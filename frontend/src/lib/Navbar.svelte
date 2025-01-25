@@ -48,7 +48,7 @@
 				</ul>
 			{/if}
 		</div>
-		<a href="/" class="btn btn-ghost text-xl">daisyUI</a>
+		<a href="/" class="btn btn-ghost text-xl">Wallet Tracker</a>
 	</div>
 	<div class="navbar-center hidden lg:flex">
 		<ul class="menu menu-horizontal px-1">
