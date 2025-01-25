@@ -1,56 +1,84 @@
-<script>
+<script lang="ts">
 	import { goto } from '$app/navigation';
+	import api from '$lib/axios';
+	import type { AxiosError } from 'axios';
 
 	let email = '';
 	let password = '';
 	let errorMessage = '';
 
+	interface APIErrorResponse {
+		token?: string; // The main error message
+		error?: string; // Optional error code or additional details
+	}
+
 	const handleLogin = async () => {
-		errorMessage = ''; // Clear previous errors
+		errorMessage = '';
 
 		// Send the login request to the backend
-		const response = await fetch('http://localhost:8080/api/v1/login', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ email, password })
-		});
+		try {
+			const response = await api.post('login', { email, password });
 
-		if (response.ok) {
-			const data = await response.json();
+			const data = response.data;
 			// Save the token to localStorage (or cookie)
 			localStorage.setItem('authToken', data.token);
-
-			// Redirect to the home page or dashboard
 			goto('/');
-		} else {
-			// Handle login error
-			const errorData = await response.json();
-			errorMessage = errorData.message || 'Login failed. Please try again.';
+		} catch (error) {
+			// Type the error as AxiosError
+			const axiosError = error as AxiosError;
+			const apiResponse = axiosError.response?.data as APIErrorResponse;
+			errorMessage = apiResponse?.error || 'An error occurred';
 		}
 	};
 </script>
 
-<main>
-	<h1>Login</h1>
+<main class="bg-base-200 flex min-h-screen items-center justify-center">
+	<div class="bg-base-100 w-full max-w-md rounded-lg p-6 shadow-md">
+		<h1 class="mb-6 text-center text-2xl font-bold">Login</h1>
 
-	<form on:submit|preventDefault={handleLogin}>
-		<label for="email">Email:</label>
-		<input id="email" type="email" bind:value={email} required />
+		<form class="space-y-4" on:submit|preventDefault={handleLogin}>
+			<div class="form-control">
+				<label for="email" class="label">
+					<span class="label-text">Email:</span>
+				</label>
+				<input
+					id="email"
+					type="email"
+					bind:value={email}
+					required
+					class="input input-bordered w-full"
+					placeholder="Enter your email"
+				/>
+			</div>
 
-		<label for="password">Password:</label>
-		<input id="password" type="password" bind:value={password} required />
+			<div class="form-control">
+				<label for="password" class="label">
+					<span class="label-text">Password:</span>
+				</label>
+				<input
+					id="password"
+					type="password"
+					bind:value={password}
+					required
+					class="input input-bordered w-full"
+					placeholder="Enter your password"
+				/>
+			</div>
 
-		{#if errorMessage}
-			<p class="error">{errorMessage}</p>
-		{/if}
+			{#if errorMessage}
+				<p class="text-sm text-red-500">{errorMessage}</p>
+			{/if}
 
-		<button type="submit">Login</button>
-	</form>
+			<div class="form-control mt-4">
+				<button type="submit" class="btn btn-primary w-full">Login</button>
+			</div>
+		</form>
+
+		<p class="mt-4 text-center text-sm">
+			Don't have an account? <a href="/register" class="link link-primary">Register</a>
+		</p>
+	</div>
 </main>
 
 <style>
-	.error {
-		color: red;
-		margin-top: 0.5rem;
-	}
 </style>

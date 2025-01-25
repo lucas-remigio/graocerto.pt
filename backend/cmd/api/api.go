@@ -41,6 +41,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 		// Allow requests from your SvelteKit app
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 
+		// Allow credentials (cookies) to be sent with the request
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
 		// Allow specific HTTP methods
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
