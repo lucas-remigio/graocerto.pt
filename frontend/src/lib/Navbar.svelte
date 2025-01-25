@@ -1,5 +1,13 @@
 <script lang="ts">
+	import { Search, Bell, LogOut } from 'lucide-svelte';
 	let isDropdownOpen = false;
+
+	const logout = async () => {
+		localStorage.removeItem('authToken');
+		document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
+		window.location.href = '/login';
+	};
 </script>
 
 <div class="navbar bg-base-100">
@@ -57,7 +65,7 @@
 				<details>
 					<summary>Parent</summary>
 					<ul class="p-2">
-						<li><a href="#submenu1">Submenu 1</a></li>
+						<li><a href="/example">Submenu 1</a></li>
 						<li><a href="#submenu2">Submenu 2</a></li>
 					</ul>
 				</details>
@@ -66,39 +74,24 @@
 		</ul>
 	</div>
 	<div class="navbar-end">
+		<!-- Search Button -->
 		<button aria-label="search" class="btn btn-ghost btn-circle">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-5 w-5"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-				/>
-			</svg>
+			<Search size={20} class="h-5 w-5" />
 		</button>
+
+		<!-- Notifications Button -->
 		<button aria-label="notifications" class="btn btn-ghost btn-circle">
 			<div class="indicator">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-					/>
-				</svg>
+				<Bell size={20} class="h-5 w-5" />
 				<span class="badge badge-xs badge-primary indicator-item"></span>
+			</div>
+		</button>
+
+		<!-- Logout Button -->
+		<button aria-label="logout" class="btn btn-ghost" on:click={logout}>
+			<div class="flex items-center space-x-2">
+				<span>Logout</span>
+				<LogOut size={20} class="h-5 w-5" />
 			</div>
 		</button>
 	</div>
