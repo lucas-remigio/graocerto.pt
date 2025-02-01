@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/lucas-remigio/wallet-tracker/service/user"
 )
@@ -38,8 +39,12 @@ func (s *APIServer) Run() error {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Allow requests from your SvelteKit app
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		origin := r.Header.Get("Origin")
+		// Allow any request from localhost
+		if origin != "" && (origin == "http://localhost" ||
+			strings.HasPrefix(origin, "http://localhost:")) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 
 		// Allow credentials (cookies) to be sent with the request
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
