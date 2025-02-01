@@ -2,21 +2,36 @@
 	import '../app.css';
 	import Navbar from '$lib/Navbar.svelte';
 	import { afterNavigate, goto } from '$app/navigation';
-	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { page } from '$app/state';
+	import { isAuthenticated, token } from '$lib/stores/auth';
+	import api from '$lib/axios';
+	import { get } from 'svelte/store';
 
 	let { children } = $props();
 
 	const publicRoutes = ['/login', '/register'];
 
-	function checkAuth(currentPath: string) {
+	async function checkAuth(currentPath: string) {
 		if (!browser) return; // Ensure this logic runs only in the browser
 
 		const isPublicRoute = publicRoutes.includes(currentPath);
+		const authToken = get(token);
 
 		if (!isPublicRoute) {
-			// verify the token on the backend
+			try {
+				if (!authToken) {
+					throw new Error('No token found');
+				}
+
+				// Verify the token with the backend
+				await api.get('/verify-token');
+
+				isAuthenticated.set(true); // Token is valid
+			} catch (error) {
+				console.log('Token verification failed:', error);
+				isAuthenticated.set(false); // Token is invalid
+				goto('/login'); // Redirect to login if verification fails
+			}
 		}
 	}
 

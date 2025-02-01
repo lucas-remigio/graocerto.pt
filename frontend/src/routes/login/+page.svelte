@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import api from '$lib/axios';
+	import { token } from '$lib/stores/auth';
 	import type { AxiosError } from 'axios';
 
 	let email = '';
@@ -17,9 +18,13 @@
 
 		// Send the login request to the backend
 		try {
-			await api.post('login', { email, password });
+			const response = await api.post('login', { email, password });
 
-			console.log('Login successful');
+			const data = response.data;
+			if (data.token) {
+				token.set(data.token);
+			}
+
 			goto('/');
 		} catch (error) {
 			// Type the error as AxiosError

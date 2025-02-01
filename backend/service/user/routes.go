@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/lucas-remigio/wallet-tracker/config"
@@ -22,6 +23,32 @@ func NewHandler(store types.UserStore) *Handler {
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/login", h.handleLogin)
 	router.HandleFunc("/register", h.handleRegister)
+	router.HandleFunc("/verify-token", h.verifyToken)
+}
+
+func (h *Handler) verifyToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	authToken := r.Header.Get("Authorization")
+
+	if authToken == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	token := strings.TrimPrefix(authToken, "Bearer ")
+	isValid, err := auth.VerifyJWT(token)
+
+	if err != nil || !isValid {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +80,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	// check if the password is correct
 	if !auth.CheckPasswordHash([]byte(payload.Password), user.Password) {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("not found, invalid email or password"))
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("not found, invalid email or password"))
 		return
 	}
 
