@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 import { token } from '$lib/stores/auth';
 
 const API_URL = import.meta.env.PROD
-	? 'https://lucas-remigio-dev.pt:8080/api/v1'
+	? 'http://lucas-remigio-dev.pt:8080/api/v1'
 	: 'http://localhost:8080/api/v1';
 
 const api = axios.create({
