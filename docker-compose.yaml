@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:80"
+    environment:
+      - NODE_ENV=${NODE_ENV}
 
   app:
     build:

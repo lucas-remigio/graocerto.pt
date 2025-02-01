@@ -21,7 +21,6 @@ COPY --from=builder /wallet-tracker /wallet-tracker
 COPY --from=builder /app /app
 
 # Set environment variables for Go
-ENV GOPATH=/app
 ENV GO111MODULE=on
 
 # Pre-download dependencies

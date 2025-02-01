@@ -21,3 +21,4 @@
 # Go workspace file
 go.work
 backend/.env
+/backend/node_modules
