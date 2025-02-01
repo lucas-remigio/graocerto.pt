@@ -19,6 +19,7 @@
 		try {
 			await api.post('login', { email, password });
 
+			console.log('Login successful');
 			goto('/');
 		} catch (error) {
 			// Type the error as AxiosError
