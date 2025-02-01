@@ -17,11 +17,7 @@
 
 		// Send the login request to the backend
 		try {
-			const response = await api.post('login', { email, password });
-
-			const data = response.data;
-			// Save the token to localStorage (or cookie)
-			localStorage.setItem('authToken', data.token);
+			await api.post('login', { email, password });
 
 			goto('/');
 		} catch (error) {

@@ -14,6 +14,7 @@
 		if (!browser) return; // Ensure this logic runs only in the browser
 
 		const authToken = document.cookie.split('; ').find((row) => row.startsWith('authToken='));
+		console.log('Layout: ' + authToken);
 		const isAuthenticated = !!authToken;
 
 		const isPublicRoute = publicRoutes.includes(currentPath);
