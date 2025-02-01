@@ -40,12 +40,16 @@ func (s *APIServer) Run() error {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		// Allow any request from localhost
+
+		// Allow requests from localhost and lucas-remigio-dev.pt
 		if origin != "" && (origin == "http://localhost" ||
-			strings.HasPrefix(origin, "http://localhost:")) {
+			strings.HasPrefix(origin, "http://localhost:") ||
+			origin == "http://lucas-remigio-dev.pt" ||
+			strings.HasPrefix(origin, "http://lucas-remigio-dev.pt:") ||
+			origin == "https://lucas-remigio-dev.pt" ||
+			strings.HasPrefix(origin, "https://lucas-remigio-dev.pt:")) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		}
-
 		// Allow credentials (cookies) to be sent with the request
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
