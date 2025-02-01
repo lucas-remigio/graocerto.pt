@@ -64,6 +64,18 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isSecure := r.TLS != nil
+	// Set the authToken as a secure, HTTP-only cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "authToken",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,                    // Prevents client-side JavaScript from accessing the cookie
+		Secure:   isSecure,                // Only send the cookie over HTTPS
+		SameSite: http.SameSiteStrictMode, // Prevents CSRF attacks
+		MaxAge:   3600,                    // Token expires after 1 hour (adjust as needed)
+	})
+
 	utils.WriteJson(w, http.StatusOK, map[string]string{"token": token})
 }
 

@@ -22,7 +22,6 @@
 			const data = response.data;
 			// Save the token to localStorage (or cookie)
 			localStorage.setItem('authToken', data.token);
-			document.cookie = `authToken=${data.token}; Path=/; SameSite=Strict; Secure`;
 
 			goto('/');
 		} catch (error) {
