@@ -7,10 +7,13 @@
 		TransactionDto,
 		TransactionsResponseDto
 	} from '$lib/types';
+	import Accounts from '../components/Accounts.svelte';
+	import TransactionsTable from '../components/TransactionsTable.svelte';
 
 	// Local component state
 	let accounts: Account[] = [];
 	let transactions: TransactionDto[] = [];
+	let selectedAccount: Account;
 	let error: string = '';
 
 	// Function to fetch accounts and then fetch transactions for the first account
@@ -28,7 +31,8 @@
 
 			// If we have at least one account, fetch its transactions
 			if (accounts && accounts.length > 0) {
-				await getAccountTransactions(accounts[0].token);
+				selectedAccount = accounts[0];
+				await getAccountTransactions(selectedAccount.token);
 			}
 		} catch (err) {
 			console.error('Error in fetchAccounts:', err);
@@ -61,60 +65,20 @@
 	});
 </script>
 
-<h1 class="mb-6 text-3xl font-bold">My Accounts</h1>
+<div class="container mx-auto p-6">
+	<h1 class="mb-6 text-3xl font-bold">My Accounts</h1>
 
-{#if error}
-	<div class="alert alert-error">
-		<p>{error}</p>
-	</div>
-{:else}
-	<!-- Display Accounts as cards -->
-	{#if accounts.length > 0}
-		<div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-			{#each accounts as account}
-				<div class="card bg-base-100 shadow-xl">
-					<div class="card-body">
-						<h2 class="card-title">{account.account_name}</h2>
-						<p><span class="font-bold">Token:</span> {account.token}</p>
-						<p><span class="font-bold">Balance:</span> {account.balance}</p>
-						<p>
-							<span class="font-bold">Created at:</span>
-							{new Date(account.created_at).toLocaleString()}
-						</p>
-					</div>
-				</div>
-			{/each}
+	{#if error}
+		<div class="alert alert-error">
+			<p>{error}</p>
 		</div>
 	{:else}
-		<p class="text-gray-500">No accounts found.</p>
-	{/if}
+		<!-- Render the Accounts component -->
+		<Accounts {accounts} />
 
-	<!-- Optionally, display transactions for the first account -->
-	{#if transactions && transactions.length > 0}
-		<h2 class="mb-4 text-2xl font-semibold">Transactions for {accounts[0].account_name}</h2>
-		<div class="overflow-x-auto">
-			<table class="table w-full">
-				<thead>
-					<tr>
-						<th>Id</th>
-						<th>Description</th>
-						<th>Amount</th>
-						<th>Date</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each transactions as tx}
-						<tr>
-							<td>{tx.id}</td>
-							<td>{tx.description}</td>
-							<td>{tx.amount}</td>
-							<td>{new Date(tx.created_at).toLocaleString()}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-	{:else if accounts.length > 0}
-		<p class="text-gray-500">No transactions found for {accounts[0].account_name}.</p>
+		<!-- Render the TransactionsTable component only if accounts exist -->
+		{#if accounts.length > 0}
+			<TransactionsTable {transactions} account={selectedAccount} />
+		{/if}
 	{/if}
-{/if}
+</div>
