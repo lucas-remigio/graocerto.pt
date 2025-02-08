@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
+
 	let description = '';
 	let amount: number = 0;
 
@@ -12,15 +14,16 @@
 		amount = 0;
 	}
 
-	function closeModal() {
-		console.log('Closing modal');
+	const dispatch = createEventDispatcher<any>();
+	function handleCloseModal() {
+		dispatch('closeModal');
 	}
 </script>
 
 <div class="modal modal-open">
 	<div class="modal-box relative">
 		<!-- Close button -->
-		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={closeModal}>✕</button>
+		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}>✕</button>
 		<h3 class="text-lg font-bold">New Transaction</h3>
 		<!-- Add your transaction form here -->
 		<form on:submit|preventDefault={handleSubmit}>
@@ -50,7 +53,7 @@
 			</div>
 			<!-- Add more fields as needed -->
 			<div class="modal-action">
-				<button type="button" class="btn" on:click={closeModal}>Cancel</button>
+				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
 				<button type="submit" class="btn btn-primary">Create Transaction</button>
 			</div>
 		</form>

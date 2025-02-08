@@ -20,7 +20,7 @@
 	async function fetchAccounts() {
 		try {
 			const res = await api_axios('accounts');
-			console.log('Response from accounts api:', res);
+
 			if (res.status !== 200) {
 				console.error('Non-200 response status:', res.status);
 				error = `Error: ${res.status}`;
@@ -59,6 +59,11 @@
 		}
 	}
 
+	function handleSelect(event: CustomEvent<{ account: Account }>) {
+		selectedAccount = event.detail.account;
+		getAccountTransactions(selectedAccount.token);
+	}
+
 	// Trigger the fetching when the component mounts
 	onMount(() => {
 		fetchAccounts();
@@ -74,7 +79,7 @@
 		</div>
 	{:else}
 		<!-- Render the Accounts component -->
-		<Accounts {accounts} />
+		<Accounts {accounts} on:select={handleSelect} />
 
 		<!-- Render the TransactionsTable component only if accounts exist -->
 		{#if accounts.length > 0}

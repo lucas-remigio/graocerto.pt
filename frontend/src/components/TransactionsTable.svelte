@@ -33,11 +33,11 @@
 		<table class="table w-full">
 			<thead class="text-center">
 				<tr>
-					<th>Date</th>
-					<th>Description</th>
-					<th>Category</th>
-					<th>Amount</th>
-					<th>Balance</th>
+					<th class="text-gray-900 dark:text-gray-100">Date</th>
+					<th class="text-gray-900 dark:text-gray-100">Description</th>
+					<th class="text-gray-900 dark:text-gray-100">Category</th>
+					<th class="text-gray-900 dark:text-gray-100">Amount</th>
+					<th class="text-gray-900 dark:text-gray-100">Balance</th>
 				</tr>
 			</thead>
 			<tbody class="text-center">
@@ -49,14 +49,14 @@
 								? 'bg-green-100'
 								: ''}
 					>
-						<td>
+						<td class="dark:text-gray-900">
 							{new Date(tx.created_at).toLocaleDateString('pt-PT', {
 								day: '2-digit',
 								month: '2-digit',
 								year: 'numeric'
 							})}
 						</td>
-						<td>{tx.description}</td>
+						<td class="dark:text-gray-900">{tx.description}</td>
 						<td>
 							<span
 								class="rounded px-2 py-1 text-white"
@@ -65,8 +65,8 @@
 								{tx.category.category_name}
 							</span>
 						</td>
-						<td>{tx.amount}$</td>
-						<td>{tx.balance}$</td>
+						<td class="dark:text-gray-900">{tx.amount}$</td>
+						<td class="dark:text-gray-900">{tx.balance}$</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -79,5 +79,5 @@
 {/if}
 
 {#if showModal}
-	<CreateTransaction></CreateTransaction>
+	<CreateTransaction on:closeModal={closeModal}></CreateTransaction>
 {/if}
