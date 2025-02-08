@@ -43,12 +43,16 @@ func (h *Handler) GetTransactionTypes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get accounts by user id
-	accounts, err := h.store.GetTransactionTypes()
+	// get transactionTypes by user id
+	transactionTypes, err := h.store.GetTransactionTypes()
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, accounts)
+	response := map[string]interface{}{
+		"transaction_types": transactionTypes,
+	}
+
+	utils.WriteJson(w, http.StatusOK, response)
 }

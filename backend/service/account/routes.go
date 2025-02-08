@@ -97,5 +97,9 @@ func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, accounts)
+	response := map[string]interface{}{
+		"accounts": accounts,
+	}
+
+	utils.WriteJson(w, http.StatusOK, response)
 }
