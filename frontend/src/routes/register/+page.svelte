@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import api from '$lib/axios';
+	import axios from '$lib/axios';
 	import type { AxiosError } from 'axios';
 
 	let first_name = '';
@@ -28,7 +28,7 @@
 
 		try {
 			// Send the register request to the backend
-			const response = await api.post('register', {
+			const response = await axios.post('register', {
 				first_name,
 				last_name,
 				email,

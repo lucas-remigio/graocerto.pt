@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import api from '$lib/axios';
+	import axios from '$lib/axios';
 	import { token } from '$lib/stores/auth';
 	import type { AxiosError } from 'axios';
 
@@ -18,11 +18,12 @@
 
 		// Send the login request to the backend
 		try {
-			const response = await api.post('login', { email, password });
+			const response = await axios.post('login', { email, password });
 
 			const data = response.data;
-			if (data.token) {
-				token.set(data.token);
+			const authToken = data.token;
+			if (authToken) {
+				token.set(authToken);
 			}
 
 			goto('/');

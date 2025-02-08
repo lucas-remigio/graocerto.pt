@@ -6,14 +6,14 @@ const API_URL = import.meta.env.PROD
 	? 'https://lucas-remigio-dev.pt/api/v1'
 	: 'http://localhost:8080/api/v1';
 
-const api = axios.create({
+const api_axios = axios.create({
 	baseURL: API_URL,
 	withCredentials: true,
 	headers: { 'Content-Type': 'application/json' }
 });
 
 // Request Interceptor: Attach token to headers
-api.interceptors.request.use((config) => {
+api_axios.interceptors.request.use((config) => {
 	const authToken = get(token);
 	if (authToken) {
 		config.headers.Authorization = `Bearer ${authToken}`;
@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
 });
 
 // Response Interceptor: Handle errors and token refresh
-api.interceptors.response.use(
+api_axios.interceptors.response.use(
 	(response) => response, // Pass through successful responses
 	async (error) => {
 		if (error.response?.status === 401) {
@@ -33,4 +33,4 @@ api.interceptors.response.use(
 	}
 );
 
-export default api;
+export default api_axios;

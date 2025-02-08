@@ -9,7 +9,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	const authToken = event.cookies.get('authToken'); // Retrieve the auth token from cookies
-	console.log('authToken:', authToken);
 
 	// Check if the route is a public route
 	if (publicRoutes.includes(event.url.pathname)) {

@@ -90,7 +90,7 @@
 		<!-- Logout Button -->
 		<button aria-label="logout" class="btn btn-ghost" on:click={logout}>
 			<div class="flex items-center space-x-2">
-				<span>Logout</span>
+				<span class="hidden sm:inline">Logout</span>
 				<LogOut size={20} class="h-5 w-5" />
 			</div>
 		</button>

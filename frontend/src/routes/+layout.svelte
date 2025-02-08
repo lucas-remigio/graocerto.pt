@@ -3,8 +3,8 @@
 	import Navbar from '$lib/Navbar.svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import { isAuthenticated, token } from '$lib/stores/auth';
-	import api from '$lib/axios';
+	import { isAuthenticated, storedToken, token } from '$lib/stores/auth';
+	import axios from '$lib/axios';
 	import { get } from 'svelte/store';
 
 	let { children } = $props();
@@ -17,21 +17,23 @@
 		const isPublicRoute = publicRoutes.includes(currentPath);
 		const authToken = get(token);
 
-		if (!isPublicRoute) {
-			try {
-				if (!authToken) {
-					throw new Error('No token found');
-				}
+		if (isPublicRoute) {
+			return;
+		}
 
-				// Verify the token with the backend
-				await api.get('/verify-token');
-
-				isAuthenticated.set(true); // Token is valid
-			} catch (error) {
-				console.log('Token verification failed:', error);
-				isAuthenticated.set(false); // Token is invalid
-				goto('/login'); // Redirect to login if verification fails
+		try {
+			if (!authToken) {
+				throw new Error('No token found');
 			}
+
+			// Verify the token with the backend
+			await axios.get('/verify-token');
+
+			isAuthenticated.set(true); // Token is valid
+		} catch (error) {
+			console.error('Token verification failed:', error);
+			isAuthenticated.set(false); // Token is invalid
+			goto('/login'); // Redirect to login if verification fails
 		}
 	}
 
