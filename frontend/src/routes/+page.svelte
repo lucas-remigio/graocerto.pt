@@ -64,6 +64,10 @@
 		getAccountTransactions(selectedAccount.token);
 	}
 
+	function handleNewTransaction() {
+		getAccountTransactions(selectedAccount.token);
+	}
+
 	// Trigger the fetching when the component mounts
 	onMount(() => {
 		fetchAccounts();
@@ -83,7 +87,11 @@
 
 		<!-- Render the TransactionsTable component only if accounts exist -->
 		{#if accounts.length > 0}
-			<TransactionsTable {transactions} account={selectedAccount} />
+			<TransactionsTable
+				{transactions}
+				account={selectedAccount}
+				on:newTransaction={handleNewTransaction}
+			/>
 		{/if}
 	{/if}
 </div>

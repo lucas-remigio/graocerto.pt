@@ -3,6 +3,7 @@
 	import type { Account, TransactionDto } from '$lib/types';
 	import { Plus } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
+	import { createEventDispatcher } from 'svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -16,6 +17,12 @@
 
 	function closeModal() {
 		showModal = false;
+	}
+
+	const dispatch = createEventDispatcher();
+	function handleNewTransaction() {
+		closeModal();
+		dispatch('newTransaction');
 	}
 </script>
 
@@ -79,5 +86,6 @@
 {/if}
 
 {#if showModal}
-	<CreateTransaction on:closeModal={closeModal}></CreateTransaction>
+	<CreateTransaction {account} on:closeModal={closeModal} on:newTransaction={handleNewTransaction}
+	></CreateTransaction>
 {/if}

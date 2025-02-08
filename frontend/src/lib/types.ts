@@ -28,15 +28,32 @@ export interface TransactionDto {
 
 export interface CategoryDto {
 	id: number;
-	transaction_type: Transactiontype;
+	transaction_type: TransactionType;
 	category_name: string;
 	color: string;
 	created_at: string;
 	updated_at: string;
 }
 
-export interface Transactiontype {
+export interface Category {
+	id: number;
+	transaction_type_id: number;
+	category_name: string;
+	color: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface CategoriesResponse {
+	categories: Category[];
+}
+
+export interface TransactionType {
 	id: number;
 	type_name: string;
 	type_slug: string;
+}
+
+export interface TransactionTypesResponse {
+	transaction_types: TransactionType[];
 }
