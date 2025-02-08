@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
 )
 
@@ -29,6 +30,10 @@ func (s *APIServer) Run() error {
 	userStore := user.NewStore(s.db)
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(apiV1Router)
+
+	accountStore := account.NewStore(s.db)
+	accountHandler := account.NewHandler(accountStore)
+	accountHandler.RegisterRoutes(apiV1Router)
 
 	// Register a handler for paths starting with /api/v1
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", apiV1Router))

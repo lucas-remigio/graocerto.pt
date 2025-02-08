@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,6 +30,14 @@ func WriteJson(w http.ResponseWriter, status int, v any) error {
 
 func WriteError(w http.ResponseWriter, status int, err error) {
 	WriteJson(w, status, map[string]string{"error": err.Error()})
+}
+
+func GenerateToken(length int) (string, error) {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
 
 func ReadContentsFromFile(filePath string) (string, error) {

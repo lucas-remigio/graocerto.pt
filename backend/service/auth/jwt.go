@@ -39,3 +39,26 @@ func VerifyJWT(tokenString string) (bool, error) {
 
 	return false, nil
 }
+
+// get the user id from jwt token
+func GetUserIdFromToken(secret []byte, tokenString string) (int, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return secret, nil
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, err
+	}
+
+	userId, err := strconv.Atoi(claims["user_id"].(string))
+	if err != nil {
+		return 0, err
+	}
+
+	return userId, nil
+}
