@@ -21,22 +21,23 @@ func NewHandler(store types.AccountStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
-	router.HandleFunc("/accounts", h.CreateAccount)
+	router.HandleFunc("/accounts", h.AccountsHandler)
+}
+
+func (h *Handler) AccountsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		h.CreateAccount(w, r)
+	case http.MethodGet:
+		h.GetAccountsByUserId(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	token := strings.TrimPrefix(authToken, "Bearer ")
-	secret := []byte(config.Envs.JWTSecret)
-	userId, err := auth.GetUserIdFromToken(secret, token)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
 		return
 	}
 
@@ -54,6 +55,16 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	token := strings.TrimPrefix(authToken, "Bearer ")
+	secret := []byte(config.Envs.JWTSecret)
+	userId, err := auth.GetUserIdFromToken(secret, token)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
 	// create a new account
 	err = h.store.CreateAccount(&types.Account{
 		UserID:      userId,
@@ -67,4 +78,30 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJson(w, http.StatusOK, map[string]string{"status": token})
+}
+
+func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	token := strings.TrimPrefix(authToken, "Bearer ")
+	secret := []byte(config.Envs.JWTSecret)
+	userId, err := auth.GetUserIdFromToken(secret, token)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	// get accounts by user id
+	accounts, err := h.store.GetAccountsByUserId(userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, accounts)
 }
