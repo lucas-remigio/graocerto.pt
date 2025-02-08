@@ -46,6 +46,21 @@ func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
 	return categories, nil
 }
 
+func (s *Store) GetCategoryById(id int) (*types.Category, error) {
+	row := s.db.QueryRow("SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at FROM categories WHERE id = ?", id)
+
+	category := new(types.Category)
+	if err := row.Scan(&category.ID, &category.UserID, &category.TransactionTypeID, &category.CategoryName, &category.Color, &category.CreatedAt, &category.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return category, nil
+}
+
 func scanRowIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
 

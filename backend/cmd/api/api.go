@@ -8,6 +8,7 @@ import (
 
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
+	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
 )
@@ -44,6 +45,10 @@ func (s *APIServer) Run() error {
 	categoryStore := category.NewStore(s.db)
 	categoryHandler := category.NewHandler(categoryStore)
 	categoryHandler.RegisterRoutes(apiV1Router)
+
+	transactionStore := transaction.NewStore(s.db)
+	transactionHandler := transaction.NewHandler(transactionStore)
+	transactionHandler.RegisterRoutes(apiV1Router)
 
 	// Register a handler for paths starting with /api/v1
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", apiV1Router))

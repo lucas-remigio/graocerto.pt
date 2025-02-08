@@ -2,6 +2,7 @@ package account
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
@@ -50,6 +51,18 @@ func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 	}
 
 	return accounts, nil
+}
+
+func (s *Store) GetAccountByToken(token string) (*types.Account, error) {
+	row := s.db.QueryRow("SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE token = ?", token)
+	account := new(types.Account)
+	if err := row.Scan(&account.ID, &account.Token, &account.UserID, &account.AccountName, &account.Balance, &account.CreatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("account not found")
+		}
+		return nil, err
+	}
+	return account, nil
 }
 
 func scanRowIntoAccount(rows *sql.Rows) (*types.Account, error) {
