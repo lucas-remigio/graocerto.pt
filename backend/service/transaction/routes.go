@@ -138,8 +138,6 @@ func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *htt
 		return
 	}
 
-	fmt.Println(accountToken)
-
 	// get categories by user id
 	transactions, err := h.store.GetTransactionsDTOByAccountToken(accountToken)
 	if err != nil {

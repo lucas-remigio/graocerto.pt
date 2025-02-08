@@ -98,7 +98,8 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string) ([]*types.
 		"FROM transactions t "+
 		"JOIN categories c ON t.category_id = c.id "+
 		"JOIN transaction_types tt ON c.transaction_type_id = tt.id "+
-		"WHERE t.account_token = ?", accountToken)
+		"WHERE t.account_token = ? "+
+		"ORDER BY t.date DESC, t.id DESC", accountToken)
 
 	if err != nil {
 		return nil, err

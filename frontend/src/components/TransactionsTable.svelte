@@ -1,22 +1,35 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
 	import type { Account, TransactionDto } from '$lib/types';
+	import { Plus } from 'lucide-svelte';
+	import CreateTransaction from './CreateTransaction.svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
 	export let account: Account;
 
-	// when i receive the transactions, i want them ordered by date, but with the most recent on top
-	transactions = transactions.sort((a, b) => {
-		return new Date(b.date).getTime() - new Date(a.date).getTime();
-	});
+	let showModal = false;
+
+	function openModal() {
+		showModal = true;
+	}
+
+	function closeModal() {
+		showModal = false;
+	}
 </script>
 
 {#if transactions && transactions.length > 0}
-	<h2 class="mb-4 text-2xl font-semibold">
-		Transactions for {account.account_name}
-	</h2>
-	<div class="overflow-x-auto">
+	<div class="mb-2 flex justify-between">
+		<h2 class="mb-4 text-2xl font-semibold">
+			Transactions for {account.account_name}
+		</h2>
+		<!-- Button to add a new transaction-->
+		<button class="btn btn-primary shadow-lg" on:click={openModal}>
+			<Plus size={20} class="h-5 w-5" />
+		</button>
+	</div>
+	<div class="bg-base-100 overflow-x-auto rounded-lg shadow-lg">
 		<table class="table w-full">
 			<thead class="text-center">
 				<tr>
@@ -63,4 +76,8 @@
 	<p class="text-gray-500">
 		No transactions found for {account.account_name}.
 	</p>
+{/if}
+
+{#if showModal}
+	<CreateTransaction></CreateTransaction>
 {/if}
