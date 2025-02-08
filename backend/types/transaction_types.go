@@ -13,6 +13,7 @@ type CreateTransactionPayload struct {
 	CategoryID   int     `json:"category_id" validate:"numeric,min=1"`
 	Amount       float64 `json:"amount" validate:"required,numeric"`
 	Description  string  `json:"description"`
+	Date         string  `json:"date" validate:"required"`
 }
 
 type Transaction struct {
@@ -27,12 +28,12 @@ type Transaction struct {
 }
 
 type TransactionDTO struct {
-	ID           int    `json:"id"`
-	AccountToken string `json:"account_token"`
-	Amount      float64      `json:"amount"`
-	Description string       `json:"description"`
-	Date        time.Time    `json:"date"`
-	Balance     float64      `json:"balance"`
-	CreatedAt   time.Time    `json:"created_at"`
-	Category    *CategoryDTO `json:"category,omitempty"`
+	ID           int          `json:"id"`
+	AccountToken string       `json:"account_token"`
+	Amount       float64      `json:"amount"`
+	Description  string       `json:"description"`
+	Date         time.Time    `json:"date"`
+	Balance      float64      `json:"balance"`
+	CreatedAt    time.Time    `json:"created_at"`
+	Category     *CategoryDTO `json:"category,omitempty"`
 }

@@ -70,6 +70,7 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		Amount:       payload.Amount,
 		CategoryId:   payload.CategoryID,
 		Description:  payload.Description,
+		Date:         payload.Date,
 	})
 
 	if err != nil {

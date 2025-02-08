@@ -3,7 +3,6 @@ package transaction
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
@@ -40,13 +39,11 @@ func (s *Store) CreateTransaction(transaction *types.Transaction) error {
 
 	// category transaction type id == 1 means credit
 	// if category.TransactionTypeID == 2 means debit
-	// transaction type 3 means transfer
+	amount := transaction.Amount
 	if category.TransactionTypeID == 2 {
-		transaction.Amount = transaction.Amount * -1
+		amount = amount * -1
 	}
-	newBalance := account.Balance + transaction.Amount
-
-	date := time.Now().Format("2006-01-02")
+	newBalance := account.Balance + amount
 
 	_, err = s.db.Exec(
 		"INSERT INTO transactions (account_token, category_id, amount, description, date, balance) VALUES (?, ?, ?, ?, ?, ?)",
@@ -54,7 +51,7 @@ func (s *Store) CreateTransaction(transaction *types.Transaction) error {
 		transaction.CategoryId,
 		transaction.Amount,
 		transaction.Description,
-		date,
+		transaction.Date,
 		newBalance,
 	)
 	if err != nil {

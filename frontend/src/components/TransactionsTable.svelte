@@ -50,7 +50,7 @@
 								: ''}
 					>
 						<td class="dark:text-gray-900">
-							{new Date(tx.created_at).toLocaleDateString('pt-PT', {
+							{new Date(tx.date).toLocaleDateString('pt-PT', {
 								day: '2-digit',
 								month: '2-digit',
 								year: 'numeric'
