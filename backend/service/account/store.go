@@ -53,13 +53,13 @@ func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 }
 
 func scanRowIntoAccount(rows *sql.Rows) (*types.Account, error) {
-	account := new(types.Account)
+	a := new(types.Account)
 
-	err := rows.Scan(&account.ID, &account.Token, &account.UserID, &account.AccountName, &account.Balance, &account.CreatedAt)
+	err := rows.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return account, nil
+	return a, nil
 }

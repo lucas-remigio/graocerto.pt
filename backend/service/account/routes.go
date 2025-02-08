@@ -3,10 +3,8 @@ package account
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/service/auth"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
@@ -57,9 +55,7 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 	// get the user id by the token from authorization
 	authToken := r.Header.Get("Authorization")
-	token := strings.TrimPrefix(authToken, "Bearer ")
-	secret := []byte(config.Envs.JWTSecret)
-	userId, err := auth.GetUserIdFromToken(secret, token)
+	userId, err := auth.GetUserIdFromToken(authToken)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, err)
 		return
@@ -77,7 +73,7 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"status": token})
+	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
 }
 
 func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
@@ -88,9 +84,7 @@ func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
 
 	// get the user id by the token from authorization
 	authToken := r.Header.Get("Authorization")
-	token := strings.TrimPrefix(authToken, "Bearer ")
-	secret := []byte(config.Envs.JWTSecret)
-	userId, err := auth.GetUserIdFromToken(secret, token)
+	userId, err := auth.GetUserIdFromToken(authToken)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, err)
 		return

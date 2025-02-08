@@ -2,6 +2,7 @@ package auth
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -41,7 +42,10 @@ func VerifyJWT(tokenString string) (bool, error) {
 }
 
 // get the user id from jwt token
-func GetUserIdFromToken(secret []byte, tokenString string) (int, error) {
+func GetUserIdFromToken(bearerToken string) (int, error) {
+	tokenString := strings.TrimPrefix(bearerToken, "Bearer ")
+	secret := []byte(config.Envs.JWTSecret)
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return secret, nil
 	})
