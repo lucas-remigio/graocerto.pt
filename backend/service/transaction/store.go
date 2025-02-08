@@ -89,10 +89,58 @@ func (s *Store) GetTransactionsByAccountToken(accountToken string) ([]*types.Tra
 	return transactions, nil
 }
 
+func (s *Store) GetTransactionsDTOByAccountToken(accountToken string) ([]*types.TransactionDTO, error) {
+
+	rows, err := s.db.Query("SELECT "+
+		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at, "+
+		"c.id, c.category_name, c.color, c.created_at, c.updated_at, "+
+		"tt.id, tt.type_name, tt.type_slug "+
+		"FROM transactions t "+
+		"JOIN categories c ON t.category_id = c.id "+
+		"JOIN transaction_types tt ON c.transaction_type_id = tt.id "+
+		"WHERE t.account_token = ?", accountToken)
+
+	if err != nil {
+		return nil, err
+	}
+
+	transactions := make([]*types.TransactionDTO, 0)
+	for rows.Next() {
+		transaction, err := scanRowIntoTransactionDTO(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, nil
+}
+
 func scanRowIntoTransaction(rows *sql.Rows) (*types.Transaction, error) {
 	a := new(types.Transaction)
 
 	err := rows.Scan(&a.ID, &a.AccountToken, &a.CategoryId, &a.Amount, &a.Description, &a.Date, &a.Balance, &a.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+func scanRowIntoTransactionDTO(rows *sql.Rows) (*types.TransactionDTO, error) {
+	a := new(types.TransactionDTO)
+
+	// Initialize nested structs so they're not nil
+	a.Category = &types.CategoryDTO{}
+	a.Category.TransactionType = &types.TransactionType{}
+
+	err := rows.Scan(
+		&a.ID, &a.AccountToken, &a.Amount, &a.Description, &a.Date, &a.Balance, &a.CreatedAt,
+		&a.Category.ID, &a.Category.CategoryName, &a.Category.Color, &a.Category.CreatedAt, &a.Category.UpdatedAt,
+		&a.Category.TransactionType.ID, &a.Category.TransactionType.TypeName, &a.Category.TransactionType.TypeSlug,
+	)
 
 	if err != nil {
 		return nil, err

@@ -20,3 +20,12 @@ type Category struct {
 	CreatedAt         string `json:"created_at"`
 	UpdatedAt         string `json:"updated_at"`
 }
+
+type CategoryDTO struct {
+	ID              int              `json:"id"`
+	TransactionType *TransactionType `json:"transaction_type"`
+	CategoryName    string           `json:"category_name"`
+	Color           string           `json:"color"`
+	CreatedAt       string           `json:"created_at"`
+	UpdatedAt       string           `json:"updated_at"`
+}
