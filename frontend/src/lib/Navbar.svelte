@@ -7,6 +7,9 @@
 	let dropdownContainer: HTMLElement; // to bind the dropdown container
 	let categoriesUrl = '/categories';
 
+	// A flag to check if a touch event was handled
+	let touchHandled = false;
+
 	const logout = async () => {
 		localStorage.removeItem('authToken');
 		document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
@@ -35,7 +38,19 @@
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
+				on:touchend={(event) => {
+					// Handle the touch event and prevent the synthetic click from also toggling
+					event.preventDefault();
+					event.stopPropagation();
+					touchHandled = true;
+					isDropdownOpen = !isDropdownOpen;
+				}}
 				on:click={(event) => {
+					// If a touch event has already toggled the dropdown, ignore this click
+					if (touchHandled) {
+						touchHandled = false;
+						return;
+					}
 					event.stopPropagation();
 					isDropdownOpen = !isDropdownOpen;
 				}}
