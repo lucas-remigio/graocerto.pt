@@ -15,9 +15,9 @@
 	};
 
 	const handleClickOutside = (event: MouseEvent) => {
-		if (dropdownContainer && !dropdownContainer.contains(event.target as Node)) {
-			isDropdownOpen = false;
-		}
+		// if (dropdownContainer && !dropdownContainer.contains(event.target as Node)) {
+		// 	isDropdownOpen = false;
+		// }
 	};
 
 	onMount(() => {
@@ -29,7 +29,7 @@
 	});
 </script>
 
-<div class="navbar bg-base-100" bind:this={dropdownContainer}>
+<div class="navbar bg-base-100">
 	<div class="navbar-start">
 		<div class="dropdown">
 			<button
