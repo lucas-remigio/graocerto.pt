@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Search, Bell, LogOut, Menu } from 'lucide-svelte';
-	let isDropdownOpen = false;
+	import { onDestroy, onMount } from 'svelte';
 
+	let isDropdownOpen = false;
+	let dropdownContainer: HTMLElement; // to bind the dropdown container
 	let categoriesUrl = '/categories';
 
 	const logout = async () => {
@@ -10,30 +13,44 @@
 
 		window.location.href = '/login';
 	};
+
+	const handleClickOutside = (event: MouseEvent) => {
+		if (dropdownContainer && !dropdownContainer.contains(event.target as Node)) {
+			isDropdownOpen = false;
+		}
+	};
+
+	onMount(() => {
+		document.addEventListener('click', handleClickOutside);
+	});
+
+	onDestroy(() => {
+		document.removeEventListener('click', handleClickOutside);
+	});
 </script>
 
 <div class="navbar bg-base-100">
 	<div class="navbar-start">
-		<div class="dropdown">
-			<div
-				tabindex="0"
-				role="button"
+		<div class="dropdown" bind:this={dropdownContainer}>
+			<button
+				type="button"
 				class="btn btn-ghost lg:hidden"
 				on:click={() => (isDropdownOpen = !isDropdownOpen)}
-				on:keydown={(e) => {
-					if (e.key === 'Enter' || e.key === ' ') {
-						e.preventDefault();
-						isDropdownOpen = !isDropdownOpen;
-					}
-				}}
 			>
 				<Menu size={20} class="h-5 w-5" />
-			</div>
+			</button>
 			{#if isDropdownOpen}
 				<ul
 					class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
 				>
-					<li><a href={categoriesUrl} class="text-lg">Categories</a></li>
+					<li>
+						<button
+							type="button"
+							on:click={() => goto(categoriesUrl)}
+							class="text-lg"
+							aria-label="Categories">Categories</button
+						>
+					</li>
 				</ul>
 			{/if}
 		</div>
@@ -41,7 +58,14 @@
 	</div>
 	<div class="navbar-center hidden lg:flex">
 		<ul class="menu menu-horizontal px-1">
-			<li><a href={categoriesUrl}>Categories</a></li>
+			<li>
+				<button
+					type="button"
+					on:click={() => goto(categoriesUrl)}
+					class="text-lg"
+					aria-label="Categories">Categories</button
+				>
+			</li>
 		</ul>
 	</div>
 	<div class="navbar-end">
