@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Search, Bell, LogOut, Menu } from 'lucide-svelte';
-	import { onDestroy, onMount } from 'svelte';
 
 	let isDropdownOpen = false;
 	let categoriesUrl = '/categories';
@@ -15,12 +14,18 @@
 </script>
 
 <div class="navbar bg-base-100">
+	<p>Dropdown is {isDropdownOpen ? 'Open' : 'Closed'}</p>
 	<div class="navbar-start">
-		<div class="dropdown">
+		<div class="dropdown relative">
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
+				on:touchend={() => {
+					console.log('Touch event fired!');
+					isDropdownOpen = !isDropdownOpen;
+				}}
 				on:click={() => {
+					console.log('Click event fired!');
 					isDropdownOpen = !isDropdownOpen;
 				}}
 			>
@@ -28,7 +33,7 @@
 			</button>
 			{#if isDropdownOpen}
 				<ul
-					class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+					class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[50] mt-3 w-52 p-2 shadow"
 				>
 					<li>
 						<button
