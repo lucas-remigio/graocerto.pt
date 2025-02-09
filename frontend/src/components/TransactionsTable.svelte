@@ -1,7 +1,7 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
 	import type { Account, TransactionDto } from '$lib/types';
-	import { Plus } from 'lucide-svelte';
+	import { CircleDollarSign, Plus } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 
@@ -11,7 +11,7 @@
 
 	let showModal = false;
 
-	function openModal() {
+	function openCreateTransactionModal() {
 		showModal = true;
 	}
 
@@ -32,8 +32,8 @@
 			Transactions for {account.account_name}
 		</h2>
 		<!-- Button to add a new transaction-->
-		<button class="btn btn-primary shadow-lg" on:click={openModal}>
-			<Plus size={20} class="h-5 w-5" />
+		<button class="btn btn-primary shadow-lg" on:click={openCreateTransactionModal}>
+			<CircleDollarSign size={20} class="h-5 w-5" />
 		</button>
 	</div>
 	<div class="bg-base-100 overflow-x-auto rounded-lg shadow-lg">
@@ -80,9 +80,21 @@
 		</table>
 	</div>
 {:else}
-	<p class="text-gray-500">
-		No transactions found for {account.account_name}.
-	</p>
+	<div class="flex h-96 flex-col items-center justify-center">
+		<p class="text-gray-500">
+			No transactions found for <strong>{account.account_name}</strong>.
+		</p>
+
+		<!-- Button to add a new transaction -->
+		<button
+			class="btn btn-primary mt-4 flex items-center gap-2 shadow-lg"
+			on:click={openCreateTransactionModal}
+			aria-label="Add New Transaction"
+		>
+			<CircleDollarSign size={20} class="h-5 w-5" />
+			<span>Create First Transaction</span>
+		</button>
+	</div>
 {/if}
 
 {#if showModal}

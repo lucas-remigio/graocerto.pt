@@ -6,8 +6,8 @@ type AccountStore interface {
 }
 
 type CreateAccountPayload struct {
-	AccountName string  `json:"account_name" validate:"required,min=3"`
-	Balance     float64 `json:"balance" validate:"required,gte=0"`
+	AccountName string   `json:"account_name" validate:"required,min=3,max=50"`
+	Balance     *float64 `json:"balance" validate:"required,gte=0,lt=100000000"`
 }
 
 type Account struct {

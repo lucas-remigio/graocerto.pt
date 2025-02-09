@@ -9,12 +9,15 @@
 	} from '$lib/types';
 	import Accounts from '../components/Accounts.svelte';
 	import TransactionsTable from '../components/TransactionsTable.svelte';
+	import { Wallet } from 'lucide-svelte';
+	import CreateAccount from '../components/CreateAccount.svelte';
 
 	// Local component state
 	let accounts: Account[] = [];
 	let transactions: TransactionDto[] = [];
 	let selectedAccount: Account;
 	let error: string = '';
+	let showCreateAccountModal = false;
 
 	// Function to fetch accounts and then fetch transactions for the first account
 	async function fetchAccounts() {
@@ -64,8 +67,22 @@
 		getAccountTransactions(selectedAccount.token);
 	}
 
+	function createAccount() {
+		// Instead of just logging, we set showModal to true
+		showCreateAccountModal = true;
+	}
+
+	function closeAccountModal() {
+		showCreateAccountModal = false;
+	}
+
 	function handleNewTransaction() {
 		getAccountTransactions(selectedAccount.token);
+	}
+
+	function handleNewAccount() {
+		closeAccountModal();
+		fetchAccounts();
 	}
 
 	// Trigger the fetching when the component mounts
@@ -75,7 +92,11 @@
 </script>
 
 <div class="container mx-auto p-6">
-	<h1 class="mb-6 text-3xl font-bold">My Accounts</h1>
+	<div class="flex justify-between">
+		<h1 class="mb-6 text-3xl font-bold">My Accounts</h1>
+		<!-- button to create new account -->
+		<button class="btn btn-primary" on:click={createAccount}><Wallet /></button>
+	</div>
 
 	{#if error}
 		<div class="alert alert-error">
@@ -92,6 +113,10 @@
 				account={selectedAccount}
 				on:newTransaction={handleNewTransaction}
 			/>
+		{/if}
+		<!-- Modal: only rendered when showModal is true -->
+		{#if showCreateAccountModal}
+			<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
 		{/if}
 	{/if}
 </div>

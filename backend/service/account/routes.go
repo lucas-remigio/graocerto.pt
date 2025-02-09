@@ -65,7 +65,7 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	err = h.store.CreateAccount(&types.Account{
 		UserID:      userId,
 		AccountName: payload.AccountName,
-		Balance:     payload.Balance,
+		Balance:     *payload.Balance,
 	})
 
 	if err != nil {

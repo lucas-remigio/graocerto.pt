@@ -7,6 +7,7 @@
 		TransactionType,
 		TransactionTypesResponse
 	} from '$lib/types';
+	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 
 	// Input account
@@ -35,6 +36,11 @@
 	const dispatch = createEventDispatcher();
 
 	async function handleSubmit() {
+		error = '';
+		if (!isFormValid()) {
+			return;
+		}
+
 		// Build the transaction object in the format your API expects
 		const transaction = {
 			account_token,
@@ -44,18 +50,67 @@
 			date // already in YYYY-MM-DD format
 		};
 
-		const response = await api_axios('transactions', {
-			method: 'POST',
-			data: transaction
-		});
+		try {
+			const response = await api_axios('transactions', {
+				method: 'POST',
+				data: transaction
+			});
 
-		if (response.status !== 200) {
-			console.error('Non-200 response status:', response.status);
-			error = `Error: ${response.status}`;
-			return;
+			if (response.status !== 200) {
+				console.error('Non-200 response status:', response.status);
+				error = `Error: ${response.status}`;
+				return;
+			}
+			handleNewTransaction();
+		} catch (err) {
+			console.error('Error in handleSubmit:', err);
+			error = 'Failed to create transaction';
+		}
+	}
+
+	function isFormValid(): boolean {
+		// round the amount
+		amount = Math.round(amount * 100) / 100;
+
+		// category must be from transaction type
+		const category: Category | undefined = categories.find((cat) => cat.id === Number(category_id));
+		if (!category) {
+			error = 'Category is required';
+			return false;
 		}
 
-		handleNewTransaction();
+		if (category.transaction_type_id !== Number(transaction_type_id)) {
+			error = 'Category must be from the selected transaction type';
+			return false;
+		}
+
+		// validations
+		if (amount < 0) {
+			error = 'Amount must be greater than 0';
+			return false;
+		}
+
+		if (amount > 999999999) {
+			error = 'Amount must be less than 999999999';
+			return false;
+		}
+
+		if (description.length < 3) {
+			error = 'Description must be at least 3 characters';
+			return false;
+		}
+
+		if (description.length > 50) {
+			error = 'Description must be less than 50 characters';
+			return false;
+		}
+
+		if (!date) {
+			error = 'Date is required';
+			return false;
+		}
+
+		return true;
 	}
 
 	function handleCloseModal() {
@@ -114,9 +169,15 @@
 	<div class="modal-box relative">
 		<!-- Close button -->
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
-			>✕</button
+			><X /></button
 		>
 		<h3 class="mb-4 text-lg font-bold">New Transaction</h3>
+		<!--Error message-->
+		{#if error}
+			<div class="alert alert-error">
+				<p class="text-gray-100">{error}</p>
+			</div>
+		{/if}
 		<form on:submit|preventDefault={handleSubmit}>
 			<!-- Transaction Type (Debit / Credit) Field -->
 			<div class="form-control mt-4">
@@ -162,6 +223,9 @@
 					placeholder="Enter amount"
 					class="input input-bordered"
 					bind:value={amount}
+					min="0"
+					step="0.01"
+					max="999999999"
 					required
 				/>
 			</div>
