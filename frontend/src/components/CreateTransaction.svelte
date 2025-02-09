@@ -214,7 +214,10 @@
 			</div>
 			{#if filteredCategories.length === 0}
 				<div class="form-control mt-4">
-					<p class="text-gray-500">No categories available for the selected transaction type.</p>
+					<p class="text-gray-500">
+						No categories available for the selected transaction type.
+						<a href="/categories" class="link"> Click me to create one! </a>
+					</p>
 				</div>
 			{/if}
 			{#if filteredCategories.length > 0}
@@ -231,49 +234,48 @@
 						<!-- Add more options as needed -->
 					</select>
 				</div>
+
+				<!-- Amount Field -->
+				<div class="form-control mt-4">
+					<label class="label" for="amount">
+						<span class="label-text">Amount</span>
+					</label>
+					<input
+						id="amount"
+						type="number"
+						placeholder="Enter amount"
+						class="input input-bordered"
+						bind:value={amount}
+						min="0"
+						step="0.01"
+						max="999999999"
+						required
+					/>
+				</div>
+
+				<!-- Description Field -->
+				<div class="form-control mt-4">
+					<label class="label" for="description">
+						<span class="label-text">Description</span>
+					</label>
+					<input
+						id="description"
+						type="text"
+						placeholder="Transaction description"
+						class="input input-bordered"
+						bind:value={description}
+						required
+					/>
+				</div>
+
+				<!-- Date Field -->
+				<div class="form-control mt-4">
+					<label class="label" for="date">
+						<span class="label-text">Date</span>
+					</label>
+					<input id="date" type="date" class="input input-bordered" bind:value={date} required />
+				</div>
 			{/if}
-
-			<!-- Amount Field -->
-			<div class="form-control mt-4">
-				<label class="label" for="amount">
-					<span class="label-text">Amount</span>
-				</label>
-				<input
-					id="amount"
-					type="number"
-					placeholder="Enter amount"
-					class="input input-bordered"
-					bind:value={amount}
-					min="0"
-					step="0.01"
-					max="999999999"
-					required
-				/>
-			</div>
-
-			<!-- Description Field -->
-			<div class="form-control mt-4">
-				<label class="label" for="description">
-					<span class="label-text">Description</span>
-				</label>
-				<input
-					id="description"
-					type="text"
-					placeholder="Transaction description"
-					class="input input-bordered"
-					bind:value={description}
-					required
-				/>
-			</div>
-
-			<!-- Date Field -->
-			<div class="form-control mt-4">
-				<label class="label" for="date">
-					<span class="label-text">Date</span>
-				</label>
-				<input id="date" type="date" class="input input-bordered" bind:value={date} required />
-			</div>
-
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
 				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
