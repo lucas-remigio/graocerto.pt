@@ -5,6 +5,9 @@
 	let isDropdownOpen = false;
 	let categoriesUrl = '/categories';
 
+	// Flag to indicate that a touch event already handled the toggle
+	let touchHandled = false;
+
 	const logout = async () => {
 		localStorage.removeItem('authToken');
 		document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
@@ -20,12 +23,21 @@
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
-				on:touchend={() => {
-					console.log('Touch event fired!');
+				on:touchend={(event) => {
+					// Prevent the synthetic click from firing after touchend
+					event.preventDefault();
+					event.stopPropagation();
+					touchHandled = true;
 					isDropdownOpen = !isDropdownOpen;
 				}}
-				on:click={() => {
-					console.log('Click event fired!');
+				on:click={(event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					// If the touch event already toggled the state, ignore this click
+					if (touchHandled) {
+						touchHandled = false;
+						return;
+					}
 					isDropdownOpen = !isDropdownOpen;
 				}}
 			>
