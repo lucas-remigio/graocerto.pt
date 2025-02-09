@@ -77,6 +77,7 @@
 	}
 
 	function handleNewTransaction() {
+		fetchAccounts();
 		getAccountTransactions(selectedAccount.token);
 	}
 
