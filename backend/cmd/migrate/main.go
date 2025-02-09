@@ -14,12 +14,8 @@ import (
 
 func main() {
 	log.Println("Starting migration")
-	log.Println(config.Envs.DBUser)
-	log.Println(config.Envs.DBPassword)
-	log.Println(config.Envs.DBAddress)
-	log.Println(config.Envs.DBName)
 
-	db, err := db.NewMYSQlStorage(&mysqlConfig.Config{
+	db, err := db.NewMySqlStorage(&mysqlConfig.Config{
 		User:                 config.Envs.DBUser,
 		Passwd:               config.Envs.DBPassword,
 		Addr:                 config.Envs.DBAddress,

@@ -2,9 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/lucas-remigio/wallet-tracker/cmd/api"
@@ -13,7 +11,7 @@ import (
 )
 
 func main() {
-	db, err := db.NewMYSQlStorage(&mysql.Config{
+	db, err := db.NewMySqlStorage(&mysql.Config{
 		User:                 config.Envs.DBUser,
 		Passwd:               config.Envs.DBPassword,
 		Addr:                 config.Envs.DBAddress,
@@ -26,14 +24,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	dbHost := os.Getenv("DB_HOST")
-	// print every info from config.envs
-	fmt.Println("DB_HOST is:", dbHost)
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", config.Envs.DBUser, config.Envs.DBPassword, config.Envs.DBAddress, config.Envs.DBName)
-	// print the dsn
-
-	fmt.Println("DSN is:", dsn)
 
 	initStorage(db)
 

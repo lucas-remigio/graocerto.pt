@@ -2,9 +2,7 @@ import axios from 'axios';
 import { get } from 'svelte/store';
 import { token } from '$lib/stores/auth';
 
-const API_URL = import.meta.env.PROD
-	? 'https://lucas-remigio-dev.pt/api/v1'
-	: 'http://localhost:8080/api/v1';
+const API_URL = import.meta.env.PROD ? '/api/v1' : 'http://localhost:8080/api/v1';
 
 const api_axios = axios.create({
 	baseURL: API_URL,

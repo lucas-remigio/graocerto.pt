@@ -80,7 +80,6 @@
 			transactionTypes = data.transaction_types;
 			// pop the slug with transfer
 			transactionTypes = transactionTypes.filter((type) => type.type_slug !== 'transfer');
-			console.log('Transaction types:', transactionTypes);
 		} catch (err) {
 			console.error('Error in fetchTransactionTypes:', err);
 			error = 'Failed to load transaction types';
@@ -99,7 +98,6 @@
 
 			const data: CategoriesResponse = res.data;
 			categories = data.categories;
-			console.log('Categories:', categories);
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
 			error = 'Failed to load categories';
@@ -122,10 +120,15 @@
 		<form on:submit|preventDefault={handleSubmit}>
 			<!-- Transaction Type (Debit / Credit) Field -->
 			<div class="form-control mt-4">
-				<label class="label">
+				<label class="label" for="transaction-type">
 					<span class="label-text">Transaction Type</span>
 				</label>
-				<select class="select select-bordered" bind:value={transaction_type_id} required>
+				<select
+					id="transaction-type"
+					class="select select-bordered"
+					bind:value={transaction_type_id}
+					required
+				>
 					<option value="" disabled selected>Select Transaction Type</option>
 					<!-- cycle through the transaction types-->
 					{#each transactionTypes as type}
@@ -136,10 +139,10 @@
 			</div>
 			<!-- Category Field -->
 			<div class="form-control mt-4">
-				<label class="label">
+				<label class="label" for="category">
 					<span class="label-text">Category</span>
 				</label>
-				<select class="select select-bordered" bind:value={category_id} required>
+				<select id="category" class="select select-bordered" bind:value={category_id} required>
 					<option value="" disabled selected>Select category</option>
 					{#each filteredCategories as cat}
 						<option value={cat.id}>{cat.category_name}</option>
@@ -150,10 +153,11 @@
 
 			<!-- Amount Field -->
 			<div class="form-control mt-4">
-				<label class="label">
+				<label class="label" for="amount">
 					<span class="label-text">Amount</span>
 				</label>
 				<input
+					id="amount"
 					type="number"
 					placeholder="Enter amount"
 					class="input input-bordered"
@@ -164,10 +168,11 @@
 
 			<!-- Description Field -->
 			<div class="form-control mt-4">
-				<label class="label">
+				<label class="label" for="description">
 					<span class="label-text">Description</span>
 				</label>
 				<input
+					id="description"
 					type="text"
 					placeholder="Transaction description"
 					class="input input-bordered"
@@ -178,10 +183,10 @@
 
 			<!-- Date Field -->
 			<div class="form-control mt-4">
-				<label class="label">
+				<label class="label" for="date">
 					<span class="label-text">Date</span>
 				</label>
-				<input type="date" class="input input-bordered" bind:value={date} required />
+				<input id="date" type="date" class="input input-bordered" bind:value={date} required />
 			</div>
 
 			<!-- Form Actions -->
