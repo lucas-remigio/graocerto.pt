@@ -26,13 +26,13 @@
 
 	$: selectedTransactionType = transactionTypes.find((t) => t.id === transaction_type_id);
 
-	const backgroundClasses: Record<string, string> = {
-		credit: 'bg-green-50',
-		debit: 'bg-red-50',
-		transfer: 'bg-blue-50'
+	const borderClasses: Record<string, string> = {
+		credit: 'border-green-500 dark:border-green-400',
+		debit: 'border-red-500 dark:border-red-400',
+		transfer: 'border-blue-500 dark:border-blue-400'
 	};
-	$: modalBackgroundClass = selectedTransactionType
-		? backgroundClasses[selectedTransactionType.type_slug]
+	$: modalBorderClass = selectedTransactionType
+		? borderClasses[selectedTransactionType.type_slug]
 		: 'bg-gray-50';
 
 	// Filter categories based on the selected transaction type id.
@@ -186,7 +186,7 @@
 </script>
 
 <div class="modal modal-open">
-	<div class="modal-box relative {modalBackgroundClass}">
+	<div class="modal-box relative border-4 {modalBorderClass}">
 		<!-- Close button -->
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
 			><X /></button
@@ -199,55 +199,90 @@
 			</div>
 		{/if}
 		<form on:submit|preventDefault={handleSubmit}>
-			<!-- Transaction Type (Debit / Credit) Field -->
-			<div class="form-control mt-4">
-				<label class="label" for="transaction-type">
-					<span class="label-text">Transaction Type</span>
-				</label>
-				<select
-					id="transaction-type"
-					class="select select-bordered"
-					bind:value={transaction_type_id}
-					required
-				>
-					<option value="" disabled selected>Select Transaction Type</option>
-					<!-- cycle through the transaction types-->
-					{#each transactionTypes as type}
-						<option value={type.id}>{type.type_name}</option>
-					{/each}
-					<!-- Add more options as needed -->
-				</select>
-			</div>
-			{#if filteredCategories.length === 0}
-				<div class="form-control mt-4">
-					<p class="text-gray-500">
-						No categories available for the selected transaction type.
-						<a href="/categories" class="link"> Click me to create one! </a>
-					</p>
-				</div>
-			{/if}
 			{#if filteredCategories.length > 0}
-				<!-- Category Field -->
+				<!-- Display both Transaction Type and Category side by side -->
+				<div class="mt-4 flex flex-col gap-4 md:flex-row">
+					<!-- Transaction Type Field -->
+					<div class="form-control flex-1">
+						<label class="label" for="transaction-type">
+							<span class="label-text">Transaction Type</span>
+						</label>
+						<select
+							id="transaction-type"
+							class="select select-bordered w-full"
+							bind:value={transaction_type_id}
+							required
+						>
+							<option value="" disabled selected>Select Transaction Type</option>
+							{#each transactionTypes as type}
+								<option value={type.id}>{type.type_name}</option>
+							{/each}
+						</select>
+					</div>
+
+					<!-- Category Field -->
+					<div class="form-control flex-1">
+						<label class="label" for="category">
+							<span class="label-text">Category</span>
+						</label>
+						<select
+							id="category"
+							class="select select-bordered w-full border-2"
+							bind:value={category_id}
+							required
+							style="border-color: {borderColor} !important;"
+						>
+							<option value="" disabled selected>Select category</option>
+							{#each filteredCategories as cat}
+								<option value={cat.id}>{cat.category_name}</option>
+							{/each}
+						</select>
+					</div>
+				</div>
+			{:else}
+				<!-- If no categories, show the Transaction Type field and a message -->
 				<div class="form-control mt-4">
-					<label class="label" for="category">
-						<span class="label-text">Category</span>
+					<label class="label" for="transaction-type">
+						<span class="label-text">Transaction Type</span>
 					</label>
 					<select
-						id="category"
-						class="select select-bordered border-2"
-						bind:value={category_id}
+						id="transaction-type"
+						class="select select-bordered w-full"
+						bind:value={transaction_type_id}
 						required
-						style="border-color: {borderColor} !important;"
 					>
-						<option value="" disabled selected>Select category</option>
-						{#each filteredCategories as cat}
-							<option value={cat.id}>{cat.category_name}</option>
+						<option value="" disabled selected>Select Transaction Type</option>
+						{#each transactionTypes as type}
+							<option value={type.id}>{type.type_name}</option>
 						{/each}
 					</select>
 				</div>
-
-				<!-- Amount Field -->
 				<div class="form-control mt-4">
+					<p class="text-gray-500">
+						No categories available for the selected transaction type.
+						<a href="/categories" class="link">Click here to create one!</a>
+					</p>
+				</div>
+			{/if}
+
+			<!-- Description Field -->
+			<div class="form-control mt-4">
+				<label class="label" for="description">
+					<span class="label-text">Description</span>
+				</label>
+				<input
+					id="description"
+					type="text"
+					placeholder="Transaction description"
+					class="input input-bordered"
+					bind:value={description}
+					required
+				/>
+			</div>
+
+			<div class="mt-4 flex gap-4">
+				<!-- Amount Field -->
+				<div class="form-control flex-1">
 					<label class="label" for="amount">
 						<span class="label-text">Amount</span>
 					</label>
@@ -255,7 +290,7 @@
 						id="amount"
 						type="number"
 						placeholder="Enter amount"
-						class="input input-bordered"
+						class="input input-bordered w-full"
 						bind:value={amount}
 						min="0"
 						step="0.01"
@@ -264,29 +299,20 @@
 					/>
 				</div>
 
-				<!-- Description Field -->
-				<div class="form-control mt-4">
-					<label class="label" for="description">
-						<span class="label-text">Description</span>
-					</label>
-					<input
-						id="description"
-						type="text"
-						placeholder="Transaction description"
-						class="input input-bordered"
-						bind:value={description}
-						required
-					/>
-				</div>
-
 				<!-- Date Field -->
-				<div class="form-control mt-4">
+				<div class="form-control flex-1">
 					<label class="label" for="date">
 						<span class="label-text">Date</span>
 					</label>
-					<input id="date" type="date" class="input input-bordered" bind:value={date} required />
+					<input
+						id="date"
+						type="date"
+						class="input input-bordered w-full"
+						bind:value={date}
+						required
+					/>
 				</div>
-			{/if}
+			</div>
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
 				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>

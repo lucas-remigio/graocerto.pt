@@ -80,13 +80,13 @@
 		return true;
 	}
 
-	const backgroundClasses: Record<string, string> = {
-		credit: 'bg-green-50',
-		debit: 'bg-red-50',
-		transfer: 'bg-blue-50'
+	const borderClasses: Record<string, string> = {
+		credit: 'border-green-500 dark:border-green-400',
+		debit: 'border-red-500 dark:border-red-400',
+		transfer: 'border-blue-500 dark:border-blue-400'
 	};
 
-	let modalBackgroundClass = backgroundClasses[transactionType.type_slug] || 'bg-gray-50';
+	let modalBorderClass = borderClasses[transactionType.type_slug] || 'bg-gray-50';
 
 	function handleCloseModal() {
 		dispatch('closeModal');
@@ -98,7 +98,7 @@
 </script>
 
 <div class="modal modal-open">
-	<div class="modal-box relative {modalBackgroundClass}">
+	<div class="modal-box relative border-4 {modalBorderClass}">
 		<!-- Close button -->
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}>
 			<X />
