@@ -4,11 +4,8 @@
 	import { onDestroy, onMount } from 'svelte';
 
 	let isDropdownOpen = false;
-	let dropdownContainer: HTMLElement; // to bind the dropdown container
+	let dropdownContainer: HTMLElement;
 	let categoriesUrl = '/categories';
-
-	// A flag to check if a touch event was handled
-	let touchHandled = false;
 
 	const logout = async () => {
 		localStorage.removeItem('authToken');
@@ -38,21 +35,8 @@
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
-				on:touchend={(event) => {
-					// Handle the touch event and prevent the synthetic click from also toggling
-					event.preventDefault();
-					event.stopPropagation();
-					touchHandled = true;
-					isDropdownOpen = !isDropdownOpen;
-				}}
-				on:click={(event) => {
-					// If a touch event has already toggled the dropdown, ignore this click
-					if (touchHandled) {
-						touchHandled = false;
-						return;
-					}
-					event.stopPropagation();
-					isDropdownOpen = !isDropdownOpen;
+				on:click={() => {
+					isDropdownOpen = true;
 				}}
 			>
 				<Menu size={20} class="h-5 w-5" />
