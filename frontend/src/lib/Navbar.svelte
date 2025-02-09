@@ -35,7 +35,10 @@
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
-				on:click={() => (isDropdownOpen = !isDropdownOpen)}
+				on:click={(event) => {
+					event.stopPropagation();
+					isDropdownOpen = !isDropdownOpen;
+				}}
 			>
 				<Menu size={20} class="h-5 w-5" />
 			</button>
