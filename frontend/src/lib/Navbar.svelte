@@ -22,20 +22,21 @@
 
 	onMount(() => {
 		document.addEventListener('click', handleClickOutside);
-	});
-
-	onDestroy(() => {
-		document.removeEventListener('click', handleClickOutside);
+		// Return a cleanup function that removes the event listener on component destruction.
+		return () => {
+			document.removeEventListener('click', handleClickOutside);
+		};
 	});
 </script>
 
-<div class="navbar bg-base-100">
+<div class="navbar bg-base-100" bind:this={dropdownContainer}>
 	<div class="navbar-start">
-		<div class="dropdown" bind:this={dropdownContainer}>
+		<div class="dropdown">
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
-				on:click={() => {
+				on:click={(event) => {
+					event.stopPropagation();
 					isDropdownOpen = true;
 				}}
 			>
