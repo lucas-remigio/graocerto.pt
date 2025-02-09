@@ -14,10 +14,14 @@
 
 		window.location.href = '/login';
 	};
+
+	function handleNavigation(url: string) {
+		isDropdownOpen = false;
+		goto(url);
+	}
 </script>
 
 <div class="navbar bg-base-100">
-	<p>Dropdown is {isDropdownOpen ? 'Open' : 'Closed'}</p>
 	<div class="navbar-start">
 		<div class="dropdown relative {isDropdownOpen ? 'dropdown-open' : ''}">
 			<button
@@ -50,7 +54,7 @@
 					<li>
 						<button
 							type="button"
-							on:click={() => goto(categoriesUrl)}
+							on:click={() => handleNavigation(categoriesUrl)}
 							class="text-lg"
 							aria-label="Categories">Categories</button
 						>
@@ -65,7 +69,7 @@
 			<li>
 				<button
 					type="button"
-					on:click={() => goto(categoriesUrl)}
+					on:click={() => handleNavigation(categoriesUrl)}
 					class="text-lg"
 					aria-label="Categories">Categories</button
 				>
