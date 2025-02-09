@@ -61,10 +61,53 @@ func (s *Store) GetCategoryById(id int) (*types.Category, error) {
 	return category, nil
 }
 
+func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
+	rows, err := s.db.Query("SELECT "+
+		"c.id, c.category_name, c.color, c.created_at, c.updated_at, "+
+		"tt.id, tt.type_name, tt.type_slug "+
+		"FROM categories c "+
+		"JOIN transaction_types tt ON c.transaction_type_id = tt.id "+
+		"WHERE c.user_id = ? "+
+		"ORDER BY c.created_at DESC", userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	categories := make([]*types.CategoryDTO, 0)
+	for rows.Next() {
+		category, err := scanRowIntoCategoryDto(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		categories = append(categories, category)
+	}
+
+	return categories, nil
+}
+
 func scanRowIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
 
 	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func scanRowIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
+	c := new(types.CategoryDTO)
+
+	// Initialize nested structs so they're not nil
+	c.TransactionType = &types.TransactionType{}
+
+	err := rows.Scan(
+		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt,
+		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
 		return nil, err

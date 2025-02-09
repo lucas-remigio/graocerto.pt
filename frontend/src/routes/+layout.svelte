@@ -3,7 +3,7 @@
 	import Navbar from '$lib/Navbar.svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import { isAuthenticated, storedToken, token } from '$lib/stores/auth';
+	import { isAuthenticated, token } from '$lib/stores/auth';
 	import axios from '$lib/axios';
 	import { get } from 'svelte/store';
 

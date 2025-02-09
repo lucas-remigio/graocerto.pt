@@ -15,7 +15,13 @@ const config = {
 			// Enable fallback for SPA behavior
 			fallback: 'index.html',
 			strict: false // Ignore strict prerendering rules
-		})
+		}),
+		alias: {
+			$components: './src/components',
+			$lib: './src/lib',
+			$stores: './src/stores',
+			$utils: './src/utils'
+		}
 	}
 };
 

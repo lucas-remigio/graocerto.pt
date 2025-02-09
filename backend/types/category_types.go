@@ -3,6 +3,7 @@ package types
 type CategoryStore interface {
 	GetCategoriesByUserId(userId int) ([]*Category, error)
 	CreateCategory(category *Category) error
+	GetCategoryDtoByUserId(userId int) ([]*CategoryDTO, error)
 }
 
 type CreateCategoryPayload struct {

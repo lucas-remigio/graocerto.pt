@@ -7,10 +7,10 @@
 		TransactionDto,
 		TransactionsResponseDto
 	} from '$lib/types';
-	import Accounts from '../components/Accounts.svelte';
-	import TransactionsTable from '../components/TransactionsTable.svelte';
 	import { Wallet } from 'lucide-svelte';
-	import CreateAccount from '../components/CreateAccount.svelte';
+	import Accounts from '$components/Accounts.svelte';
+	import TransactionsTable from '$components/TransactionsTable.svelte';
+	import CreateAccount from '$components/CreateAccount.svelte';
 
 	// Local component state
 	let accounts: Account[] = [];
@@ -91,7 +91,7 @@
 	});
 </script>
 
-<div class="container mx-auto p-6">
+<div class="container mx-auto p-4">
 	<div class="flex justify-between">
 		<h1 class="mb-6 text-3xl font-bold">My Accounts</h1>
 		<!-- button to create new account -->

@@ -20,6 +20,7 @@ func NewHandler(store types.CategoryStore) *Handler {
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/categories", h.CategoryHandler)
+	router.HandleFunc("/categories/dto", h.GetCategoriesDtoByUserId)
 }
 
 func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +94,34 @@ func (h *Handler) GetCategoriesByUserId(w http.ResponseWriter, r *http.Request) 
 
 	// get categories by user id
 	categories, err := h.store.GetCategoriesByUserId(userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response := map[string]interface{}{
+		"categories": categories,
+	}
+
+	utils.WriteJson(w, http.StatusOK, response)
+}
+
+func (h *Handler) GetCategoriesDtoByUserId(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	userId, err := auth.GetUserIdFromToken(authToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	// get categories by user id
+	categories, err := h.store.GetCategoryDtoByUserId(userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

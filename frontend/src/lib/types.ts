@@ -48,6 +48,10 @@ export interface CategoriesResponse {
 	categories: Category[];
 }
 
+export interface CategoriesDtoResponse {
+	categories: CategoryDto[];
+}
+
 export interface TransactionType {
 	id: number;
 	type_name: string;

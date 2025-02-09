@@ -44,7 +44,7 @@
 				<ul
 					class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
 				>
-					<li><a href="#item1">Item 1</a></li>
+					<li><a href="/categories">Categories</a></li>
 					<li>
 						<a href="#parent">Parent</a>
 						<ul class="p-2">
@@ -60,7 +60,7 @@
 	</div>
 	<div class="navbar-center hidden lg:flex">
 		<ul class="menu menu-horizontal px-1">
-			<li><a href="#item1">Item 1</a></li>
+			<li><a href="/categories">Categories</a></li>
 			<li>
 				<details>
 					<summary>Parent</summary>

@@ -9,19 +9,19 @@
 	export let transactions: TransactionDto[] = [];
 	export let account: Account;
 
-	let showModal = false;
+	let showCreateTransactionModal = false;
 
 	function openCreateTransactionModal() {
-		showModal = true;
+		showCreateTransactionModal = true;
 	}
 
-	function closeModal() {
-		showModal = false;
+	function closeCreateTransactionModal() {
+		showCreateTransactionModal = false;
 	}
 
 	const dispatch = createEventDispatcher();
 	function handleNewTransaction() {
-		closeModal();
+		closeCreateTransactionModal();
 		dispatch('newTransaction');
 	}
 </script>
@@ -97,7 +97,7 @@
 	</div>
 {/if}
 
-{#if showModal}
-	<CreateTransaction {account} on:closeModal={closeModal} on:newTransaction={handleNewTransaction}
+{#if showCreateTransactionModal}
+	<CreateTransaction {account} on:closeModal={closeCreateTransactionModal} on:newTransaction={handleNewTransaction}
 	></CreateTransaction>
 {/if}
