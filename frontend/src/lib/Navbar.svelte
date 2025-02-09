@@ -19,7 +19,7 @@
 <div class="navbar bg-base-100">
 	<p>Dropdown is {isDropdownOpen ? 'Open' : 'Closed'}</p>
 	<div class="navbar-start">
-		<div class="dropdown relative">
+		<div class="dropdown relative {isDropdownOpen ? 'dropdown-open' : ''}">
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
@@ -95,3 +95,9 @@
 		</button>
 	</div>
 </div>
+
+<style>
+	.dropdown:not(.dropdown-open) .dropdown-content {
+		display: none;
+	}
+</style>
