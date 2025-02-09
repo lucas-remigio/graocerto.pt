@@ -1,12 +1,15 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
+	import type { Category, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 
+	export let transactionType: TransactionType;
+
 	let error: string = '';
 	// Form field variables
-	let balance: number = 0;
-	let account_name: string = '';
+	let category_name: string = '';
+	let color: string = '';
 
 	// Create event dispatcher (to emit events to the parent)
 	const dispatch = createEventDispatcher();
@@ -17,106 +20,125 @@
 			return;
 		}
 
-		const account = {
-			balance,
-			account_name
+		const category = {
+			transaction_type_id: transactionType.id,
+			category_name: category_name,
+			color: color
 		};
 
 		try {
-			const response = await api_axios.post('accounts', account);
+			const response = await api_axios.post('categories', category);
 
 			if (response.status !== 200) {
 				console.error('Non-200 response status:', response.status);
 				error = `Error: ${response.status}`;
 				return;
 			}
-			handleNewAccount();
+
+			handleNewCategory();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to create account';
+			error = 'Failed to create category';
 		}
 	}
 
 	function validateForm(): boolean {
-		// round the balance
-		balance = Math.round(balance * 100) / 100;
-
-		// validations
-		if (balance < 0) {
-			error = 'Balance must be greater than 0';
+		if (!category_name) {
+			error = 'Category name is required';
 			return false;
 		}
 
-		if (balance > 999999999) {
-			error = 'Balance must be less than 999999999';
+		category_name = category_name.trim();
+
+		if (category_name.length > 50) {
+			error = 'Category name must be less than 50 characters';
 			return false;
 		}
 
-		if (account_name.length < 3) {
-			error = 'Account name must be at least 3 characters';
+		if (category_name.length < 3) {
+			error = 'Category name must be at least 3 characters';
 			return false;
 		}
 
-		if (account_name.length > 50) {
-			error = 'Account name must be less than 50 characters';
+		if (!color) {
+			error = 'Color is required';
+			return false;
+		}
+
+		color = color.trim();
+
+		if (color[0] !== '#') {
+			error = 'Color must be a valid hex color';
+			return false;
+		}
+
+		if (color.length !== 7) {
+			error = 'Color must be a valid hex color';
 			return false;
 		}
 
 		return true;
 	}
 
+	const backgroundClasses: Record<string, string> = {
+		credit: 'bg-green-50',
+		debit: 'bg-red-50',
+		transfer: 'bg-blue-50'
+	};
+
+	let modalBackgroundClass = backgroundClasses[transactionType.type_slug] || 'bg-gray-50';
+
 	function handleCloseModal() {
 		dispatch('closeModal');
 	}
 
-	function handleNewAccount() {
-		dispatch('newAccount');
+	function handleNewCategory() {
+		dispatch('newCategory');
 	}
 </script>
 
 <div class="modal modal-open">
-	<div class="modal-box relative">
+	<div class="modal-box relative {modalBackgroundClass}">
 		<!-- Close button -->
-		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
-			><X /></button
-		>
-		<h3 class="mb-4 text-lg font-bold">New Account</h3>
-		<!--Error message-->
+		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}>
+			<X />
+		</button>
+		<h3 class="mb-4 text-lg font-bold">
+			New {transactionType.type_name} Category
+		</h3>
+		<!-- Error message -->
 		{#if error}
 			<div class="alert alert-error">
 				<p class="text-gray-100">{error}</p>
 			</div>
 		{/if}
 		<form on:submit|preventDefault={handleSubmit}>
-			<!-- Description Field -->
+			<!-- Category Name Field -->
 			<div class="form-control mt-4">
-				<label class="label" for="account_name">
-					<span class="label-text">Account name</span>
+				<label class="label" for="category_name">
+					<span class="label-text">Category Name</span>
 				</label>
 				<input
-					id="account_name"
+					id="category_name"
 					type="text"
-					placeholder="Account name"
+					placeholder="Category name"
 					class="input input-bordered"
-					bind:value={account_name}
+					bind:value={category_name}
 					required
 				/>
 			</div>
 
-			<!-- Amount Field -->
+			<!-- Color Field -->
 			<div class="form-control mt-4">
-				<label class="label" for="balance">
-					<span class="label-text">Balance</span>
+				<label class="label" for="color">
+					<span class="label-text">Color (hex)</span>
 				</label>
 				<input
-					id="balance"
-					type="number"
-					placeholder="Enter amount"
+					id="color"
+					type="text"
+					placeholder="#ffffff"
 					class="input input-bordered"
-					min="0"
-					step="0.01"
-					max="999999999"
-					bind:value={balance}
+					bind:value={color}
 					required
 				/>
 			</div>
@@ -124,7 +146,7 @@
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
 				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
-				<button type="submit" class="btn btn-primary">Create Account</button>
+				<button type="submit" class="btn btn-primary">Create Category</button>
 			</div>
 		</form>
 	</div>

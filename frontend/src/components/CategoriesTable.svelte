@@ -10,8 +10,8 @@
 {:else}
 	<table
 		class="table-zebra table w-full"
-		class:bg-red-50={categoryType === 'credit'}
-		class:bg-green-50={categoryType === 'debit'}
+		class:bg-green-50={categoryType === 'credit'}
+		class:bg-red-50={categoryType === 'debit'}
 	>
 		<thead>
 			<tr>

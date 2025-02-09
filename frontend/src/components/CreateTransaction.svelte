@@ -1,5 +1,6 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
+	import { TransactionTypes } from '$lib/transaction_types_types';
 	import type {
 		Account,
 		CategoriesResponse,
@@ -15,14 +16,27 @@
 
 	let error: string = '';
 	let transactionTypes: TransactionType[] = [];
+	let transaction_type_id: number = 0;
 	let categories: Category[] = [];
 
-	// Filtered categories based on transaction type
-	let transaction_type_id: number | string = '';
-	let filteredCategories: Category[] = [];
-	// Reactive block to filter categories whenever transaction_type_id changes
+	$: if (transactionTypes.length > 0 && !transaction_type_id) {
+		transaction_type_id = transactionTypes[0].id;
+	}
+
+	$: selectedTransactionType = transactionTypes.find((t) => t.id === transaction_type_id);
+
+	const backgroundClasses: Record<string, string> = {
+		credit: 'bg-green-50',
+		debit: 'bg-red-50',
+		transfer: 'bg-blue-50'
+	};
+	$: modalBackgroundClass = selectedTransactionType
+		? backgroundClasses[selectedTransactionType.type_slug]
+		: 'bg-gray-50';
+
+	// Filter categories based on the selected transaction type id.
 	$: filteredCategories = categories.filter(
-		(cat) => cat.transaction_type_id === Number(transaction_type_id)
+		(cat) => cat.transaction_type_id === transaction_type_id
 	);
 
 	// Form field variables
@@ -166,7 +180,7 @@
 </script>
 
 <div class="modal modal-open">
-	<div class="modal-box relative">
+	<div class="modal-box relative {modalBackgroundClass}">
 		<!-- Close button -->
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
 			><X /></button
@@ -198,19 +212,26 @@
 					<!-- Add more options as needed -->
 				</select>
 			</div>
-			<!-- Category Field -->
-			<div class="form-control mt-4">
-				<label class="label" for="category">
-					<span class="label-text">Category</span>
-				</label>
-				<select id="category" class="select select-bordered" bind:value={category_id} required>
-					<option value="" disabled selected>Select category</option>
-					{#each filteredCategories as cat}
-						<option value={cat.id}>{cat.category_name}</option>
-					{/each}
-					<!-- Add more options as needed -->
-				</select>
-			</div>
+			{#if filteredCategories.length === 0}
+				<div class="form-control mt-4">
+					<p class="text-gray-500">No categories available for the selected transaction type.</p>
+				</div>
+			{/if}
+			{#if filteredCategories.length > 0}
+				<!-- Category Field -->
+				<div class="form-control mt-4">
+					<label class="label" for="category">
+						<span class="label-text">Category</span>
+					</label>
+					<select id="category" class="select select-bordered" bind:value={category_id} required>
+						<option value="" disabled selected>Select category</option>
+						{#each filteredCategories as cat}
+							<option value={cat.id}>{cat.category_name}</option>
+						{/each}
+						<!-- Add more options as needed -->
+					</select>
+				</div>
+			{/if}
 
 			<!-- Amount Field -->
 			<div class="form-control mt-4">
