@@ -23,7 +23,15 @@ jobs:
       - name: Deploy to VPS
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd /wallet-tracker
+            cd /home/lucas/wallet-tracker || cd ~/wallet-tracker
+            if [ ! -d .git ]; then
+              echo "Repository not found. Cloning..."
+              git clone git@github.com:your-username/wallet-tracker.git .
+            fi
             git pull origin main
+            if [ ! -f docker-compose.prod.yaml ]; then
+              echo "Error: docker-compose.prod.yaml not found!"
+              exit 1
+            fi
             docker compose -f docker-compose.prod.yaml up --build -d
           EOF
