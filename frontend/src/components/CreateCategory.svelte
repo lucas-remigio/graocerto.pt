@@ -131,16 +131,25 @@
 			<!-- Color Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="color">
-					<span class="label-text">Color (hex)</span>
+					<span class="label-text">Color</span>
 				</label>
-				<input
-					id="color"
-					type="text"
-					placeholder="#ffffff"
-					class="input input-bordered"
-					bind:value={color}
-					required
-				/>
+				<div class="flex items-center space-x-4">
+					<!-- The native color input -->
+					<input
+						id="color"
+						type="color"
+						class="h-10 w-80 border-0 p-0"
+						bind:value={color}
+						required
+					/>
+					<!-- A swatch preview showing the chosen color -->
+					<div
+						class="h-8 w-8 rounded-full border border-gray-300"
+						style="background-color: {color};"
+					></div>
+					<!-- Display the hex value -->
+					<span class="text-sm font-medium">{color}</span>
+				</div>
 			</div>
 
 			<!-- Form Actions -->

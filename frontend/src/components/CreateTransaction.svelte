@@ -18,6 +18,7 @@
 	let transactionTypes: TransactionType[] = [];
 	let transaction_type_id: number = 0;
 	let categories: Category[] = [];
+	let categoriesMappedById: Map<number, Category> = new Map();
 
 	$: if (transactionTypes.length > 0 && !transaction_type_id) {
 		transaction_type_id = transactionTypes[0].id;
@@ -38,6 +39,9 @@
 	$: filteredCategories = categories.filter(
 		(cat) => cat.transaction_type_id === transaction_type_id
 	);
+
+	$: selectedCategory = categoriesMappedById.get(Number(category_id));
+	$: borderColor = selectedCategory ? selectedCategory.color : '#ccc';
 
 	// Form field variables
 	let account_token = account.token;
@@ -167,6 +171,8 @@
 
 			const data: CategoriesResponse = res.data;
 			categories = data.categories;
+
+			categoriesMappedById = new Map(categories.map((cat) => [cat.id, cat]));
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
 			error = 'Failed to load categories';
@@ -226,12 +232,17 @@
 					<label class="label" for="category">
 						<span class="label-text">Category</span>
 					</label>
-					<select id="category" class="select select-bordered" bind:value={category_id} required>
+					<select
+						id="category"
+						class="select select-bordered border-2"
+						bind:value={category_id}
+						required
+						style="border-color: {borderColor} !important;"
+					>
 						<option value="" disabled selected>Select category</option>
 						{#each filteredCategories as cat}
 							<option value={cat.id}>{cat.category_name}</option>
 						{/each}
-						<!-- Add more options as needed -->
 					</select>
 				</div>
 

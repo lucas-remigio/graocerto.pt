@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS categories (
     FOREIGN KEY (`user_id`) REFERENCES users(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`transaction_type_id`) REFERENCES transaction_types(`id`) ON DELETE CASCADE,
     
-    UNIQUE KEY `user_category` (`user_id`, `category_name`)
+    UNIQUE KEY `user_category` (`user_id`, `transaction_type_id`, `category_name`)
 );
