@@ -4,7 +4,6 @@
 	import { onDestroy, onMount } from 'svelte';
 
 	let isDropdownOpen = false;
-	let dropdownContainer: HTMLElement;
 	let categoriesUrl = '/categories';
 
 	const logout = async () => {
@@ -13,20 +12,6 @@
 
 		window.location.href = '/login';
 	};
-
-	const handleClickOutside = (event: MouseEvent) => {
-		// if (dropdownContainer && !dropdownContainer.contains(event.target as Node)) {
-		// 	isDropdownOpen = false;
-		// }
-	};
-
-	onMount(() => {
-		document.addEventListener('click', handleClickOutside);
-		// Return a cleanup function that removes the event listener on component destruction.
-		return () => {
-			document.removeEventListener('click', handleClickOutside);
-		};
-	});
 </script>
 
 <div class="navbar bg-base-100">
@@ -35,9 +20,8 @@
 			<button
 				type="button"
 				class="btn btn-ghost lg:hidden"
-				on:click={(event) => {
-					event.stopPropagation();
-					isDropdownOpen = true;
+				on:click={() => {
+					isDropdownOpen = !isDropdownOpen;
 				}}
 			>
 				<Menu size={20} class="h-5 w-5" />
