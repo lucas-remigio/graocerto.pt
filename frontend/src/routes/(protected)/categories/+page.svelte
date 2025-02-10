@@ -9,7 +9,7 @@
 		TransactionType
 	} from '$lib/types';
 	import CategoriesTable from '$components/CategoriesTable.svelte';
-	import { Tag } from 'lucide-svelte';
+	import { Plus, Tag } from 'lucide-svelte';
 	import { TransactionTypes, TransactionTypeSlug } from '$lib/transaction_types_types';
 	import CreateCategory from '$components/CreateCategory.svelte';
 
@@ -87,6 +87,7 @@
 						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Credit)}
 						aria-label="Create New Credit Category"
 					>
+						<Plus size={20} />
 						<Tag size={20} />
 					</button>
 				</div>
@@ -102,6 +103,7 @@
 						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Debit)}
 						aria-label="Create New Debit Category"
 					>
+						<Plus size={20} />
 						<Tag size={20} />
 					</button>
 				</div>

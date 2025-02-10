@@ -7,7 +7,7 @@
 		TransactionDto,
 		TransactionsResponseDto
 	} from '$lib/types';
-	import { Wallet } from 'lucide-svelte';
+	import { Plus, Wallet } from 'lucide-svelte';
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
 	import CreateAccount from '$components/CreateAccount.svelte';
@@ -34,7 +34,9 @@
 
 			// If we have at least one account, fetch its transactions
 			if (accounts && accounts.length > 0) {
-				selectedAccount = accounts[0];
+				if (!selectedAccount) {
+					selectedAccount = accounts[0];
+				}
 				await getAccountTransactions(selectedAccount.token);
 			}
 		} catch (err) {
@@ -96,7 +98,10 @@
 	<div class="flex justify-between">
 		<h1 class="mb-6 text-3xl font-bold">My Accounts</h1>
 		<!-- button to create new account -->
-		<button class="btn btn-primary" on:click={createAccount}><Wallet /></button>
+		<button class="btn btn-primary" on:click={createAccount}>
+			<Plus size={20} />
+			<Wallet size={20} /></button
+		>
 	</div>
 
 	{#if error}

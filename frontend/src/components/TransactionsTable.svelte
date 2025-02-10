@@ -33,18 +33,19 @@
 		</h2>
 		<!-- Button to add a new transaction-->
 		<button class="btn btn-primary shadow-lg" on:click={openCreateTransactionModal}>
-			<CircleDollarSign size={20} class="h-5 w-5" />
+			<Plus size={20} />
+			<CircleDollarSign size={20} />
 		</button>
 	</div>
+
 	<div class="bg-base-100 overflow-x-auto rounded-lg shadow-lg">
 		<table class="table w-full">
 			<thead class="text-center">
 				<tr>
 					<th class="text-gray-900 dark:text-gray-100">Date</th>
-					<th class="text-gray-900 dark:text-gray-100">Description</th>
 					<th class="text-gray-900 dark:text-gray-100">Category</th>
 					<th class="text-gray-900 dark:text-gray-100">Amount</th>
-					<th class="text-gray-900 dark:text-gray-100">Balance</th>
+					<th class="text-gray-900 dark:text-gray-100">Description</th>
 				</tr>
 			</thead>
 			<tbody class="text-center">
@@ -63,7 +64,6 @@
 								year: 'numeric'
 							})}
 						</td>
-						<td class="dark:text-gray-900">{tx.description}</td>
 						<td>
 							<span
 								class="rounded px-2 py-1 text-white"
@@ -73,7 +73,7 @@
 							</span>
 						</td>
 						<td class="dark:text-gray-900">{tx.amount}$</td>
-						<td class="dark:text-gray-900">{tx.balance}$</td>
+						<td class="dark:text-gray-900">{tx.description}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -98,6 +98,9 @@
 {/if}
 
 {#if showCreateTransactionModal}
-	<CreateTransaction {account} on:closeModal={closeCreateTransactionModal} on:newTransaction={handleNewTransaction}
+	<CreateTransaction
+		{account}
+		on:closeModal={closeCreateTransactionModal}
+		on:newTransaction={handleNewTransaction}
 	></CreateTransaction>
 {/if}
