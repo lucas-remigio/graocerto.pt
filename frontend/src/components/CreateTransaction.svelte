@@ -103,7 +103,7 @@
 		}
 
 		// validations
-		if (amount < 0) {
+		if (amount <= 0) {
 			error = 'Amount must be greater than 0';
 			return false;
 		}
@@ -113,19 +113,9 @@
 			return false;
 		}
 
-		if (description.length < 3) {
-			error = 'Description must be at least 3 characters';
-			return false;
-		}
-
-		if (description.length > 50) {
-			error = 'Description must be less than 50 characters';
-			return false;
-		}
-
 		if (!date) {
-			error = 'Date is required';
-			return false;
+			// default to today
+			date = new Date().toISOString().split('T')[0];
 		}
 
 		return true;
@@ -276,7 +266,6 @@
 					placeholder="Transaction description"
 					class="input input-bordered"
 					bind:value={description}
-					required
 				/>
 			</div>
 
@@ -304,13 +293,7 @@
 					<label class="label" for="date">
 						<span class="label-text">Date</span>
 					</label>
-					<input
-						id="date"
-						type="date"
-						class="input input-bordered w-full"
-						bind:value={date}
-						required
-					/>
+					<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
 				</div>
 			</div>
 			<!-- Form Actions -->

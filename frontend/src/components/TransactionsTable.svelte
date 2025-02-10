@@ -11,6 +11,25 @@
 
 	let showCreateTransactionModal = false;
 
+	function formatCurrency(amount: number): string {
+		// make the currency have a , every 3 digits
+		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+	}
+
+	function formatDate(date: string): string {
+		// the format should be just month and year, in extense portuguese, without the "de" between
+		const formattedDate = new Date(date).toLocaleDateString('pt-PT', {
+			month: 'long',
+			year: 'numeric'
+		});
+
+		let month = formattedDate.split(' ')[0];
+		month = month.charAt(0).toUpperCase() + month.slice(1);
+		const year = formattedDate.split(' ')[2];
+
+		return `${month} ${year}`;
+	}
+
 	function openCreateTransactionModal() {
 		showCreateTransactionModal = true;
 	}
@@ -58,11 +77,7 @@
 								: ''}
 					>
 						<td class="dark:text-gray-900">
-							{new Date(tx.date).toLocaleDateString('pt-PT', {
-								day: '2-digit',
-								month: '2-digit',
-								year: 'numeric'
-							})}
+							{formatDate(tx.date)}
 						</td>
 						<td>
 							<span
@@ -72,8 +87,8 @@
 								{tx.category.category_name}
 							</span>
 						</td>
-						<td class="dark:text-gray-900">{tx.amount}$</td>
-						<td class="dark:text-gray-900">{tx.description}</td>
+						<td class="dark:text-gray-900">{formatCurrency(tx.amount)}€</td>
+						<td class="dark:text-gray-900">{tx.description || 'N/A'}</td>
 					</tr>
 				{/each}
 			</tbody>
