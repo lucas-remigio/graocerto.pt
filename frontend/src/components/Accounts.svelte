@@ -1,24 +1,27 @@
 <!-- src/components/Accounts.svelte -->
 <script lang="ts">
 	import type { Account } from '$lib/types';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { Pencil, Trash } from 'lucide-svelte';
 	import EditAccount from './EditAccount.svelte';
+	import ConfirmAction from './ConfirmAction.svelte';
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
 	export let selectedAccount: Account | null = null;
 
 	let openEditAccountModal: boolean = false;
+	let openDeleteAccountModal: boolean = false;
+
+	const dispatch = createEventDispatcher<any>();
 
 	function formatCurrency(amount: number): string {
 		// make the currency have a , every 3 digits
 		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 	}
 
-	const dispatch = createEventDispatcher<any>();
-
 	function handleCardClick(account: Account) {
+		selectedAccount = account;
 		dispatch('select', { account });
 	}
 
@@ -30,8 +33,17 @@
 		openEditAccountModal = false;
 	}
 
-	function handleDeleteAccount(account: Account) {
-		dispatch('delete', { account });
+	function handleConfirmAccountDeletion() {
+		openDeleteAccountModal = true;
+	}
+
+	function handleCloseDeleteAccountModal() {
+		openDeleteAccountModal = false;
+	}
+
+	function handleDeleteAccount() {
+		openDeleteAccountModal = false;
+		dispatch('delete', { account: selectedAccount! });
 	}
 
 	function handleUpdatedAccount() {
@@ -56,24 +68,26 @@
 					</div>
 				</button>
 				<!-- Action buttons container -->
-				<div
-					class="absolute right-2 top-2 flex gap-1 md:opacity-0 md:transition-opacity md:hover:opacity-100"
-				>
-					<button
-						class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
-						on:click|stopPropagation={() => handleEditAccount(account)}
-						title="Edit account"
+				{#if account.token === selectedAccount?.token}
+					<div
+						class="absolute right-2 top-2 flex gap-1 md:opacity-0 md:transition-opacity md:hover:opacity-100"
 					>
-						<Pencil size={16} />
-					</button>
-					<button
-						class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
-						on:click|stopPropagation={() => handleDeleteAccount(account)}
-						title="Delete account"
-					>
-						<Trash size={16} />
-					</button>
-				</div>
+						<button
+							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
+							on:click|stopPropagation={() => handleEditAccount(account)}
+							title="Edit account"
+						>
+							<Pencil size={16} />
+						</button>
+						<button
+							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
+							on:click|stopPropagation={() => handleConfirmAccountDeletion()}
+							title="Delete account"
+						>
+							<Trash size={16} />
+						</button>
+					</div>
+				{/if}
 			</div>
 		{/each}
 	</div>
@@ -86,5 +100,14 @@
 		account={selectedAccount!}
 		on:closeModal={handleCloseEditAccountModal}
 		on:updatedAccount={handleUpdatedAccount}
+	/>
+{/if}
+
+{#if openDeleteAccountModal}
+	<ConfirmAction
+		title={`Delete Account ${selectedAccount?.account_name}`}
+		message={`Are you sure you want to delete the account ${selectedAccount?.account_name}? This action cannot be undone.`}
+		onConfirm={() => handleDeleteAccount()}
+		onCancel={() => handleCloseDeleteAccountModal()}
 	/>
 {/if}

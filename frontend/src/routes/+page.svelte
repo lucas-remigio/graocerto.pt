@@ -15,9 +15,45 @@
 	// Local component state
 	let accounts: Account[] = [];
 	let transactions: TransactionDto[] = [];
-	let selectedAccount: Account;
 	let error: string = '';
 	let showCreateAccountModal = false;
+
+	let selectedAccount: Account;
+
+	function getSelectedAccount() {
+		if (accounts.length === 0) {
+			return;
+		}
+
+		const storedAccountToken = localStorage.getItem('selectedAccount');
+		if (!storedAccountToken) {
+			selectedAccount = accounts[0];
+			return;
+		}
+
+		const foundAccount = accounts.find((account) => account.token === storedAccountToken);
+		if (!foundAccount) {
+			selectedAccount = accounts[0];
+			return;
+		}
+
+		selectedAccount = foundAccount;
+	}
+
+	async function deleteAccount(account: Account) {
+		try {
+			const response = await api_axios.delete(`accounts/${account.token}`);
+
+			if (response.status !== 200) {
+				console.error('Non-200 response status:', response.status);
+				error = `Error: ${response.status}`;
+				return;
+			}
+		} catch (err) {
+			console.error('Error in handleSubmit:', err);
+			error = 'Failed to create account';
+		}
+	}
 
 	// Function to fetch accounts and then fetch transactions for the first account
 	async function fetchAccounts() {
@@ -34,9 +70,7 @@
 
 			// If we have at least one account, fetch its transactions
 			if (accounts && accounts.length > 0) {
-				if (!selectedAccount) {
-					selectedAccount = accounts[0];
-				}
+				getSelectedAccount();
 				await getAccountTransactions(selectedAccount.token);
 			}
 		} catch (err) {
@@ -66,6 +100,7 @@
 
 	function handleSelect(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
+		localStorage.setItem('selectedAccount', selectedAccount.token);
 		getAccountTransactions(selectedAccount.token);
 	}
 
@@ -80,7 +115,6 @@
 
 	function handleNewTransaction() {
 		fetchAccounts();
-		getAccountTransactions(selectedAccount.token);
 	}
 
 	function handleNewAccount() {
@@ -90,12 +124,15 @@
 
 	function handleUpdateTransaction() {
 		fetchAccounts();
-		getAccountTransactions(selectedAccount.token);
 	}
 
 	function handleUpdateAccount() {
 		fetchAccounts();
-		getAccountTransactions(selectedAccount.token);
+	}
+
+	function handleDeleteAccount(account: Account) {
+		deleteAccount(account);
+		fetchAccounts();
 	}
 
 	// Trigger the fetching when the component mounts
@@ -125,6 +162,7 @@
 			{selectedAccount}
 			on:select={handleSelect}
 			on:updatedAccount={handleUpdateAccount}
+			on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
 		/>
 
 		<!-- Render the TransactionsTable component only if accounts exist -->
