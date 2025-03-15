@@ -1,21 +1,25 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
-	import type { Account, TransactionDto } from '$lib/types';
+	import type { Account, CategoryDto, TransactionDto } from '$lib/types';
 	import { CircleDollarSign, Pencil, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
+	import TransactionFilters from './TransactionFilters.svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
 	export let account: Account;
+	export let categories: CategoryDto[] = [];
 
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
 	let showDeleteTransactionModal = false;
 
 	let selectedTransaction: TransactionDto | null = null;
+	let activeFilter: any = null;
+	let filteredTransactions: TransactionDto[] = transactions;
 
 	function formatCurrency(amount: number): string {
 		// make the currency have a , every 3 digits
@@ -23,7 +27,7 @@
 	}
 
 	function getTransactionDetails(transaction: TransactionDto): string {
-		return `${transaction.description} (${formatCurrency(transaction.amount)}€) at ${formatDate(transaction.date)}`;
+		return `${transaction.description} (${formatCurrency(transaction.amount)}€) with category ${transaction.category.category_name} at ${formatDate(transaction.date)}`;
 	}
 
 	function formatDate(date: string): string {
@@ -38,6 +42,63 @@
 		const year = formattedDate.split(' ')[2];
 
 		return `${month} ${year}`;
+	}
+
+	$: {
+		// Update filtered transactions whenever transactions change or when filter is applied
+		filteredTransactions = activeFilter
+			? transactions.filter((transaction) => {
+					// Date range filter
+					if (
+						activeFilter.dateFrom &&
+						new Date(transaction.date) < new Date(activeFilter.dateFrom)
+					) {
+						return false;
+					}
+					if (activeFilter.dateTo && new Date(transaction.date) > new Date(activeFilter.dateTo)) {
+						return false;
+					}
+
+					// Transaction type filter
+					if (
+						activeFilter.transactionTypes.length > 0 &&
+						!activeFilter.transactionTypes.includes(transaction.category.transaction_type.type_slug)
+					) {
+						return false;
+					}
+
+					// Categories filter
+					if (
+						activeFilter.categories.length > 0 &&
+						!activeFilter.categories.includes(transaction.category.id)
+					) {
+						return false;
+					}
+
+					// Amount range filter
+					if (activeFilter.amountFrom !== null && transaction.amount < activeFilter.amountFrom) {
+						return false;
+					}
+					if (activeFilter.amountTo !== null && transaction.amount > activeFilter.amountTo) {
+						return false;
+					}
+
+					return true;
+				})
+			: transactions;
+	}
+
+	function handleFilter(
+		event: CustomEvent<{
+			dateFrom: string;
+			dateTo: string;
+			transactionTypes: string[];
+			categories: number[];
+			amountFrom: number | null;
+			amountTo: number | null;
+		}>
+	) {
+		activeFilter = event.detail;
 	}
 
 	function openCreateTransactionModal() {
@@ -86,6 +147,30 @@
 		closeEditTransactionModal();
 		dispatch('updateTransaction');
 	}
+
+	// Add this function to group transactions by month
+	function groupTransactionsByMonth(transactions: TransactionDto[]) {
+		const groups = new Map<string, TransactionDto[]>();
+
+		transactions.forEach((tx) => {
+			const date = new Date(tx.date);
+			const key = `${date.getFullYear()}-${date.getMonth()}`;
+			if (!groups.has(key)) {
+				groups.set(key, []);
+			}
+			groups.get(key)!.push(tx);
+		});
+
+		// Convert to array and sort by date (most recent first)
+		return Array.from(groups.entries())
+			.sort((a, b) => b[0].localeCompare(a[0]))
+			.map(([key, transactions]) => ({
+				month: formatDate(transactions[0].date),
+				transactions
+			}));
+	}
+
+	$: groupedTransactions = groupTransactionsByMonth(filteredTransactions);
 </script>
 
 {#if transactions && transactions.length > 0}
@@ -100,57 +185,70 @@
 		</button>
 	</div>
 
-	<div class="bg-base-100 overflow-x-auto rounded-lg shadow-lg">
-		<table class="table w-full">
-			<thead class="text-center">
-				<tr>
-					<th class="text-gray-900 dark:text-gray-100">Date</th>
-					<th class="text-gray-900 dark:text-gray-100">Category</th>
-					<th class="text-gray-900 dark:text-gray-100">Amount</th>
-					<th class="text-gray-900 dark:text-gray-100">Description</th>
-					<th class="text-gray-900 dark:text-gray-100">Actions</th>
-				</tr>
-			</thead>
-			<tbody class="text-center">
-				{#each transactions as tx}
-					<tr
-						class={tx.category.transaction_type.type_slug === 'debit'
-							? 'bg-red-100'
-							: tx.category.transaction_type.type_slug === 'credit'
-								? 'bg-green-100'
-								: ''}
-					>
-						<td class="dark:text-gray-900">
-							{formatDate(tx.date)}
-						</td>
-						<td>
-							<span
-								class="rounded px-2 py-1 text-white"
-								style="background-color: {tx.category.color};"
-							>
-								{tx.category.category_name}
-							</span>
-						</td>
-						<td class="dark:text-gray-900">{formatCurrency(tx.amount)}€</td>
-						<td class="dark:text-gray-900">{tx.description || 'N/A'}</td>
-						<td>
-							<button
-								class="btn btn-sm btn-circle btn-ghost"
-								on:click={() => handleEditTransaction(tx)}
-							>
-								<Pencil size={20} />
-							</button>
-							<button
-								class="btn btn-sm btn-circle btn-ghost"
-								on:click={() => handleDeleteTransaction(tx)}
-							>
-								<Trash size={20} />
-							</button>
-						</td>
+	<div class="overflow-x-auto">
+		<TransactionFilters {categories} on:filter={handleFilter} />
+
+		{#if filteredTransactions.length === 0}
+			<p class="text-center text-gray-500">No transactions found.</p>
+		{:else}
+			<table class="table w-full">
+				<thead class="sticky top-0 text-center">
+					<tr>
+						<th class="text-gray-900 dark:text-gray-100">Date</th>
+						<th class="text-gray-900 dark:text-gray-100">Category</th>
+						<th class="text-gray-900 dark:text-gray-100">Amount</th>
+						<th class="text-gray-900 dark:text-gray-100">Description</th>
+						<th class="text-gray-900 dark:text-gray-100">Actions</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody class="text-center">
+					{#each groupedTransactions as group}
+						<tr class="bg-base-200">
+							<td colspan="5" class="px-4 py-2 text-left font-bold">
+								{group.month}
+							</td>
+						</tr>
+						{#each group.transactions as tx}
+							<tr
+								class={tx.category.transaction_type.type_slug === 'debit'
+									? 'bg-red-100'
+									: tx.category.transaction_type.type_slug === 'credit'
+										? 'bg-green-100'
+										: ''}
+							>
+								<td class="dark:text-gray-900">
+									{formatDate(tx.date)}
+								</td>
+								<td>
+									<span
+										class="rounded px-2 py-1 text-white"
+										style="background-color: {tx.category.color};"
+									>
+										{tx.category.category_name}
+									</span>
+								</td>
+								<td class="dark:text-gray-900">{formatCurrency(tx.amount)}€</td>
+								<td class="dark:text-gray-900">{tx.description || 'N/A'}</td>
+								<td class="flex w-10 gap-1">
+									<button
+										class="btn btn-sm btn-circle text-blue-300"
+										on:click={() => handleEditTransaction(tx)}
+									>
+										<Pencil size={20} />
+									</button>
+									<button
+										class="btn btn-sm btn-circle text-red-300"
+										on:click={() => handleDeleteTransaction(tx)}
+									>
+										<Trash size={20} />
+									</button>
+								</td>
+							</tr>
+						{/each}
+					{/each}
+				</tbody>
+			</table>
+		{/if}
 	</div>
 {:else}
 	<div class="flex h-96 flex-col items-center justify-center">

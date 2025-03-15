@@ -19,10 +19,12 @@
 		// Send the login request to the backend
 		try {
 			const response = await axios.post('login', { email, password });
-
 			const data = response.data;
 			const authToken = data.token;
+
 			if (authToken) {
+				// Store in both localStorage and Svelte store
+				localStorage.setItem('token', authToken);
 				token.set(authToken);
 			}
 
@@ -32,6 +34,10 @@
 			const axiosError = error as AxiosError;
 			const apiResponse = axiosError.response?.data as APIErrorResponse;
 			errorMessage = apiResponse?.error || 'An error occurred';
+
+			// Clear any existing tokens on error
+			localStorage.removeItem('token');
+			token.set(null);
 		}
 	};
 </script>

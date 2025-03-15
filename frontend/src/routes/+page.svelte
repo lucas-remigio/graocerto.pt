@@ -5,7 +5,8 @@
 		Account,
 		AccountsResponse,
 		TransactionDto,
-		TransactionsResponseDto
+		TransactionsResponseDto,
+		CategoryDto
 	} from '$lib/types';
 	import { Plus, Wallet } from 'lucide-svelte';
 	import Accounts from '$components/Accounts.svelte';
@@ -15,6 +16,7 @@
 	// Local component state
 	let accounts: Account[] = [];
 	let transactions: TransactionDto[] = [];
+	let categories: CategoryDto[] = [];
 	let error: string = '';
 	let showCreateAccountModal = false;
 
@@ -117,6 +119,19 @@
 		}
 	}
 
+	// Function to fetch categories
+	async function fetchCategories() {
+		try {
+			const res = await api_axios('categories/dto');
+			if (res.status === 200) {
+				categories = res.data.categories;
+			}
+		} catch (err) {
+			console.error('Error fetching categories:', err);
+			error = 'Failed to load categories';
+		}
+	}
+
 	function handleSelect(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
 		localStorage.setItem('selectedAccount', selectedAccount.token);
@@ -157,8 +172,8 @@
 	}
 
 	// Trigger the fetching when the component mounts
-	onMount(() => {
-		fetchAccounts();
+	onMount(async () => {
+		await Promise.all([fetchAccounts(), fetchCategories()]);
 	});
 </script>
 
@@ -190,9 +205,10 @@
 		{#if accounts.length > 0}
 			<TransactionsTable
 				{transactions}
+				{categories}
 				account={selectedAccount}
 				on:newTransaction={handleNewTransaction}
-				on:updateTransaction={handleNewTransaction}
+				on:updatedTransaction={handleUpdateTransaction}
 				on:deleteTransaction={({ detail: { transaction } }) => handleDeleteTransaction(transaction)}
 			/>
 		{/if}
