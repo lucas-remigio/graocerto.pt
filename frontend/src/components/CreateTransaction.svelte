@@ -1,6 +1,5 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
-	import { TransactionTypes } from '$lib/transaction_types_types';
 	import type {
 		Account,
 		CategoriesResponse,
@@ -181,7 +180,9 @@
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
 			><X /></button
 		>
-		<h3 class="mb-4 text-lg font-bold">New Transaction</h3>
+		<h3 class="mb-4 text-lg font-bold">
+			New Transaction for <strong>{account.account_name}</strong>
+		</h3>
 		<!--Error message-->
 		{#if error}
 			<div class="alert alert-error">

@@ -110,7 +110,7 @@
 		</div>
 	{:else}
 		<!-- Render the Accounts component -->
-		<Accounts {accounts} on:select={handleSelect} />
+		<Accounts {accounts} {selectedAccount} on:select={handleSelect} />
 
 		<!-- Render the TransactionsTable component only if accounts exist -->
 		{#if accounts.length > 0}

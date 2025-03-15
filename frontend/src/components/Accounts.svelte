@@ -6,6 +6,7 @@
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
+	export let selectedAccount: Account | null = null;
 
 	function formatCurrency(amount: number): string {
 		// make the currency have a , every 3 digits
@@ -25,6 +26,7 @@
 			<button
 				type="button"
 				class="card bg-base-100 cursor-pointer border-none p-0 shadow-xl outline-none"
+				class:bg-base-300={selectedAccount?.token === account.token}
 				on:click={() => handleCardClick(account)}
 			>
 				<div class="card-body">
