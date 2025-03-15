@@ -248,3 +248,56 @@ func scanRowIntoTransactionDTO(rows *sql.Rows) (*types.TransactionDTO, error) {
 
 	return a, nil
 }
+
+func (s *Store) DeleteTransaction(transactionId int, userId int) error {
+	// get the transaction
+	tx, err := s.GetTransactionById(transactionId)
+	if err != nil {
+		return fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	// get the account
+	accStore := account.NewStore(s.db)
+	account, err := accStore.GetAccountByToken(tx.AccountToken)
+	if err != nil {
+		return fmt.Errorf("failed to get account: %w", err)
+	}
+
+	// check if the user is the owner of the account
+	if account.UserID != userId {
+		return fmt.Errorf("user does not have permission to delete this transaction")
+	}
+
+	// get the transaction category
+	catStore := category.NewStore(s.db)
+	category, err := catStore.GetCategoryById(tx.CategoryId)
+	if err != nil {
+		return fmt.Errorf("failed to get category: %w", err)
+	}
+
+	// check if the category is a transfer
+	// if the transaction was a credit, we must remove that amount
+	amount := tx.Amount
+	if category.TransactionTypeID == int(types.CreditTransactionType) {
+		amount = amount * -1
+	}
+
+	// get the current balance
+	currentBalance := account.Balance
+
+	// get the new balance
+	newBalance := currentBalance + amount
+
+	_, err = s.db.Exec("DELETE FROM transactions WHERE id = ?", transactionId)
+	if err != nil {
+		return fmt.Errorf("failed to delete transaction: %w", err)
+	}
+
+	// update the account balance
+	_, err = s.db.Exec("UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
+	if err != nil {
+		return fmt.Errorf("failed to update account balance: %w", err)
+	}
+
+	return nil
+}

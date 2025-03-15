@@ -24,7 +24,18 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/transactions", h.CreateTransaction)
 	router.HandleFunc("/transactions/dto/", h.GetTransactionsDTOByAccountToken)
 	router.HandleFunc("/transactions/", h.GetTransactionsByAccountToken)
-	router.HandleFunc("/transactions/{id}", h.UpdateTransaction)
+	router.HandleFunc("/transactions/{id}", h.ChangeTransaction)
+}
+
+func (h *Handler) ChangeTransaction(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPut:
+		h.UpdateTransaction(w, r)
+	case http.MethodDelete:
+		h.DeleteTransaction(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func (h *Handler) HandleTransactions(w http.ResponseWriter, r *http.Request) {
@@ -205,6 +216,43 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		Date:        payload.Date,
 	})
 
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
+func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get the transaction id from the url
+	transactionId := strings.TrimPrefix(r.URL.Path, "/transactions/")
+	if transactionId == "" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing transaction id"))
+		return
+	}
+
+	// convert the transaction id to an int
+	transactionIdInt, err := strconv.Atoi(transactionId)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid transaction id"))
+		return
+	}
+
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	userId, err := auth.GetUserIdFromToken(authToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	err = h.store.DeleteTransaction(transactionIdInt, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

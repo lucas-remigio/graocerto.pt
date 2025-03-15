@@ -107,6 +107,7 @@
 	<ConfirmAction
 		title={`Delete Account ${selectedAccount?.account_name}`}
 		message={`Are you sure you want to delete the account ${selectedAccount?.account_name}? This action cannot be undone.`}
+		type="danger"
 		onConfirm={() => handleDeleteAccount()}
 		onCancel={() => handleCloseDeleteAccountModal()}
 	/>

@@ -5,6 +5,7 @@
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
+	import ConfirmAction from './ConfirmAction.svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -19,6 +20,10 @@
 	function formatCurrency(amount: number): string {
 		// make the currency have a , every 3 digits
 		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+	}
+
+	function getTransactionDetails(transaction: TransactionDto): string {
+		return `${transaction.description} (${formatCurrency(transaction.amount)}€) at ${formatDate(transaction.date)}`;
 	}
 
 	function formatDate(date: string): string {
@@ -60,7 +65,15 @@
 
 	function closeDeleteTransactionModal() {
 		showDeleteTransactionModal = false;
-		selectedTransaction = null;
+	}
+
+	function handleDeleteTransactionCancel() {
+		closeDeleteTransactionModal();
+	}
+
+	function handleDeleteTransactionConfirm() {
+		closeDeleteTransactionModal();
+		dispatch('deleteTransaction', { transaction: selectedTransaction! });
 	}
 
 	const dispatch = createEventDispatcher();
@@ -172,4 +185,14 @@
 		on:closeModal={closeEditTransactionModal}
 		on:updateTransaction={handleUpdateTransaction}
 	></EditTransaction>
+{/if}
+
+{#if showDeleteTransactionModal}
+	<ConfirmAction
+		title="Delete Transaction"
+		message={`Are you sure you want to delete this transaction ${getTransactionDetails(selectedTransaction!)}? This action cannot be undone.`}
+		type="danger"
+		onConfirm={handleDeleteTransactionConfirm}
+		onCancel={handleDeleteTransactionCancel}
+	></ConfirmAction>
 {/if}

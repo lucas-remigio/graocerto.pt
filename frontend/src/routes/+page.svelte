@@ -57,6 +57,23 @@
 		}
 	}
 
+	async function deleteTransaction(transaction: TransactionDto) {
+		try {
+			const response = await api_axios.delete(`transactions/${transaction.id}`);
+
+			if (response.status !== 200) {
+				console.error('Non-200 response status:', response.status);
+				error = `Error: ${response.status}`;
+				return;
+			}
+
+			fetchAccounts();
+		} catch (err) {
+			console.error('Error in handleSubmit:', err);
+			error = 'Failed to create account';
+		}
+	}
+
 	// Function to fetch accounts and then fetch transactions for the first account
 	async function fetchAccounts() {
 		try {
@@ -135,6 +152,10 @@
 		deleteAccount(account);
 	}
 
+	function handleDeleteTransaction(transaction: TransactionDto) {
+		deleteTransaction(transaction);
+	}
+
 	// Trigger the fetching when the component mounts
 	onMount(() => {
 		fetchAccounts();
@@ -172,6 +193,7 @@
 				account={selectedAccount}
 				on:newTransaction={handleNewTransaction}
 				on:updateTransaction={handleNewTransaction}
+				on:deleteTransaction={({ detail: { transaction } }) => handleDeleteTransaction(transaction)}
 			/>
 		{/if}
 		<!-- Modal: only rendered when showModal is true -->
