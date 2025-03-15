@@ -103,3 +103,29 @@ func (s *Store) UpdateAccount(account *types.Account) error {
 	}
 	return nil
 }
+
+func (s *Store) DeleteAccount(token string, userId int) error {
+	// first get the account so that we can check if the user is the owner of the account
+	account, err := s.GetAccountByToken(token)
+	if err != nil {
+		return err
+	}
+
+	if account.UserID != userId {
+		return fmt.Errorf("user does not have permission to delete this account")
+	}
+
+	// delete all transactions associated with the account
+	_, err = s.db.Exec("DELETE FROM transactions WHERE account_token = ?", token)
+	if err != nil {
+		return err
+	}
+
+	// delete the account
+	_, err = s.db.Exec("DELETE FROM accounts WHERE token = ? AND user_id = ?", token, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

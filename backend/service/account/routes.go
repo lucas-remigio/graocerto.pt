@@ -22,7 +22,7 @@ func NewHandler(store types.AccountStore) *Handler {
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/accounts", h.AccountsHandler)
-	router.HandleFunc("/accounts/{id}", h.UpdateAccount)
+	router.HandleFunc("/accounts/{id}", h.ChangeAccountHandler)
 }
 
 func (h *Handler) AccountsHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +31,17 @@ func (h *Handler) AccountsHandler(w http.ResponseWriter, r *http.Request) {
 		h.CreateAccount(w, r)
 	case http.MethodGet:
 		h.GetAccountsByUserId(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *Handler) ChangeAccountHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPut:
+		h.UpdateAccount(w, r)
+	case http.MethodDelete:
+		h.DeleteAccount(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -157,6 +168,37 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 		Balance:     *payload.Balance,
 	})
 
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
+func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	userId, err := auth.GetUserIdFromToken(authToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	// get the account token from the url
+	accountToken := strings.TrimPrefix(r.URL.Path, "/accounts/")
+	if accountToken == "" {
+		http.Error(w, "Missing account token", http.StatusBadRequest)
+		return
+	}
+
+	// delete the account
+	err = h.store.DeleteAccount(accountToken, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

@@ -49,6 +49,8 @@
 				error = `Error: ${response.status}`;
 				return;
 			}
+
+			fetchAccounts();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
 			error = 'Failed to create account';
@@ -105,7 +107,6 @@
 	}
 
 	function createAccount() {
-		// Instead of just logging, we set showModal to true
 		showCreateAccountModal = true;
 	}
 
@@ -132,7 +133,6 @@
 
 	function handleDeleteAccount(account: Account) {
 		deleteAccount(account);
-		fetchAccounts();
 	}
 
 	// Trigger the fetching when the component mounts

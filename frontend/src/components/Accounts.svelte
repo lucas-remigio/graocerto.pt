@@ -43,7 +43,7 @@
 
 	function handleDeleteAccount() {
 		openDeleteAccountModal = false;
-		dispatch('delete', { account: selectedAccount! });
+		dispatch('deleteAccount', { account: selectedAccount! });
 	}
 
 	function handleUpdatedAccount() {

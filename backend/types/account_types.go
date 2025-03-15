@@ -4,6 +4,7 @@ type AccountStore interface {
 	GetAccountsByUserId(userId int) ([]*Account, error)
 	CreateAccount(account *Account) error
 	UpdateAccount(account *Account) error
+	DeleteAccount(token string, userId int) error
 }
 
 type CreateAccountPayload struct {
