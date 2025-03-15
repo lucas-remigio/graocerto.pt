@@ -3,6 +3,7 @@ package transaction
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
@@ -113,6 +114,107 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string) ([]*types.
 	}
 
 	return transactions, nil
+}
+
+func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
+	rows, err := s.db.Query("SELECT id, account_token, category_id, amount, description, date, balance, created_at FROM transactions WHERE id = ?", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil, fmt.Errorf("transaction not found")
+	}
+
+	transaction, err := scanRowIntoTransaction(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return transaction, nil
+}
+
+func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload) error {
+	// get the current transaction before the update
+	tx, err := s.GetTransactionById(transaction.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	// get the account
+	accStore := account.NewStore(s.db)
+	account, err := accStore.GetAccountByToken(tx.AccountToken)
+	if err != nil {
+		return fmt.Errorf("failed to get account: %w", err)
+	}
+
+	// there are a lot of things that can happen here
+	// most simple case: from credit to credit. if it was 100 and now is 130, we add 30 to the balance
+	// if it was debit to debit, if it was 100 and now is 70, we add 30 to the balance
+	// if it was credit to debit, if it was 100 and now is 70, we subtract 30 from the balance
+	// if it was debit to credit, if it was 100 and now is 130, we subtract 30 from the balance
+
+	// get the current category
+	catStore := category.NewStore(s.db)
+	currentCategory, err := catStore.GetCategoryById(tx.CategoryId)
+	if err != nil {
+		return fmt.Errorf("failed to get category: %w", err)
+	}
+
+	// get the new category
+	newCategory, err := catStore.GetCategoryById(transaction.CategoryID)
+	if err != nil {
+		return fmt.Errorf("failed to get category: %w", err)
+	}
+
+	// get the current balance
+	currentBalance := account.Balance
+
+	// get the new balance
+	amount := transaction.Amount
+	if currentCategory.TransactionTypeID == (int)(types.DebitTransactionType) {
+		amount = amount * -1
+	}
+	amountDifference := amount - tx.Amount
+	var newBalance float64 = currentBalance
+
+	// Helper function to check transaction type
+	isTransactionType := func(categoryTypeID int, expectedType types.TransactionTypeID) bool {
+		return categoryTypeID == int(expectedType)
+	}
+
+	// Both transactions are of the same type (both credit or both debit)
+	if isTransactionType(currentCategory.TransactionTypeID, types.CreditTransactionType) ==
+		isTransactionType(newCategory.TransactionTypeID, types.CreditTransactionType) {
+		newBalance = currentBalance + amountDifference
+	} else {
+		// Transaction types are different (switching between credit and debit)
+		newBalance = currentBalance - amountDifference
+	}
+
+	parsedDate, err := time.Parse(time.RFC3339, transaction.Date)
+	if err != nil {
+		return fmt.Errorf("failed to parse date: %w", err)
+	}
+
+	_, err = s.db.Exec("UPDATE transactions SET amount = ?, category_id = ?, description = ?, date = ? WHERE id = ?",
+		transaction.Amount,
+		transaction.CategoryID,
+		transaction.Description,
+		parsedDate.Format("2006-01-02"),
+		transaction.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+
+	// update the account balance
+	_, err = s.db.Exec("UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
+	if err != nil {
+		return fmt.Errorf("failed to update account balance: %w", err)
+	}
+
+	return nil
 }
 
 func scanRowIntoTransaction(rows *sql.Rows) (*types.Transaction, error) {

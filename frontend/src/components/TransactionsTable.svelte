@@ -1,15 +1,20 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
 	import type { Account, TransactionDto } from '$lib/types';
-	import { CircleDollarSign, Plus } from 'lucide-svelte';
+	import { CircleDollarSign, Pencil, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
+	import EditTransaction from './EditTransaction.svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
 	export let account: Account;
 
 	let showCreateTransactionModal = false;
+	let showEditTransactionModal = false;
+	let showDeleteTransactionModal = false;
+
+	let selectedTransaction: TransactionDto | null = null;
 
 	function formatCurrency(amount: number): string {
 		// make the currency have a , every 3 digits
@@ -38,10 +43,35 @@
 		showCreateTransactionModal = false;
 	}
 
+	function handleEditTransaction(transaction: TransactionDto) {
+		showEditTransactionModal = true;
+		selectedTransaction = transaction;
+	}
+
+	function closeEditTransactionModal() {
+		showEditTransactionModal = false;
+		selectedTransaction = null;
+	}
+
+	function handleDeleteTransaction(transaction: TransactionDto) {
+		showDeleteTransactionModal = true;
+		selectedTransaction = transaction;
+	}
+
+	function closeDeleteTransactionModal() {
+		showDeleteTransactionModal = false;
+		selectedTransaction = null;
+	}
+
 	const dispatch = createEventDispatcher();
 	function handleNewTransaction() {
 		closeCreateTransactionModal();
 		dispatch('newTransaction');
+	}
+
+	function handleUpdateTransaction() {
+		closeEditTransactionModal();
+		dispatch('updateTransaction');
 	}
 </script>
 
@@ -65,6 +95,7 @@
 					<th class="text-gray-900 dark:text-gray-100">Category</th>
 					<th class="text-gray-900 dark:text-gray-100">Amount</th>
 					<th class="text-gray-900 dark:text-gray-100">Description</th>
+					<th class="text-gray-900 dark:text-gray-100">Actions</th>
 				</tr>
 			</thead>
 			<tbody class="text-center">
@@ -89,6 +120,20 @@
 						</td>
 						<td class="dark:text-gray-900">{formatCurrency(tx.amount)}€</td>
 						<td class="dark:text-gray-900">{tx.description || 'N/A'}</td>
+						<td>
+							<button
+								class="btn btn-sm btn-circle btn-ghost"
+								on:click={() => handleEditTransaction(tx)}
+							>
+								<Pencil size={20} />
+							</button>
+							<button
+								class="btn btn-sm btn-circle btn-ghost"
+								on:click={() => handleDeleteTransaction(tx)}
+							>
+								<Trash size={20} />
+							</button>
+						</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -118,4 +163,13 @@
 		on:closeModal={closeCreateTransactionModal}
 		on:newTransaction={handleNewTransaction}
 	></CreateTransaction>
+{/if}
+
+{#if showEditTransactionModal}
+	<EditTransaction
+		{account}
+		transaction={selectedTransaction!}
+		on:closeModal={closeEditTransactionModal}
+		on:updateTransaction={handleUpdateTransaction}
+	></EditTransaction>
 {/if}

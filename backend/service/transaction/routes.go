@@ -3,6 +3,7 @@ package transaction
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -23,6 +24,7 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/transactions", h.CreateTransaction)
 	router.HandleFunc("/transactions/dto/", h.GetTransactionsDTOByAccountToken)
 	router.HandleFunc("/transactions/", h.GetTransactionsByAccountToken)
+	router.HandleFunc("/transactions/{id}", h.UpdateTransaction)
 }
 
 func (h *Handler) HandleTransactions(w http.ResponseWriter, r *http.Request) {
@@ -151,4 +153,62 @@ func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *htt
 	}
 
 	utils.WriteJson(w, http.StatusOK, response)
+}
+
+func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get the transaction id from the url
+	transactionId := strings.TrimPrefix(r.URL.Path, "/transactions/")
+	if transactionId == "" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing transaction id"))
+		return
+	}
+
+	// convert the transaction id to an int
+	transactionIdInt, err := strconv.Atoi(transactionId)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid transaction id"))
+		return
+	}
+
+	// get JSON payload
+	var payload types.UpdateTransactionPayload
+	if err := utils.ParseJson(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		error := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
+		return
+	}
+
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	_, err = auth.GetUserIdFromToken(authToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	err = h.store.UpdateTransaction(&types.UpdateTransactionPayload{
+		ID:          transactionIdInt,
+		Amount:      payload.Amount,
+		CategoryID:  payload.CategoryID,
+		Description: payload.Description,
+		Date:        payload.Date,
+	})
+
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
 }

@@ -6,6 +6,7 @@ type TransactionStore interface {
 	GetTransactionsByAccountToken(accountToken string) ([]*Transaction, error)
 	CreateTransaction(transaction *Transaction) error
 	GetTransactionsDTOByAccountToken(accountToken string) ([]*TransactionDTO, error)
+	UpdateTransaction(transaction *UpdateTransactionPayload) error
 }
 
 type CreateTransactionPayload struct {
@@ -14,6 +15,14 @@ type CreateTransactionPayload struct {
 	Amount       float64 `json:"amount" validate:"required,numeric"`
 	Description  string  `json:"description"`
 	Date         string  `json:"date" validate:"required"`
+}
+
+type UpdateTransactionPayload struct {
+	ID          int     `json:"id" validate:"required,numeric"`
+	Amount      float64 `json:"amount" validate:"required,numeric"`
+	CategoryID  int     `json:"category_id" validate:"numeric,min=1"`
+	Description string  `json:"description"`
+	Date        string  `json:"date" validate:"required"`
 }
 
 type Transaction struct {

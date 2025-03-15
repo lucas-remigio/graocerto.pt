@@ -3,6 +3,8 @@ package account
 import (
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/lucas-remigio/wallet-tracker/service/auth"
@@ -20,6 +22,7 @@ func NewHandler(store types.AccountStore) *Handler {
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/accounts", h.AccountsHandler)
+	router.HandleFunc("/accounts/{id}", h.UpdateAccount)
 }
 
 func (h *Handler) AccountsHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,4 +105,62 @@ func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJson(w, http.StatusOK, response)
+}
+
+func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	userId, err := auth.GetUserIdFromToken(authToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	// get the account id from the url
+	accountId := strings.TrimPrefix(r.URL.Path, "/accounts/")
+	if accountId == "" {
+		http.Error(w, "Missing account id", http.StatusBadRequest)
+		return
+	}
+
+	// convert the account id to an int
+	accountIdInt, err := strconv.Atoi(accountId)
+	if err != nil {
+		http.Error(w, "Invalid account id", http.StatusBadRequest)
+		return
+	}
+
+	// get the JSON payload
+	var payload types.UpdateAccountPayload
+	if err := utils.ParseJson(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		error := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
+		return
+	}
+
+	// update the account
+	err = h.store.UpdateAccount(&types.Account{
+		ID:          accountIdInt,
+		UserID:      userId,
+		AccountName: payload.AccountName,
+		Balance:     *payload.Balance,
+	})
+
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
 }

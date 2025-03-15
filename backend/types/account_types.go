@@ -3,9 +3,15 @@ package types
 type AccountStore interface {
 	GetAccountsByUserId(userId int) ([]*Account, error)
 	CreateAccount(account *Account) error
+	UpdateAccount(account *Account) error
 }
 
 type CreateAccountPayload struct {
+	AccountName string   `json:"account_name" validate:"required,min=3,max=50"`
+	Balance     *float64 `json:"balance" validate:"required,gte=0,lt=100000000"`
+}
+
+type UpdateAccountPayload struct {
 	AccountName string   `json:"account_name" validate:"required,min=3,max=50"`
 	Balance     *float64 `json:"balance" validate:"required,gte=0,lt=100000000"`
 }

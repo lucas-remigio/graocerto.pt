@@ -13,10 +13,11 @@
 
 	// Input account
 	export let account: Account;
+	export let transaction: TransactionDto;
 
 	let error: string = '';
 	let transactionTypes: TransactionType[] = [];
-	let transaction_type_id: number = 0;
+	let transaction_type_id: number = transaction.category.transaction_type.id;
 	let categories: Category[] = [];
 	let categoriesMappedById: Map<number, Category> = new Map();
 
@@ -45,10 +46,10 @@
 
 	// Form field variables
 	let account_token = account.token;
-	let category_id: number | string = '';
-	let amount: number = 0;
-	let description = '';
-	let date = ''; // expects format "YYYY-MM-DD" from the date input
+	let category_id: number | string = transaction.category.id;
+	let amount: number = transaction.amount;
+	let description = transaction.description;
+	let date = transaction.date; // expects format "YYYY-MM-DD" from the date input
 
 	// Create event dispatcher (to emit events to the parent)
 	const dispatch = createEventDispatcher();
@@ -60,8 +61,8 @@
 		}
 
 		// Build the transaction object in the format your API expects
-		const transaction = {
-			account_token,
+		const updatedTransaction = {
+			id: transaction.id,
 			category_id: Number(category_id),
 			amount,
 			description,
@@ -69,9 +70,9 @@
 		};
 
 		try {
-			const response = await api_axios('transactions', {
-				method: 'POST',
-				data: transaction
+			const response = await api_axios(`transactions/${transaction.id}`, {
+				method: 'PUT',
+				data: updatedTransaction
 			});
 
 			if (response.status !== 200) {
@@ -79,10 +80,10 @@
 				error = `Error: ${response.status}`;
 				return;
 			}
-			handleNewTransaction();
+			handleUpdateTransaction();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to create transaction';
+			error = 'Failed to update transaction';
 		}
 	}
 
@@ -125,8 +126,8 @@
 		dispatch('closeModal');
 	}
 
-	function handleNewTransaction() {
-		dispatch('newTransaction');
+	function handleUpdateTransaction() {
+		dispatch('updateTransaction');
 	}
 
 	async function fetchTransactionTypes() {
@@ -182,7 +183,7 @@
 			><X /></button
 		>
 		<h3 class="mb-4 text-lg font-bold">
-			New Transaction for <strong>>{account.account_name}</strong>
+			Edit Transaction for <strong>{account.account_name}</strong>
 		</h3>
 		<!--Error message-->
 		{#if error}
@@ -301,7 +302,7 @@
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
 				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
-				<button type="submit" class="btn btn-primary">Create Transaction</button>
+				<button type="submit" class="btn btn-primary">Update Transaction</button>
 			</div>
 		</form>
 	</div>

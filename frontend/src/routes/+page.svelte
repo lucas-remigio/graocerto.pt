@@ -88,6 +88,16 @@
 		fetchAccounts();
 	}
 
+	function handleUpdateTransaction() {
+		fetchAccounts();
+		getAccountTransactions(selectedAccount.token);
+	}
+
+	function handleUpdateAccount() {
+		fetchAccounts();
+		getAccountTransactions(selectedAccount.token);
+	}
+
 	// Trigger the fetching when the component mounts
 	onMount(() => {
 		fetchAccounts();
@@ -110,7 +120,12 @@
 		</div>
 	{:else}
 		<!-- Render the Accounts component -->
-		<Accounts {accounts} {selectedAccount} on:select={handleSelect} />
+		<Accounts
+			{accounts}
+			{selectedAccount}
+			on:select={handleSelect}
+			on:updatedAccount={handleUpdateAccount}
+		/>
 
 		<!-- Render the TransactionsTable component only if accounts exist -->
 		{#if accounts.length > 0}
@@ -118,6 +133,7 @@
 				{transactions}
 				account={selectedAccount}
 				on:newTransaction={handleNewTransaction}
+				on:updateTransaction={handleNewTransaction}
 			/>
 		{/if}
 		<!-- Modal: only rendered when showModal is true -->

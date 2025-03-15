@@ -65,6 +65,15 @@ func (s *Store) GetAccountByToken(token string) (*types.Account, error) {
 	return account, nil
 }
 
+func (s *Store) GetAccountById(id int) (*types.Account, error) {
+	row := s.db.QueryRow("SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE id = ?", id)
+	account := new(types.Account)
+	if err := row.Scan(&account.ID, &account.Token, &account.UserID, &account.AccountName, &account.Balance, &account.CreatedAt); err != nil {
+		return nil, err
+	}
+	return account, nil
+}
+
 func scanRowIntoAccount(rows *sql.Rows) (*types.Account, error) {
 	a := new(types.Account)
 
@@ -75,4 +84,22 @@ func scanRowIntoAccount(rows *sql.Rows) (*types.Account, error) {
 	}
 
 	return a, nil
+}
+
+func (s *Store) UpdateAccount(account *types.Account) error {
+	// first get the current account so that we can check if the user is the owner of the account
+	currentAccount, err := s.GetAccountById(account.ID)
+	if err != nil {
+		return err
+	}
+
+	if currentAccount.UserID != account.UserID {
+		return fmt.Errorf("user does not have permission to update this account")
+	}
+
+	_, err = s.db.Exec("UPDATE accounts SET account_name = ?, balance = ? WHERE id = ?", account.AccountName, account.Balance, account.ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
