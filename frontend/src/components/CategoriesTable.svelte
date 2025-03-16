@@ -64,13 +64,13 @@
 					</td>
 					<td>
 						<button
-							class="btn btn-sm btn-circle btn-ghost"
+							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
 							on:click={() => openEditCategoryModal(category)}
 						>
 							<Pencil size={20} />
 						</button>
 						<button
-							class="btn btn-sm btn-circle btn-ghost"
+							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
 							on:click={() => handleDeleteCategory(category.id)}
 						>
 							<Trash size={20} />
