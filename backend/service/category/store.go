@@ -2,6 +2,7 @@ package category
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/lucas-remigio/wallet-tracker/types"
 )
@@ -87,6 +88,25 @@ func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error)
 	return categories, nil
 }
 
+func (s *Store) UpdateCategory(category *types.Category) error {
+	// get current category to check if incomding user is the same
+	currentCategory, err := s.GetCategoryById(category.ID)
+	if err != nil {
+		return err
+	}
+
+	if currentCategory.UserID != category.UserID {
+		return fmt.Errorf("user does not have permission to update this category")
+	}
+
+	_, err = s.db.Exec("UPDATE categories SET category_name = ?, color = ? WHERE id = ?", category.CategoryName, category.Color, category.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func scanRowIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
 
@@ -114,4 +134,35 @@ func scanRowIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
 	}
 
 	return c, nil
+}
+
+func (s *Store) DeleteCategory(id int, userId int) error {
+	// get current category to check if incomding user is the same
+	currentCategory, err := s.GetCategoryById(id)
+	if err != nil {
+		return err
+	}
+
+	if currentCategory.UserID != userId {
+		return fmt.Errorf("user does not have permission to delete this category")
+	}
+
+	// first we must check if the category is used in any transactions
+	rows, err := s.db.Query("SELECT id FROM transactions WHERE category_id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	if rows.Next() {
+		// TODO: in the future, in this case, we soft delete it
+		// for now, we just return an error
+		return fmt.Errorf("category is used in at least one transaction")
+	}
+
+	_, err = s.db.Exec("DELETE FROM categories WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -4,12 +4,20 @@ type CategoryStore interface {
 	GetCategoriesByUserId(userId int) ([]*Category, error)
 	CreateCategory(category *Category) error
 	GetCategoryDtoByUserId(userId int) ([]*CategoryDTO, error)
+	GetCategoryById(id int) (*Category, error)
+	UpdateCategory(category *Category) error
+	DeleteCategory(id int, userId int) error
 }
 
 type CreateCategoryPayload struct {
 	TransactionTypeId int    `json:"transaction_type_id" validate:"required,numeric,min=1"`
 	CategoryName      string `json:"category_name" validate:"required,max=255,min=3"`
 	Color             string `json:"color" validate:"required,hexcolor"`
+}
+
+type UpdateCategoryPayload struct {
+	CategoryName string `json:"category_name" validate:"required,max=255,min=3"`
+	Color        string `json:"color" validate:"required,hexcolor"`
 }
 
 type Category struct {

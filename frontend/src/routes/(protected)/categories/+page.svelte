@@ -20,6 +20,7 @@
 	let debitCategories: CategoryDto[] = [];
 	let creditCategories: CategoryDto[] = [];
 	let error: string = '';
+	let deleteError: string = '';
 
 	async function fetchCategories() {
 		try {
@@ -46,6 +47,31 @@
 		}
 	}
 
+	async function deleteCategory(categoryId: number) {
+		try {
+			const res = await api_axios.delete(`categories/${categoryId}`);
+
+			if (res.status !== 200) {
+				console.error('Non-200 response status:', res.status);
+				showErrorMessage(res.data.error);
+				return;
+			}
+
+			fetchCategories();
+		} catch (err: any) {
+			console.error('Error in deleteCategory:', err);
+			const error = err.response.data.error;
+			showErrorMessage(error);
+		}
+	}
+
+	function showErrorMessage(error: string) {
+		deleteError = `Failed to delete category: ${error}`;
+		setTimeout(() => {
+			deleteError = '';
+		}, 5000);
+	}
+
 	function openCreateCategoryModal(transactionType: TransactionTypeSlug) {
 		const matchingType = TransactionTypes.find((t) => t.type_slug === transactionType);
 		selectedTransactionType = matchingType;
@@ -67,6 +93,10 @@
 		closeCreateCategoryModal();
 	}
 
+	function handleDeleteCategory(categoryId: number) {
+		deleteCategory(categoryId);
+	}
+
 	onMount(async () => {
 		fetchCategories();
 	});
@@ -76,6 +106,9 @@
 	<p class="text-red-500">{error}</p>
 {:else}
 	<div class="container mx-auto p-4">
+		{#if deleteError}
+			<p class="text-red-500">{deleteError}</p>
+		{/if}
 		<h1 class="mb-6 text-3xl font-bold">My Categories</h1>
 		<div class="flex flex-col md:flex-row md:space-x-4">
 			<!-- Credit Categories Table (Left) -->
@@ -91,7 +124,14 @@
 						<Tag size={20} />
 					</button>
 				</div>
-				<CategoriesTable categories={creditCategories} categoryType={TransactionTypeSlug.Credit} />
+				<CategoriesTable
+					categories={creditCategories}
+					categoryType={TransactionTypeSlug.Credit}
+					on:editCategory={fetchCategories}
+					on:deleteCategory={({ detail: { categoryId } }) => {
+						handleDeleteCategory(categoryId);
+					}}
+				/>
 			</div>
 
 			<!-- Debit Categories Table (Right) -->
@@ -107,7 +147,14 @@
 						<Tag size={20} />
 					</button>
 				</div>
-				<CategoriesTable categories={debitCategories} categoryType={TransactionTypeSlug.Debit} />
+				<CategoriesTable
+					categories={debitCategories}
+					categoryType={TransactionTypeSlug.Debit}
+					on:editCategory={fetchCategories}
+					on:deleteCategory={({ detail: { categoryId } }) => {
+						handleDeleteCategory(categoryId);
+					}}
+				/>
 			</div>
 		</div>
 	</div>

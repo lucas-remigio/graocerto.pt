@@ -1,8 +1,14 @@
 <script lang="ts">
 	import type { CategoryDto } from '$lib/types';
+	import { Pencil, Trash } from 'lucide-svelte';
+	import EditCategory from './EditCategory.svelte';
+	import { createEventDispatcher } from 'svelte';
 
 	export let categories: CategoryDto[] = [];
 	export let categoryType: 'debit' | 'credit' = 'debit';
+
+	let editCategoryModalOpen = false;
+	let selectedCategory: CategoryDto | null = null;
 
 	const borderClasses: Record<string, string> = {
 		credit: 'border-green-500 dark:border-green-400',
@@ -10,6 +16,26 @@
 		transfer: 'border-blue-500 dark:border-blue-400'
 	};
 	let modalBorderClass = categoryType ? borderClasses[categoryType] : 'border-gray-50';
+
+	function openEditCategoryModal(category: CategoryDto) {
+		selectedCategory = category;
+		editCategoryModalOpen = true;
+	}
+
+	function closeEditCategoryModal() {
+		editCategoryModalOpen = false;
+	}
+
+	const dispatch = createEventDispatcher();
+
+	function handleEditCategory() {
+		closeEditCategoryModal();
+		dispatch('editCategory');
+	}
+
+	function handleDeleteCategory(categoryId: number) {
+		dispatch('deleteCategory', { categoryId });
+	}
 </script>
 
 {#if categories.length === 0}
@@ -20,6 +46,7 @@
 			<tr>
 				<th>Category Name</th>
 				<th>Color</th>
+				<th>Actions</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -35,8 +62,30 @@
 							<span>{category.color}</span>
 						</div>
 					</td>
+					<td>
+						<button
+							class="btn btn-sm btn-circle btn-ghost"
+							on:click={() => openEditCategoryModal(category)}
+						>
+							<Pencil size={20} />
+						</button>
+						<button
+							class="btn btn-sm btn-circle btn-ghost"
+							on:click={() => handleDeleteCategory(category.id)}
+						>
+							<Trash size={20} />
+						</button>
+					</td>
 				</tr>
 			{/each}
 		</tbody>
 	</table>
+{/if}
+
+{#if editCategoryModalOpen}
+	<EditCategory
+		category={selectedCategory!}
+		on:closeModal={closeEditCategoryModal}
+		on:editCategory={handleEditCategory}
+	/>
 {/if}

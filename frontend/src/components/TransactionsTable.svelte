@@ -230,14 +230,14 @@
 								<td class="dark:text-gray-900">{formatCurrency(tx.amount)}€</td>
 								<td class="dark:text-gray-900">{tx.description || 'N/A'}</td>
 								<td class="flex w-10 gap-1">
-									<button
+									<!-- <button
 										class="btn btn-sm btn-circle text-blue-300"
 										on:click={() => handleEditTransaction(tx)}
 									>
 										<Pencil size={20} />
-									</button>
+									</button> -->
 									<button
-										class="btn btn-sm btn-circle text-red-300"
+										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
 										on:click={() => handleDeleteTransaction(tx)}
 									>
 										<Trash size={20} />

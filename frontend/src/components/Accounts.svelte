@@ -60,7 +60,7 @@
 					type="button"
 					class="card bg-base-100 w-full cursor-pointer p-0 outline-none transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl
 					{selectedAccount?.token === account.token
-						? 'ring-primary ring-2 bg-gray-800'
+						? 'ring-primary ring-2 '
 						: 'border-base-200 hover:border-primary/20 border shadow-lg'}"
 					on:click={() => handleCardClick(account)}
 				>
