@@ -3,12 +3,15 @@
 	import { Pencil, Trash } from 'lucide-svelte';
 	import EditCategory from './EditCategory.svelte';
 	import { createEventDispatcher } from 'svelte';
+	import ConfirmAction from './ConfirmAction.svelte';
 
 	export let categories: CategoryDto[] = [];
 	export let categoryType: 'debit' | 'credit' = 'debit';
 
 	let editCategoryModalOpen = false;
 	let selectedCategory: CategoryDto | null = null;
+
+	let promptDeleteCategoryModalOpen = false;
 
 	const borderClasses: Record<string, string> = {
 		credit: 'border-green-500 dark:border-green-400',
@@ -33,7 +36,17 @@
 		dispatch('editCategory');
 	}
 
-	function handleDeleteCategory(categoryId: number) {
+	function handlePromptDeleteCategory(category: CategoryDto) {
+		selectedCategory = category;
+		promptDeleteCategoryModalOpen = true;
+	}
+
+	function closePromptDeleteCategoryModal() {
+		promptDeleteCategoryModalOpen = false;
+	}
+
+	function handleConfirmDeleteCategory(categoryId: number) {
+		closePromptDeleteCategoryModal();
 		dispatch('deleteCategory', { categoryId });
 	}
 </script>
@@ -71,7 +84,7 @@
 						</button>
 						<button
 							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
-							on:click={() => handleDeleteCategory(category.id)}
+							on:click={() => handlePromptDeleteCategory(category)}
 						>
 							<Trash size={20} />
 						</button>
@@ -87,5 +100,15 @@
 		category={selectedCategory!}
 		on:closeModal={closeEditCategoryModal}
 		on:editCategory={handleEditCategory}
+	/>
+{/if}
+
+{#if promptDeleteCategoryModalOpen}
+	<ConfirmAction
+		title="Delete Category"
+		message={`Are you sure you want to delete the category ${selectedCategory!.category_name}? This action cannot be undone.`}
+		type="danger"
+		onConfirm={() => handleConfirmDeleteCategory(selectedCategory!.id)}
+		onCancel={closePromptDeleteCategoryModal}
 	/>
 {/if}
