@@ -48,6 +48,11 @@ jobs:
             echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
             echo "TAG=${{ github.sha }}" >> .env
 
+            export TAG=${{ github.sha }}
+            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            export DB_USER=${{ secrets.DB_USER }}
+            export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+
             docker image prune -a -f
              
             docker pull lucasremigio/frontend:${{ github.sha }}
