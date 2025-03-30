@@ -1,8 +1,6 @@
 services:
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: lucas-remigio/frontend:${TAG}
     ports:
       - "80:80"
       - "443:443"
@@ -14,9 +12,7 @@ services:
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro # Ensure the live folder is accessible
 
   app:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: lucas-remigio/app:${TAG}
     ports:
       - "8080:8080"
     depends_on:
