@@ -48,13 +48,10 @@ jobs:
             echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
             echo "TAG=${{ github.sha }}" >> .env
 
-            # Clean up unused Docker images
             docker image prune -a -f
              
-            # Pull the latest images using the tag (replace YOUR_TAG with the actual tag or use an env var)
             docker pull lucasremigio/frontend:${{ github.sha }}
             docker pull lucasremigio/app:${{ github.sha }}
 
-            # Start or update your containers
             docker compose -f docker-compose.prod.yaml up -d
           EOF
