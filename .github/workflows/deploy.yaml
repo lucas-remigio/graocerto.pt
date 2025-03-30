@@ -50,5 +50,5 @@ jobs:
             export TAG=${{ github.sha }}
 
             # Start or update your containers
-            docker-compose -f docker-compose.prod.yaml up -d
+            docker compose -f docker-compose.prod.yaml up -d
           EOF
