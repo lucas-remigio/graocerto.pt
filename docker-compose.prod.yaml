@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: lucas-remigio/frontend:${TAG}
+    image: lucasremigio/frontend:${TAG}
     ports:
       - "80:80"
       - "443:443"
@@ -12,7 +12,7 @@ services:
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro # Ensure the live folder is accessible
 
   app:
-    image: lucas-remigio/app:${TAG}
+    image: lucasremigio/app:${TAG}
     ports:
       - "8080:8080"
     depends_on:
