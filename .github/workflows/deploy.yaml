@@ -43,12 +43,8 @@ jobs:
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
 
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" > .env
-            echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-
-            echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
-
-            echo "TAG=${{ github.sha }}" >> .env
+            # On the server, only save the tag, in case we need to restart manually
+            echo "TAG=${{ github.sha }}" > .env
 
             export TAG=${{ github.sha }}
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
