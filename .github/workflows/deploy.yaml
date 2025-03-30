@@ -46,6 +46,7 @@ jobs:
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" > .env
             echo "DB_USER=${{ secrets.DB_USER }}" >> .env
             echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+            echo "TAG=${{ github.sha }}" >> .env
 
             # Clean up unused Docker images
             docker image prune -a -f
@@ -53,9 +54,6 @@ jobs:
             # Pull the latest images using the tag (replace YOUR_TAG with the actual tag or use an env var)
             docker pull lucasremigio/frontend:${{ github.sha }}
             docker pull lucasremigio/app:${{ github.sha }}
-            
-            # Update the production docker-compose file if needed (e.g., replace ${TAG} with the commit SHA)
-            export TAG=${{ github.sha }}
 
             # Start or update your containers
             docker compose -f docker-compose.prod.yaml up -d
