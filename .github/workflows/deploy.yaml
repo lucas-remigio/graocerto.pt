@@ -33,6 +33,9 @@ jobs:
       - name: Push Backend Image
         run: docker push lucasremigio/app:${{ github.sha }}
 
+      - name: Push Websocket Image
+        run: docker push lucasremigio/websockets:${{ github.sha }}
+
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh

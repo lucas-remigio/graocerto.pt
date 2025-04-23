@@ -17,25 +17,36 @@
 
 	// Track WebSocket connection status
 	let hasJoinedRoom = false;
-	let unsubscribe: () => void;
 	let wsConnected = false;
 
-	// Subscribe to the connected store
-	connected.subscribe((value) => {
+	// Subscribe to connection status and room logic
+	const unsubConnected = connected.subscribe((value) => {
 		wsConnected = value;
+
+		// Join room when connected and not already joined
+		if (value && $userEmail && !hasJoinedRoom) {
+			// Add a slight delay to ensure WebSocket is fully established
+			setTimeout(() => {
+				sendMessage({
+					type: 'join_room',
+					email: $userEmail
+				});
+				console.log(`JOIN ROOM message sent for ${$userEmail}`);
+				hasJoinedRoom = true;
+			}, 500);
+		}
 	});
 
-	// Subscribe to WebSocket messages
-	messages.subscribe((msgs) => {
+	// Subscribe to messages
+	const unsubMessages = messages.subscribe((msgs) => {
 		if (msgs.length > 0) {
-			// Process the latest message
+			// Process only the latest message to avoid duplicates
 			const latestMsg = msgs[msgs.length - 1];
-			console.log('Latest message:', latestMsg);
 
-			// Check if it's an update we care about
-			if (latestMsg.type === 'account_update' || latestMsg.type === 'transaction_update') {
+			// Check if it's an update notification
+			if (latestMsg.type === 'account_update') {
 				console.log('Received update via WebSocket:', latestMsg);
-				fetchAccounts(); // Refresh data when we get updates
+				fetchAccounts(); // Refresh data
 			}
 		}
 	});
@@ -225,29 +236,12 @@
 	// Trigger the fetching when the component mounts
 	onMount(async () => {
 		await Promise.all([fetchAccounts(), fetchCategories()]);
-
-		// Create a subscription that can be cleaned up later
-		unsubscribe = socket.subscribe((ws) => {
-			// Only send join_room once per connection
-			if (ws && $userEmail && !hasJoinedRoom) {
-				sendMessage({
-					type: 'join_room',
-					email: $userEmail
-				});
-				console.log(`Joining WebSocket room for ${$userEmail}`);
-				hasJoinedRoom = true;
-			}
-
-			// Reset flag when connection is lost
-			if (!ws) {
-				hasJoinedRoom = false;
-			}
-		});
 	});
 
 	// Clean up subscription when component is destroyed
 	onDestroy(() => {
-		if (unsubscribe) unsubscribe();
+		unsubConnected();
+		unsubMessages();
 	});
 </script>
 

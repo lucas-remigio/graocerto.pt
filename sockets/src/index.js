@@ -1,4 +1,4 @@
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 import express from "express";
 import { createServer } from "http";
 import * as dotenv from "dotenv";
@@ -70,7 +70,7 @@ wss.on("connection", (ws, req) => {
         if (rooms.has(email)) {
           // Broadcast to all clients in room except sender
           rooms.get(email).forEach((client) => {
-            if (client !== ws && client.readyState === WebSocketServer.OPEN) {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
               try {
                 // Get the recipient's client ID
                 const recipientInfo = clients.get(client);
