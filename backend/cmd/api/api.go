@@ -58,25 +58,27 @@ func (s *APIServer) Run() error {
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
+	// Define allowed origins
+	allowedOrigins := map[string]bool{
+		"http://localhost":             true,
+		"https://lucas-remigio-dev.pt": true,
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 
-		// Allow requests from localhost and lucas-remigio-dev.pt
-		if origin != "" && (origin == "http://localhost" ||
+		// Check if origin is allowed directly or is localhost with port
+		isAllowed := allowedOrigins[origin] ||
 			strings.HasPrefix(origin, "http://localhost:") ||
-			origin == "http://lucas-remigio-dev.pt" ||
-			strings.HasPrefix(origin, "http://lucas-remigio-dev.pt:") ||
-			origin == "https://lucas-remigio-dev.pt" ||
-			strings.HasPrefix(origin, "https://lucas-remigio-dev.pt:")) {
+			strings.HasPrefix(origin, "https://lucas-remigio-dev.pt:")
+
+		if isAllowed {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		}
-		// Allow credentials (cookies) to be sent with the request
+
+		// Common CORS headers
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		// Allow specific HTTP methods
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-
-		// Allow specific headers
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		// Handle preflight requests

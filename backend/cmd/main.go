@@ -17,18 +17,10 @@ func main() {
 
 	// Check if we should use remote database
 	if remoteUrl := config.Envs.RemoteDBUrl; remoteUrl != "" {
-		dbConfig = parseRemoteDbUrl(remoteUrl)
+		dbConfig = parseDatabaseUrl(remoteUrl, true)
 		log.Println("Using remote database connection")
 	} else {
-		dbConfig = &mysql.Config{
-			User:                 config.Envs.DBUser,
-			Passwd:               config.Envs.DBPassword,
-			Addr:                 config.Envs.DBAddress,
-			DBName:               config.Envs.DBName,
-			Net:                  "tcp",
-			AllowNativePasswords: true,
-			ParseTime:            true,
-		}
+		dbConfig = parseDatabaseUrl(config.Envs.DatabaseUrl, false)
 		log.Println("Using local database connection")
 	}
 
@@ -46,13 +38,13 @@ func main() {
 	}
 }
 
-// Parse remote database URL into MySQL config
-func parseRemoteDbUrl(remoteUrl string) *mysql.Config {
-	log.Println("Parsing remote DB URL:", remoteUrl)
+// Parse  database URL into MySQL config
+func parseDatabaseUrl(dbUrl string, isRemote bool) *mysql.Config {
+	log.Println("Parsing database URL:", dbUrl)
 	// Parse the URL
-	u, err := url.Parse(remoteUrl)
+	u, err := url.Parse(dbUrl)
 	if err != nil {
-		log.Fatalf("Failed to parse remote DB URL: %v", err)
+		log.Fatalf("Failed to parse database URL: %v", err)
 	}
 
 	// Extract username and password
@@ -75,7 +67,11 @@ func parseRemoteDbUrl(remoteUrl string) *mysql.Config {
 		Net:                  "tcp",
 		AllowNativePasswords: true,
 		ParseTime:            true,
-		TLSConfig:            "skip-verify", // Enable SSL
+	}
+
+	if isRemote {
+		// Set the TLS config for remote connections
+		config.TLSConfig = "skip-verify"
 	}
 
 	return config

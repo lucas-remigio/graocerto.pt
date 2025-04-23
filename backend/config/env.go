@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 
@@ -11,15 +10,10 @@ import (
 type Config struct {
 	PublicHost             string
 	Port                   string
-	DBUser                 string
-	DBPassword             string
-	DBHost                 string
-	DBAddress              string
-	DBName                 string
 	JWTExpirationInSeconds int64
 	JWTSecret              string
 	OpenAIKey              string
-	DBUrl                  string
+	DatabaseUrl            string
 	RemoteDBUrl            string
 }
 
@@ -31,14 +25,10 @@ func initConfig() Config {
 	return Config{
 		PublicHost:             getEnv("PUBLIC_HOST", "http://localhost"),
 		Port:                   getEnv("PORT", "8080"),
-		DBUser:                 getEnv("DB_USER", "root"),
-		DBPassword:             getEnv("DB_PASSWORD", ""),
-		DBAddress:              fmt.Sprintf("%s:%s", getEnv("DB_HOST", "localhost"), getEnv("DB_PORT", "3306")),
-		DBName:                 getEnv("DB_NAME", "wallet_tracker"),
 		JWTExpirationInSeconds: getEnvAsInt("JWT_EXPIRATION_IN_SECONDS", 3600*24*7),
 		JWTSecret:              getEnv("JWT_SECRET", "not-so-secret"),
 		OpenAIKey:              getEnv("OPENAI_API_KEY", "not-so-secret"),
-		DBUrl:                  getEnv("DB_URL", "mysql"),
+		DatabaseUrl:            getEnv("DATABASE_URL", "mysql"),
 		RemoteDBUrl:            getEnv("REMOTE_DB_URL", ""),
 	}
 }

@@ -23,12 +23,10 @@ services:
     depends_on:
       - db
     environment:
-      - DB_HOST=mysql-container
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=wallet_tracker
+      # Single connection string for local database
+      - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@mysql-container:3306/wallet_tracker
       # This is to test the remote database in dev. If this url is given, the backend will prioritize it over the local database.
-      - REMOTE_DB_URL=${REMOTE_DB_URL}
+      # - REMOTE_DB_URL=${REMOTE_DB_URL}
 
   db:
     image: mysql:8
