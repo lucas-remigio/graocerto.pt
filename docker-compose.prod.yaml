@@ -14,24 +14,25 @@ services:
     image: lucasremigio/app:${TAG}
     ports:
       - "8080:8080"
-    depends_on:
-      - db
+    # depends_on:
+    #   - db
     environment:
-      - DB_HOST=mysql-container
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=wallet_tracker
+      - REMOTE_DB_URL=${REMOTE_DB_URL}
+      # - DB_HOST=mysql-container
+      # - DB_USER=${DB_USER}
+      # - DB_PASSWORD=${DB_PASSWORD}
+      # - DB_NAME=wallet_tracker
 
-  db:
-    image: mysql:8
-    container_name: mysql-container
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: wallet_tracker
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
+      # db:
+      #   image: mysql:8
+      #   container_name: mysql-container
+      #   environment:
+      #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      #     MYSQL_DATABASE: wallet_tracker
+      #   ports:
+      #     - "3306:3306"
+      #   volumes:
+      #     - mysql_data:/var/lib/mysql
 
 volumes:
   mysql_data:

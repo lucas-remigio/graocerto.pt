@@ -50,6 +50,7 @@ jobs:
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             export DB_USER=${{ secrets.DB_USER }}
             export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            export REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
 
             docker image prune -a -f
              

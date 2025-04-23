@@ -19,6 +19,8 @@ type Config struct {
 	JWTExpirationInSeconds int64
 	JWTSecret              string
 	OpenAIKey              string
+	DBUrl                  string
+	RemoteDBUrl            string
 }
 
 var Envs = initConfig()
@@ -36,6 +38,8 @@ func initConfig() Config {
 		JWTExpirationInSeconds: getEnvAsInt("JWT_EXPIRATION_IN_SECONDS", 3600*24*7),
 		JWTSecret:              getEnv("JWT_SECRET", "not-so-secret"),
 		OpenAIKey:              getEnv("OPENAI_API_KEY", "not-so-secret"),
+		DBUrl:                  getEnv("DB_URL", "mysql"),
+		RemoteDBUrl:            getEnv("REMOTE_DB_URL", ""),
 	}
 }
 

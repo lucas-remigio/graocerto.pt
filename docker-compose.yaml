@@ -5,8 +5,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    depends_on:
+      - app
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -25,6 +27,8 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=wallet_tracker
+      # This is to test the remote database in dev. If this url is given, the backend will prioritize it over the local database.
+      - REMOTE_DB_URL=${REMOTE_DB_URL}
 
   db:
     image: mysql:8
