@@ -2,13 +2,31 @@ import { WebSocket, WebSocketServer } from "ws";
 import express from "express";
 import { createServer } from "http";
 import * as dotenv from "dotenv";
+import cors from "cors"; // Add this dependency
 
 dotenv.config();
 
 const PORT = process.env.PORT || 8090;
 const app = express();
+
+// Add CORS middleware for the initial HTTP handshake
+app.use(
+  cors({
+    origin: [
+      "https://lucas-remigio-dev.pt",
+      "http://localhost:3000",
+      "http://localhost:5173",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
+
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({
+  server,
+  path: "/ws", // This makes the WebSocket server only handle /ws path
+});
 
 // Track clients and rooms
 const clients = new Map(); // ws -> { id, email }
@@ -140,7 +158,7 @@ wss.on("connection", (ws, req) => {
 });
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/ws/health", (req, res) => {
   res.status(200).send({
     status: "ok",
     connections: clients.size,
@@ -152,7 +170,7 @@ app.get("/health", (req, res) => {
 });
 
 // Add this near your health endpoint
-app.get("/debug-rooms", (req, res) => {
+app.get("/ws/debug-rooms", (req, res) => {
   const roomsDebug = {};
 
   // Collect detailed info about each room
