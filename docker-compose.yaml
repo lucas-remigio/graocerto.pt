@@ -28,7 +28,17 @@ services:
       # This is to test the remote database in dev. If this url is given, the backend will prioritize it over the local database.
       # - REMOTE_DB_URL=${REMOTE_DB_URL}
 
+  websockets:
+    build:
+      context: ./sockets
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+
   db:
+    # Dev environment database
     image: mysql:8
     container_name: mysql-container
     environment:

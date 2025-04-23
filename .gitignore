@@ -22,3 +22,13 @@
 go.work
 backend/.env
 /backend/node_modules
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo

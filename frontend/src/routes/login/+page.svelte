@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import axios from '$lib/axios';
-	import { token } from '$lib/stores/auth';
+	import { login, token } from '$lib/stores/auth';
 	import type { AxiosError } from 'axios';
 
 	let email = '';
@@ -24,8 +24,7 @@
 
 			if (authToken) {
 				// Store in both localStorage and Svelte store
-				localStorage.setItem('token', authToken);
-				token.set(authToken);
+				login(authToken, email);
 			}
 
 			goto('/');

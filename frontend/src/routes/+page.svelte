@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
+	import { connected, socket, messages, sendMessage } from '$lib/ws'; // Import WebSocket utilities
 	import api_axios from '$lib/axios';
 	import type {
 		Account,
@@ -12,6 +13,32 @@
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
 	import CreateAccount from '$components/CreateAccount.svelte';
+	import { userEmail } from '$lib/stores/auth';
+
+	// Track WebSocket connection status
+	let hasJoinedRoom = false;
+	let unsubscribe: () => void;
+	let wsConnected = false;
+
+	// Subscribe to the connected store
+	connected.subscribe((value) => {
+		wsConnected = value;
+	});
+
+	// Subscribe to WebSocket messages
+	messages.subscribe((msgs) => {
+		if (msgs.length > 0) {
+			// Process the latest message
+			const latestMsg = msgs[msgs.length - 1];
+			console.log('Latest message:', latestMsg);
+
+			// Check if it's an update we care about
+			if (latestMsg.type === 'account_update' || latestMsg.type === 'transaction_update') {
+				console.log('Received update via WebSocket:', latestMsg);
+				fetchAccounts(); // Refresh data when we get updates
+			}
+		}
+	});
 
 	// Local component state
 	let accounts: Account[] = [];
@@ -148,32 +175,79 @@
 
 	function handleNewTransaction() {
 		fetchAccounts();
+
+		wsUpdateScreen();
 	}
 
 	function handleNewAccount() {
 		closeAccountModal();
 		fetchAccounts();
+
+		wsUpdateScreen();
 	}
 
 	function handleUpdateTransaction() {
 		fetchAccounts();
+
+		wsUpdateScreen();
 	}
 
 	function handleUpdateAccount() {
 		fetchAccounts();
+
+		wsUpdateScreen();
 	}
 
 	function handleDeleteAccount(account: Account) {
 		deleteAccount(account);
+
+		wsUpdateScreen();
 	}
 
 	function handleDeleteTransaction(transaction: TransactionDto) {
 		deleteTransaction(transaction);
+
+		wsUpdateScreen();
+	}
+
+	function wsUpdateScreen() {
+		// this function is called on every deletion, edition or creation of both an account and a transaction
+		// Notify other users of the change
+		if (wsConnected) {
+			sendMessage({
+				type: 'account_update',
+				action: 'update',
+				email: $userEmail
+			});
+		}
 	}
 
 	// Trigger the fetching when the component mounts
 	onMount(async () => {
 		await Promise.all([fetchAccounts(), fetchCategories()]);
+
+		// Create a subscription that can be cleaned up later
+		unsubscribe = socket.subscribe((ws) => {
+			// Only send join_room once per connection
+			if (ws && $userEmail && !hasJoinedRoom) {
+				sendMessage({
+					type: 'join_room',
+					email: $userEmail
+				});
+				console.log(`Joining WebSocket room for ${$userEmail}`);
+				hasJoinedRoom = true;
+			}
+
+			// Reset flag when connection is lost
+			if (!ws) {
+				hasJoinedRoom = false;
+			}
+		});
+	});
+
+	// Clean up subscription when component is destroyed
+	onDestroy(() => {
+		if (unsubscribe) unsubscribe();
 	});
 </script>
 

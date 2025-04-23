@@ -10,6 +10,15 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro # Mount SSL certificates as read-only
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro # Ensure the live folder is accessible
 
+  websockets:
+    build:
+      context: ./sockets
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+
   app:
     image: lucasremigio/app:${TAG}
     ports:
