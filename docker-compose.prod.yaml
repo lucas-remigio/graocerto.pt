@@ -11,9 +11,7 @@ services:
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro # Ensure the live folder is accessible
 
   websockets:
-    build:
-      context: ./sockets
-      dockerfile: Dockerfile
+    image: lucasremigio/websockets:${TAG}
     ports:
       - "8090:8090"
     environment:

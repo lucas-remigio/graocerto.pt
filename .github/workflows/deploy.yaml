@@ -20,6 +20,10 @@ jobs:
         run: |
           docker build -f backend/Dockerfile -t lucasremigio/app:${{ github.sha }} ./backend
 
+      - name: Build Websocket Image
+        run: |
+          docker build -f sockets/Dockerfile -t lucasremigio/websockets:${{ github.sha }} ./sockets
+
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
@@ -56,6 +60,7 @@ jobs:
              
             docker pull lucasremigio/frontend:${{ github.sha }}
             docker pull lucasremigio/app:${{ github.sha }}
+            docker pull lucasremigio/websockets:${{ github.sha }} 
 
             docker compose -f docker-compose.prod.yaml up -d
           EOF
