@@ -48,6 +48,7 @@ func main() {
 
 // Parse remote database URL into MySQL config
 func parseRemoteDbUrl(remoteUrl string) *mysql.Config {
+	log.Println("Parsing remote DB URL:", remoteUrl)
 	// Parse the URL
 	u, err := url.Parse(remoteUrl)
 	if err != nil {
