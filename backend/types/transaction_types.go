@@ -8,6 +8,7 @@ type TransactionStore interface {
 	GetTransactionsDTOByAccountToken(accountToken string) ([]*TransactionDTO, error)
 	UpdateTransaction(transaction *UpdateTransactionPayload) error
 	DeleteTransaction(transactionId int, userId int) error
+	GetTransactionsByAccountTokenAndMonth(accountToken string, month, year int) ([]*Transaction, error)
 }
 
 type CreateTransactionPayload struct {

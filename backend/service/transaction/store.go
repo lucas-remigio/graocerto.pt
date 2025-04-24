@@ -87,6 +87,35 @@ func (s *Store) GetTransactionsByAccountToken(accountToken string) ([]*types.Tra
 	return transactions, nil
 }
 
+func (s *Store) GetTransactionsByAccountTokenAndMonth(accountToken string, month, year int) ([]*types.Transaction, error) {
+	query := `
+        SELECT id, account_token, category_id, amount, description, date, balance, created_at 
+        FROM transactions 
+        WHERE account_token = ? 
+        AND MONTH(date) = ? 
+        AND YEAR(date) = ? 
+        ORDER BY date DESC, id DESC
+    `
+
+	rows, err := s.db.Query(query, accountToken, month, year)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	transactions := make([]*types.Transaction, 0)
+	for rows.Next() {
+		transaction, err := scanRowIntoTransaction(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, nil
+}
+
 func (s *Store) GetTransactionsDTOByAccountToken(accountToken string) ([]*types.TransactionDTO, error) {
 
 	rows, err := s.db.Query("SELECT "+

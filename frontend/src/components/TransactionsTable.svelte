@@ -1,12 +1,14 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
-	import type { Account, CategoryDto, TransactionDto } from '$lib/types';
-	import { CircleDollarSign, Pencil, Plus, Trash } from 'lucide-svelte';
+	import type { Account, AiFeedbackResponse, CategoryDto, TransactionDto } from '$lib/types';
+	import { BarChart, CircleDollarSign, Pencil, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import TransactionFilters from './TransactionFilters.svelte';
+	import api_axios from '$lib/axios';
+	import AiFeedback from './AiFeedback.svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -16,6 +18,8 @@
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
 	let showDeleteTransactionModal = false;
+	let showAiFeedbackModal = false;
+	let error: string = '';
 
 	let selectedTransaction: TransactionDto | null = null;
 	let activeFilter: any = null;
@@ -132,6 +136,14 @@
 		closeDeleteTransactionModal();
 	}
 
+	function closeAiFeedbackModal() {
+		showAiFeedbackModal = false;
+	}
+
+	function openAiFeedbackModal() {
+		showAiFeedbackModal = true;
+	}
+
 	function handleDeleteTransactionConfirm() {
 		closeDeleteTransactionModal();
 		dispatch('deleteTransaction', { transaction: selectedTransaction! });
@@ -170,6 +182,17 @@
 			}));
 	}
 
+	function hasAnyTransactionThisMonth(): boolean {
+		const currentDate = new Date();
+		return transactions.some((tx) => {
+			const txDate = new Date(tx.date);
+			return (
+				txDate.getFullYear() === currentDate.getFullYear() &&
+				txDate.getMonth() === currentDate.getMonth()
+			);
+		});
+	}
+
 	$: groupedTransactions = groupTransactionsByMonth(filteredTransactions);
 </script>
 
@@ -178,6 +201,16 @@
 		<h2 class="mb-4 text-2xl font-semibold">
 			Transactions for {account.account_name}
 		</h2>
+		<!-- Button to get feedback -->
+		{#if hasAnyTransactionThisMonth()}
+			<button
+				class="btn btn-primary shadow-lg"
+				on:click={openAiFeedbackModal}
+				aria-label="Get AI Feedback"
+			>
+				<BarChart class="h-5 w-5" />
+			</button>
+		{/if}
 		<!-- Button to add a new transaction-->
 		<button class="btn btn-primary shadow-lg" on:click={openCreateTransactionModal}>
 			<Plus size={20} />
@@ -293,4 +326,8 @@
 		onConfirm={handleDeleteTransactionConfirm}
 		onCancel={handleDeleteTransactionCancel}
 	></ConfirmAction>
+{/if}
+
+{#if showAiFeedbackModal}
+	<AiFeedback {account} closeModal={closeAiFeedbackModal}></AiFeedback>
 {/if}

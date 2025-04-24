@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
@@ -129,7 +130,12 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string) (*typ
 	}
 
 	// Get the transactions for the account using the transaction store
-	transactions, err := s.transactionsStore.GetTransactionsByAccountToken(accountToken)
+	// Get the current month and year
+	currentTime := time.Now()
+	month := int(currentTime.Month())
+	year := currentTime.Year()
+
+	transactions, err := s.transactionsStore.GetTransactionsByAccountTokenAndMonth(accountToken, month, year)
 	if err != nil {
 		return nil, fmt.Errorf("error getting transactions: %v", err)
 	}
@@ -187,6 +193,8 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string) (*typ
 
 	// Combine template with transactions data
 	fullPrompt := string(promptTemplate) + "\n" + transactionsData.String()
+
+	log.Println("Full prompt:", fullPrompt)
 
 	// Call the OpenAI API to get the feedback
 	message, err := s.openAiStore.GenerateGPT4Response(fullPrompt)

@@ -61,3 +61,8 @@ export interface TransactionType {
 export interface TransactionTypesResponse {
 	transaction_types: TransactionType[];
 }
+
+export interface AiFeedbackResponse {
+	feedback_message: string;
+	in_depth_analysis: string;
+}
