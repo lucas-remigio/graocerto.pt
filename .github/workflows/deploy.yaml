@@ -12,9 +12,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Set up environment variables early in the workflow
+      - name: Set environment variables
+        run: |
+          echo "BACKEND_URL=https://lucas-remigio-dev.pt" >> $GITHUB_ENV
+          echo "SOCKETS_URL=wss://lucas-remigio-dev.pt" >> $GITHUB_ENV
+          echo "FRONTEND_URL=https://lucas-remigio-dev.pt" >> $GITHUB_ENV
+
       - name: Build Frontend Image
         run: |
-          docker build -f frontend/Dockerfile -t lucasremigio/frontend:${{ github.sha }} ./frontend
+          docker build -f frontend/Dockerfile \
+            --build-arg VITE_BACKEND_URL=${{ env.BACKEND_URL }} \
+            --build-arg VITE_SOCKETS_URL=${{ env.SOCKETS_URL }} \
+            -t lucasremigio/frontend:${{ github.sha }} ./frontend
 
       - name: Build Backend Image
         run: |
@@ -62,9 +72,6 @@ jobs:
             export BACKEND_URL=https://lucas-remigio-dev.pt
             export SOCKETS_URL=wss://lucas-remigio-dev.pt
             export FRONTEND_URL=https://lucas-remigio-dev.pt
-
-            export VITE_BACKEND_URL=${BACKEND_URL}
-            export VITE_SOCKETS_URL=${SOCKETS_URL}
 
             docker image prune -a -f
              

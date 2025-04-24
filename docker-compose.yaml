@@ -3,14 +3,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: ${BACKEND_URL}
+        VITE_SOCKETS_URL: ${SOCKETS_URL}
     ports:
       - "3000:3000"
     depends_on:
       - app
     environment:
       - NODE_ENV=development
-      - VITE_BACKEND_URL=http://app:8080
-      - VITE_SOCKETS_URL=http://websockets:8090
     volumes:
       - ./frontend:/app
       - /app/node_modules

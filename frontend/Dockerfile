@@ -4,6 +4,14 @@ FROM node:18-alpine AS build
 # Set the working directory
 WORKDIR /app
 
+# Define build arguments
+ARG VITE_BACKEND_URL
+ARG VITE_SOCKETS_URL
+
+# Make them available as environment variables during build
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+ENV VITE_SOCKETS_URL=$VITE_SOCKETS_URL
+
 # Install pnpm globally
 RUN npm install -g pnpm
 
