@@ -5,6 +5,7 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 # Define build arguments
+# Vite required the ENV variables to be passed as build arguments
 ARG VITE_BACKEND_URL
 ARG VITE_SOCKETS_URL
 
