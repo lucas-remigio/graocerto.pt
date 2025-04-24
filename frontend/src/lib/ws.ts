@@ -2,7 +2,9 @@ import { get, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 // Connection config
-const WS_URL = import.meta.env.PROD ? `wss://${window.location.host}/ws` : 'ws://localhost:8090/ws';
+const SOCKETS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8090';
+const WS_URL = `${SOCKETS_URL}/ws`;
+console.log('WebSocket URL:', WS_URL);
 
 // Simple socket store
 export const socket = writable<WebSocket | null>(null);

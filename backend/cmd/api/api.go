@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
@@ -60,8 +61,8 @@ func (s *APIServer) Run() error {
 func corsMiddleware(next http.Handler) http.Handler {
 	// Define allowed origins
 	allowedOrigins := map[string]bool{
-		"http://localhost":             true,
-		"https://lucas-remigio-dev.pt": true,
+		"http://localhost":      true,
+		config.Envs.FrontendUrl: true,
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

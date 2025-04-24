@@ -19,8 +19,8 @@ func main() {
 	var dbConfig *mysqlConfig.Config
 
 	// Check if we should use remote database
-	if remoteUrl := config.Envs.RemoteDBUrl; remoteUrl != "" {
-		dbConfig = parseDatabaseUrl(remoteUrl, true)
+	if config.Envs.IsProduction {
+		dbConfig = parseDatabaseUrl(config.Envs.RemoteDBUrl, true)
 		log.Println("Using remote database connection")
 	} else {
 		dbConfig = parseDatabaseUrl(config.Envs.DatabaseUrl, false)

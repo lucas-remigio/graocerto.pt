@@ -9,6 +9,8 @@ services:
       - app
     environment:
       - NODE_ENV=development
+      - VITE_BACKEND_URL=http://app:8080
+      - VITE_SOCKETS_URL=http://websockets:8090
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -23,10 +25,12 @@ services:
     depends_on:
       - db
     environment:
+      - IS_PRODUCTION=false
       # Single connection string for local database
       - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@mysql-container:3306/wallet_tracker
       # This is to test the remote database in dev. If this url is given, the backend will prioritize it over the local database.
-      # - REMOTE_DB_URL=${REMOTE_DB_URL}
+      - REMOTE_DB_URL=${REMOTE_DB_URL}
+      - FRONTEND_URL=http://localhost:3000
 
   websockets:
     build:
@@ -36,6 +40,7 @@ services:
       - "8090:8090"
     environment:
       - PORT=8090
+      - FRONTEND_URL=http://localhost:3000
 
   db:
     # Dev environment database

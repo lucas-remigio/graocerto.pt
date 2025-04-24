@@ -9,14 +9,12 @@ dotenv.config();
 const PORT = process.env.PORT || 8090;
 const app = express();
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+
 // Add CORS middleware for the initial HTTP handshake
 app.use(
   cors({
-    origin: [
-      "https://lucas-remigio-dev.pt",
-      "http://localhost:3000",
-      "http://localhost:5173",
-    ],
+    origin: [FRONTEND_URL, "http://localhost:3000", "http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -169,32 +167,6 @@ app.get("/ws/health", (req, res) => {
   });
 });
 
-// Add this near your health endpoint
-app.get("/ws/debug-rooms", (req, res) => {
-  const roomsDebug = {};
-
-  // Collect detailed info about each room
-  for (const [email, clients] of rooms.entries()) {
-    roomsDebug[email] = {
-      totalClients: clients.size,
-      clients: Array.from(clients).map((client) => {
-        const clientInfo = clients.get(client) || { id: "unknown" };
-        return {
-          id: clientInfo.id,
-          readyState: client.readyState,
-        };
-      }),
-    };
-  }
-
-  res.status(200).send({
-    rooms: roomsDebug,
-    clients: Array.from(clients.entries()).map(([_, info]) => ({
-      id: info.id,
-      email: info.email || "not in a room",
-    })),
-  });
-});
 
 // Start server
 server.listen(PORT, () => {

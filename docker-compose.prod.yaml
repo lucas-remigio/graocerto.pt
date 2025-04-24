@@ -6,6 +6,8 @@ services:
       - "443:443"
     environment:
       - NODE_ENV=production
+      - VITE_BACKEND_URL=${BACKEND_URL}
+      - VITE_SOCKETS_URL=${SOCKETS_URL}
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro # Mount SSL certificates as read-only
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro # Ensure the live folder is accessible
@@ -16,6 +18,7 @@ services:
       - "8090:8090"
     environment:
       - PORT=8090
+      - FRONTEND_URL=${FRONTEND_URL}
 
   app:
     image: lucasremigio/app:${TAG}
@@ -24,9 +27,10 @@ services:
     # depends_on:
     #   - db
     environment:
+      - IS_PRODUCTION=true
       - REMOTE_DB_URL=${REMOTE_DB_URL}
-      # - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@mysql-container:3306/wallet_tracker
-
+      - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@mysql-container:3306/wallet_tracker
+      - FRONTEND_URL=${FRONTEND_URL}
       # db:
       #   image: mysql:8
       #   container_name: mysql-container

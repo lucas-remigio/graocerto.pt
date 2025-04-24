@@ -15,6 +15,8 @@ type Config struct {
 	OpenAIKey              string
 	DatabaseUrl            string
 	RemoteDBUrl            string
+	FrontendUrl            string
+	IsProduction           bool
 }
 
 var Envs = initConfig()
@@ -30,6 +32,8 @@ func initConfig() Config {
 		OpenAIKey:              getEnv("OPENAI_API_KEY", "not-so-secret"),
 		DatabaseUrl:            getEnv("DATABASE_URL", "mysql"),
 		RemoteDBUrl:            getEnv("REMOTE_DB_URL", ""),
+		FrontendUrl:            getEnv("FRONTEND_URL", "http://localhost:3000"),
+		IsProduction:           getEnvAsBool("IS_PRODUCTION", false),
 	}
 }
 
@@ -52,4 +56,16 @@ func getEnvAsInt(key string, fallback int64) int64 {
 
 	return fallback
 
+}
+
+func getEnvAsBool(key string, fallback bool) bool {
+	if value, ok := os.LookupEnv(key); ok {
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fallback
+		}
+		return b
+	}
+
+	return fallback
 }
