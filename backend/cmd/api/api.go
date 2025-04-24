@@ -9,6 +9,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
+	"github.com/lucas-remigio/wallet-tracker/service/openai"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
@@ -35,10 +36,6 @@ func (s *APIServer) Run() error {
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(apiV1Router)
 
-	accountStore := account.NewStore(s.db)
-	accountHandler := account.NewHandler(accountStore)
-	accountHandler.RegisterRoutes(apiV1Router)
-
 	transactionTypesStore := transaction_types.NewStore(s.db)
 	transactionTypesHandler := transaction_types.NewHandler(transactionTypesStore)
 	transactionTypesHandler.RegisterRoutes(apiV1Router)
@@ -47,9 +44,17 @@ func (s *APIServer) Run() error {
 	categoryHandler := category.NewHandler(categoryStore)
 	categoryHandler.RegisterRoutes(apiV1Router)
 
-	transactionStore := transaction.NewStore(s.db)
+	openAiStore := openai.NewClient()
+
+	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
+	accountHandler := account.NewHandler(accountStore)
+	accountHandler.RegisterRoutes(apiV1Router)
+
+	transactionStore := transaction.NewStore(s.db, accountStore)
 	transactionHandler := transaction.NewHandler(transactionStore)
 	transactionHandler.RegisterRoutes(apiV1Router)
+
+	accountStore.SetTransactionStore(transactionStore)
 
 	// Register a handler for paths starting with /api/v1
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", apiV1Router))

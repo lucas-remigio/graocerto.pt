@@ -1,6 +1,6 @@
 package types
 
-type OpenAI interface {
+type OpenAIStore interface {
 	GenerateGPT4Response(prompt string) (string, error)
 }
 
@@ -23,4 +23,10 @@ type GPTResponse struct {
 	Choices []struct {
 		Message Message `json:"message"`
 	} `json:"choices"`
+}
+
+// MY TYPES
+type MonthlyFeedback struct {
+	FeedbackMessage string `json:"feedback_message"`
+	InDepthAnalysis string `json:"in_depth_analysis"`
 }

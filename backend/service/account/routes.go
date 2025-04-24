@@ -23,6 +23,7 @@ func NewHandler(store types.AccountStore) *Handler {
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/accounts", h.AccountsHandler)
 	router.HandleFunc("/accounts/{id}", h.ChangeAccountHandler)
+	router.HandleFunc("/accounts/{id}/feedback-month", h.GetAccountFeedbackMonthly)
 }
 
 func (h *Handler) AccountsHandler(w http.ResponseWriter, r *http.Request) {
@@ -205,4 +206,43 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
+func (h *Handler) GetAccountFeedbackMonthly(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get the user id by the token from authorization
+	authToken := r.Header.Get("Authorization")
+	userId, err := auth.GetUserIdFromToken(authToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	// get the account token from the url
+	// url is like /accounts/{accountId}/feedback-month
+	accountToken := strings.TrimPrefix(r.URL.Path, "/accounts/")
+	if accountToken == "" {
+		http.Error(w, "Missing account token", http.StatusBadRequest)
+		return
+	}
+
+	// remove the feedback-month from the account token
+	accountToken = strings.TrimSuffix(accountToken, "/feedback-month")
+	if accountToken == "" {
+		http.Error(w, "Missing account token", http.StatusBadRequest)
+		return
+	}
+
+	// get the account feedback monthly
+	feedback, err := h.store.GetAccountFeedbackMonthly(userId, accountToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, feedback)
 }

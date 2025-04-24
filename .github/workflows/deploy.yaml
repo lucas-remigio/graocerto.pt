@@ -62,6 +62,10 @@ jobs:
             export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             export REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
 
+            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            export JWT_SECRET=${{ secrets.JWT_SECRET }}
+            export JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
+
             # Use the repository variable
             export FRONTEND_URL=${{ vars.FRONTEND_URL }}
             export BACKEND_URL=${{ vars.BACKEND_URL }}

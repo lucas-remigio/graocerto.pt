@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/types"
 )
 
 type Store struct {
-	db *sql.DB
+	db           *sql.DB
+	accountStore types.AccountStore
 }
 
-func NewStore(db *sql.DB) *Store {
+func NewStore(db *sql.DB, accountStore types.AccountStore) *Store {
 	return &Store{
-		db: db,
+		db:           db,
+		accountStore: accountStore,
 	}
 }
 
@@ -32,8 +33,7 @@ func (s *Store) CreateTransaction(transaction *types.Transaction) error {
 		return fmt.Errorf("transfers are not allowed here")
 	}
 
-	accStore := account.NewStore(s.db)
-	account, err := accStore.GetAccountByToken(transaction.AccountToken)
+	account, err := s.accountStore.GetAccountByToken(transaction.AccountToken)
 	if err != nil {
 		return fmt.Errorf("failed to get account: %w", err)
 	}
@@ -143,8 +143,7 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload) e
 	}
 
 	// get the account
-	accStore := account.NewStore(s.db)
-	account, err := accStore.GetAccountByToken(tx.AccountToken)
+	account, err := s.accountStore.GetAccountByToken(tx.AccountToken)
 	if err != nil {
 		return fmt.Errorf("failed to get account: %w", err)
 	}
@@ -257,8 +256,7 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) error {
 	}
 
 	// get the account
-	accStore := account.NewStore(s.db)
-	account, err := accStore.GetAccountByToken(tx.AccountToken)
+	account, err := s.accountStore.GetAccountByToken(tx.AccountToken)
 	if err != nil {
 		return fmt.Errorf("failed to get account: %w", err)
 	}

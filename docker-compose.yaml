@@ -29,9 +29,12 @@ services:
       - IS_PRODUCTION=false
       # Single connection string for local database
       - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@mysql-container:3306/wallet_tracker
-      # This is to test the remote database in dev. If this url is given, the backend will prioritize it over the local database.
+      # This is to test the remote database in dev. Change IS_PRODUCTION to true to use the remote database
       - REMOTE_DB_URL=${REMOTE_DB_URL}
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=${FRONTEND_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_IN_SECONDS=${JWT_EXPIRATION_IN_SECONDS}
 
   websockets:
     build:
@@ -41,7 +44,7 @@ services:
       - "8090:8090"
     environment:
       - PORT=8090
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=${FRONTEND_URL}
 
   db:
     # Dev environment database

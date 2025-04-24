@@ -80,5 +80,33 @@ func (c *Client) GenerateGPT4Response(prompt string) (string, error) {
 		return "", fmt.Errorf("no choices returned in OpenAI response")
 	}
 
-	return gptResponse.Choices[0].Message.Content, nil
+	message, err := c.cleanAiMessage(gptResponse.Choices[0].Message.Content)
+	if err != nil {
+		return "", fmt.Errorf("failed to clean AI message: %w", err)
+	}
+
+	return message, nil
+}
+
+func (c *Client) cleanAiMessage(message string) (string, error) {
+	// This function receives the message from OpenAi, and cleans everything before the { and after the }
+	// so that only the json format is returned
+
+	// Find the first occurrence of '{'
+	start := bytes.Index([]byte(message), []byte("{"))
+	if start == -1 {
+		return "", fmt.Errorf("no JSON object found in the message")
+	}
+
+	// Find the last occurrence of '}'
+	end := bytes.LastIndex([]byte(message), []byte("}"))
+	if end == -1 {
+		return "", fmt.Errorf("no JSON object found in the message")
+	}
+
+	// Extract the JSON object
+	jsonObject := message[start : end+1]
+
+	return string(jsonObject), nil
+
 }

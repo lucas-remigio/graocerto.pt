@@ -2,9 +2,11 @@ package types
 
 type AccountStore interface {
 	GetAccountsByUserId(userId int) ([]*Account, error)
+	GetAccountByToken(token string) (*Account, error)
 	CreateAccount(account *Account) error
 	UpdateAccount(account *Account) error
 	DeleteAccount(token string, userId int) error
+	GetAccountFeedbackMonthly(userId int, accountToken string) (*MonthlyFeedback, error)
 }
 
 type CreateAccountPayload struct {
