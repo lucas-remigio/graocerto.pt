@@ -5,14 +5,13 @@
 		X,
 		Lightbulb,
 		BarChart,
-		TrendingUp,
 		PieChart,
 		CalendarClock,
 		ArrowUpRight,
 		Loader2,
 		AlertCircle
 	} from 'lucide-svelte';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 
 	export let account: Account;

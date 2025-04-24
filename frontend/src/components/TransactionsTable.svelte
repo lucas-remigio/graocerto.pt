@@ -1,13 +1,12 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
-	import type { Account, AiFeedbackResponse, CategoryDto, TransactionDto } from '$lib/types';
-	import { BarChart, CircleDollarSign, Pencil, Plus, Trash } from 'lucide-svelte';
+	import type { Account, CategoryDto, TransactionDto } from '$lib/types';
+	import { Bot, CircleDollarSign, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import TransactionFilters from './TransactionFilters.svelte';
-	import api_axios from '$lib/axios';
 	import AiFeedback from './AiFeedback.svelte';
 
 	// Export props for transactions array and the account name.
@@ -201,21 +200,25 @@
 		<h2 class="mb-4 text-2xl font-semibold">
 			Transactions for {account.account_name}
 		</h2>
-		<!-- Button to get feedback -->
-		{#if hasAnyTransactionThisMonth()}
-			<button
-				class="btn btn-primary shadow-lg"
-				on:click={openAiFeedbackModal}
-				aria-label="Get AI Feedback"
-			>
-				<BarChart class="h-5 w-5" />
+		<div class="flex items-center gap-4">
+			<!-- Button to get feedback -->
+			{#if hasAnyTransactionThisMonth()}
+				<button
+					class="btn btn-primary shadow-lg"
+					on:click={openAiFeedbackModal}
+					aria-label="Get AI Feedback"
+				>
+					<div class="flex items-center gap-1">
+						<Bot size={20} />
+					</div>
+				</button>
+			{/if}
+			<!-- Button to add a new transaction-->
+			<button class="btn btn-primary shadow-lg" on:click={openCreateTransactionModal}>
+				<Plus size={20} />
+				<CircleDollarSign size={20} />
 			</button>
-		{/if}
-		<!-- Button to add a new transaction-->
-		<button class="btn btn-primary shadow-lg" on:click={openCreateTransactionModal}>
-			<Plus size={20} />
-			<CircleDollarSign size={20} />
-		</button>
+		</div>
 	</div>
 
 	<div class="overflow-x-auto">
