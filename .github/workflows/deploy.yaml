@@ -63,6 +63,9 @@ jobs:
             export SOCKETS_URL=wss://lucas-remigio-dev.pt
             export FRONTEND_URL=https://lucas-remigio-dev.pt
 
+            export VITE_BACKEND_URL=${BACKEND_URL}
+            export VITE_SOCKETS_URL=${SOCKETS_URL}
+
             docker image prune -a -f
              
             docker pull lucasremigio/frontend:${{ github.sha }}

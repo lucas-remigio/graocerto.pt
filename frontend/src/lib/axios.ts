@@ -6,6 +6,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 
 const API_URL = `${BACKEND_URL}/api/v1`;
 console.log('API URL:', API_URL);
+console.log('Backend URL:', import.meta.env.VITE_BACKEND_URL);
 
 const api_axios = axios.create({
 	baseURL: API_URL,
