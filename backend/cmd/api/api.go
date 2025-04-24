@@ -5,7 +5,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/lucas-remigio/wallet-tracker/cmd/api/middlewares"
 	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
@@ -56,11 +58,27 @@ func (s *APIServer) Run() error {
 
 	accountStore.SetTransactionStore(transactionStore)
 
+	// Create a rate limiter: 10 requests per second with burst of 20
+	// Clean up unused rate limiters after 5 minutes
+	rateLimiter := middlewares.NewClientRateLimiter(10, 20, 5*time.Minute)
+
 	// Register a handler for paths starting with /api/v1
-	router.Handle("/api/v1/", http.StripPrefix("/api/v1", apiV1Router))
+	apiHandlerChain := chainMiddleware(
+		http.StripPrefix("/api/v1", apiV1Router),
+		middlewares.RateLimitMiddleware(rateLimiter),
+	)
+	router.Handle("/api/v1/", apiHandlerChain)
 
 	log.Println("Server is running on", s.addr)
 	return http.ListenAndServe(s.addr, corsMiddleware(router))
+}
+
+// Define a helper function to chain middlewares
+func chainMiddleware(h http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
+	for _, middleware := range middlewares {
+		h = middleware(h)
+	}
+	return h
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
