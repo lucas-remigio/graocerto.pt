@@ -3,7 +3,7 @@ Analyze the following transaction data and provide a comprehensive assessment.
 
 INSTRUCTIONS:
 1. Analyze the provided transactions spanning the account period
-2. Consider both income (positive amounts) and expenses (negative amounts)
+2. Consider both income (Credits) and expenses (Debits)
 3. Use the transaction descriptions and categories to identify patterns
 4. Provide a well-structured analysis following the format below
 
@@ -11,6 +11,9 @@ Keep your analysis constructive and actionable, focusing on practical insights t
 Be friendly and supportive in your tone, as if you are a trusted advisor. You can even use funnier language, brainrot included.
 Be specific with numbers and percentages where appropriate. 
 Limit your response to the most important insights rather than listing every transaction.
+
+The feedback message should be a summary of the analysis, keeping it concise and engaging.
+The in-depth analysis should be clear and concise, providing actionable insights and suggestions for improvement.
 
 Return only the following JSON format without any additional text or explanation:
 ### Return format:

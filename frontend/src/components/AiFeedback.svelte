@@ -55,11 +55,13 @@
 
 <div class="modal modal-open">
 	<div
-		class="modal-box relative max-w-3xl overflow-hidden p-0"
+		class="modal-box relative flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0"
 		transition:fly={{ y: 20, duration: 300 }}
 	>
-		<!-- Gradient header -->
-		<div class="bg-gradient-to-r from-purple-600 to-blue-500 px-6 py-5 text-white shadow-lg">
+		<!-- Gradient header (fixed) -->
+		<div
+			class="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-blue-500 px-6 py-5 text-white shadow-lg"
+		>
 			<div class="flex items-center gap-2">
 				<BarChart class="h-5 w-5" />
 				<h3 class="text-xl font-bold">Financial Insights: {account.account_name}</h3>
@@ -82,8 +84,8 @@
 			</div>
 		</div>
 
-		<!-- Message body -->
-		<div class="p-6">
+		<!-- Message body (scrollable) -->
+		<div class="overflow-y-auto p-6">
 			{#if isLoading}
 				<div class="flex flex-col items-center justify-center py-12" in:fade>
 					<Loader2 class="mb-4 h-12 w-12 animate-spin text-blue-500" />
