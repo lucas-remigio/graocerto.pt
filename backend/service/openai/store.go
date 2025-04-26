@@ -26,7 +26,7 @@ func (c *Client) GenerateGPT4Response(prompt string) (string, error) {
 
 	// Create the request payload
 	request := types.GPTRequest{
-		Model: "gpt-4", // Adjust to "gpt-4-turbo" if that's the specific version you want
+		Model: "gpt-4.1-mini",
 		Messages: []types.Message{
 			{Role: "system", Content: "You are a helpful assistant."},
 			{Role: "user", Content: prompt},
