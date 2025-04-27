@@ -36,7 +36,8 @@ RUN pnpm build
 
 # Serve the build with Nginx
 FROM nginx:stable
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy the file to the templates directory for environment variable substitution
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80

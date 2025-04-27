@@ -1,11 +1,13 @@
 services:
   frontend:
     image: lucasremigio/frontend:${TAG}
+    # No envs here. As they are all build arguments, they can be seen on the deploy.yaml where they are built into the image
     ports:
       - "80:80"
       - "443:443"
     environment:
       - NODE_ENV=production
+      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro # Mount SSL certificates as read-only
 
