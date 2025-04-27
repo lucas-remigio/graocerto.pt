@@ -8,10 +8,14 @@ WORKDIR /app
 # Vite required the ENV variables to be passed as build arguments
 ARG VITE_BACKEND_URL
 ARG VITE_SOCKETS_URL
+ARG VITE_BACKEND_PORT
+ARG VITE_SOCKETS_PORT
 
 # Make them available as environment variables during build
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV VITE_SOCKETS_URL=$VITE_SOCKETS_URL
+ENV VITE_BACKEND_PORT=$VITE_BACKEND_PORT
+ENV VITE_SOCKETS_PORT=$VITE_SOCKETS_PORT
 
 # Install pnpm globally
 RUN npm install -g pnpm

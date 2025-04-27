@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { get, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 // Connection config
 const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'ws://localhost:8090';
-const WS_URL = `${SOCKETS_URL}/ws`;
+const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '8090';
+
+const WS_URL = `${SOCKETS_URL}:${SOCKETS_PORT}/ws`;
 console.log('WebSocket URL:', WS_URL);
-console.log('WebSocket URL:', import.meta.env.VITE_SOCKETS_URL);
 
 // Simple socket store
 export const socket = writable<WebSocket | null>(null);

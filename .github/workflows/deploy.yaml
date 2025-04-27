@@ -17,6 +17,8 @@ jobs:
           docker build -f frontend/Dockerfile \
             --build-arg VITE_BACKEND_URL=${{ vars.BACKEND_URL }} \
             --build-arg VITE_SOCKETS_URL=${{ vars.SOCKETS_URL }} \
+            --build-arg VITE_BACKEND_PORT=${{ vars.BACKEND_PORT }} \
+            --build-arg VITE_SOCKETS_PORT=${{ vars.SOCKETS_PORT }} \
             -t lucasremigio/frontend:${{ github.sha }} ./frontend
 
       - name: Build Backend Image
@@ -74,7 +76,7 @@ jobs:
             export SOCKETS_URL=${{ vars.SOCKETS_URL }}
             export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
 
-            docker image prune -a -f
+            docker system prune -a -f
              
             docker pull lucasremigio/frontend:${{ github.sha }}
             docker pull lucasremigio/app:${{ github.sha }}
