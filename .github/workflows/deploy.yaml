@@ -54,25 +54,25 @@ jobs:
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
 
             # On the server, only save the tag, in case we need to restart manually
-            echo "TAG=${{ github.sha }}" > .env
+            cat > .env << EOL
 
-            export TAG=${{ github.sha }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            export DB_USER=${{ secrets.DB_USER }}
-            export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            export REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
-
-            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            export JWT_SECRET=${{ secrets.JWT_SECRET }}
-            export JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
-
-            # Use the repository variable
-            export FRONTEND_URL=${{ vars.FRONTEND_URL }}
-            export FRONTEND_DOMAIN=${{ secrets.FRONTEND_DOMAIN }}
-            export BACKEND_URL=${{ vars.BACKEND_URL }}
-            export BACKEND_PORT=${{ vars.BACKEND_PORT }}
-            export SOCKETS_URL=${{ vars.SOCKETS_URL }}
-            export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
+            TAG=${{ github.sha }}
+            SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
+            FRONTEND_URL=${{ vars.FRONTEND_URL }}
+            BACKEND_PORT=${{ vars.BACKEND_PORT }}
+            BACKEND_URL=${{ vars.BACKEND_URL }}
+            SOCKETS_URL=${{ vars.SOCKETS_URL }}
+            FRONTEND_DOMAIN=${{ secrets.FRONTEND_DOMAIN }}
+            
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
+            
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
+            EOL
 
             docker image prune -a -f
              

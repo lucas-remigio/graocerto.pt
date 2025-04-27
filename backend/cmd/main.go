@@ -32,7 +32,14 @@ func main() {
 
 	initStorage(db)
 
-	server := api.NewAPIServer(":8080", db)
+	port := config.Envs.Port
+	if port == "" {
+		port = "8080"
+		log.Println("No port specified, using default port 8080")
+	}
+	addr := ":" + port
+
+	server := api.NewAPIServer(addr, db)
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}
