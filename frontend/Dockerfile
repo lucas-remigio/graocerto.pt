@@ -30,10 +30,8 @@ RUN pnpm build
 
 # Serve the build with Nginx
 FROM nginx:stable
-COPY nginx.template.conf /etc/nginx/conf.d/default.conf.template
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/build /usr/share/nginx/html
 
-EXPOSE 80 443
-
-# Use environment variable substitution for ALL variables before starting nginx
-CMD ["/bin/bash", "-c", "envsubst '$BACKEND_URL $BACKEND_PORT $SOCKETS_URL $SOCKETS_PORT $FRONTEND_DOMAIN $FRONTEND_URL' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
