@@ -70,6 +70,8 @@ jobs:
             export FRONTEND_URL=${{ vars.FRONTEND_URL }}
             export BACKEND_URL=${{ vars.BACKEND_URL }}
             export SOCKETS_URL=${{ vars.SOCKETS_URL }}
+            export BACKEND_PORT=${{ vars.BACKEND_PORT }}
+            export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
 
             docker image prune -a -f
              
