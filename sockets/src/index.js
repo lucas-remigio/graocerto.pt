@@ -1,13 +1,18 @@
 import { WebSocket, WebSocketServer } from "ws";
 import express from "express";
-import { createServer } from "http";
+import { createServer as createHttpServer } from "http";
+import { createServer as createHttpsServer } from "https";
 import * as dotenv from "dotenv";
-import cors from "cors"; // Add this dependency
+import cors from "cors";
+import fs from "fs";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 8090;
 const app = express();
+const USE_TLS = process.env.USE_TLS === "true";
+const CERT_FILE = process.env.CERT_FILE;
+const KEY_FILE = process.env.KEY_FILE;
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
@@ -20,7 +25,26 @@ app.use(
   })
 );
 
-const server = createServer(app);
+// Create either HTTP or HTTPS server based on configuration
+let server;
+if (USE_TLS && CERT_FILE && KEY_FILE) {
+  try {
+    const httpsOptions = {
+      cert: fs.readFileSync(CERT_FILE),
+      key: fs.readFileSync(KEY_FILE),
+    };
+    server = createHttpsServer(httpsOptions, app);
+    console.log("Created HTTPS server with TLS enabled (WSS)");
+  } catch (error) {
+    console.error("Failed to create HTTPS server:", error);
+    console.log("Falling back to HTTP server");
+    server = createHttpServer(app);
+  }
+} else {
+  server = createHttpServer(app);
+  console.log("Created HTTP server (WS - not secure)");
+}
+
 const wss = new WebSocketServer({
   server,
   path: "/ws", // This makes the WebSocket server only handle /ws path
@@ -166,7 +190,6 @@ app.get("/ws/health", (req, res) => {
     })),
   });
 });
-
 
 // Start server
 server.listen(PORT, () => {

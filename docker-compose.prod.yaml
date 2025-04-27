@@ -8,7 +8,6 @@ services:
       - NODE_ENV=production
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro # Mount SSL certificates as read-only
-      - /etc/letsencrypt/live:/etc/letsencrypt/live:ro # Ensure the live folder is accessible
 
   websockets:
     image: lucasremigio/websockets:${TAG}
@@ -17,6 +16,11 @@ services:
     environment:
       - PORT=${SOCKETS_PORT}
       - FRONTEND_URL=${FRONTEND_URL}
+      - USE_TLS=true
+      - CERT_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/fullchain.pem
+      - KEY_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/privkey.pem
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
   app:
     image: lucasremigio/app:${TAG}
@@ -33,6 +37,11 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_IN_SECONDS=${JWT_EXPIRATION_IN_SECONDS}
+      - USE_TLS=true
+      - CERT_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/fullchain.pem
+      - KEY_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/privkey.pem
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
       # db:
       #   image: mysql:8
       #   container_name: mysql-container
