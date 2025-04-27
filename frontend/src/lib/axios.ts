@@ -4,9 +4,12 @@ import { token } from '$lib/stores/auth';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost';
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8080';
+const isProd = import.meta.env.VITE_IS_PRODUCTION === 'true';
 
 // Check both NODE_ENV and Vite's PROD flag
-const API_URL = `${BACKEND_URL}:${BACKEND_PORT}/api/v1`;
+const API_URL = isProd
+	? `/api/v1` // Path-based URL for production (through Nginx proxy)
+	: `${BACKEND_URL}:${BACKEND_PORT}/api/v1`; // Full URL for development
 
 console.log('Backend URL:', API_URL);
 

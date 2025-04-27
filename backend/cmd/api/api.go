@@ -20,13 +20,6 @@ import (
 type APIServer struct {
 	addr string
 	db   *sql.DB
-
-	// Add TLS fields
-	useTLS   bool
-	certFile string
-	keyFile  string
-
-	// Any other existing fields...
 }
 
 func NewAPIServer(addr string, db *sql.DB) *APIServer {
@@ -34,13 +27,6 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 		addr: addr,
 		db:   db,
 	}
-}
-
-// Add this method to implement TLS configuration
-func (s *APIServer) SetTLSConfig(certFile, keyFile string) {
-	s.useTLS = true
-	s.certFile = certFile
-	s.keyFile = keyFile
 }
 
 func (s *APIServer) Run() error {
@@ -84,13 +70,8 @@ func (s *APIServer) Run() error {
 	router.Handle("/api/v1/", apiHandlerChain)
 
 	log.Println("Server is running on", s.addr)
-	if s.useTLS {
-		log.Printf("Starting HTTPS server on %s", s.addr)
-		return http.ListenAndServeTLS(s.addr, s.certFile, s.keyFile, corsMiddleware(router))
-	} else {
-		log.Printf("Starting HTTP server on %s", s.addr)
-		return http.ListenAndServe(s.addr, corsMiddleware(router))
-	}
+	log.Printf("Starting HTTP server on %s", s.addr)
+	return http.ListenAndServe(s.addr, corsMiddleware(router))
 }
 
 // Define a helper function to chain middlewares

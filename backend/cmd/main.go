@@ -41,18 +41,6 @@ func main() {
 
 	server := api.NewAPIServer(addr, db)
 
-	// Check if TLS should be enabled
-	useTLS := config.Envs.UseTLS
-	certFile := config.Envs.CertFile
-	keyFile := config.Envs.KeyFile
-
-	log.Printf("Starting server on port %s, TLS: %v", port, useTLS)
-
-	// Set TLS config in server if needed
-	if useTLS {
-		server.SetTLSConfig(certFile, keyFile)
-	}
-
 	// Use the server's Run method which will handle HTTP/HTTPS internally
 	if err := server.Run(); err != nil {
 		log.Fatal(err)

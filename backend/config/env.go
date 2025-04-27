@@ -17,9 +17,6 @@ type Config struct {
 	RemoteDBUrl            string
 	FrontendUrl            string
 	IsProduction           bool
-	UseTLS                 bool
-	CertFile               string
-	KeyFile                string
 }
 
 var Envs = initConfig()
@@ -37,9 +34,6 @@ func initConfig() Config {
 		RemoteDBUrl:            getEnv("REMOTE_DB_URL", ""),
 		FrontendUrl:            getEnv("FRONTEND_URL", "http://localhost:3000"),
 		IsProduction:           getEnvAsBool("IS_PRODUCTION", false),
-		UseTLS:                 getEnvAsBool("USE_TLS", false),
-		CertFile:               getEnv("CERT_FILE", ""),
-		KeyFile:                getEnv("KEY_FILE", ""),
 	}
 }
 

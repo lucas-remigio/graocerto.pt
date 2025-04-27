@@ -5,8 +5,12 @@ import { browser } from '$app/environment';
 // Connection config
 const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'ws://localhost';
 const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '8090';
+const isProd = import.meta.env.VITE_IS_PRODUCTION === 'true';
 
-const WS_URL = `${SOCKETS_URL}:${SOCKETS_PORT}/ws`;
+// Check both NODE_ENV and Vite's PROD flag
+const WS_URL = isProd
+	? `/api/v1` // Path-based URL for production (through Nginx proxy)
+	: `${SOCKETS_URL}:${SOCKETS_PORT}/ws`; // Full URL for development
 
 console.log('WebSocket URL:', WS_URL);
 

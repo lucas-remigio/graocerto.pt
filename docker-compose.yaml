@@ -2,10 +2,10 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       args:
-        BACKEND_URL: ${BACKEND_URL}
-        SOCKETS_URL: ${SOCKETS_URL}
+        BACKEND_URL: ${SOCKETS_URL}
+        SOCKETS_URL: ${BACKEND_URL}
         BACKEND_PORT: ${BACKEND_PORT}
         SOCKETS_PORT: ${SOCKETS_PORT}
         IS_PRODUCTION: false
@@ -15,10 +15,6 @@ services:
       - app
     environment:
       - NODE_ENV=development
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - ./frontend/nginx.dev.conf:/etc/nginx/conf.d/default.conf
 
   app:
     build:

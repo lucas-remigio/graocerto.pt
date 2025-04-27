@@ -1,13 +1,17 @@
 services:
   frontend:
     image: lucasremigio/frontend:${TAG}
-    # No envs here. As they are all build arguments, they can be seen on the deploy.yaml where they are built into the image
     ports:
       - "80:80"
       - "443:443"
     environment:
+      # these environments are used on the nginx conf file
       - NODE_ENV=production
       - FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
+      - BACKEND_URL=${BACKEND_URL}
+      - SOCKETS_URL=${SOCKETS_URL}
+      - BACKEND_PORT=${BACKEND_PORT}
+      - SOCKETS_PORT=${SOCKETS_PORT}
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro # Mount SSL certificates as read-only
 
@@ -18,11 +22,6 @@ services:
     environment:
       - PORT=${SOCKETS_PORT}
       - FRONTEND_URL=${FRONTEND_URL}
-      - USE_TLS=true
-      - CERT_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/fullchain.pem
-      - KEY_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/privkey.pem
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
 
   app:
     image: lucasremigio/app:${TAG}
@@ -39,11 +38,6 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_IN_SECONDS=${JWT_EXPIRATION_IN_SECONDS}
-      - USE_TLS=true
-      - CERT_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/fullchain.pem
-      - KEY_FILE=/etc/letsencrypt/live/${FRONTEND_DOMAIN}/privkey.pem
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
       # db:
       #   image: mysql:8
       #   container_name: mysql-container
