@@ -4,10 +4,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_BACKEND_URL: ${BACKEND_URL}
-        VITE_SOCKETS_URL: ${SOCKETS_URL}
-        VITE_BACKEND_PORT: ${BACKEND_PORT}
-        VITE_SOCKETS_PORT: ${SOCKETS_PORT}
+        BACKEND_URL: ${BACKEND_URL}
+        SOCKETS_URL: ${SOCKETS_URL}
+        BACKEND_PORT: ${BACKEND_PORT}
+        SOCKETS_PORT: ${SOCKETS_PORT}
+        IS_PRODUCTION: false
     ports:
       - "3000:3000"
     depends_on:

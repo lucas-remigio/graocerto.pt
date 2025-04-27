@@ -6,7 +6,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost';
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8080';
 
 // Check both NODE_ENV and Vite's PROD flag
-const isProd = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+const isProd = import.meta.env.VITE_IS_PRODUCTION;
+console.log('Production mode: ', import.meta.env.VITE_IS_PRODUCTION);
 const API_URL = isProd ? `${BACKEND_URL}/api/v1` : `${BACKEND_URL}:${BACKEND_PORT}/api/v1`;
 
 console.log('Backend URL:', API_URL);

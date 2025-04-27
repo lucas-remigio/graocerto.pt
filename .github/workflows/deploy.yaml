@@ -15,10 +15,11 @@ jobs:
       - name: Build Frontend Image
         run: |
           docker build -f frontend/Dockerfile \
-            --build-arg VITE_BACKEND_URL=${{ vars.BACKEND_URL }} \
-            --build-arg VITE_SOCKETS_URL=${{ vars.SOCKETS_URL }} \
-            --build-arg VITE_BACKEND_PORT=${{ vars.BACKEND_PORT }} \
-            --build-arg VITE_SOCKETS_PORT=${{ vars.SOCKETS_PORT }} \
+            --build-arg BACKEND_URL=${{ vars.BACKEND_URL }} \
+            --build-arg SOCKETS_URL=${{ vars.SOCKETS_URL }} \
+            --build-arg BACKEND_PORT=${{ vars.BACKEND_PORT }} \
+            --build-arg SOCKETS_PORT=${{ vars.SOCKETS_PORT }} \
+            --build-arg IS_PRODUCTION=true \
             -t lucasremigio/frontend:${{ github.sha }} ./frontend
 
       - name: Build Backend Image
