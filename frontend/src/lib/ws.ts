@@ -6,7 +6,9 @@ import { browser } from '$app/environment';
 const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'ws://localhost:8090';
 const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '8090';
 
-const WS_URL = `${SOCKETS_URL}:${SOCKETS_PORT}/ws`;
+const isProd = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+const WS_URL = isProd ? `${SOCKETS_URL}/ws` : `${SOCKETS_URL}:${SOCKETS_PORT}/ws`;
+
 console.log('WebSocket URL:', WS_URL);
 
 // Simple socket store

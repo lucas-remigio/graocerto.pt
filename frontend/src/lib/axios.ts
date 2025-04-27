@@ -2,10 +2,13 @@ import axios from 'axios';
 import { get } from 'svelte/store';
 import { token } from '$lib/stores/auth';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost';
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8080';
 
-const API_URL = `${BACKEND_URL}:${BACKEND_PORT}/api/v1`;
+// Check both NODE_ENV and Vite's PROD flag
+const isProd = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+const API_URL = isProd ? `${BACKEND_URL}/api/v1` : `${BACKEND_URL}:${BACKEND_PORT}/api/v1`;
+
 console.log('Backend URL:', API_URL);
 
 const api_axios = axios.create({
