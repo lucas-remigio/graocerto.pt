@@ -9,7 +9,7 @@ const isProd = import.meta.env.VITE_IS_PRODUCTION === 'true';
 // Check both NODE_ENV and Vite's PROD flag
 const API_URL = isProd
 	? `/api/v1` // Path-based URL for production (through Nginx proxy)
-	: `${BACKEND_URL}:${BACKEND_PORT}/api/v1`; // Full URL for development
+	: `http://${BACKEND_URL}:${BACKEND_PORT}/api/v1`; // Full URL for development
 
 console.log('Backend URL:', API_URL);
 
