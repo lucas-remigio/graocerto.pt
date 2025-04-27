@@ -7,10 +7,10 @@ const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'ws://localhost';
 const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '8090';
 const isProd = import.meta.env.VITE_IS_PRODUCTION === 'true';
 
-// Check both NODE_ENV and Vite's PROD flag
+const protocol = isProd ? 'wss:' : 'ws:';
 const WS_URL = isProd
-	? `/api/v1` // Path-based URL for production (through Nginx proxy)
-	: `${SOCKETS_URL}:${SOCKETS_PORT}/ws`; // Full URL for development
+	? `${protocol}//${location.host}/ws`
+	: `${protocol}//${SOCKETS_URL}:${SOCKETS_PORT}/ws`;
 
 console.log('WebSocket URL:', WS_URL);
 
