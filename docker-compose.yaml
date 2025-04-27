@@ -22,11 +22,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     depends_on:
       - db
     environment:
       - IS_PRODUCTION=false
+      - PORT=${BACKEND_PORT}
       # Single connection string for local database
       - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@mysql-container:3306/wallet_tracker
       # This is to test the remote database in dev. Change IS_PRODUCTION to true to use the remote database
@@ -41,9 +42,9 @@ services:
       context: ./sockets
       dockerfile: Dockerfile
     ports:
-      - "8090:8090"
+      - "${SOCKETS_PORT}:${SOCKETS_PORT}"
     environment:
-      - PORT=8090
+      - PORT=${SOCKETS_PORT}
       - FRONTEND_URL=${FRONTEND_URL}
 
   db:

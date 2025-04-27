@@ -53,26 +53,26 @@ jobs:
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
 
-            # exporting all the envs to the file for persistence
-            cat > .env << EOL
-            TAG=${{ github.sha }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_USER=${{ secrets.DB_USER }}
-            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
-            
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
-            
-            # Repository variables
-            FRONTEND_URL=${{ vars.FRONTEND_URL }}
-            BACKEND_URL=${{ vars.BACKEND_URL }}
-            SOCKETS_URL=${{ vars.SOCKETS_URL }}
-            BACKEND_PORT=${{ vars.BACKEND_PORT }}
-            SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
-            FRONTEND_DOMAIN=${{ secrets.FRONTEND_DOMAIN }}
-            EOL
+            # On the server, only save the tag, in case we need to restart manually
+            echo "TAG=${{ github.sha }}" > .env
+
+            export TAG=${{ github.sha }}
+            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            export DB_USER=${{ secrets.DB_USER }}
+            export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            export REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
+
+            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            export JWT_SECRET=${{ secrets.JWT_SECRET }}
+            export JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
+
+            # Use the repository variable
+            export FRONTEND_URL=${{ vars.FRONTEND_URL }}
+            export FRONTEND_DOMAIN=${{ secrets.FRONTEND_DOMAIN }}
+            export BACKEND_URL=${{ vars.BACKEND_URL }}
+            export BACKEND_PORT=${{ vars.BACKEND_PORT }}
+            export SOCKETS_URL=${{ vars.SOCKETS_URL }}
+            export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
 
             docker image prune -a -f
              
