@@ -3,7 +3,7 @@ import { get, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 // Connection config
-const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'ws://localhost:8090';
+const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'ws://localhost';
 const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '8090';
 
 const WS_URL = `${SOCKETS_URL}:${SOCKETS_PORT}/ws`;
