@@ -6,6 +6,8 @@
 	import { isAuthenticated, token } from '$lib/stores/auth';
 	import axios from '$lib/axios';
 	import { get } from 'svelte/store';
+	import { onMount } from 'svelte';
+	import { isLoading, setupI18n } from '$lib/i18n';
 
 	let { children } = $props();
 
@@ -38,6 +40,7 @@
 	}
 
 	if (browser) {
+		setupI18n();
 		// Run on initial load
 		checkAuth(window.location.pathname);
 
@@ -46,6 +49,12 @@
 			checkAuth(navigation.to?.url.pathname || '/');
 		});
 	}
+
+	onMount(() => {
+		if (!browser) {
+			setupI18n();
+		}
+	});
 </script>
 
 <Navbar />

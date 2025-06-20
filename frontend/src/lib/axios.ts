@@ -2,8 +2,8 @@ import axios from 'axios';
 import { get } from 'svelte/store';
 import { token } from '$lib/stores/auth';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost';
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8080';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'localhost';
+const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '3001';
 const isProd = import.meta.env.VITE_IS_PRODUCTION === 'true';
 
 // Check both NODE_ENV and Vite's PROD flag

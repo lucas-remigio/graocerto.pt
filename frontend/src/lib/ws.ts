@@ -3,8 +3,8 @@ import { get, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 // Connection config
-const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'ws://localhost';
-const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '8090';
+const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'localhost';
+const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '3002';
 const isProd = import.meta.env.VITE_IS_PRODUCTION === 'true';
 
 const protocol = isProd ? 'wss:' : 'ws:';

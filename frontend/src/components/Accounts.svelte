@@ -71,9 +71,7 @@
 				</button>
 				<!-- Action buttons container -->
 				{#if account.token === selectedAccount?.token}
-					<div
-						class="absolute right-2 top-2 flex gap-1 md:opacity-0 md:transition-opacity md:hover:opacity-100"
-					>
+					<div class="absolute right-2 top-2 flex gap-1">
 						<button
 							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
 							on:click|stopPropagation={() => handleEditAccount(account)}

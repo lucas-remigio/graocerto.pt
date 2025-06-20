@@ -8,6 +8,7 @@
 	import ConfirmAction from './ConfirmAction.svelte';
 	import TransactionFilters from './TransactionFilters.svelte';
 	import AiFeedback from './AiFeedback.svelte';
+	import { t } from '$lib/i18n';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -36,15 +37,12 @@
 	function formatDate(date: string): string {
 		// the format should be just month and year, in extense portuguese, without the "de" between
 		const formattedDate = new Date(date).toLocaleDateString('pt-PT', {
+			day: 'numeric',
 			month: 'long',
 			year: 'numeric'
 		});
 
-		let month = formattedDate.split(' ')[0];
-		month = month.charAt(0).toUpperCase() + month.slice(1);
-		const year = formattedDate.split(' ')[2];
-
-		return `${month} ${year}`;
+		return `${formattedDate}`;
 	}
 
 	$: {
@@ -165,19 +163,26 @@
 
 		transactions.forEach((tx) => {
 			const date = new Date(tx.date);
-			const key = `${date.getFullYear()}-${date.getMonth()}`;
-			if (!groups.has(key)) {
-				groups.set(key, []);
+			// Use YYYY-MM format for consistent sorting
+			const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+			if (!groups.has(sortKey)) {
+				groups.set(sortKey, []);
 			}
-			groups.get(key)!.push(tx);
+			groups.get(sortKey)!.push(tx);
 		});
 
-		// Convert to array and sort by date (most recent first)
+		// Convert to array and sort by key (most recent first)
 		return Array.from(groups.entries())
 			.sort((a, b) => b[0].localeCompare(a[0]))
 			.map(([key, transactions]) => ({
-				month: formatDate(transactions[0].date),
-				transactions
+				month: new Date(transactions[0].date).toLocaleDateString('pt-PT', {
+					month: 'long',
+					year: 'numeric'
+				}),
+				transactions: transactions.sort(
+					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				)
 			}));
 	}
 
@@ -198,7 +203,8 @@
 {#if transactions && transactions.length > 0}
 	<div class="mb-2 flex justify-between">
 		<h2 class="mb-4 text-2xl font-semibold">
-			Transactions for {account.account_name}
+			{$t('page.transactions-for')}
+			{account.account_name}
 		</h2>
 		<div class="flex items-center gap-4">
 			<!-- Button to get feedback -->
@@ -230,11 +236,11 @@
 			<table class="table w-full">
 				<thead class="sticky top-0 text-center">
 					<tr>
-						<th class="text-gray-900 dark:text-gray-100">Date</th>
-						<th class="text-gray-900 dark:text-gray-100">Category</th>
-						<th class="text-gray-900 dark:text-gray-100">Amount</th>
-						<th class="text-gray-900 dark:text-gray-100">Description</th>
-						<th class="text-gray-900 dark:text-gray-100">Actions</th>
+						<th style="width: 15%">Date</th>
+						<th style="width: 20%">Category</th>
+						<th style="width: 15%">Amount</th>
+						<th style="width: 40%">Description</th>
+						<th style="width: 10%">Actions</th>
 					</tr>
 				</thead>
 				<tbody class="text-center">
@@ -252,10 +258,10 @@
 										? 'bg-green-100'
 										: ''}
 							>
-								<td class="dark:text-gray-900">
+								<td class="text-gray-900">
 									{formatDate(tx.date)}
 								</td>
-								<td>
+								<td class="text-gray-900">
 									<span
 										class="rounded px-2 py-1 text-white"
 										style="background-color: {tx.category.color};"
@@ -263,9 +269,9 @@
 										{tx.category.category_name}
 									</span>
 								</td>
-								<td class="dark:text-gray-900">{formatCurrency(tx.amount)}€</td>
-								<td class="dark:text-gray-900">{tx.description || 'N/A'}</td>
-								<td class="flex w-10 gap-1">
+								<td class="text-gray-900">{formatCurrency(tx.amount)}€</td>
+								<td class="text-gray-900">{tx.description || 'N/A'}</td>
+								<td class="text-gray-900">
 									<!-- <button
 										class="btn btn-sm btn-circle text-blue-300"
 										on:click={() => handleEditTransaction(tx)}

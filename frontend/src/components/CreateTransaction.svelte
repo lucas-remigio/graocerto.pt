@@ -48,7 +48,7 @@
 	let category_id: number | string = '';
 	let amount: number = 0;
 	let description = '';
-	let date = ''; // expects format "YYYY-MM-DD" from the date input
+	let date = new Date().toISOString().split('T')[0]; // expects format "YYYY-MM-DD" from the date input
 
 	// Create event dispatcher (to emit events to the parent)
 	const dispatch = createEventDispatcher();
@@ -182,7 +182,7 @@
 			><X /></button
 		>
 		<h3 class="mb-4 text-lg font-bold">
-			New Transaction for <strong>>{account.account_name}</strong>
+			New Transaction for <strong>{account.account_name}</strong>
 		</h3>
 		<!--Error message-->
 		{#if error}

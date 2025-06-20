@@ -1,0 +1,11 @@
+{
+	"navbar": {
+		"categories": "Categories",
+		"notifications": "Notifications"
+	},
+
+	"page": {
+		"my-accounts": "My Accounts",
+		"transactions-for": "Transactions for"
+	}
+}
