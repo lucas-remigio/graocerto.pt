@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
 )
 
@@ -18,55 +19,47 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) GetUserByEmail(email string) (*types.User, error) {
-	rows, err := s.db.Query("SELECT * FROM users WHERE email = ?", email)
+	user, err := db.QueryFirstFromRows(s.db,
+		"SELECT * FROM users WHERE email = ?",
+		scanRowIntoUser, email)
+
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
 		return nil, err
 	}
 
-	u := new(types.User)
-	for rows.Next() {
-		u, err = scanRowIntoUser(rows)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if u.ID == 0 {
+	if user.ID == 0 {
 		return nil, fmt.Errorf("user not found")
 	}
 
-	return u, nil
+	return user, nil
 }
 
 func (s *Store) CreateUser(user *types.User) error {
-	_, err := s.db.Exec("INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)", user.FirstName, user.LastName, user.Email, user.Password)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return db.ExecWithValidation(s.db,
+		"INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)",
+		user.FirstName, user.LastName, user.Email, user.Password)
 }
 
 func (s *Store) GetUserById(id int) (*types.User, error) {
-	rows, err := s.db.Query("SELECT * FROM users WHERE id = ?", id)
+	user, err := db.QueryFirstFromRows(s.db,
+		"SELECT * FROM users WHERE id = ?",
+		scanRowIntoUser, id)
+
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
 		return nil, err
 	}
 
-	u := new(types.User)
-	for rows.Next() {
-		u, err = scanRowIntoUser(rows)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if u.ID == 0 {
+	if user.ID == 0 {
 		return nil, fmt.Errorf("user not found")
 	}
 
-	return u, nil
+	return user, nil
 }
 
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {

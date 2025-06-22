@@ -1,13 +1,9 @@
 package account
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/lucas-remigio/wallet-tracker/service/auth"
+	"github.com/lucas-remigio/wallet-tracker/middleware"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
 )
@@ -21,63 +17,35 @@ func NewHandler(store types.AccountStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
-	router.HandleFunc("/accounts", h.AccountsHandler)
-	router.HandleFunc("/accounts/{id}", h.ChangeAccountHandler)
-	router.HandleFunc("/accounts/{id}/feedback-month", h.GetAccountFeedbackMonthly)
-}
-
-func (h *Handler) AccountsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		h.CreateAccount(w, r)
-	case http.MethodGet:
-		h.GetAccountsByUserId(w, r)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
-}
-
-func (h *Handler) ChangeAccountHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPut:
-		h.UpdateAccount(w, r)
-	case http.MethodDelete:
-		h.DeleteAccount(w, r)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
+	router.HandleFunc("/accounts", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.CreateAccount,
+			http.MethodGet:  h.GetAccountsByUserId,
+		})))
+	router.HandleFunc("/accounts/{id}", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPut:    h.UpdateAccount,
+			http.MethodDelete: h.DeleteAccount,
+		}),
+	))
+	router.HandleFunc("/accounts/{id}/feedback-month", middleware.AuthMiddleware(h.GetAccountFeedbackMonthly))
 }
 
 func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// get JSON payload
+	// parse and validate JSON payload
 	var payload types.CreateAccountPayload
-	if err := utils.ParseJson(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
 		return
 	}
 
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		error := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
-		return
-	}
-
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	userId, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
 	// create a new account
-	err = h.store.CreateAccount(&types.Account{
+	err := h.store.CreateAccount(&types.Account{
 		UserID:      userId,
 		AccountName: payload.AccountName,
 		Balance:     *payload.Balance,
@@ -88,20 +56,13 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+	middleware.WriteSuccessResponse(w)
 }
 
 func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	userId, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
@@ -116,53 +77,30 @@ func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
 		"accounts": accounts,
 	}
 
-	utils.WriteJson(w, http.StatusOK, response)
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	userId, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
+	// extract account ID from URL path (/accounts/{id})
+	accountIdInt, ok := middleware.ExtractPathParamAsIntAndRespond(w, r, 1)
+	if !ok {
 		return
 	}
 
-	// get the account id from the url
-	accountId := strings.TrimPrefix(r.URL.Path, "/accounts/")
-	if accountId == "" {
-		http.Error(w, "Missing account id", http.StatusBadRequest)
-		return
-	}
-
-	// convert the account id to an int
-	accountIdInt, err := strconv.Atoi(accountId)
-	if err != nil {
-		http.Error(w, "Invalid account id", http.StatusBadRequest)
-		return
-	}
-
-	// get the JSON payload
+	// parse and validate JSON payload
 	var payload types.UpdateAccountPayload
-	if err := utils.ParseJson(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		error := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
 		return
 	}
 
 	// update the account
-	err = h.store.UpdateAccount(&types.Account{
+	err := h.store.UpdateAccount(&types.Account{
 		ID:          accountIdInt,
 		UserID:      userId,
 		AccountName: payload.AccountName,
@@ -174,66 +112,42 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+	middleware.WriteSuccessResponse(w)
 }
 
 func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	userId, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
-		return
-	}
-
-	// get the account token from the url
-	accountToken := strings.TrimPrefix(r.URL.Path, "/accounts/")
-	if accountToken == "" {
-		http.Error(w, "Missing account token", http.StatusBadRequest)
+	// extract account token from URL path (/accounts/{token})
+	accountToken, ok := middleware.ExtractPathParamAndRespond(w, r, 1)
+	if !ok {
 		return
 	}
 
 	// delete the account
-	err = h.store.DeleteAccount(accountToken, userId)
+	err := h.store.DeleteAccount(accountToken, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+	middleware.WriteSuccessResponse(w)
 }
 
 func (h *Handler) GetAccountFeedbackMonthly(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	userId, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
-		return
-	}
-
-	// get the account token from the url
-	// url is like /accounts/{accountId}/feedback-month
-	accountToken := strings.TrimPrefix(r.URL.Path, "/accounts/")
-	if accountToken == "" {
-		http.Error(w, "Missing account token", http.StatusBadRequest)
-		return
-	}
-
-	// remove the feedback-month from the account token
-	accountToken = strings.TrimSuffix(accountToken, "/feedback-month")
-	if accountToken == "" {
-		http.Error(w, "Missing account token", http.StatusBadRequest)
+	// extract account token from URL path (/accounts/{accountId}/feedback-month)
+	accountToken, ok := middleware.ExtractPathParamAndRespond(w, r, 1)
+	if !ok {
 		return
 	}
 
@@ -244,5 +158,5 @@ func (h *Handler) GetAccountFeedbackMonthly(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, feedback)
+	middleware.WriteDataResponse(w, feedback)
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
 )
@@ -39,7 +40,10 @@ func (s *Store) CreateAccount(account *types.Account) error {
 	}
 	account.Token = token
 
-	_, err = s.db.Exec("INSERT INTO accounts (token, user_id, account_name, balance) VALUES (?, ?, ?, ?)", account.Token, account.UserID, account.AccountName, account.Balance)
+	err = db.ExecWithValidation(s.db,
+		"INSERT INTO accounts (token, user_id, account_name, balance) VALUES (?, ?, ?, ?)",
+		account.Token, account.UserID, account.AccountName, account.Balance,
+	)
 
 	if err != nil {
 		return err
@@ -49,55 +53,21 @@ func (s *Store) CreateAccount(account *types.Account) error {
 }
 
 func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
-	rows, err := s.db.Query("SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE user_id = ?", userId)
-	if err != nil {
-		return nil, err
-	}
-
-	accounts := make([]*types.Account, 0)
-	for rows.Next() {
-		account, err := scanRowIntoAccount(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		accounts = append(accounts, account)
-	}
-
-	return accounts, nil
+	return db.QueryList(s.db,
+		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE user_id = ?",
+		scanRowsIntoAccount, userId)
 }
 
 func (s *Store) GetAccountByToken(token string) (*types.Account, error) {
-	row := s.db.QueryRow("SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE token = ?", token)
-	account := new(types.Account)
-	if err := row.Scan(&account.ID, &account.Token, &account.UserID, &account.AccountName, &account.Balance, &account.CreatedAt); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("account not found")
-		}
-		return nil, err
-	}
-	return account, nil
+	return db.QuerySingle(s.db,
+		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE token = ?",
+		scanRowIntoAccount, token)
 }
 
 func (s *Store) GetAccountById(id int) (*types.Account, error) {
-	row := s.db.QueryRow("SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE id = ?", id)
-	account := new(types.Account)
-	if err := row.Scan(&account.ID, &account.Token, &account.UserID, &account.AccountName, &account.Balance, &account.CreatedAt); err != nil {
-		return nil, err
-	}
-	return account, nil
-}
-
-func scanRowIntoAccount(rows *sql.Rows) (*types.Account, error) {
-	a := new(types.Account)
-
-	err := rows.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return a, nil
+	return db.QuerySingle(s.db,
+		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE id = ?",
+		scanRowIntoAccount, id)
 }
 
 func (s *Store) UpdateAccount(account *types.Account) error {
@@ -107,15 +77,13 @@ func (s *Store) UpdateAccount(account *types.Account) error {
 		return err
 	}
 
-	if currentAccount.UserID != account.UserID {
-		return fmt.Errorf("user does not have permission to update this account")
-	}
-
-	_, err = s.db.Exec("UPDATE accounts SET account_name = ?, balance = ? WHERE id = ?", account.AccountName, account.Balance, account.ID)
-	if err != nil {
+	if err := db.ValidateOwnership(account.UserID, currentAccount.UserID, "account"); err != nil {
 		return err
 	}
-	return nil
+
+	return db.ExecWithValidation(s.db,
+		"UPDATE accounts SET account_name = ?, balance = ? WHERE id = ?",
+		account.AccountName, account.Balance, account.ID)
 }
 
 func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string) (*types.MonthlyFeedback, error) {
@@ -226,16 +194,40 @@ func (s *Store) DeleteAccount(token string, userId int) error {
 	}
 
 	// delete all transactions associated with the account
-	_, err = s.db.Exec("DELETE FROM transactions WHERE account_token = ?", token)
+	err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE account_token = ?", token)
 	if err != nil {
 		return err
 	}
 
 	// delete the account
-	_, err = s.db.Exec("DELETE FROM accounts WHERE token = ? AND user_id = ?", token, userId)
+	err = db.ExecWithValidation(s.db, "DELETE FROM accounts WHERE token = ? AND user_id = ?", token, userId)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func scanRowIntoAccount(row *sql.Row) (*types.Account, error) {
+	a := new(types.Account)
+
+	err := row.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+func scanRowsIntoAccount(rows *sql.Rows) (*types.Account, error) {
+	a := new(types.Account)
+
+	err := rows.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
 }

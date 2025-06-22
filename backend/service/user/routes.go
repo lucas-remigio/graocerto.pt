@@ -3,10 +3,9 @@ package user
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/lucas-remigio/wallet-tracker/config"
+	"github.com/lucas-remigio/wallet-tracker/middleware"
 	"github.com/lucas-remigio/wallet-tracker/service/auth"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
@@ -23,32 +22,13 @@ func NewHandler(store types.UserStore) *Handler {
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/login", h.handleLogin)
 	router.HandleFunc("/register", h.handleRegister)
-	router.HandleFunc("/verify-token", h.verifyToken)
+	router.HandleFunc("/verify-token", middleware.AuthMiddleware(h.verifyToken))
 }
 
 func (h *Handler) verifyToken(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	authToken := r.Header.Get("Authorization")
-
-	if authToken == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	token := strings.TrimPrefix(authToken, "Bearer ")
-	isValid, err := auth.VerifyJWT(token)
-
-	if err != nil || !isValid {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
-	}
-
+	// If we reach here, the middleware has already verified the token
+	// and the user is authenticated
 	w.WriteHeader(http.StatusOK)
-
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -57,17 +37,9 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get JSON payload
+	// parse and validate JSON payload
 	var payload types.LoginUserPayload
-	if err := utils.ParseJson(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		error := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
 		return
 	}
 
@@ -111,17 +83,10 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	// get JSON payload
-	var payload types.RegisterUserPayload
-	if err := utils.ParseJson(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
 
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		error := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
+	// parse and validate JSON payload
+	var payload types.RegisterUserPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
 		return
 	}
 
@@ -152,5 +117,5 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusCreated, map[string]string{"message": "user created"})
+	middleware.WriteCreatedResponse(w)
 }

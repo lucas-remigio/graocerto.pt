@@ -1,13 +1,9 @@
 package transaction
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/lucas-remigio/wallet-tracker/service/auth"
+	"github.com/lucas-remigio/wallet-tracker/middleware"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
 )
@@ -21,10 +17,10 @@ func NewHandler(store types.TransactionStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
-	router.HandleFunc("/transactions", h.CreateTransaction)
-	router.HandleFunc("/transactions/dto/", h.GetTransactionsDTOByAccountToken)
-	router.HandleFunc("/transactions/", h.GetTransactionsByAccountToken)
-	router.HandleFunc("/transactions/{id}", h.ChangeTransaction)
+	router.HandleFunc("/transactions", middleware.AuthMiddleware(h.CreateTransaction))
+	router.HandleFunc("/transactions/dto/", middleware.AuthMiddleware(h.GetTransactionsDTOByAccountToken))
+	router.HandleFunc("/transactions/", middleware.AuthMiddleware(h.GetTransactionsByAccountToken))
+	router.HandleFunc("/transactions/{id}", middleware.AuthMiddleware(h.ChangeTransaction))
 }
 
 func (h *Handler) ChangeTransaction(w http.ResponseWriter, r *http.Request) {
@@ -50,35 +46,20 @@ func (h *Handler) HandleTransactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// get JSON payload
+	// parse and validate JSON payload
 	var payload types.CreateTransactionPayload
-	if err := utils.ParseJson(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
 		return
 	}
 
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		error := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
+	// require authentication
+	_, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	_, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
-		return
-	}
-
-	// create a new account
-	err = h.store.CreateTransaction(&types.Transaction{
+	// create a new transaction
+	err := h.store.CreateTransaction(&types.Transaction{
 		AccountToken: payload.AccountToken,
 		Amount:       payload.Amount,
 		CategoryId:   payload.CategoryID,
@@ -91,32 +72,23 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+	middleware.WriteSuccessResponse(w)
 }
 
 func (h *Handler) GetTransactionsByAccountToken(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// require authentication
+	_, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	_, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
+	// extract account token from URL path (/transactions/{token})
+	accountToken, ok := middleware.ExtractPathParamAndRespond(w, r, 1)
+	if !ok {
 		return
 	}
 
-	// Example URL: /transactions/{account_token}
-	// Remove the prefix to get the account token.
-	accountToken := strings.TrimPrefix(r.URL.Path, "/transactions/")
-	if accountToken == "" {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing account token"))
-		return
-	}
-
-	// get categories by user id
+	// get transactions by account token
 	transactions, err := h.store.GetTransactionsByAccountToken(accountToken)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -127,32 +99,23 @@ func (h *Handler) GetTransactionsByAccountToken(w http.ResponseWriter, r *http.R
 		"transactions": transactions,
 	}
 
-	utils.WriteJson(w, http.StatusOK, response)
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// require authentication
+	_, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	_, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
+	// extract account token from URL path (/transactions/dto/{token})
+	accountToken, ok := middleware.ExtractPathParamAndRespond(w, r, 2)
+	if !ok {
 		return
 	}
 
-	// Example URL: /transactions/{account_token}
-	// Remove the prefix to get the account token.
-	accountToken := strings.TrimPrefix(r.URL.Path, "/transactions/dto/")
-	if accountToken == "" {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing account token"))
-		return
-	}
-
-	// get categories by user id
+	// get transactions DTO by account token
 	transactions, err := h.store.GetTransactionsDTOByAccountToken(accountToken)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -163,52 +126,29 @@ func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *htt
 		"transactions": transactions,
 	}
 
-	utils.WriteJson(w, http.StatusOK, response)
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// extract transaction ID from URL path (/transactions/{id})
+	transactionIdInt, ok := middleware.ExtractPathParamAsIntAndRespond(w, r, 1)
+	if !ok {
 		return
 	}
 
-	// get the transaction id from the url
-	transactionId := strings.TrimPrefix(r.URL.Path, "/transactions/")
-	if transactionId == "" {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing transaction id"))
-		return
-	}
-
-	// convert the transaction id to an int
-	transactionIdInt, err := strconv.Atoi(transactionId)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid transaction id"))
-		return
-	}
-
-	// get JSON payload
+	// parse and validate JSON payload
 	var payload types.UpdateTransactionPayload
-	if err := utils.ParseJson(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
 		return
 	}
 
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		error := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", error))
+	// require authentication
+	_, ok = middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	_, err = auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
-		return
-	}
-
-	err = h.store.UpdateTransaction(&types.UpdateTransactionPayload{
+	err := h.store.UpdateTransaction(&types.UpdateTransactionPayload{
 		ID:          transactionIdInt,
 		Amount:      payload.Amount,
 		CategoryID:  payload.CategoryID,
@@ -221,42 +161,27 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+	middleware.WriteSuccessResponse(w)
 }
 
 func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// extract transaction ID from URL path (/transactions/{id})
+	transactionIdInt, ok := middleware.ExtractPathParamAsIntAndRespond(w, r, 1)
+	if !ok {
 		return
 	}
 
-	// get the transaction id from the url
-	transactionId := strings.TrimPrefix(r.URL.Path, "/transactions/")
-	if transactionId == "" {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing transaction id"))
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
 		return
 	}
 
-	// convert the transaction id to an int
-	transactionIdInt, err := strconv.Atoi(transactionId)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid transaction id"))
-		return
-	}
-
-	// get the user id by the token from authorization
-	authToken := r.Header.Get("Authorization")
-	userId, err := auth.GetUserIdFromToken(authToken)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
-		return
-	}
-
-	err = h.store.DeleteTransaction(transactionIdInt, userId)
+	err := h.store.DeleteTransaction(transactionIdInt, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
+	middleware.WriteSuccessResponse(w)
 }

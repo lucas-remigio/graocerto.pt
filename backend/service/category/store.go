@@ -2,8 +2,8 @@ package category
 
 import (
 	"database/sql"
-	"fmt"
 
+	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
 )
 
@@ -18,96 +18,71 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) CreateCategory(category *types.Category) error {
-	_, err := s.db.Exec("INSERT INTO categories (user_id, transaction_type_id, category_name, color) VALUES (?, ?, ?, ?)",
+	return db.ExecWithValidation(s.db,
+		"INSERT INTO categories (user_id, transaction_type_id, category_name, color) VALUES (?, ?, ?, ?)",
 		category.UserID, category.TransactionTypeID, category.CategoryName, category.Color)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
-	rows, err := s.db.Query("SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at FROM categories WHERE user_id = ?", userId)
-	if err != nil {
-		return nil, err
-	}
-
-	categories := make([]*types.Category, 0)
-	for rows.Next() {
-		category, err := scanRowIntoCategory(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		categories = append(categories, category)
-	}
-
-	return categories, nil
+	return db.QueryList(s.db,
+		"SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at FROM categories WHERE user_id = ?",
+		scanRowsIntoCategory, userId)
 }
 
 func (s *Store) GetCategoryById(id int) (*types.Category, error) {
-	row := s.db.QueryRow("SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at FROM categories WHERE id = ?", id)
-
-	category := new(types.Category)
-	if err := row.Scan(&category.ID, &category.UserID, &category.TransactionTypeID, &category.CategoryName, &category.Color, &category.CreatedAt, &category.UpdatedAt); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return category, nil
+	return db.QuerySingle(s.db,
+		"SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at FROM categories WHERE id = ?",
+		scanRowIntoCategory, id)
 }
 
 func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
-	rows, err := s.db.Query("SELECT "+
-		"c.id, c.category_name, c.color, c.created_at, c.updated_at, "+
-		"tt.id, tt.type_name, tt.type_slug "+
-		"FROM categories c "+
-		"JOIN transaction_types tt ON c.transaction_type_id = tt.id "+
-		"WHERE c.user_id = ? "+
-		"ORDER BY c.created_at DESC", userId)
-
-	if err != nil {
-		return nil, err
-	}
-
-	categories := make([]*types.CategoryDTO, 0)
-	for rows.Next() {
-		category, err := scanRowIntoCategoryDto(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		categories = append(categories, category)
-	}
-
-	return categories, nil
+	return db.QueryList(s.db,
+		"SELECT "+
+			"c.id, c.category_name, c.color, c.created_at, c.updated_at, "+
+			"tt.id, tt.type_name, tt.type_slug "+
+			"FROM categories c "+
+			"JOIN transaction_types tt ON c.transaction_type_id = tt.id "+
+			"WHERE c.user_id = ? "+
+			"ORDER BY c.created_at DESC",
+		scanRowIntoCategoryDto, userId)
 }
 
 func (s *Store) UpdateCategory(category *types.Category) error {
-	// get current category to check if incomding user is the same
+	// get current category to check if incoming user is the same
 	currentCategory, err := s.GetCategoryById(category.ID)
 	if err != nil {
 		return err
 	}
 
-	if currentCategory.UserID != category.UserID {
-		return fmt.Errorf("user does not have permission to update this category")
+	if err := db.ValidateOwnership(category.UserID, currentCategory.UserID, "category"); err != nil {
+		return err
 	}
 
-	_, err = s.db.Exec("UPDATE categories SET category_name = ?, color = ? WHERE id = ?", category.CategoryName, category.Color, category.ID)
+	return db.ExecWithValidation(s.db,
+		"UPDATE categories SET category_name = ?, color = ? WHERE id = ?",
+		category.CategoryName, category.Color, category.ID)
+}
+
+func (s *Store) DeleteCategory(id int, userId int) error {
+	// get current category to check if incoming user is the same
+	currentCategory, err := s.GetCategoryById(id)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if err := db.ValidateOwnership(userId, currentCategory.UserID, "category"); err != nil {
+		return err
+	}
+
+	// check if the category is used in any transactions
+	if err := db.CheckResourceExists(s.db, "SELECT id FROM transactions WHERE category_id = ?", "category", id); err != nil {
+		return err
+	}
+
+	return db.ExecWithValidation(s.db, "DELETE FROM categories WHERE id = ?", id)
 }
 
-func scanRowIntoCategory(rows *sql.Rows) (*types.Category, error) {
+func scanRowsIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
 
 	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt)
@@ -136,33 +111,14 @@ func scanRowIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
 	return c, nil
 }
 
-func (s *Store) DeleteCategory(id int, userId int) error {
-	// get current category to check if incomding user is the same
-	currentCategory, err := s.GetCategoryById(id)
+func scanRowIntoCategory(row *sql.Row) (*types.Category, error) {
+	c := new(types.Category)
+
+	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if currentCategory.UserID != userId {
-		return fmt.Errorf("user does not have permission to delete this category")
-	}
-
-	// first we must check if the category is used in any transactions
-	rows, err := s.db.Query("SELECT id FROM transactions WHERE category_id = ?", id)
-	if err != nil {
-		return err
-	}
-
-	if rows.Next() {
-		// TODO: in the future, in this case, we soft delete it
-		// for now, we just return an error
-		return fmt.Errorf("category is used in at least one transaction")
-	}
-
-	_, err = s.db.Exec("DELETE FROM categories WHERE id = ?", id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c, nil
 }
