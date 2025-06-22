@@ -131,7 +131,7 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string) ([]*types.
 		"JOIN transaction_types tt ON c.transaction_type_id = tt.id " +
 		"WHERE t.account_token = ? " +
 		"ORDER BY t.date DESC, t.id DESC"
-	
+
 	return db.QueryList(s.db, query, scanTransactionDTO, accountToken)
 }
 
