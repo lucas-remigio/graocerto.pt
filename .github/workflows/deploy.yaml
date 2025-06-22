@@ -36,14 +36,14 @@ jobs:
       - name: Build and Push Images
         uses: docker/build-push-action@v5
         with:
-          context: ./${{ matrix.service }}
-          file: ./${{ matrix.service }}/Dockerfile
+          context: ${{ matrix.context }} 
+          file: ${{ matrix.context }}/Dockerfile
           push: true
           tags: |
-            lucasremigio/${{ matrix.service == 'backend' && 'app' || matrix.service }}:${{ github.sha }}
-            lucasremigio/${{ matrix.service == 'backend' && 'app' || matrix.service }}:latest
-          cache-from: type=registry,ref=lucasremigio/${{ matrix.service == 'backend' && 'app' || matrix.service }}:buildcache
-          cache-to: type=registry,ref=lucasremigio/${{ matrix.service == 'backend' && 'app' || matrix.service }}:buildcache,mode=max
+            lucasremigio/${{ matrix.image_name }}:${{ github.sha }}
+            lucasremigio/${{ matrix.image_name }}:latest
+          cache-from: type=registry,ref=lucasremigio/${{ matrix.image_name }}:buildcache
+          cache-to: type=registry,ref=lucasremigio/${{ matrix.image_name }}:buildcache,mode=max
           build-args: |
             ${{ matrix.service == 'frontend' && format('BACKEND_URL={0}', vars.BACKEND_URL) || '' }}
             ${{ matrix.service == 'frontend' && format('SOCKETS_URL={0}', vars.SOCKETS_URL) || '' }}
