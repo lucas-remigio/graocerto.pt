@@ -10,7 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [frontend, backend, websockets]
+        include:
+          - service: frontend
+            image_name: frontend
+            context: ./frontend
+          - service: backend
+            image_name: app
+            context: ./backend
+          - service: websockets
+            image_name: websockets
+            context: ./sockets
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
