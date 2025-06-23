@@ -7,10 +7,13 @@ import {
 	_,
 	isLoading as svelteI18nLoading
 } from 'svelte-i18n';
-import { derived } from 'svelte/store';
+import { derived, writable } from 'svelte/store';
 
 // Use svelte-i18n's built-in loading state
 export const isLoading = derived(svelteI18nLoading, ($loading) => $loading);
+
+// Track if i18n is fully initialized
+export const i18nReady = writable(false);
 
 register('en', () => import('./locales/en.json'));
 register('pt', () => import('./locales/pt.json'));
@@ -30,7 +33,16 @@ export function setupI18n() {
 		loadingDelay: 100 // Reduced for faster feedback in dev
 	});
 
+	// Mark as initialized immediately to prevent multiple calls
 	initialized = true;
+
+	// Wait for i18n to be fully ready
+	const unsubscribe = svelteI18nLoading.subscribe((loading) => {
+		if (!loading) {
+			i18nReady.set(true);
+			unsubscribe();
+		}
+	});
 }
 
 export function setLocale(newLocale: string) {

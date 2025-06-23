@@ -7,7 +7,7 @@
 	import axios from '$lib/axios';
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import { isLoading, setupI18n, t } from '$lib/i18n';
+	import { isLoading, setupI18n, t, i18nReady } from '$lib/i18n';
 
 	let { children } = $props();
 
@@ -67,8 +67,9 @@
 	onMount(() => {
 		setupI18n();
 
-		const unsubscribe = isLoading.subscribe((loading) => {
-			if (!loading) {
+		// Wait for i18n to be fully ready (this covers both loading states)
+		const unsubscribe = i18nReady.subscribe((ready) => {
+			if (ready) {
 				appReady = true;
 				unsubscribe();
 			}
@@ -76,7 +77,7 @@
 	});
 </script>
 
-{#if !appReady || $isLoading}
+{#if !appReady}
 	<div class="flex h-screen items-center justify-center">
 		<div class="text-center">
 			<span class="loading loading-spinner loading-lg"></span>
