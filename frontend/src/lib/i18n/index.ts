@@ -1,8 +1,16 @@
 import { browser } from '$app/environment';
-import { init, register, locale, getLocaleFromNavigator, _ } from 'svelte-i18n';
-import { writable } from 'svelte/store';
+import {
+	init,
+	register,
+	locale,
+	getLocaleFromNavigator,
+	_,
+	isLoading as svelteI18nLoading
+} from 'svelte-i18n';
+import { derived } from 'svelte/store';
 
-export const isLoading = writable(true);
+// Use svelte-i18n's built-in loading state
+export const isLoading = derived(svelteI18nLoading, ($loading) => $loading);
 
 register('en', () => import('./locales/en.json'));
 register('pt', () => import('./locales/pt.json'));
@@ -19,18 +27,10 @@ export function setupI18n() {
 	init({
 		fallbackLocale: 'en',
 		initialLocale,
-		loadingDelay: 200
+		loadingDelay: 100 // Reduced for faster feedback in dev
 	});
 
 	initialized = true;
-
-	// Set loading to false after initialization
-	setTimeout(
-		() => {
-			isLoading.set(false);
-		},
-		browser ? 50 : 0
-	);
 }
 
 export function setLocale(newLocale: string) {

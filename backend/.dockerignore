@@ -1,0 +1,114 @@
+# Git and version control
+.git
+.gitignore
+.gitmodules
+
+# Documentation
+README.md
+*.md
+docs/
+doc/
+
+# Build artifacts and binaries
+bin/
+build/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go specific
+# Keep go.mod and go.sum - they're needed!
+vendor/
+*.test
+*.prof
+coverage.txt
+coverage.out
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+log/
+
+# Environment files (these should be injected at runtime)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+
+# Database files (if any local DBs)
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+test/
+tests/
+*_test.go
+testdata/
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+circle.yml
+appveyor.yml
+Jenkinsfile
+
+# Docker files (avoid recursive Docker builds)
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Package manager files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Cache directories
+.cache/
+cache/
+
+# Local development scripts
+scripts/dev/
+dev/
+local/
+
+# Makefile (if not needed in container)
+# Makefile
+
+# Wait script (already copied explicitly)
+# wait-for-it.sh

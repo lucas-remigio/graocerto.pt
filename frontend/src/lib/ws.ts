@@ -32,11 +32,9 @@ export function connect() {
 
 	isConnecting = true;
 
-	console.log('Attempting to connect to WebSocket...');
 	const ws = new WebSocket(WS_URL);
 
 	ws.onopen = () => {
-		console.log('WebSocket connected');
 		connected.set(true);
 		socket.set(ws);
 		isConnecting = false;
@@ -45,7 +43,6 @@ export function connect() {
 	ws.onmessage = (event) => {
 		try {
 			const data = JSON.parse(event.data);
-			console.log('WebSocket message received:', data);
 			messages.update((msgs) => [...msgs, data]);
 		} catch (error) {
 			console.error('Failed to parse message', error);
@@ -53,14 +50,12 @@ export function connect() {
 	};
 
 	ws.onclose = (event) => {
-		console.log('WebSocket disconnected:', event.code, event.reason);
 		connected.set(false);
 		socket.set(null);
 		isConnecting = false;
 
 		// Reconnect after a delay, but only if not closed cleanly
 		if (!event.wasClean) {
-			console.log('Scheduling reconnection...');
 			// Clear any existing reconnect timer
 			if (reconnectTimer) clearTimeout(reconnectTimer);
 			reconnectTimer = setTimeout(connect, 3000);

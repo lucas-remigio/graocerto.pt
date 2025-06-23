@@ -3,23 +3,35 @@
 	import Navbar from '$lib/Navbar.svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import { isAuthenticated, token } from '$lib/stores/auth';
+	import { isAuthenticated, token, authHydrated } from '$lib/stores/auth';
 	import axios from '$lib/axios';
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import { isLoading, setupI18n } from '$lib/i18n';
+	import { isLoading, setupI18n, t } from '$lib/i18n';
 
 	let { children } = $props();
 
 	const publicRoutes = ['/login', '/register'];
 
+	// add app-wide loading state - using $state() for Svelte 5 reactivity
+	let appReady = $state(false);
+
 	async function checkAuth(currentPath: string) {
 		if (!browser) return; // Ensure this logic runs only in the browser
+
+		// Wait for auth to be hydrated from localStorage
+		if (!get(authHydrated)) {
+			return;
+		}
 
 		const isPublicRoute = publicRoutes.includes(currentPath);
 		const authToken = get(token);
 
 		if (isPublicRoute) {
+			// If user is authenticated but on a public route (login/register), redirect to dashboard
+			if (authToken) {
+				goto('/');
+			}
 			return;
 		}
 
@@ -34,31 +46,46 @@
 			isAuthenticated.set(true); // Token is valid
 		} catch (error) {
 			console.error('Token verification failed:', error);
-			isAuthenticated.set(false); // Token is invalid
 			goto('/login'); // Redirect to login if verification fails
 		}
 	}
 
 	if (browser) {
-		setupI18n();
-		// Run on initial load
-		checkAuth(window.location.pathname);
+		// Wait for auth hydration before checking auth on initial load
+		authHydrated.subscribe((hydrated) => {
+			if (hydrated) {
+				checkAuth(window.location.pathname);
+			}
+		});
 
-		// Run on every navigation
+		// Run on every navigation (auth will already be hydrated by then)
 		afterNavigate((navigation) => {
 			checkAuth(navigation.to?.url.pathname || '/');
 		});
 	}
 
 	onMount(() => {
-		if (!browser) {
-			setupI18n();
-		}
+		setupI18n();
+
+		const unsubscribe = isLoading.subscribe((loading) => {
+			if (!loading) {
+				appReady = true;
+				unsubscribe();
+			}
+		});
 	});
 </script>
 
-<Navbar />
-
-<main>
-	{@render children()}
-</main>
+{#if !appReady || $isLoading}
+	<div class="flex h-screen items-center justify-center">
+		<div class="text-center">
+			<span class="loading loading-spinner loading-lg"></span>
+			<p class="ml-4">Loading application...</p>
+		</div>
+	</div>
+{:else}
+	<Navbar />
+	<main>
+		{@render children()}
+	</main>
+{/if}

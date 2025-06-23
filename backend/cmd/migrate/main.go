@@ -38,8 +38,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Get migrations path from environment variable or use default
+	migrationsPath := os.Getenv("MIGRATIONS_PATH")
+	if migrationsPath == "" {
+		migrationsPath = "file://cmd/migrate/migrations"
+	}
+
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://cmd/migrate/migrations",
+		migrationsPath,
 		"mysql",
 		driver,
 	)

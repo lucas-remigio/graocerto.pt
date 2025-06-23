@@ -25,17 +25,17 @@ RUN npm install -g pnpm
 # Copy only package.json and pnpm-lock.yaml first to leverage Docker caching
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies and ensure optional dependencies are skipped
-RUN pnpm install 
+# Install dependencies (production only for smaller image)
+RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the application
 COPY . .
 
-# Build the app
-RUN pnpm build
+# Sync SvelteKit and build the app
+RUN pnpm run prepare && pnpm build
 
-# Serve the build with Nginx
-FROM nginx:stable
+# Production stage with Nginx
+FROM nginx:alpine
 # Copy the file to the templates directory for environment variable substitution
 COPY nginx.conf /etc/nginx/templates/production.conf.template
 COPY --from=build /app/build /usr/share/nginx/html

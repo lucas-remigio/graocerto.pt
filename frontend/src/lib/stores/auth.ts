@@ -1,16 +1,27 @@
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 
-// Writable store to store the token
-// Try to get an initial token from localStorage if it exists
-export const storedToken =
-	typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
-const storedEmail = typeof localStorage !== 'undefined' ? localStorage.getItem('userEmail') : null;
-
-export const token = writable<string | null>(storedToken);
-export const userEmail = writable<string | null>(storedEmail);
-
-// Writable store to manage authentication state
+// Initialize stores with null - will be hydrated on client
+export const token = writable<string | null>(null);
+export const userEmail = writable<string | null>(null);
 export const isAuthenticated = writable<boolean>(false);
+export const authHydrated = writable<boolean>(false);
+
+// Hydrate from localStorage on client side
+if (browser) {
+	const storedToken = localStorage.getItem('token');
+	const storedEmail = localStorage.getItem('userEmail');
+
+	if (storedToken) {
+		token.set(storedToken);
+	}
+	if (storedEmail) {
+		userEmail.set(storedEmail);
+	}
+
+	// Mark auth as hydrated after setting initial values
+	authHydrated.set(true);
+}
 
 // Update the `isAuthenticated` state whenever the token changes
 token.subscribe((value) => {
@@ -40,9 +51,6 @@ userEmail.subscribe((value) => {
 export function login(newToken: string, email: string) {
 	token.set(newToken);
 	userEmail.set(email);
-
-	console.log('Token set:', newToken);
-	console.log('Email set:', email);
 }
 
 // Helper function to clear both token and email when user logs out
