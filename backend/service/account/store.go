@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
@@ -86,7 +85,7 @@ func (s *Store) UpdateAccount(account *types.Account) error {
 		account.AccountName, account.Balance, account.ID)
 }
 
-func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string) (*types.MonthlyFeedback, error) {
+func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string, month, year int) (*types.MonthlyFeedback, error) {
 
 	// check if the account belongs to the user
 	account, err := s.GetAccountByToken(accountToken)
@@ -98,11 +97,6 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string) (*typ
 	}
 
 	// Get the transactions for the account using the transaction store
-	// Get the current month and year
-	currentTime := time.Now()
-	month := int(currentTime.Month())
-	year := currentTime.Year()
-
 	transactions, err := s.transactionsStore.GetTransactionsByAccountToken(accountToken, &month, &year)
 	if err != nil {
 		return nil, fmt.Errorf("error getting transactions: %v", err)

@@ -336,9 +336,9 @@
 		<h1 class="mb-6 text-3xl font-bold">{$t('page.my-accounts')}</h1>
 		<!-- button to create new account -->
 		<button class="btn btn-primary" on:click={createAccount}>
-			<Plus size={20} />
-			<Wallet size={20} /></button
-		>
+			<Plus size={20} class="text-base-content" />
+			<Wallet size={20} class="text-base-content" />
+		</button>
 	</div>
 
 	{#if error}

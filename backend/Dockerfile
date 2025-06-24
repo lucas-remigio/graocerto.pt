@@ -41,6 +41,9 @@ COPY --from=builder /app/migrate-tool ./
 # Copy migration files to a simple path
 COPY --from=builder /app/cmd/migrate/migrations ./migrations/
 
+# Copy prompts folder
+COPY --from=builder /app/prompts ./prompts/
+
 # Set environment variable for migrations path
 ENV MIGRATIONS_PATH=file://migrations
 

@@ -22,6 +22,9 @@
 	let showAiFeedbackModal = false;
 	let error: string = '';
 
+	let month: number = new Date().getMonth() + 1; // Current month (1-12)
+	let year: number = new Date().getFullYear(); // Current year
+
 	let selectedTransaction: TransactionDto | null = null;
 	let activeFilter: any = null;
 	let filteredTransactions: TransactionDto[] = transactions;
@@ -139,6 +142,15 @@
 	}
 
 	function openAiFeedbackModal() {
+		// this should get the first transactions's month and year
+		if (filteredTransactions.length === 0) {
+			error = 'No transactions available for AI feedback.';
+			return;
+		}
+		const firstTransaction = filteredTransactions[0];
+		month = new Date(firstTransaction.date).getMonth() + 1; // Get month (1-12)
+		year = new Date(firstTransaction.date).getFullYear();
+		error = '';
 		showAiFeedbackModal = true;
 	}
 
@@ -205,21 +217,21 @@
 		</h2>
 		<div class="flex items-center gap-4">
 			<!-- Button to get feedback -->
-			{#if transactions.length > 0}
+			{#if !isAll}
 				<button
 					class="btn btn-primary shadow-lg"
 					on:click={openAiFeedbackModal}
 					aria-label="Get AI Feedback"
 				>
 					<div class="flex items-center gap-1">
-						<Bot size={20} />
+						<Bot size={20} class="text-base-content" />
 					</div>
 				</button>
 			{/if}
 			<!-- Button to add a new transaction-->
 			<button class="btn btn-primary shadow-lg" on:click={openCreateTransactionModal}>
-				<Plus size={20} />
-				<CircleDollarSign size={20} />
+				<Plus size={20} class="text-base-content" />
+				<CircleDollarSign size={20} class="text-base-content" />
 			</button>
 		</div>
 	</div>
@@ -332,5 +344,5 @@
 {/if}
 
 {#if showAiFeedbackModal}
-	<AiFeedback {account} closeModal={closeAiFeedbackModal}></AiFeedback>
+	<AiFeedback {account} {month} {year} closeModal={closeAiFeedbackModal}></AiFeedback>
 {/if}

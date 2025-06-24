@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -49,4 +50,17 @@ func ReadContentsFromFile(filePath string) (string, error) {
 
 	// Convert the file content to a string
 	return string(data), nil
+}
+
+func GetIntFromQuery(r *http.Request, key string) (int, error) {
+	value := r.URL.Query().Get(key)
+	if value == "" {
+		return 0, fmt.Errorf("query parameter %s is missing", key)
+	}
+
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf("query parameter %s must be an integer", key)
+	}
+	return intValue, nil
 }
