@@ -27,7 +27,7 @@
 				+{formatCurrency(totals.credit)}€
 			</div>
 		</div>
-		<div class="stat px-4 pr-0 py-2 text-right">
+		<div class="stat px-4 py-2 text-right">
 			<div class="stat-title text-base-content/70 text-right text-xs">
 				{$t('transactions.net-balance')}
 			</div>
