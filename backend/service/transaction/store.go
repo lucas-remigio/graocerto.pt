@@ -308,3 +308,27 @@ func scanMonthYear(rows *sql.Rows) (*types.MonthYear, error) {
 	}
 	return m, nil
 }
+
+func (s *Store) CalculateTransactionTotals(transactions []*types.TransactionDTO) (*types.TransactionTotals, error) {
+	total := &types.TransactionTotals{
+		Debit:      0,
+		Credit:     0,
+		Difference: 0,
+	}
+
+	if transactions == nil {
+		return total, fmt.Errorf("transactions cannot be nil")
+	}
+
+	for _, tx := range transactions {
+		if tx.Category.TransactionType.ID == int(types.CreditTransactionType) {
+			total.Credit += tx.Amount
+		} else if tx.Category.TransactionType.ID == int(types.DebitTransactionType) {
+			total.Debit += tx.Amount
+		}
+	}
+
+	total.Difference = total.Credit - total.Debit
+
+	return total, nil
+}

@@ -210,7 +210,7 @@
 								>{$t('transactions.select-transaction-type')}</option
 							>
 							{#each transactionTypes as type}
-								<option value={type.id}>{type.type_name}</option>
+								<option value={type.id}>{$t('transaction-types.' + type.type_slug)}</option>
 							{/each}
 						</select>
 					</div>

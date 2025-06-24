@@ -126,10 +126,15 @@ func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// transactions must also return all transactions months and years registered for this given account
+	creditTotal, err := h.store.CalculateTransactionTotals(transactions)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-	response := map[string]any{
-		"transactions": transactions,
+	response := &types.TransactionsResponse{
+		Transactions: transactions,
+		Totals:  creditTotal,
 	}
 
 	middleware.WriteDataResponse(w, response)

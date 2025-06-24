@@ -9,6 +9,7 @@ type TransactionStore interface {
 	UpdateTransaction(transaction *UpdateTransactionPayload) error
 	DeleteTransaction(transactionId int, userId int) error
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
+	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 }
 
 type CreateTransactionPayload struct {
@@ -54,4 +55,15 @@ type MonthYear struct {
 	Month int `json:"month"`
 	Year  int `json:"year"`
 	Count int `json:"count"`
+}
+
+type TransactionTotals struct {
+	Debit      float64 `json:"debit"`
+	Credit     float64 `json:"credit"`
+	Difference float64 `json:"difference"`
+}
+
+type TransactionsResponse struct {
+	Transactions []*TransactionDTO  `json:"transactions"`
+	Totals       *TransactionTotals `json:"totals"`
 }

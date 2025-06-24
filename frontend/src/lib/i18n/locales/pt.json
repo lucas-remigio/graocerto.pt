@@ -70,7 +70,11 @@
 		"amount-too-large": "O valor deve ser menor que 999999999",
 		"failed-load-types": "Falha ao carregar tipos de transação",
 		"update-transaction": "Atualizar Transação",
-		"edit-transaction-for": "Editar Transação para"
+		"edit-transaction-for": "Editar Transação para",
+		"total-debit": "Total Débitos",
+		"total-credit": "Total Créditos",
+		"total-transfer": "Total Transferências",
+		"net-balance": "Saldo Líquido"
 	},
 
 	"accounts": {

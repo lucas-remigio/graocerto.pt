@@ -8,7 +8,8 @@
 		TransactionDto,
 		TransactionsResponseDto,
 		CategoryDto,
-		MonthYear
+		MonthYear,
+		TransactionsTotals
 	} from '$lib/types';
 	import { Plus, Wallet } from 'lucide-svelte';
 	import Accounts from '$components/Accounts.svelte';
@@ -55,6 +56,11 @@
 	// Local component state
 	let accounts: Account[] = [];
 	let transactions: TransactionDto[] = []; // Store all transactions
+	let transactionsTotals: TransactionsTotals = {
+		debit: 0,
+		credit: 0,
+		transfer: 0
+	};
 	let categories: CategoryDto[] = [];
 	let error: string = '';
 	let showCreateAccountModal = false;
@@ -184,6 +190,7 @@
 
 			const data: TransactionsResponseDto = res.data;
 			transactions = data.transactions;
+			transactionsTotals = data.totals;
 		} catch (err) {
 			console.error('Error in fetchAccountTransactions:', err);
 			error = $t('errors.failed-load-transactions');
@@ -201,7 +208,7 @@
 			}
 
 			availableMonths = res.data.months as MonthYear[];
-			// chheck if there is this current month in the available months. if not, add it
+			// check if there is this current month in the available months. if not, add it
 			if (
 				!availableMonths.some(
 					(monthData) => monthData.month === currentMonth && monthData.year === currentYear
@@ -360,6 +367,7 @@
 			<TransactionsTable
 				{transactions}
 				{categories}
+				{transactionsTotals}
 				account={selectedAccount}
 				isAll={selectedMonth === null && selectedYear === null}
 				on:newTransaction={handleNewTransaction}

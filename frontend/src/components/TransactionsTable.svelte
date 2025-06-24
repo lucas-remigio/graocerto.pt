@@ -1,18 +1,20 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
-	import type { Account, CategoryDto, TransactionDto } from '$lib/types';
+	import type { Account, CategoryDto, TransactionDto, TransactionsTotals } from '$lib/types';
 	import { Bot, CircleDollarSign, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import TransactionFilters from './TransactionFilters.svelte';
+	import TransactionsStats from './TransactionsStats.svelte';
 	import AiFeedback from './AiFeedback.svelte';
 	import { t } from '$lib/i18n';
 	import { format, locale } from 'svelte-i18n';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
+	export let transactionsTotals: TransactionsTotals;
 	export let account: Account;
 	export let categories: CategoryDto[] = [];
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
@@ -255,7 +257,14 @@
 	</div>
 
 	<div class="overflow-x-auto">
-		<TransactionFilters {categories} on:filter={handleFilter} />
+		<div class="flex items-center justify-between">
+			<div>
+				<TransactionFilters {categories} on:filter={handleFilter} />
+			</div>
+
+			<!-- Totals Summary -->
+			<TransactionsStats totals={transactionsTotals} />
+		</div>
 
 		{#if filteredTransactions.length === 0}
 			<p class="text-center text-gray-500">{$t('transactions.no-transactions')}</p>

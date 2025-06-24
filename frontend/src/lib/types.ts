@@ -13,6 +13,7 @@ export interface AccountsResponse {
 
 export interface TransactionsResponseDto {
 	transactions: TransactionDto[];
+	totals: TransactionsTotals;
 }
 
 export interface TransactionDto {
@@ -24,6 +25,11 @@ export interface TransactionDto {
 	balance: number;
 	created_at: string;
 	category: CategoryDto;
+}
+export interface TransactionsTotals {
+	debit: number;
+	credit: number;
+	difference: number;
 }
 
 export interface CategoryDto {
