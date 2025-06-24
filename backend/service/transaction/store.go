@@ -104,24 +104,26 @@ func (s *Store) CreateTransaction(transaction *types.Transaction) error {
 	return nil
 }
 
-func (s *Store) GetTransactionsByAccountToken(accountToken string) ([]*types.Transaction, error) {
-	query := "SELECT id, account_token, category_id, amount, description, date, balance, created_at FROM transactions WHERE account_token = ?"
+func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*types.Transaction, error) {
+	query := `
+		SELECT id, account_token, category_id, amount, description, date, balance, created_at 
+		FROM transactions 
+		WHERE account_token = ?`
+
+	if month != nil && year != nil {
+		query += " AND MONTH(date) = ? AND YEAR(date) = ?"
+	}
+
+	query += " ORDER BY date DESC, id DESC"
+
+	if month != nil && year != nil {
+		return db.QueryList(s.db, query, scanTransaction, accountToken, *month, *year)
+	}
+
 	return db.QueryList(s.db, query, scanTransaction, accountToken)
 }
 
-func (s *Store) GetTransactionsByAccountTokenAndMonth(accountToken string, month, year int) ([]*types.Transaction, error) {
-	query := `
-        SELECT id, account_token, category_id, amount, description, date, balance, created_at 
-        FROM transactions 
-        WHERE account_token = ? 
-        AND MONTH(date) = ? 
-        AND YEAR(date) = ? 
-        ORDER BY date DESC, id DESC
-    `
-	return db.QueryList(s.db, query, scanTransaction, accountToken, month, year)
-}
-
-func (s *Store) GetTransactionsDTOByAccountToken(accountToken string) ([]*types.TransactionDTO, error) {
+func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, year *int) ([]*types.TransactionDTO, error) {
 	query := "SELECT " +
 		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at, " +
 		"c.id, c.category_name, c.color, c.created_at, c.updated_at, " +
@@ -129,8 +131,17 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string) ([]*types.
 		"FROM transactions t " +
 		"JOIN categories c ON t.category_id = c.id " +
 		"JOIN transaction_types tt ON c.transaction_type_id = tt.id " +
-		"WHERE t.account_token = ? " +
-		"ORDER BY t.date DESC, t.id DESC"
+		"WHERE t.account_token = ? "
+
+	if month != nil && year != nil {
+		query += "AND MONTH(t.date) = ? AND YEAR(t.date) = ? "
+	}
+
+	query += "ORDER BY t.date DESC, t.id DESC"
+
+	if month != nil && year != nil {
+		return db.QueryList(s.db, query, scanTransactionDTO, accountToken, *month, *year)
+	}
 
 	return db.QueryList(s.db, query, scanTransactionDTO, accountToken)
 }
@@ -271,4 +282,29 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) error {
 	}
 
 	return nil
+}
+
+// Store implementation
+func (s *Store) GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*types.MonthYear, error) {
+	query := `
+        SELECT 
+            YEAR(date) as year,
+            MONTH(date) as month,
+            COUNT(*) as count
+        FROM transactions 
+        WHERE account_token = ? 
+        GROUP BY YEAR(date), MONTH(date)
+        ORDER BY year DESC, month DESC
+    `
+
+	return db.QueryList(s.db, query, scanMonthYear, accountToken)
+}
+
+func scanMonthYear(rows *sql.Rows) (*types.MonthYear, error) {
+	m := new(types.MonthYear)
+	err := rows.Scan(&m.Year, &m.Month, &m.Count)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

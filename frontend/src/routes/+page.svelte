@@ -7,14 +7,16 @@
 		AccountsResponse,
 		TransactionDto,
 		TransactionsResponseDto,
-		CategoryDto
+		CategoryDto,
+		MonthYear
 	} from '$lib/types';
-	import { Plus, Wallet } from 'lucide-svelte';
+	import { Plus, Wallet, Calendar } from 'lucide-svelte';
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
 	import CreateAccount from '$components/CreateAccount.svelte';
 	import { userEmail } from '$lib/stores/auth';
 	import { t } from '$lib/i18n';
+	import { format } from 'svelte-i18n';
 
 	// Track WebSocket connection status
 	let hasJoinedRoom = false;
@@ -52,12 +54,17 @@
 
 	// Local component state
 	let accounts: Account[] = [];
-	let transactions: TransactionDto[] = [];
+	let transactions: TransactionDto[] = []; // Store all transactions
 	let categories: CategoryDto[] = [];
 	let error: string = '';
 	let showCreateAccountModal = false;
 
 	let selectedAccount: Account;
+
+	// Month selector state
+	let availableMonths: MonthYear[] = [];
+	let selectedMonth = new Date().getMonth() + 1; // 1-12 (1 = January)
+	let selectedYear = new Date().getFullYear();
 
 	function getSelectedAccount() {
 		if (accounts.length === 0) {
@@ -129,7 +136,7 @@
 			// If we have at least one account, fetch its transactions
 			if (accounts && accounts.length > 0) {
 				getSelectedAccount();
-				await getAccountTransactions(selectedAccount.token);
+				await fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 			}
 		} catch (err) {
 			console.error('Error in fetchAccounts:', err);
@@ -138,9 +145,26 @@
 	}
 
 	// Function to fetch transactions for a given account token
-	async function getAccountTransactions(accountToken: string) {
+	async function fetchAccountTransactions(accountToken: string, month?: number, year?: number) {
 		try {
-			const res = await api_axios('transactions/dto/' + accountToken);
+			await Promise.all([
+				fetchTransactions(accountToken, month, year),
+				fetchAvailableMonths(accountToken)
+			]);
+		} catch (err) {
+			console.error('Error in fetchAccountTransactions:', err);
+			error = 'Failed to load transactions';
+		}
+	}
+
+	async function fetchTransactions(accountToken: string, month?: number, year?: number) {
+		try {
+			const res = await api_axios('transactions/dto/' + accountToken, {
+				params: {
+					month,
+					year
+				}
+			});
 
 			if (res.status !== 200) {
 				console.error('Non-200 response status for transactions:', res.status);
@@ -151,8 +175,26 @@
 			const data: TransactionsResponseDto = res.data;
 			transactions = data.transactions;
 		} catch (err) {
-			console.error('Error in getAccountTransactions:', err);
+			console.error('Error in fetchAccountTransactions:', err);
 			error = 'Failed to load transactions';
+		}
+	}
+
+	async function fetchAvailableMonths(accountToken: string) {
+		try {
+			const res = await api_axios('transactions/months/' + accountToken);
+
+			if (res.status !== 200) {
+				console.error('Non-200 response status for months:', res.status);
+				error = `Error: ${res.status}`;
+				return;
+			}
+
+			console.log('Available months response:', res.data);
+			availableMonths = res.data.months as MonthYear[];
+		} catch (err) {
+			console.error('Error in fetchAvailableMonths:', err);
+			error = 'Failed to load available months';
 		}
 	}
 
@@ -169,10 +211,10 @@
 		}
 	}
 
-	function handleSelect(event: CustomEvent<{ account: Account }>) {
+	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
 		localStorage.setItem('selectedAccount', selectedAccount.token);
-		getAccountTransactions(selectedAccount.token);
+		fetchAccountTransactions(selectedAccount.token);
 	}
 
 	function createAccount() {
@@ -181,6 +223,13 @@
 
 	function closeAccountModal() {
 		showCreateAccountModal = false;
+	}
+
+	function handleMonthSelect(month: number, year: number) {
+		selectedMonth = month;
+		selectedYear = year;
+
+		fetchAccountTransactions(selectedAccount.token, month, year);
 	}
 
 	function handleNewTransaction() {
@@ -232,6 +281,18 @@
 		}
 	}
 
+	function formatDate(month: number, year: number): string {
+		const date = new Date(year, month - 1); // month is 0-indexed in JavaScript
+		return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+	}
+
+	function isCurrentMonth(monthData: MonthYear): boolean {
+		const currentDate = new Date();
+		return (
+			monthData.month === currentDate.getMonth() + 1 && monthData.year === currentDate.getFullYear()
+		);
+	}
+
 	onMount(async () => {
 		await Promise.all([fetchAccounts(), fetchCategories()]);
 	});
@@ -262,13 +323,38 @@
 		<Accounts
 			{accounts}
 			{selectedAccount}
-			on:select={handleSelect}
+			on:select={handleSelectAccount}
 			on:updatedAccount={handleUpdateAccount}
 			on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
 		/>
 
-		<!-- Render the TransactionsTable component only if accounts exist -->
+		<!-- Month Selector and Transactions Layout -->
 		{#if accounts.length > 0}
+			<!-- Month Selector - Simple horizontal layout for all screen sizes -->
+			<div class="mb-6">
+				<div class="mb-3 flex items-center gap-2">
+					<Calendar size={16} class="text-primary" />
+					<span class="text-sm font-medium">Select Month:</span>
+				</div>
+				<div class="flex gap-2 overflow-x-auto pb-2">
+					{#each availableMonths as monthData}
+						<button
+							class="btn btn-sm {selectedMonth === monthData.month &&
+							selectedYear === monthData.year
+								? 'btn-primary'
+								: isCurrentMonth(monthData)
+									? 'btn-outline btn-primary'
+									: 'btn-ghost'} 
+								flex-shrink-0 whitespace-nowrap"
+							on:click={() => handleMonthSelect(monthData.month, monthData.year)}
+						>
+							{formatDate(monthData.month, monthData.year)}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Transactions Table - Simple single layout -->
 			<TransactionsTable
 				{transactions}
 				{categories}
@@ -278,6 +364,7 @@
 				on:deleteTransaction={({ detail: { transaction } }) => handleDeleteTransaction(transaction)}
 			/>
 		{/if}
+
 		<!-- Modal: only rendered when showModal is true -->
 		{#if showCreateAccountModal}
 			<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />

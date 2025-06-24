@@ -3,12 +3,12 @@ package types
 import "time"
 
 type TransactionStore interface {
-	GetTransactionsByAccountToken(accountToken string) ([]*Transaction, error)
+	GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*Transaction, error)
+	GetTransactionsDTOByAccountToken(accountToken string, month, year *int) ([]*TransactionDTO, error)
 	CreateTransaction(transaction *Transaction) error
-	GetTransactionsDTOByAccountToken(accountToken string) ([]*TransactionDTO, error)
 	UpdateTransaction(transaction *UpdateTransactionPayload) error
 	DeleteTransaction(transactionId int, userId int) error
-	GetTransactionsByAccountTokenAndMonth(accountToken string, month, year int) ([]*Transaction, error)
+	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 }
 
 type CreateTransactionPayload struct {
@@ -47,4 +47,11 @@ type TransactionDTO struct {
 	Balance      float64      `json:"balance"`
 	CreatedAt    time.Time    `json:"created_at"`
 	Category     *CategoryDTO `json:"category,omitempty"`
+}
+
+// New type for month/year data
+type MonthYear struct {
+	Month int `json:"month"`
+	Year  int `json:"year"`
+	Count int `json:"count"`
 }

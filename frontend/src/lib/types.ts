@@ -66,3 +66,9 @@ export interface AiFeedbackResponse {
 	feedback_message: string;
 	in_depth_analysis: string;
 }
+
+export interface MonthYear {
+	month: number; // 1-12 (1 = January)
+	year: number;
+	count: number; // Number of transactions in that month/year
+}

@@ -1,0 +1,16 @@
+meta {
+  name: MonthsTransactions
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost:3001/api/v1/transactions/months/fb883458ee5746fa9e2ed2e5b78a914e
+  body: none
+  auth: inherit
+}
+
+headers {
+  Accept: application/json, text/plain, */*
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkX2F0IjoxNzQ3MDgzNTQwLCJ1c2VyX2lkIjoiMSJ9.k1Xs3V5lVGopK_T6kgle1og9h4K8_UKPJ87p-ZeiD0g
+}

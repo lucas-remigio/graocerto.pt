@@ -103,7 +103,7 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string) (*typ
 	month := int(currentTime.Month())
 	year := currentTime.Year()
 
-	transactions, err := s.transactionsStore.GetTransactionsByAccountTokenAndMonth(accountToken, month, year)
+	transactions, err := s.transactionsStore.GetTransactionsByAccountToken(accountToken, &month, &year)
 	if err != nil {
 		return nil, fmt.Errorf("error getting transactions: %v", err)
 	}
