@@ -10,10 +10,11 @@
 		CategoryDto,
 		MonthYear
 	} from '$lib/types';
-	import { Plus, Wallet, Calendar } from 'lucide-svelte';
+	import { Plus, Wallet } from 'lucide-svelte';
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
 	import CreateAccount from '$components/CreateAccount.svelte';
+	import MonthSelector from '$components/MonthSelector.svelte';
 	import { userEmail } from '$lib/stores/auth';
 	import { t, locale } from '$lib/i18n';
 
@@ -309,17 +310,6 @@
 		}
 	}
 
-	function formatDate(month: number, year: number): string {
-		const date = new Date(year, month - 1); // month is 0-indexed in JavaScript
-		return date.toLocaleString(currentLocale, { month: 'long', year: 'numeric' });
-	}
-
-	function isCurrentMonth(monthData: MonthYear): boolean {
-		return monthData.month === currentMonth && monthData.year === currentYear;
-	}
-
-	$: currentLocale = $locale || 'en-US';
-
 	onMount(async () => {
 		await Promise.all([fetchAccounts(), fetchCategories()]);
 	});
@@ -357,37 +347,14 @@
 
 		<!-- Month Selector and Transactions Layout -->
 		{#if accounts.length > 0}
-			<!-- Month Selector - Simple horizontal layout for all screen sizes -->
-			<div class="mb-6">
-				<div class="mb-3 flex items-center gap-2">
-					<Calendar size={16} class="text-primary" />
-					<span class="text-sm font-medium">Select Month:</span>
-				</div>
-				<div class="flex gap-2 overflow-x-auto pb-2">
-					<button
-						class="btn btn-sm {selectedMonth === null && selectedYear === null
-							? 'btn-primary'
-							: 'btn-ghost'}"
-						on:click={() => handleMonthSelect(null, null)}
-					>
-						All
-					</button>
-					{#each availableMonths as monthData}
-						<button
-							class="btn btn-sm {selectedMonth === monthData.month &&
-							selectedYear === monthData.year
-								? 'btn-primary'
-								: isCurrentMonth(monthData)
-									? 'btn-outline btn-primary'
-									: 'btn-ghost'} 
-								flex-shrink-0 whitespace-nowrap"
-							on:click={() => handleMonthSelect(monthData.month, monthData.year)}
-						>
-							{formatDate(monthData.month, monthData.year)}
-						</button>
-					{/each}
-				</div>
-			</div>
+			<div class="divider"></div>
+			<!-- Month Selector Component -->
+			<MonthSelector
+				{availableMonths}
+				{selectedMonth}
+				{selectedYear}
+				on:monthSelect={({ detail }) => handleMonthSelect(detail.month, detail.year)}
+			/>
 
 			<!-- Transactions Table - Simple single layout -->
 			<TransactionsTable
@@ -400,10 +367,10 @@
 				on:deleteTransaction={({ detail: { transaction } }) => handleDeleteTransaction(transaction)}
 			/>
 		{/if}
-
-		<!-- Modal: only rendered when showModal is true -->
-		{#if showCreateAccountModal}
-			<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
-		{/if}
 	{/if}
 </div>
+
+<!-- Modal: only rendered when showModal is true -->
+{#if showCreateAccountModal}
+	<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
+{/if}

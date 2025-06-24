@@ -9,6 +9,7 @@
 	import TransactionFilters from './TransactionFilters.svelte';
 	import AiFeedback from './AiFeedback.svelte';
 	import { t } from '$lib/i18n';
+	import { format, locale } from 'svelte-i18n';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -29,6 +30,8 @@
 	let activeFilter: any = null;
 	let filteredTransactions: TransactionDto[] = transactions;
 
+	$: currentLocale = $locale || 'en';
+
 	function formatCurrency(amount: number): string {
 		// make the currency have a , every 3 digits
 		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
@@ -40,13 +43,25 @@
 
 	function formatDate(date: string): string {
 		// the format should be just month and year, in extense portuguese, without the "de" between
-		const formattedDate = new Date(date).toLocaleDateString('pt-PT', {
+		const formattedDate = new Date(date).toLocaleDateString(currentLocale, {
 			day: 'numeric',
 			month: 'long',
 			year: 'numeric'
 		});
 
 		return `${formattedDate}`;
+	}
+
+	function transactionsFormattedDate(): string {
+		// get the first transactions from the list
+		if (transactions.length === 0) {
+			return '';
+		}
+		const firstTransaction = transactions[0];
+		return new Date(firstTransaction.date).toLocaleDateString(currentLocale, {
+			month: 'long',
+			year: 'numeric'
+		});
 	}
 
 	$: {
@@ -214,6 +229,9 @@
 		<h2 class="mb-4 text-2xl font-semibold">
 			{$t('page.transactions-for')}
 			{account.account_name}
+			{#if !isAll}
+				- {transactionsFormattedDate()}
+			{/if}
 		</h2>
 		<div class="flex items-center gap-4">
 			<!-- Button to get feedback -->
