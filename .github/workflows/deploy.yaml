@@ -36,7 +36,7 @@ jobs:
       - name: Build and Push Images
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.context }} 
+          context: ${{ matrix.context }}
           file: ${{ matrix.context }}/Dockerfile
           push: true
           tags: |
@@ -71,23 +71,27 @@ jobs:
       - name: Deploy to VPS
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            # Create .env file with all variables
-            cat > .env << EOL
-            TAG=${{ github.sha }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_USER=${{ secrets.DB_USER }}
-            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
-            FRONTEND_URL=${{ vars.FRONTEND_URL }}
-            FRONTEND_DOMAIN=${{ vars.FRONTEND_DOMAIN }}
-            BACKEND_URL=${{ vars.BACKEND_URL }}
-            BACKEND_PORT=${{ vars.BACKEND_PORT }}
-            SOCKETS_URL=${{ vars.SOCKETS_URL }}
-            SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
-            EOL
+
+            # On the server, only save the tag, in case we need to restart manually
+            echo "TAG=${{ github.sha }}" > .env
+
+            export TAG=${{ github.sha }}
+            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}Add commentMore actions
+            export DB_USER=${{ secrets.DB_USER }}
+            export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            export REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
+
+            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            export JWT_SECRET=${{ secrets.JWT_SECRET }}
+            export JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
+
+            # Use the repository variable
+            export FRONTEND_URL=${{ vars.FRONTEND_URL }}
+            export FRONTEND_DOMAIN=${{ vars.FRONTEND_DOMAIN }}
+            export BACKEND_URL=${{ vars.BACKEND_URL }}
+            export BACKEND_PORT=${{ vars.BACKEND_PORT }}
+            export SOCKETS_URL=${{ vars.SOCKETS_URL }}
+            export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
 
             # Pull images in parallel
             docker pull lucasremigio/frontend:${{ github.sha }} &
