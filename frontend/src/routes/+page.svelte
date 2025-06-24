@@ -15,8 +15,7 @@
 	import TransactionsTable from '$components/TransactionsTable.svelte';
 	import CreateAccount from '$components/CreateAccount.svelte';
 	import { userEmail } from '$lib/stores/auth';
-	import { t } from '$lib/i18n';
-	import { format } from 'svelte-i18n';
+	import { t, locale } from '$lib/i18n';
 
 	// Track WebSocket connection status
 	let hasJoinedRoom = false;
@@ -63,8 +62,10 @@
 
 	// Month selector state
 	let availableMonths: MonthYear[] = [];
-	let selectedMonth = new Date().getMonth() + 1; // 1-12 (1 = January)
-	let selectedYear = new Date().getFullYear();
+	const currentMonth = new Date().getMonth() + 1; // 1-12 (1 = January)
+	const currentYear = new Date().getFullYear();
+	let selectedMonth: number | null = currentMonth;
+	let selectedYear: number | null = currentYear;
 
 	function getSelectedAccount() {
 		if (accounts.length === 0) {
@@ -145,7 +146,11 @@
 	}
 
 	// Function to fetch transactions for a given account token
-	async function fetchAccountTransactions(accountToken: string, month?: number, year?: number) {
+	async function fetchAccountTransactions(
+		accountToken: string,
+		month: number | null,
+		year: number | null
+	) {
 		try {
 			await Promise.all([
 				fetchTransactions(accountToken, month, year),
@@ -157,7 +162,11 @@
 		}
 	}
 
-	async function fetchTransactions(accountToken: string, month?: number, year?: number) {
+	async function fetchTransactions(
+		accountToken: string,
+		month: number | null,
+		year: number | null
+	) {
 		try {
 			const res = await api_axios('transactions/dto/' + accountToken, {
 				params: {
@@ -190,12 +199,29 @@
 				return;
 			}
 
-			console.log('Available months response:', res.data);
 			availableMonths = res.data.months as MonthYear[];
+			// chheck if there is this current month in the available months. if not, add it
+			if (
+				!availableMonths.some(
+					(monthData) => monthData.month === currentMonth && monthData.year === currentYear
+				)
+			) {
+				addCurrentMonth();
+			}
 		} catch (err) {
 			console.error('Error in fetchAvailableMonths:', err);
 			error = 'Failed to load available months';
 		}
+	}
+
+	function addCurrentMonth() {
+		const currentMonthYear: MonthYear = {
+			month: currentMonth,
+			year: currentYear,
+			count: 0
+		};
+
+		availableMonths.unshift(currentMonthYear);
 	}
 
 	// Function to fetch categories
@@ -214,7 +240,9 @@
 	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
 		localStorage.setItem('selectedAccount', selectedAccount.token);
-		fetchAccountTransactions(selectedAccount.token);
+		selectedMonth = currentMonth;
+		selectedYear = currentYear;
+		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 	}
 
 	function createAccount() {
@@ -225,11 +253,11 @@
 		showCreateAccountModal = false;
 	}
 
-	function handleMonthSelect(month: number, year: number) {
+	function handleMonthSelect(month: number | null, year: number | null) {
 		selectedMonth = month;
 		selectedYear = year;
 
-		fetchAccountTransactions(selectedAccount.token, month, year);
+		fetchTransactions(selectedAccount.token, month, year);
 	}
 
 	function handleNewTransaction() {
@@ -283,15 +311,14 @@
 
 	function formatDate(month: number, year: number): string {
 		const date = new Date(year, month - 1); // month is 0-indexed in JavaScript
-		return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+		return date.toLocaleString(currentLocale, { month: 'long', year: 'numeric' });
 	}
 
 	function isCurrentMonth(monthData: MonthYear): boolean {
-		const currentDate = new Date();
-		return (
-			monthData.month === currentDate.getMonth() + 1 && monthData.year === currentDate.getFullYear()
-		);
+		return monthData.month === currentMonth && monthData.year === currentYear;
 	}
+
+	$: currentLocale = $locale || 'en-US';
 
 	onMount(async () => {
 		await Promise.all([fetchAccounts(), fetchCategories()]);
@@ -337,6 +364,14 @@
 					<span class="text-sm font-medium">Select Month:</span>
 				</div>
 				<div class="flex gap-2 overflow-x-auto pb-2">
+					<button
+						class="btn btn-sm {selectedMonth === null && selectedYear === null
+							? 'btn-primary'
+							: 'btn-ghost'}"
+						on:click={() => handleMonthSelect(null, null)}
+					>
+						All
+					</button>
 					{#each availableMonths as monthData}
 						<button
 							class="btn btn-sm {selectedMonth === monthData.month &&
@@ -359,6 +394,7 @@
 				{transactions}
 				{categories}
 				account={selectedAccount}
+				isAll={selectedMonth === null && selectedYear === null}
 				on:newTransaction={handleNewTransaction}
 				on:updatedTransaction={handleUpdateTransaction}
 				on:deleteTransaction={({ detail: { transaction } }) => handleDeleteTransaction(transaction)}

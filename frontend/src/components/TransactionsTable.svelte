@@ -14,6 +14,7 @@
 	export let transactions: TransactionDto[] = [];
 	export let account: Account;
 	export let categories: CategoryDto[] = [];
+	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
 
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
@@ -186,18 +187,14 @@
 			}));
 	}
 
-	function hasAnyTransactionThisMonth(): boolean {
-		const currentDate = new Date();
-		return transactions.some((tx) => {
-			const txDate = new Date(tx.date);
-			return (
-				txDate.getFullYear() === currentDate.getFullYear() &&
-				txDate.getMonth() === currentDate.getMonth()
-			);
-		});
-	}
-
-	$: groupedTransactions = groupTransactionsByMonth(filteredTransactions);
+	$: groupedTransactions = isAll
+		? groupTransactionsByMonth(filteredTransactions)
+		: [
+				{
+					month: '',
+					transactions: filteredTransactions
+				}
+			];
 </script>
 
 {#if transactions && transactions.length > 0}
@@ -208,7 +205,7 @@
 		</h2>
 		<div class="flex items-center gap-4">
 			<!-- Button to get feedback -->
-			{#if hasAnyTransactionThisMonth()}
+			{#if transactions.length > 0}
 				<button
 					class="btn btn-primary shadow-lg"
 					on:click={openAiFeedbackModal}
@@ -245,11 +242,14 @@
 				</thead>
 				<tbody class="text-center">
 					{#each groupedTransactions as group}
-						<tr class="bg-base-200">
-							<td colspan="5" class="px-4 py-2 text-left font-bold">
-								{group.month}
-							</td>
-						</tr>
+						<!-- Only show month header if isAll is true and month is not empty -->
+						{#if isAll && group.month}
+							<tr class="bg-base-200">
+								<td colspan="5" class="px-4 py-2 text-left font-bold">
+									{group.month}
+								</td>
+							</tr>
+						{/if}
 						{#each group.transactions as tx}
 							<tr
 								class={tx.category.transaction_type.type_slug === 'debit'
@@ -272,12 +272,6 @@
 								<td class="text-gray-900">{formatCurrency(tx.amount)}€</td>
 								<td class="text-gray-900">{tx.description || 'N/A'}</td>
 								<td class="text-gray-900">
-									<!-- <button
-										class="btn btn-sm btn-circle text-blue-300"
-										on:click={() => handleEditTransaction(tx)}
-									>
-										<Pencil size={20} />
-									</button> -->
 									<button
 										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
 										on:click={() => handleDeleteTransaction(tx)}
