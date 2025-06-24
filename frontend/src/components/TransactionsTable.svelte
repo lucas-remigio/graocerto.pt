@@ -48,7 +48,6 @@
 		const formattedDate = new Date(date).toLocaleDateString(currentLocale, {
 			day: 'numeric',
 			month: 'long',
-			year: 'numeric'
 		});
 
 		return `${formattedDate}`;
