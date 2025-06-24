@@ -12,19 +12,25 @@ type Scannable interface {
 
 // QueryList executes a query and scans results into a slice using the provided scanner function
 func QueryList[T any](db *sql.DB, query string, scanner func(*sql.Rows) (*T, error), args ...interface{}) ([]*T, error) {
+	// Always return an array, even if empty
+	results := []*T{}
+
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*T
 	for rows.Next() {
 		item, err := scanner(rows)
 		if err != nil {
 			return nil, err
 		}
 		results = append(results, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return results, nil

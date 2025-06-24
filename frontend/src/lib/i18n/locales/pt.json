@@ -7,5 +7,72 @@
 	"page": {
 		"my-accounts": "As minhas contas",
 		"transactions-for": "Transações para"
+	},
+
+	"common": {
+		"all": "Todas",
+		"create": "Criar",
+		"edit": "Editar",
+		"delete": "Eliminar",
+		"cancel": "Cancelar",
+		"save": "Guardar",
+		"close": "Fechar",
+		"loading": "A carregar...",
+		"error": "Erro",
+		"success": "Sucesso"
+	},
+
+	"errors": {
+		"failed-create-account": "Falha ao criar conta",
+		"failed-load-accounts": "Falha ao carregar contas",
+		"failed-load-transactions": "Falha ao carregar transações",
+		"failed-load-months": "Falha ao carregar meses disponíveis",
+		"failed-load-categories": "Falha ao carregar categorias"
+	},
+
+	"months": {
+		"show-all-transactions": "Mostrar todas as transações"
+	},
+
+	"transactions": {
+		"no-transactions": "Nenhuma transação encontrada",
+		"no-transactions-for": "Nenhuma transação encontrada para",
+		"create-first": "Criar Primeira Transação",
+		"ai-feedback": "Feedback IA",
+		"no-transactions-ai": "Nenhuma transação disponível para feedback IA",
+		"date": "Data",
+		"description": "Descrição",
+		"amount": "Valor",
+		"category": "Categoria",
+		"type": "Tipo",
+		"actions": "Ações"
+	},
+
+	"accounts": {
+		"create-account": "Criar Conta",
+		"account-name": "Nome da Conta",
+		"select-account": "Selecionar Conta"
+	},
+
+	"auth": {
+		"login": "Entrar",
+		"register": "Registar",
+		"email": "Email",
+		"password": "Palavra-passe",
+		"confirm-password": "Confirmar Palavra-passe",
+		"enter-email": "Insira o seu email",
+		"enter-password": "Insira a sua palavra-passe",
+		"enter-confirm-password": "Confirme a sua palavra-passe",
+		"reenter-password": "Reinsira a sua palavra-passe",
+		"no-account": "Não tem conta?",
+		"have-account": "Já tem conta?",
+		"registration-successful": "Registo com sucesso! A redirecionar para login...",
+		"error-occurred": "Ocorreu um erro",
+		"registration-failed": "Falha no registo. Tente novamente.",
+		"passwords-no-match": "As palavras-passe não coincidem.",
+		"first-name": "Primeiro Nome",
+		"last-name": "Último Nome",
+		"enter-first": "Insira o seu primeiro nome",
+		"enter-last": "Insira o seu último nome"
 	}
 }

@@ -68,10 +68,11 @@
 		setupI18n();
 
 		// Wait for i18n to be fully ready (this covers both loading states)
-		const unsubscribe = i18nReady.subscribe((ready) => {
+		let unsubscribe: (() => void) | undefined;
+		unsubscribe = i18nReady.subscribe((ready) => {
 			if (ready) {
 				appReady = true;
-				unsubscribe();
+				unsubscribe?.();
 			}
 		});
 	});

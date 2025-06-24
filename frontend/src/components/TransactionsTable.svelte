@@ -159,7 +159,7 @@
 	function openAiFeedbackModal() {
 		// this should get the first transactions's month and year
 		if (filteredTransactions.length === 0) {
-			error = 'No transactions available for AI feedback.';
+			error = $t('transactions.no-transactions-ai');
 			return;
 		}
 		const firstTransaction = filteredTransactions[0];
@@ -258,16 +258,16 @@
 		<TransactionFilters {categories} on:filter={handleFilter} />
 
 		{#if filteredTransactions.length === 0}
-			<p class="text-center text-gray-500">No transactions found.</p>
+			<p class="text-center text-gray-500">{$t('transactions.no-transactions')}</p>
 		{:else}
 			<table class="table w-full">
 				<thead class="sticky top-0 text-center">
 					<tr>
-						<th style="width: 15%">Date</th>
-						<th style="width: 20%">Category</th>
-						<th style="width: 15%">Amount</th>
-						<th style="width: 40%">Description</th>
-						<th style="width: 10%">Actions</th>
+						<th style="width: 15%">{$t('transactions.date')}</th>
+						<th style="width: 20%">{$t('transactions.category')}</th>
+						<th style="width: 15%">{$t('transactions.amount')}</th>
+						<th style="width: 40%">{$t('transactions.description')}</th>
+						<th style="width: 10%">{$t('transactions.actions')}</th>
 					</tr>
 				</thead>
 				<tbody class="text-center">
@@ -319,7 +319,7 @@
 {:else}
 	<div class="flex h-96 flex-col items-center justify-center">
 		<p class="text-gray-500">
-			No transactions found for <strong>{account.account_name}</strong>.
+			{$t('transactions.no-transactions-for')} <strong>{account.account_name}</strong>.
 		</p>
 
 		<!-- Button to add a new transaction -->
@@ -329,7 +329,7 @@
 			aria-label="Add New Transaction"
 		>
 			<CircleDollarSign size={20} class="h-5 w-5" />
-			<span>Create First Transaction</span>
+			<span>{$t('transactions.create-first')}</span>
 		</button>
 	</div>
 {/if}

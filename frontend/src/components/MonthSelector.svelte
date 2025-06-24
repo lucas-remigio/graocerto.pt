@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { Calendar } from 'lucide-svelte';
 	import type { MonthYear } from '$lib/types';
-	import { locale } from '$lib/i18n';
+	import { locale, t } from '$lib/i18n';
 
 	export let availableMonths: MonthYear[] = [];
 	export let selectedMonth: number | null = null;
@@ -38,7 +38,7 @@
 				? 'btn-primary'
 				: 'btn-ghost'} flex-shrink-0"
 			on:click={() => handleMonthSelect(null, null)}
-			title="Show all transactions"
+			title={$t('months.show-all-transactions')}
 		>
 			<Calendar size={20} />
 		</button>

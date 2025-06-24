@@ -7,5 +7,72 @@
 	"page": {
 		"my-accounts": "My Accounts",
 		"transactions-for": "Transactions for"
+	},
+
+	"common": {
+		"all": "All",
+		"create": "Create",
+		"edit": "Edit",
+		"delete": "Delete",
+		"cancel": "Cancel",
+		"save": "Save",
+		"close": "Close",
+		"loading": "Loading...",
+		"error": "Error",
+		"success": "Success"
+	},
+
+	"errors": {
+		"failed-create-account": "Failed to create account",
+		"failed-load-accounts": "Failed to load accounts",
+		"failed-load-transactions": "Failed to load transactions",
+		"failed-load-months": "Failed to load available months",
+		"failed-load-categories": "Failed to load categories"
+	},
+
+	"months": {
+		"show-all-transactions": "Show all transactions"
+	},
+
+	"transactions": {
+		"no-transactions": "No transactions found",
+		"no-transactions-for": "No transactions found for",
+		"create-first": "Create First Transaction",
+		"ai-feedback": "AI Feedback",
+		"no-transactions-ai": "No transactions available for AI feedback",
+		"date": "Date",
+		"description": "Description",
+		"amount": "Amount",
+		"category": "Category",
+		"type": "Type",
+		"actions": "Actions"
+	},
+
+	"accounts": {
+		"create-account": "Create Account",
+		"account-name": "Account Name",
+		"select-account": "Select Account"
+	},
+
+	"auth": {
+		"login": "Login",
+		"register": "Register",
+		"email": "Email",
+		"password": "Password",
+		"confirm-password": "Confirm Password",
+		"enter-email": "Enter your email",
+		"enter-password": "Enter your password",
+		"enter-confirm-password": "Confirm your password",
+		"reenter-password": "Re-enter your password",
+		"no-account": "Don't have an account?",
+		"have-account": "Already have an account?",
+		"registration-successful": "Registration successful! Redirecting to login...",
+		"error-occurred": "An error occurred",
+		"registration-failed": "Registration failed. Please try again.",
+		"passwords-no-match": "Passwords do not match.",
+		"first-name": "First Name",
+		"last-name": "Last Name",
+		"enter-first": "Enter your first name",
+		"enter-last": "Enter your last name"
 	}
 }

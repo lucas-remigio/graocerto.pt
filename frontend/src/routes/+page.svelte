@@ -101,7 +101,7 @@
 			fetchAccounts();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to create account';
+			error = $t('errors.failed-create-account');
 		}
 	}
 
@@ -118,7 +118,7 @@
 			fetchAccounts();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to create account';
+			error = $t('errors.failed-create-account');
 		}
 	}
 
@@ -142,7 +142,7 @@
 			}
 		} catch (err) {
 			console.error('Error in fetchAccounts:', err);
-			error = 'Failed to load accounts';
+			error = $t('errors.failed-load-accounts');
 		}
 	}
 
@@ -159,7 +159,7 @@
 			]);
 		} catch (err) {
 			console.error('Error in fetchAccountTransactions:', err);
-			error = 'Failed to load transactions';
+			error = $t('errors.failed-load-transactions');
 		}
 	}
 
@@ -186,7 +186,7 @@
 			transactions = data.transactions;
 		} catch (err) {
 			console.error('Error in fetchAccountTransactions:', err);
-			error = 'Failed to load transactions';
+			error = $t('errors.failed-load-transactions');
 		}
 	}
 
@@ -211,7 +211,7 @@
 			}
 		} catch (err) {
 			console.error('Error in fetchAvailableMonths:', err);
-			error = 'Failed to load available months';
+			error = $t('errors.failed-load-months');
 		}
 	}
 
@@ -234,7 +234,7 @@
 			}
 		} catch (err) {
 			console.error('Error fetching categories:', err);
-			error = 'Failed to load categories';
+			error = $t('errors.failed-load-categories');
 		}
 	}
 
