@@ -354,7 +354,7 @@
 {#if showDeleteTransactionModal}
 	<ConfirmAction
 		title="Delete Transaction"
-		message={`Are you sure you want to delete this transaction ${getTransactionDetails(selectedTransaction!)}? This action cannot be undone.`}
+		message={`${$t('modals.delete-transaction-confirm')} ${getTransactionDetails(selectedTransaction!)}? ${$t('modals.cannot-be-undone')}`}
 		type="danger"
 		onConfirm={handleDeleteTransactionConfirm}
 		onCancel={handleDeleteTransactionCancel}

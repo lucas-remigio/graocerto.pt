@@ -10,6 +10,7 @@
 	} from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	// Input account
 	export let account: Account;
@@ -82,7 +83,7 @@
 			handleNewTransaction();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to create transaction';
+			error = $t('errors.failed-create-transaction');
 		}
 	}
 
@@ -93,23 +94,23 @@
 		// category must be from transaction type
 		const category: Category | undefined = categories.find((cat) => cat.id === Number(category_id));
 		if (!category) {
-			error = 'Category is required';
+			error = $t('transactions.category-required');
 			return false;
 		}
 
 		if (category.transaction_type_id !== Number(transaction_type_id)) {
-			error = 'Category must be from the selected transaction type';
+			error = $t('transactions.category-must-match');
 			return false;
 		}
 
 		// validations
 		if (amount <= 0) {
-			error = 'Amount must be greater than 0';
+			error = $t('transactions.amount-greater-zero');
 			return false;
 		}
 
 		if (amount > 999999999) {
-			error = 'Amount must be less than 999999999';
+			error = $t('transactions.amount-too-large');
 			return false;
 		}
 
@@ -145,7 +146,7 @@
 			transactionTypes = transactionTypes.filter((type) => type.type_slug !== 'transfer');
 		} catch (err) {
 			console.error('Error in fetchTransactionTypes:', err);
-			error = 'Failed to load transaction types';
+			error = $t('transactions.failed-load-types');
 		}
 	}
 
@@ -165,7 +166,7 @@
 			categoriesMappedById = new Map(categories.map((cat) => [cat.id, cat]));
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
-			error = 'Failed to load categories';
+			error = $t('errors.failed-load-categories');
 		}
 	}
 
@@ -182,7 +183,7 @@
 			><X /></button
 		>
 		<h3 class="mb-4 text-lg font-bold">
-			New Transaction for <strong>{account.account_name}</strong>
+			{$t('transactions.new-transaction-for')} <strong>{account.account_name}</strong>
 		</h3>
 		<!--Error message-->
 		{#if error}
@@ -197,7 +198,7 @@
 					<!-- Transaction Type Field -->
 					<div class="form-control flex-1">
 						<label class="label" for="transaction-type">
-							<span class="label-text">Transaction Type</span>
+							<span class="label-text">{$t('transactions.transaction-type')}</span>
 						</label>
 						<select
 							id="transaction-type"
@@ -205,7 +206,9 @@
 							bind:value={transaction_type_id}
 							required
 						>
-							<option value="" disabled selected>Select Transaction Type</option>
+							<option value="" disabled selected
+								>{$t('transactions.select-transaction-type')}</option
+							>
 							{#each transactionTypes as type}
 								<option value={type.id}>{type.type_name}</option>
 							{/each}
@@ -215,7 +218,7 @@
 					<!-- Category Field -->
 					<div class="form-control flex-1">
 						<label class="label" for="category">
-							<span class="label-text">Category</span>
+							<span class="label-text">{$t('transactions.category')}</span>
 						</label>
 						<select
 							id="category"
@@ -224,7 +227,7 @@
 							required
 							style="border-color: {borderColor} !important;"
 						>
-							<option value="" disabled selected>Select category</option>
+							<option value="" disabled selected>{$t('transactions.select-category')}</option>
 							{#each filteredCategories as cat}
 								<option value={cat.id}>{cat.category_name}</option>
 							{/each}
@@ -235,7 +238,7 @@
 				<!-- If no categories, show the Transaction Type field and a message -->
 				<div class="form-control mt-4">
 					<label class="label" for="transaction-type">
-						<span class="label-text">Transaction Type</span>
+						<span class="label-text">{$t('transactions.transaction-type')}</span>
 					</label>
 					<select
 						id="transaction-type"
@@ -243,16 +246,16 @@
 						bind:value={transaction_type_id}
 						required
 					>
-						<option value="" disabled selected>Select Transaction Type</option>
+						<option value="" disabled selected>{$t('transactions.select-transaction-type')}</option>
 						{#each transactionTypes as type}
 							<option value={type.id}>{type.type_name}</option>
 						{/each}
 					</select>
 				</div>
 				<div class="form-control mt-4">
-					<p class="text-gray-500">
-						No categories available for the selected transaction type.
-						<a href="/categories" class="link">Click here to create one!</a>
+					<p class="text-base-content/70">
+						{$t('transactions.no-categories-available')}
+						<a href="/categories" class="link">{$t('transactions.click-to-create')}</a>
 					</p>
 				</div>
 			{/if}
@@ -260,12 +263,12 @@
 			<!-- Description Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="description">
-					<span class="label-text">Description</span>
+					<span class="label-text">{$t('transactions.description')}</span>
 				</label>
 				<input
 					id="description"
 					type="text"
-					placeholder="Transaction description"
+					placeholder={$t('transactions.transaction-description')}
 					class="input input-bordered"
 					bind:value={description}
 				/>
@@ -275,12 +278,12 @@
 				<!-- Amount Field -->
 				<div class="form-control flex-1">
 					<label class="label" for="amount">
-						<span class="label-text">Amount</span>
+						<span class="label-text">{$t('transactions.amount')}</span>
 					</label>
 					<input
 						id="amount"
 						type="number"
-						placeholder="Enter amount"
+						placeholder={$t('transactions.transaction-amount')}
 						class="input input-bordered w-full"
 						bind:value={amount}
 						min="0"
@@ -293,15 +296,17 @@
 				<!-- Date Field -->
 				<div class="form-control flex-1">
 					<label class="label" for="date">
-						<span class="label-text">Date</span>
+						<span class="label-text">{$t('transactions.date')}</span>
 					</label>
 					<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
 				</div>
 			</div>
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
-				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
-				<button type="submit" class="btn btn-primary">Create Transaction</button>
+				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
+				<button type="submit" class="btn btn-primary"
+					>{$t('transactions.create-transaction')}</button
+				>
 			</div>
 		</form>
 	</div>

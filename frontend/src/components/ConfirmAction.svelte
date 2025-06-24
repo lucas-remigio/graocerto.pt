@@ -1,7 +1,6 @@
 <script lang="ts">
-	import api_axios from '$lib/axios';
 	import { X } from 'lucide-svelte';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	export let title: string;
 	export let message: string;
@@ -58,9 +57,11 @@
 
 			<!-- Action buttons -->
 			<div class="modal-action">
-				<button class="btn border border-gray-900" on:click={handleCloseModal}>Cancel</button>
+				<button class="btn border border-gray-900" on:click={handleCloseModal}
+					>{$t('common.cancel')}</button
+				>
 				<button class="btn {typeStyles[type].button} border" on:click={handleConfirm}
-					>Confirm</button
+					>{$t('modals.confirm')}</button
 				>
 			</div>
 		</div>

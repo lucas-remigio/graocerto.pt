@@ -3,6 +3,7 @@
 	import type { Account } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	export let account: Account;
 
@@ -36,7 +37,7 @@
 			handleUpdatedAccount();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to update account';
+			error = $t('errors.failed-update-account');
 		}
 	}
 
@@ -46,17 +47,17 @@
 
 		// validations
 		if (balance < 0) {
-			error = 'Balance must be greater than 0';
+			error = $t('errors.balance-negative');
 			return false;
 		}
 
 		if (balance > 999999999) {
-			error = 'Balance must be less than 999999999';
+			error = $t('errors.balance-too-large');
 			return false;
 		}
 
 		if (account_name.length < 3) {
-			error = 'Account name must be at least 3 characters';
+			error = $t('errors.account-name-too-short');
 			return false;
 		}
 
@@ -83,7 +84,7 @@
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
 			><X /></button
 		>
-		<h3 class="mb-4 text-lg font-bold">Edit Account</h3>
+		<h3 class="mb-4 text-lg font-bold">{$t('accounts.edit-account-title')}</h3>
 		<!--Error message-->
 		{#if error}
 			<div class="alert alert-error">
@@ -94,12 +95,12 @@
 			<!-- Description Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="account_name">
-					<span class="label-text">Account name</span>
+					<span class="label-text">{$t('accounts.account-name')}</span>
 				</label>
 				<input
 					id="account_name"
 					type="text"
-					placeholder="Account name"
+					placeholder={$t('accounts.account-name-placeholder')}
 					class="input input-bordered"
 					bind:value={account_name}
 					required
@@ -109,12 +110,12 @@
 			<!-- Amount Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="balance">
-					<span class="label-text">Balance</span>
+					<span class="label-text">{$t('accounts.balance')}</span>
 				</label>
 				<input
 					id="balance"
 					type="number"
-					placeholder="Enter amount"
+					placeholder={$t('accounts.balance-placeholder')}
 					class="input input-bordered"
 					min="0"
 					step="0.01"
@@ -126,8 +127,8 @@
 
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
-				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
-				<button type="submit" class="btn btn-primary">Update Account</button>
+				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
+				<button type="submit" class="btn btn-primary">{$t('accounts.update-account')}</button>
 			</div>
 		</form>
 	</div>

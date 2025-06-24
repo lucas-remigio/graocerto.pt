@@ -27,7 +27,15 @@
 		"failed-load-accounts": "Falha ao carregar contas",
 		"failed-load-transactions": "Falha ao carregar transações",
 		"failed-load-months": "Falha ao carregar meses disponíveis",
-		"failed-load-categories": "Falha ao carregar categorias"
+		"failed-load-categories": "Falha ao carregar categorias",
+		"failed-create-transaction": "Falha ao criar transação",
+		"failed-create-category": "Falha ao criar categoria",
+		"failed-update-account": "Falha ao atualizar conta",
+		"failed-update-transaction": "Falha ao atualizar transação",
+		"failed-edit-category": "Falha ao editar categoria",
+		"balance-negative": "O saldo deve ser maior ou igual a 0",
+		"balance-too-large": "O saldo deve ser menor que 999999999",
+		"account-name-too-short": "O nome da conta deve ter pelo menos 3 caracteres"
 	},
 
 	"months": {
@@ -38,6 +46,9 @@
 		"no-transactions": "Nenhuma transação encontrada",
 		"no-transactions-for": "Nenhuma transação encontrada para",
 		"create-first": "Criar Primeira Transação",
+		"create-transaction": "Criar Transação",
+		"edit-transaction": "Editar Transação",
+		"new-transaction-for": "Nova Transação para",
 		"ai-feedback": "Feedback IA",
 		"no-transactions-ai": "Nenhuma transação disponível para feedback IA",
 		"date": "Data",
@@ -45,13 +56,68 @@
 		"amount": "Valor",
 		"category": "Categoria",
 		"type": "Tipo",
-		"actions": "Ações"
+		"actions": "Ações",
+		"transaction-type": "Tipo de Transação",
+		"select-category": "Selecionar categoria",
+		"select-transaction-type": "Selecionar Tipo de Transação",
+		"transaction-description": "Descrição da transação",
+		"transaction-amount": "Valor da transação",
+		"click-to-create": "Clique aqui para criar uma!",
+		"no-categories-available": "Nenhuma categoria disponível para o tipo de transação selecionado.",
+		"category-required": "Categoria é obrigatória",
+		"category-must-match": "A categoria deve ser do tipo de transação selecionado",
+		"amount-greater-zero": "O valor deve ser maior que 0",
+		"amount-too-large": "O valor deve ser menor que 999999999",
+		"failed-load-types": "Falha ao carregar tipos de transação",
+		"update-transaction": "Atualizar Transação",
+		"edit-transaction-for": "Editar Transação para"
 	},
 
 	"accounts": {
 		"create-account": "Criar Conta",
+		"edit-account-title": "Editar Conta",
 		"account-name": "Nome da Conta",
-		"select-account": "Selecionar Conta"
+		"balance": "Saldo",
+		"select-account": "Selecionar Conta",
+		"no-accounts-found": "Nenhuma conta encontrada.",
+		"edit-account": "Editar conta",
+		"delete-account": "Eliminar conta",
+		"account-name-placeholder": "Insira o nome da conta",
+		"balance-placeholder": "Insira o saldo inicial",
+		"update-account": "Atualizar Conta"
+	},
+
+	"categories": {
+		"no-categories": "Nenhuma categoria disponível.",
+		"category-name": "Nome da Categoria",
+		"color": "Cor",
+		"actions": "Ações",
+		"create-category": "Criar Categoria",
+		"edit-category": "Editar Categoria",
+		"delete-category": "Eliminar Categoria",
+		"category-type": "Tipo de Categoria",
+		"debit": "Débito",
+		"credit": "Crédito",
+		"transfer": "Transferência",
+		"delete-confirm": "Tem a certeza que quer eliminar a categoria",
+		"delete-warning": "Esta ação não pode ser desfeita.",
+		"category-name-placeholder": "Insira o nome da categoria",
+		"select-color": "Selecione uma cor",
+		"category-name-required": "Nome da categoria é obrigatório",
+		"category-name-too-long": "Nome da categoria deve ter menos de 50 caracteres",
+		"category-name-too-short": "Nome da categoria deve ter pelo menos 3 caracteres",
+		"color-required": "Cor é obrigatória",
+		"color-invalid": "Cor deve ser um hex válido",
+		"new-category-for": "Nova Categoria",
+		"edit-category-title": "Editar Categoria"
+	},
+
+	"modals": {
+		"confirm": "Confirmar",
+		"are-you-sure": "Tem a certeza?",
+		"cannot-be-undone": "Esta ação não pode ser desfeita.",
+		"delete-transaction-confirm": "Tem certeza de que deseja excluir esta transação",
+		"delete-account-confirm": "Tem certeza de que deseja excluir a conta"
 	},
 
 	"auth": {
@@ -74,5 +140,11 @@
 		"last-name": "Último Nome",
 		"enter-first": "Insira o seu primeiro nome",
 		"enter-last": "Insira o seu último nome"
+	},
+
+	"transaction-types": {
+		"debit": "Débito",
+		"credit": "Crédito",
+		"transfer": "Transferência"
 	}
 }

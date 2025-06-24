@@ -3,6 +3,7 @@
 	import type { Category, CategoryDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	export let category: CategoryDto;
 
@@ -37,42 +38,42 @@
 			handleEditCategory();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to edit category';
+			error = $t('errors.failed-edit-category');
 		}
 	}
 
 	function validateForm(): boolean {
 		if (!category_name) {
-			error = 'Category name is required';
+			error = $t('categories.category-name-required');
 			return false;
 		}
 
 		category_name = category_name.trim();
 
 		if (category_name.length > 50) {
-			error = 'Category name must be less than 50 characters';
+			error = $t('categories.category-name-too-long');
 			return false;
 		}
 
 		if (category_name.length < 3) {
-			error = 'Category name must be at least 3 characters';
+			error = $t('categories.category-name-too-short');
 			return false;
 		}
 
 		if (!color) {
-			error = 'Color is required';
+			error = $t('categories.color-required');
 			return false;
 		}
 
 		color = color.trim();
 
 		if (color[0] !== '#') {
-			error = 'Color must be a valid hex color';
+			error = $t('categories.color-invalid');
 			return false;
 		}
 
 		if (color.length !== 7) {
-			error = 'Color must be a valid hex color';
+			error = $t('categories.color-invalid');
 			return false;
 		}
 
@@ -103,7 +104,8 @@
 			<X />
 		</button>
 		<h3 class="mb-4 text-lg font-bold">
-			Edit {category.transaction_type.type_name} Category - {category.category_name}
+			{$t('categories.edit-category-title')} -
+			{$t('transaction-types.' + category.transaction_type.type_slug)} - {category.category_name}
 		</h3>
 		<!-- Error message -->
 		{#if error}
@@ -115,12 +117,12 @@
 			<!-- Category Name Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="category_name">
-					<span class="label-text">Category Name</span>
+					<span class="label-text">{$t('categories.category-name')}</span>
 				</label>
 				<input
 					id="category_name"
 					type="text"
-					placeholder="Category name"
+					placeholder={$t('categories.category-name-placeholder')}
 					class="input input-bordered"
 					bind:value={category_name}
 					required
@@ -130,7 +132,7 @@
 			<!-- Color Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="color">
-					<span class="label-text">Color</span>
+					<span class="label-text">{$t('categories.color')}</span>
 				</label>
 				<div class="flex items-center space-x-4">
 					<!-- The native color input -->
@@ -153,8 +155,8 @@
 
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
-				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
-				<button type="submit" class="btn btn-primary">Edit Category</button>
+				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
+				<button type="submit" class="btn btn-primary">{$t('categories.edit-category')}</button>
 			</div>
 		</form>
 	</div>

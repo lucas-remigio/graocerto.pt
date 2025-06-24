@@ -4,6 +4,7 @@
 	import EditCategory from './EditCategory.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
+	import { t } from '$lib/i18n';
 
 	export let categories: CategoryDto[] = [];
 	export let categoryType: 'debit' | 'credit' = 'debit';
@@ -52,14 +53,14 @@
 </script>
 
 {#if categories.length === 0}
-	<p class="text-gray-500">No categories available.</p>
+	<p class="text-base-content/70 py-8 text-center">{$t('categories.no-categories')}</p>
 {:else}
 	<table class="table-zebra table w-full border-2 {modalBorderClass}">
 		<thead>
 			<tr>
-				<th>Category Name</th>
-				<th>Color</th>
-				<th>Actions</th>
+				<th>{$t('categories.category-name')}</th>
+				<th>{$t('categories.color')}</th>
+				<th>{$t('categories.actions')}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -105,8 +106,8 @@
 
 {#if promptDeleteCategoryModalOpen}
 	<ConfirmAction
-		title="Delete Category"
-		message={`Are you sure you want to delete the category ${selectedCategory!.category_name}? This action cannot be undone.`}
+		title={$t('categories.delete-category')}
+		message={`${$t('categories.delete-confirm')} ${selectedCategory!.category_name}? ${$t('categories.delete-warning')}`}
 		type="danger"
 		onConfirm={() => handleConfirmDeleteCategory(selectedCategory!.id)}
 		onCancel={closePromptDeleteCategoryModal}

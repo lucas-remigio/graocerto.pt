@@ -5,6 +5,7 @@
 	import { Pencil, Trash } from 'lucide-svelte';
 	import EditAccount from './EditAccount.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
+	import { t } from '$lib/i18n';
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
@@ -106,7 +107,7 @@
 {#if openDeleteAccountModal}
 	<ConfirmAction
 		title={`Delete Account ${selectedAccount?.account_name}`}
-		message={`Are you sure you want to delete the account ${selectedAccount?.account_name}? This action cannot be undone.`}
+		message={`${$t('modals.delete-account-confirm')} ${selectedAccount?.account_name}? ${$t('modals.cannot-be-undone')}`}
 		type="danger"
 		onConfirm={() => handleDeleteAccount()}
 		onCancel={() => handleCloseDeleteAccountModal()}

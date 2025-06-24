@@ -27,7 +27,15 @@
 		"failed-load-accounts": "Failed to load accounts",
 		"failed-load-transactions": "Failed to load transactions",
 		"failed-load-months": "Failed to load available months",
-		"failed-load-categories": "Failed to load categories"
+		"failed-load-categories": "Failed to load categories",
+		"failed-create-transaction": "Failed to create transaction",
+		"failed-create-category": "Failed to create category",
+		"failed-update-account": "Failed to update account",
+		"failed-update-transaction": "Failed to update transaction",
+		"failed-edit-category": "Failed to edit category",
+		"balance-negative": "Balance must be greater than or equal to 0",
+		"balance-too-large": "Balance must be less than 999999999",
+		"account-name-too-short": "Account name must be at least 3 characters"
 	},
 
 	"months": {
@@ -38,6 +46,9 @@
 		"no-transactions": "No transactions found",
 		"no-transactions-for": "No transactions found for",
 		"create-first": "Create First Transaction",
+		"create-transaction": "Create Transaction",
+		"edit-transaction": "Edit Transaction",
+		"new-transaction-for": "New Transaction for",
 		"ai-feedback": "AI Feedback",
 		"no-transactions-ai": "No transactions available for AI feedback",
 		"date": "Date",
@@ -45,13 +56,68 @@
 		"amount": "Amount",
 		"category": "Category",
 		"type": "Type",
-		"actions": "Actions"
+		"actions": "Actions",
+		"transaction-type": "Transaction Type",
+		"select-category": "Select category",
+		"select-transaction-type": "Select Transaction Type",
+		"transaction-description": "Transaction description",
+		"transaction-amount": "Transaction amount",
+		"click-to-create": "Click here to create one!",
+		"no-categories-available": "No categories available for the selected transaction type.",
+		"category-required": "Category is required",
+		"category-must-match": "Category must be from the selected transaction type",
+		"amount-greater-zero": "Amount must be greater than 0",
+		"amount-too-large": "Amount must be less than 999999999",
+		"failed-load-types": "Failed to load transaction types",
+		"update-transaction": "Update Transaction",
+		"edit-transaction-for": "Edit Transaction for"
 	},
 
 	"accounts": {
 		"create-account": "Create Account",
+		"edit-account-title": "Edit Account",
 		"account-name": "Account Name",
-		"select-account": "Select Account"
+		"balance": "Balance",
+		"select-account": "Select Account",
+		"no-accounts-found": "No accounts found.",
+		"edit-account": "Edit account",
+		"delete-account": "Delete account",
+		"account-name-placeholder": "Enter account name",
+		"balance-placeholder": "Enter initial balance",
+		"update-account": "Update Account"
+	},
+
+	"categories": {
+		"no-categories": "No categories available.",
+		"category-name": "Category Name",
+		"color": "Color",
+		"actions": "Actions",
+		"create-category": "Create Category",
+		"edit-category": "Edit Category",
+		"delete-category": "Delete Category",
+		"category-type": "Category Type",
+		"debit": "Debit",
+		"credit": "Credit",
+		"transfer": "Transfer",
+		"delete-confirm": "Are you sure you want to delete the category",
+		"delete-warning": "This action cannot be undone.",
+		"category-name-placeholder": "Enter category name",
+		"select-color": "Select a color",
+		"category-name-required": "Category name is required",
+		"category-name-too-long": "Category name must be less than 50 characters",
+		"category-name-too-short": "Category name must be at least 3 characters",
+		"color-required": "Color is required",
+		"color-invalid": "Color must be a valid hex color",
+		"new-category-for": "New Category",
+		"edit-category-title": "Edit Category"
+	},
+
+	"modals": {
+		"confirm": "Confirm",
+		"are-you-sure": "Are you sure?",
+		"cannot-be-undone": "This action cannot be undone.",
+		"delete-transaction-confirm": "Are you sure you want to delete this transaction",
+		"delete-account-confirm": "Are you sure you want to delete the account"
 	},
 
 	"auth": {
@@ -74,5 +140,11 @@
 		"last-name": "Last Name",
 		"enter-first": "Enter your first name",
 		"enter-last": "Enter your last name"
+	},
+
+	"transaction-types": {
+		"debit": "Debit",
+		"credit": "Credit",
+		"transfer": "Transfer"
 	}
 }

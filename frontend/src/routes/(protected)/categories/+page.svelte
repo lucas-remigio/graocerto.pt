@@ -12,6 +12,7 @@
 	import { Plus, Tag } from 'lucide-svelte';
 	import { TransactionTypes, TransactionTypeSlug } from '$lib/transaction_types_types';
 	import CreateCategory from '$components/CreateCategory.svelte';
+	import { t } from '$lib/i18n';
 
 	let showCreateCategoryModal = false;
 	let selectedTransactionType: TransactionType | undefined;
@@ -43,7 +44,7 @@
 			);
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
-			error = 'Failed to load categories';
+			error = $t('errors.failed-load-categories');
 		}
 	}
 
@@ -109,19 +110,19 @@
 		{#if deleteError}
 			<p class="text-red-500">{deleteError}</p>
 		{/if}
-		<h1 class="mb-6 text-3xl font-bold">My Categories</h1>
+		<h1 class="mb-6 text-3xl font-bold">{$t('navbar.categories')}</h1>
 		<div class="flex flex-col md:flex-row md:space-x-4">
 			<!-- Credit Categories Table (Left) -->
 			<div class="flex-1">
 				<div class="mb-2 flex items-center justify-between">
-					<h2 class="text-xl font-bold">Credit</h2>
+					<h2 class="text-xl font-bold">{$t('categories.credit')}</h2>
 					<button
 						class="btn btn-primary flex items-center gap-2"
 						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Credit)}
-						aria-label="Create New Credit Category"
+						aria-label={$t('categories.create-category')}
 					>
-						<Plus size={20} />
-						<Tag size={20} />
+						<Plus size={20} class="text-base-content" />
+						<Tag size={20} class="text-base-content" />
 					</button>
 				</div>
 				<CategoriesTable
@@ -137,14 +138,14 @@
 			<!-- Debit Categories Table (Right) -->
 			<div class="mt-4 flex-1 md:mt-0">
 				<div class="mb-2 flex items-center justify-between">
-					<h2 class="text-xl font-bold">Debit</h2>
+					<h2 class="text-xl font-bold">{$t('categories.debit')}</h2>
 					<button
 						class="btn btn-primary flex items-center gap-2"
 						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Debit)}
-						aria-label="Create New Debit Category"
+						aria-label={$t('categories.create-category')}
 					>
-						<Plus size={20} />
-						<Tag size={20} />
+						<Plus size={20} class="text-base-content" />
+						<Tag size={20} class="text-base-content" />
 					</button>
 				</div>
 				<CategoriesTable

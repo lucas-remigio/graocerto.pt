@@ -2,6 +2,7 @@
 	import api_axios from '$lib/axios';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	let error: string = '';
 	// Form field variables
@@ -33,7 +34,7 @@
 			handleNewAccount();
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = 'Failed to create account';
+			error = $t('errors.failed-create-account');
 		}
 	}
 
@@ -80,7 +81,7 @@
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
 			><X /></button
 		>
-		<h3 class="mb-4 text-lg font-bold">New Account</h3>
+		<h3 class="mb-4 text-lg font-bold">{$t('accounts.create-account')}</h3>
 		<!--Error message-->
 		{#if error}
 			<div class="alert alert-error">
@@ -91,12 +92,12 @@
 			<!-- Description Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="account_name">
-					<span class="label-text">Account name</span>
+					<span class="label-text">{$t('accounts.account-name')}</span>
 				</label>
 				<input
 					id="account_name"
 					type="text"
-					placeholder="Account name"
+					placeholder={$t('accounts.account-name-placeholder')}
 					class="input input-bordered"
 					bind:value={account_name}
 					required
@@ -106,12 +107,12 @@
 			<!-- Amount Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="balance">
-					<span class="label-text">Balance</span>
+					<span class="label-text">{$t('accounts.balance')}</span>
 				</label>
 				<input
 					id="balance"
 					type="number"
-					placeholder="Enter amount"
+					placeholder={$t('accounts.balance-placeholder')}
 					class="input input-bordered"
 					min="0"
 					step="0.01"
@@ -123,8 +124,8 @@
 
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
-				<button type="button" class="btn" on:click={handleCloseModal}>Cancel</button>
-				<button type="submit" class="btn btn-primary">Create Account</button>
+				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
+				<button type="submit" class="btn btn-primary">{$t('accounts.create-account')}</button>
 			</div>
 		</form>
 	</div>
