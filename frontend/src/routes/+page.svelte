@@ -9,11 +9,12 @@
 		TransactionsResponseDto,
 		CategoryDto,
 		MonthYear,
-		TransactionsTotals
+		TransactionsTotals,
+		TransactionStatistics
 	} from '$lib/types';
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
-	import TransactionStatistics from '$components/TransactionStatistics.svelte';
+	import TransactionStatisticsComponent from '$components/TransactionStatistics.svelte';
 	import MonthSelector from '$components/MonthSelector.svelte';
 	import ViewToggle from '$components/ViewToggle.svelte';
 	import { userEmail } from '$lib/stores/auth';
@@ -61,6 +62,9 @@
 		credit: 0,
 		difference: 0
 	};
+	let statistics: TransactionStatistics | null = null;
+	let statisticsLoading = false;
+	let statisticsError: string = '';
 	let categories: CategoryDto[] = [];
 	let error: string = '';
 
@@ -78,6 +82,13 @@
 
 	// View toggle state
 	let currentView: 'transactions' | 'statistics' = 'transactions';
+
+	// Caches to avoid unnecessary API calls
+	let statisticsCache = new Map<string, TransactionStatistics>();
+	let transactionsCache = new Map<
+		string,
+		{ transactions: TransactionDto[]; totals: TransactionsTotals }
+	>();
 
 	$: currentLocale = $locale || 'en-US'; // Default to 'en-US' if locale is not set
 
@@ -181,11 +192,26 @@
 		}
 	}
 
+	// Function to generate cache key for transactions and statistics
+	function getCacheKey(accountToken: string, month: number | null, year: number | null): string {
+		return `${accountToken}-${month ?? 'null'}-${year ?? 'null'}`;
+	}
+
 	async function fetchTransactions(
 		accountToken: string,
 		month: number | null,
 		year: number | null
 	) {
+		const cacheKey = getCacheKey(accountToken, month, year);
+
+		// Check cache first
+		if (transactionsCache.has(cacheKey)) {
+			const cached = transactionsCache.get(cacheKey)!;
+			transactions = cached.transactions;
+			transactionsTotals = cached.totals;
+			return;
+		}
+
 		try {
 			const res = await api_axios('transactions/dto/' + accountToken, {
 				params: {
@@ -203,6 +229,12 @@
 			const data: TransactionsResponseDto = res.data;
 			transactions = data.transactions;
 			transactionsTotals = data.totals;
+
+			// Cache the result
+			transactionsCache.set(cacheKey, {
+				transactions: data.transactions,
+				totals: data.totals
+			});
 		} catch (err) {
 			console.error('Error in fetchAccountTransactions:', err);
 			error = $t('errors.failed-load-transactions');
@@ -234,6 +266,50 @@
 		}
 	}
 
+	// Function to fetch statistics for a given account token and month/year
+	async function fetchStatistics(accountToken: string, month: number | null, year: number | null) {
+		const cacheKey = getCacheKey(accountToken, month, year);
+
+		// Check cache first
+		if (statisticsCache.has(cacheKey)) {
+			statistics = statisticsCache.get(cacheKey)!;
+			return;
+		}
+
+		statisticsLoading = true;
+		statisticsError = '';
+
+		try {
+			const params: any = {};
+			if (month !== null) params.month = month;
+			if (year !== null) params.year = year;
+
+			const response = await api_axios.get(`transactions/statistics/${accountToken}`, { params });
+
+			if (response.status === 200) {
+				statistics = response.data;
+				// Cache the result (only if not null)
+				if (statistics) {
+					statisticsCache.set(cacheKey, statistics);
+				}
+			} else {
+				statisticsError = `Failed to load statistics: ${response.status}`;
+			}
+		} catch (err) {
+			console.error('Error fetching statistics:', err);
+			statisticsError = $t('errors.failed-load-transactions');
+		} finally {
+			statisticsLoading = false;
+		}
+	}
+
+	// Function to clear caches when data changes
+	function clearCaches() {
+		statisticsCache.clear();
+		transactionsCache.clear();
+		statistics = null;
+	}
+
 	function addCurrentMonth() {
 		const currentMonthYear: MonthYear = {
 			month: currentMonth,
@@ -262,6 +338,7 @@
 		localStorage.setItem('selectedAccount', selectedAccount.token);
 		selectedMonth = currentMonth;
 		selectedYear = currentYear;
+		clearCaches(); // Clear caches when switching accounts
 		currentView = 'transactions'; // Reset to transactions view when switching accounts
 		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 	}
@@ -270,7 +347,14 @@
 		selectedMonth = month;
 		selectedYear = year;
 
-		fetchTransactions(selectedAccount.token, month, year);
+		// Fetch data based on current view
+		if (currentView === 'statistics') {
+			// Only fetch statistics when in statistics view
+			fetchStatistics(selectedAccount.token, month, year);
+		} else {
+			// Only fetch transactions when in transactions view
+			fetchTransactions(selectedAccount.token, month, year);
+		}
 	}
 
 	$: selectedFormatedDate = (() => {
@@ -282,39 +366,56 @@
 
 	function handleViewToggle(event: CustomEvent<{ view: 'transactions' | 'statistics' }>) {
 		currentView = event.detail.view;
+
+		// Fetch appropriate data for current view if not cached
+		if (selectedAccount) {
+			if (currentView === 'statistics') {
+				// Switching to statistics view - fetch statistics
+				fetchStatistics(selectedAccount.token, selectedMonth, selectedYear);
+			} else {
+				// Switching to transactions view - fetch transactions
+				fetchTransactions(selectedAccount.token, selectedMonth, selectedYear);
+			}
+		}
 	}
 
 	function handleNewTransaction() {
+		clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleNewAccount() {
+		clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleUpdateTransaction() {
+		clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleUpdateAccount() {
+		clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleDeleteAccount(account: Account) {
+		clearCaches(); // Clear caches since data changed
 		deleteAccount(account);
 
 		wsUpdateScreen();
 	}
 
 	function handleDeleteTransaction(transaction: TransactionDto) {
+		clearCaches(); // Clear caches since data changed
 		deleteTransaction(transaction);
 
 		wsUpdateScreen();
@@ -409,11 +510,14 @@
 									handleDeleteTransaction(transaction)}
 							/>
 						{:else}
-							<TransactionStatistics
+							<TransactionStatisticsComponent
 								account={selectedAccount}
 								{selectedMonth}
 								{selectedYear}
 								formatedDate={selectedFormatedDate}
+								{statistics}
+								loading={statisticsLoading}
+								error={statisticsError}
 							/>
 						{/if}
 					</div>

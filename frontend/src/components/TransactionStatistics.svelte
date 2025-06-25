@@ -1,50 +1,18 @@
 <!-- src/components/TransactionStatistics.svelte -->
 <script lang="ts">
 	import type { Account, TransactionStatistics } from '$lib/types';
-	import api_axios from '$lib/axios';
 	import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
-	import { onMount } from 'svelte';
 
 	export let account: Account;
 	export let selectedMonth: number | null;
 	export let selectedYear: number | null;
 	export let formatedDate: string = '';
-
-	let statistics: TransactionStatistics | null = null;
-	let loading = true;
-	let error: string = '';
+	export let statistics: TransactionStatistics | null = null;
+	export let loading: boolean = false;
+	export let error: string = '';
 
 	$: isAll = selectedMonth === null && selectedYear === null;
-
-	// Fetch statistics when account or month/year changes
-	$: if (account) {
-		fetchStatistics(account.token, selectedMonth, selectedYear);
-	}
-
-	async function fetchStatistics(accountToken: string, month: number | null, year: number | null) {
-		loading = true;
-		error = '';
-
-		try {
-			const params: any = {};
-			if (month !== null) params.month = month;
-			if (year !== null) params.year = year;
-
-			const response = await api_axios.get(`transactions/statistics/${accountToken}`, { params });
-
-			if (response.status === 200) {
-				statistics = response.data;
-			} else {
-				error = `Failed to load statistics: ${response.status}`;
-			}
-		} catch (err) {
-			console.error('Error fetching statistics:', err);
-			error = $t('errors.failed-load-transactions');
-		} finally {
-			loading = false;
-		}
-	}
 
 	function formatCurrency(amount: number): string {
 		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
