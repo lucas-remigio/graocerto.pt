@@ -42,7 +42,9 @@
 	};
 </script>
 
-<main class="bg-base-200 flex min-h-screen items-center justify-center">
+<main
+	class="bg-base-200 flex  items-center justify-center h-[calc(100vh-80px)] min-h-0"
+>
 	<div class="bg-base-100 w-full max-w-md rounded-lg p-6 shadow-md">
 		<h1 class="mb-6 text-center text-2xl font-bold">{$t('auth.login')}</h1>
 

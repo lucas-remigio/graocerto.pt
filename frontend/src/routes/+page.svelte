@@ -336,9 +336,9 @@
 		</div>
 	{:else}
 		<!-- Responsive Layout: Vertical on large screens, horizontal on small/medium -->
-		<div class="flex flex-col lg:h-[calc(100vh-120px)] lg:flex-row lg:gap-6">
+		<div class="flex flex-col lg:h-[calc(100vh-120px)] lg:flex-row">
 			<!-- Left Column: Accounts (full width on small/medium, fixed width on large) -->
-			<div class="lg:w-80 lg:flex-shrink-0">
+			<div class="lg:w-80 lg:flex-shrink-0 lg:pr-6">
 				<Accounts
 					{accounts}
 					{selectedAccount}
@@ -350,9 +350,13 @@
 				/>
 			</div>
 
+			<!-- Vertical Divider - only visible on large screens -->
+			<div class="lg:bg-base-300 hidden lg:block lg:w-px"></div>
+
 			<!-- Right Column: Transactions (full width on small/medium, remaining space on large) -->
 			{#if accounts.length > 0}
-				<div class="flex-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden">
+				<div class="flex-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:pl-6">
+					<!-- Horizontal Divider - only visible on small/medium screens -->
 					<div class="divider lg:hidden"></div>
 
 					<!-- Month Selector Component -->
