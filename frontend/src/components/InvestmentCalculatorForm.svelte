@@ -115,7 +115,7 @@
 
 		<form on:submit|preventDefault={handleSubmit} class="space-y-6">
 			<!-- Input Fields Grid -->
-			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
 				<!-- Initial Investment -->
 				<div class="form-control">
 					<label for="initial-investment" class="label">

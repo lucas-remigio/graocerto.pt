@@ -52,14 +52,23 @@
 <div class="container mx-auto p-4">
 	<InvestmentCalculatorHeader />
 
-	<InvestmentCalculatorForm
-		{isLoading}
-		{error}
-		on:calculate={handleCalculate}
-		on:reset={handleReset}
-	/>
+	<!-- Responsive Layout: Vertical on small/medium, horizontal on large -->
+	<div class="flex flex-col lg:flex-row lg:items-start lg:gap-6">
+		<!-- Left Column: Form (full width on small/medium, fixed width on large) -->
+		<div class="w-full lg:w-96 lg:flex-shrink-0">
+			<InvestmentCalculatorForm
+				{isLoading}
+				{error}
+				on:calculate={handleCalculate}
+				on:reset={handleReset}
+			/>
+		</div>
 
-	{#if results}
-		<InvestmentCalculatorResults {results} />
-	{/if}
+		<!-- Right Column: Results (full width on small/medium, remaining space on large) -->
+		{#if results}
+			<div class="mt-6 w-full overflow-hidden lg:mt-0 lg:min-w-0 lg:flex-1">
+				<InvestmentCalculatorResults {results} />
+			</div>
+		{/if}
+	</div>
 </div>
