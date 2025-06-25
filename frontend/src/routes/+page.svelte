@@ -342,7 +342,7 @@
 				<Accounts
 					{accounts}
 					{selectedAccount}
-					vertical={isLargeScreen}
+					isVertical={isLargeScreen}
 					on:select={handleSelectAccount}
 					on:updatedAccount={handleUpdateAccount}
 					on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}

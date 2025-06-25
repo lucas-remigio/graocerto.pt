@@ -11,7 +11,7 @@
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
 	export let selectedAccount: Account | null = null;
-	export let vertical: boolean = false;
+	export let isVertical: boolean = false;
 
 	let openEditAccountModal: boolean = false;
 	let openDeleteAccountModal: boolean = false;
@@ -80,7 +80,7 @@
 
 {#if accounts.length > 0}
 	<div
-		class="p-1 {vertical
+		class="p-1 {isVertical
 			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto pr-2'
 			: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
 	>
