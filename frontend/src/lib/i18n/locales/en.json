@@ -191,7 +191,8 @@
 			"total": "Total"
 		},
 		"chart": {
-			"amount": "Amount"
+			"amount": "Amount",
+			"placeholder": "Chart will appear here after calculation"
 		}
 	}
 }

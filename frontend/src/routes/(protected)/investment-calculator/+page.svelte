@@ -65,10 +65,8 @@
 		</div>
 
 		<!-- Right Column: Results (full width on small/medium, remaining space on large) -->
-		{#if results}
-			<div class="mt-6 w-full overflow-hidden lg:mt-0 lg:min-w-0 lg:flex-1">
-				<InvestmentCalculatorResults {results} />
-			</div>
-		{/if}
+		<div class="mt-6 w-full overflow-hidden lg:mt-0 lg:min-w-0 lg:flex-1">
+			<InvestmentCalculatorResults {results} />
+		</div>
 	</div>
 </div>
