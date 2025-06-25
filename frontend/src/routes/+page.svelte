@@ -11,10 +11,8 @@
 		MonthYear,
 		TransactionsTotals
 	} from '$lib/types';
-	import { Plus, Wallet } from 'lucide-svelte';
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
-	import CreateAccount from '$components/CreateAccount.svelte';
 	import MonthSelector from '$components/MonthSelector.svelte';
 	import { userEmail } from '$lib/stores/auth';
 	import { t, locale } from '$lib/i18n';
@@ -63,7 +61,6 @@
 	};
 	let categories: CategoryDto[] = [];
 	let error: string = '';
-	let showCreateAccountModal = false;
 
 	let selectedAccount: Account;
 
@@ -73,6 +70,14 @@
 	const currentYear = new Date().getFullYear();
 	let selectedMonth: number | null = currentMonth;
 	let selectedYear: number | null = currentYear;
+
+	// Track screen size for responsive layout
+	let isLargeScreen: boolean = false;
+
+	// Update screen size tracking
+	function updateScreenSize() {
+		isLargeScreen = window.innerWidth >= 1024; // lg breakpoint in Tailwind
+	}
 
 	function getSelectedAccount() {
 		if (accounts.length === 0) {
@@ -253,14 +258,6 @@
 		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 	}
 
-	function createAccount() {
-		showCreateAccountModal = true;
-	}
-
-	function closeAccountModal() {
-		showCreateAccountModal = false;
-	}
-
 	function handleMonthSelect(month: number | null, year: number | null) {
 		selectedMonth = month;
 		selectedYear = year;
@@ -275,7 +272,6 @@
 	}
 
 	function handleNewAccount() {
-		closeAccountModal();
 		fetchAccounts();
 
 		wsUpdateScreen();
@@ -319,66 +315,72 @@
 
 	onMount(async () => {
 		await Promise.all([fetchAccounts(), fetchCategories()]);
+
+		// Set up screen size tracking
+		updateScreenSize();
+		window.addEventListener('resize', updateScreenSize);
 	});
 
 	// Clean up subscription when component is destroyed
 	onDestroy(() => {
 		unsubConnected();
 		unsubMessages();
+		window.removeEventListener('resize', updateScreenSize);
 	});
 </script>
 
 <div class="container mx-auto p-4">
-	<div class="flex justify-between">
-		<h1 class="mb-6 text-3xl font-bold">{$t('page.my-accounts')}</h1>
-		<!-- button to create new account -->
-		<button class="btn btn-primary" on:click={createAccount}>
-			<Plus size={20} class="text-base-content" />
-			<Wallet size={20} class="text-base-content" />
-		</button>
-	</div>
-
 	{#if error}
 		<div class="alert alert-error">
 			<p>{error}</p>
 		</div>
 	{:else}
-		<!-- Render the Accounts component -->
-		<Accounts
-			{accounts}
-			{selectedAccount}
-			on:select={handleSelectAccount}
-			on:updatedAccount={handleUpdateAccount}
-			on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
-		/>
+		<!-- Responsive Layout: Vertical on large screens, horizontal on small/medium -->
+		<div class="flex flex-col lg:h-[calc(100vh-120px)] lg:flex-row lg:gap-6">
+			<!-- Left Column: Accounts (full width on small/medium, fixed width on large) -->
+			<div class="lg:w-80 lg:flex-shrink-0">
+				<Accounts
+					{accounts}
+					{selectedAccount}
+					vertical={isLargeScreen}
+					on:select={handleSelectAccount}
+					on:updatedAccount={handleUpdateAccount}
+					on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
+					on:newAccount={handleNewAccount}
+				/>
+			</div>
 
-		<!-- Month Selector and Transactions Layout -->
-		{#if accounts.length > 0}
-			<div class="divider"></div>
-			<!-- Month Selector Component -->
-			<MonthSelector
-				{availableMonths}
-				{selectedMonth}
-				{selectedYear}
-				on:monthSelect={({ detail }) => handleMonthSelect(detail.month, detail.year)}
-			/>
+			<!-- Right Column: Transactions (full width on small/medium, remaining space on large) -->
+			{#if accounts.length > 0}
+				<div class="flex-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden">
+					<div class="divider lg:hidden"></div>
 
-			<!-- Transactions Table - Simple single layout -->
-			<TransactionsTable
-				{transactions}
-				{categories}
-				{transactionsTotals}
-				account={selectedAccount}
-				isAll={selectedMonth === null && selectedYear === null}
-				on:newTransaction={handleNewTransaction}
-				on:updatedTransaction={handleUpdateTransaction}
-				on:deleteTransaction={({ detail: { transaction } }) => handleDeleteTransaction(transaction)}
-			/>
-		{/if}
+					<!-- Month Selector Component -->
+					<div class="lg:flex-shrink-0">
+						<MonthSelector
+							{availableMonths}
+							{selectedMonth}
+							{selectedYear}
+							on:monthSelect={({ detail }) => handleMonthSelect(detail.month, detail.year)}
+						/>
+					</div>
+
+					<!-- Transactions Table with scroll container -->
+					<div class="lg:min-h-0 lg:flex-1 lg:overflow-auto">
+						<TransactionsTable
+							{transactions}
+							{categories}
+							{transactionsTotals}
+							account={selectedAccount}
+							isAll={selectedMonth === null && selectedYear === null}
+							on:newTransaction={handleNewTransaction}
+							on:updatedTransaction={handleUpdateTransaction}
+							on:deleteTransaction={({ detail: { transaction } }) =>
+								handleDeleteTransaction(transaction)}
+						/>
+					</div>
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
-
-<!-- Modal: only rendered when showModal is true -->
-{#if showCreateAccountModal}
-	<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
-{/if}

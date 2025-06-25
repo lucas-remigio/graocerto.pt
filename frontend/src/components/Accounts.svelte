@@ -2,17 +2,20 @@
 <script lang="ts">
 	import type { Account } from '$lib/types';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { Pencil, Trash } from 'lucide-svelte';
+	import { Pencil, Trash, Plus, Wallet } from 'lucide-svelte';
 	import EditAccount from './EditAccount.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
+	import CreateAccount from './CreateAccount.svelte';
 	import { t } from '$lib/i18n';
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
 	export let selectedAccount: Account | null = null;
+	export let vertical: boolean = false;
 
 	let openEditAccountModal: boolean = false;
 	let openDeleteAccountModal: boolean = false;
+	let showCreateAccountModal: boolean = false;
 
 	const dispatch = createEventDispatcher<any>();
 
@@ -51,10 +54,36 @@
 		handleCloseEditAccountModal();
 		dispatch('updatedAccount');
 	}
+
+	function createAccount() {
+		showCreateAccountModal = true;
+	}
+
+	function closeAccountModal() {
+		showCreateAccountModal = false;
+	}
+
+	function handleNewAccount() {
+		closeAccountModal();
+		dispatch('newAccount');
+	}
 </script>
 
+<!-- Header with title and create button -->
+<div class="mb-6 flex justify-between">
+	<h1 class="text-3xl font-bold">{$t('page.my-accounts')}</h1>
+	<button class="btn btn-primary" on:click={createAccount}>
+		<Plus size={20} class="text-base-content" />
+		<Wallet size={20} class="text-base-content" />
+	</button>
+</div>
+
 {#if accounts.length > 0}
-	<div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+	<div
+		class="p-1 {vertical
+			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto pr-2'
+			: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
+	>
 		{#each accounts as account}
 			<div class="relative">
 				<button
@@ -112,4 +141,9 @@
 		onConfirm={() => handleDeleteAccount()}
 		onCancel={() => handleCloseDeleteAccountModal()}
 	/>
+{/if}
+
+<!-- Create Account Modal -->
+{#if showCreateAccountModal}
+	<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
 {/if}
