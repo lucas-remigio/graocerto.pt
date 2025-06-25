@@ -376,7 +376,7 @@
 		</div>
 	{:else}
 		<!-- Responsive Layout: Vertical on large screens, horizontal on small/medium -->
-		<div class="flex flex-col lg:h-[calc(100vh-120px)] lg:flex-row">
+		<div class="flex flex-col lg:h-[calc(100vh-100px)] lg:flex-row">
 			<!-- Left Column: Accounts (full width on small/medium, fixed width on large) -->
 			<div class="lg:w-80 lg:flex-shrink-0 lg:pr-6">
 				<Accounts

@@ -63,7 +63,7 @@
 	});
 </script>
 
-<div class="navbar bg-base-100">
+<div class="navbar bg-base-100 border-base-300 h-16 min-h-16 border-b">
 	<div class="navbar-start">
 		<div class="dropdown relative {isDropdownOpen ? 'dropdown-open' : ''}">
 			<button

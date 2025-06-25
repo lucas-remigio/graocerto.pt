@@ -142,7 +142,7 @@
 		<!-- Credit Categories -->
 		{#if statistics.credit_category_breakdown && statistics.credit_category_breakdown.length > 0}
 			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body p-6">
+				<div class="card-body py-0 px-6">
 					<h3 class="card-title text-success mb-4">
 						{$t('statistics.credit-categories')}
 					</h3>
@@ -157,7 +157,7 @@
 		<!-- Debit Categories -->
 		{#if statistics.debit_category_breakdown && statistics.debit_category_breakdown.length > 0}
 			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body p-6">
+				<div class="card-body py-0 px-6">
 					<h3 class="card-title text-error mb-4">
 						{$t('statistics.debit-categories')}
 					</h3>
