@@ -143,27 +143,23 @@
 	<!-- Category Breakdowns with Pie Charts -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		<!-- Credit Categories -->
-		{#if statistics.credit_category_breakdown && statistics.credit_category_breakdown.length > 0}
-			<div class="bg-base-100">
-				<div class="px-6 py-4">
-					<h3 class="text-success mb-4 text-lg font-semibold">
-						{$t('statistics.credit-categories')}
-					</h3>
-					<PieChartComponent data={statistics.credit_category_breakdown} isCredit={true} />
-				</div>
+		<div class="bg-base-100">
+			<div class="px-6 py-4">
+				<h3 class="text-success mb-4 text-lg font-semibold">
+					{$t('statistics.credit-categories')}
+				</h3>
+				<PieChartComponent data={statistics.credit_category_breakdown} isCredit={true} />
 			</div>
-		{/if}
+		</div>
 
 		<!-- Debit Categories -->
-		{#if statistics.debit_category_breakdown && statistics.debit_category_breakdown.length > 0}
-			<div class="bg-base-100">
-				<div class="px-6 py-4">
-					<h3 class="text-error mb-4 text-lg font-semibold">
-						{$t('statistics.debit-categories')}
-					</h3>
-					<PieChartComponent data={statistics.debit_category_breakdown} isCredit={false} />
-				</div>
+		<div class="bg-base-100">
+			<div class="px-6 py-4">
+				<h3 class="text-error mb-4 text-lg font-semibold">
+					{$t('statistics.debit-categories')}
+				</h3>
+				<PieChartComponent data={statistics.debit_category_breakdown} isCredit={false} />
 			</div>
-		{/if}
+		</div>
 	</div>
 {/if}
