@@ -6,6 +6,7 @@
 	import EditAccount from './EditAccount.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import CreateAccount from './CreateAccount.svelte';
+	import AccountCard from './AccountCard.svelte';
 	import { t } from '$lib/i18n';
 
 	// Export a prop to receive the accounts array.
@@ -19,18 +20,19 @@
 
 	const dispatch = createEventDispatcher<any>();
 
-	function formatCurrency(amount: number): string {
-		// make the currency have a , every 3 digits
-		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+	function handleCardSelect(event: CustomEvent<{ account: Account }>) {
+		selectedAccount = event.detail.account;
+		dispatch('select', { account: event.detail.account });
 	}
 
-	function handleCardClick(account: Account) {
-		selectedAccount = account;
-		dispatch('select', { account });
-	}
-
-	function handleEditAccount(account: Account) {
+	function handleCardEdit(event: CustomEvent<{ account: Account }>) {
+		selectedAccount = event.detail.account;
 		openEditAccountModal = true;
+	}
+
+	function handleCardDelete(event: CustomEvent<{ account: Account }>) {
+		selectedAccount = event.detail.account;
+		openDeleteAccountModal = true;
 	}
 
 	function handleCloseEditAccountModal() {
@@ -85,42 +87,13 @@
 			: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
 	>
 		{#each accounts as account}
-			<div class="group relative">
-				<button
-					type="button"
-					class="card bg-base-100 w-full cursor-pointer p-0 outline-none transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl
-					{selectedAccount?.token === account.token
-						? 'ring-primary ring-2 '
-						: 'border-base-200 hover:border-primary/20 border shadow-lg'}"
-					on:click={() => handleCardClick(account)}
-				>
-					<div class="card-body">
-						<h2 class="card-title">{account.account_name}</h2>
-						<p class="text-3xl font-bold">{formatCurrency(account.balance)}€</p>
-					</div>
-				</button>
-				<!-- Action buttons container - only visible on hover -->
-				{#if account.token === selectedAccount?.token}
-					<div
-						class="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-					>
-						<button
-							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
-							on:click|stopPropagation={() => handleEditAccount(account)}
-							title="Edit account"
-						>
-							<Pencil size={16} />
-						</button>
-						<button
-							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
-							on:click|stopPropagation={() => handleConfirmAccountDeletion()}
-							title="Delete account"
-						>
-							<Trash size={16} />
-						</button>
-					</div>
-				{/if}
-			</div>
+			<AccountCard
+				{account}
+				{selectedAccount}
+				on:select={handleCardSelect}
+				on:edit={handleCardEdit}
+				on:delete={handleCardDelete}
+			/>
 		{/each}
 	</div>
 {:else}
