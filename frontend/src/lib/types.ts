@@ -99,3 +99,21 @@ export interface InvestmentCalculatorInput {
 	annual_return_rate: number; // As a percentage (e.g., 5 for 5%)
 	investment_duration_years: number; // Number of years to calculate
 }
+
+export interface CategoryStatistic {
+	name: string;
+	count: number;
+	total: number;
+	percentage: number;
+}
+
+export interface TransactionStatistics {
+	total_transactions: number;
+	average_transaction: number;
+	largest_debit: number;
+	largest_credit: number;
+	daily_average: number;
+	credit_category_breakdown: CategoryStatistic[];
+	debit_category_breakdown: CategoryStatistic[];
+	totals: TransactionsTotals;
+}

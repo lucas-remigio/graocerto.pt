@@ -21,6 +21,7 @@ func NewHandler(store types.TransactionStore) *Handler {
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/transactions", middleware.AuthMiddleware(h.CreateTransaction))
 	router.HandleFunc("/transactions/dto/", middleware.AuthMiddleware(h.GetTransactionsDTOByAccountToken))
+	router.HandleFunc("/transactions/statistics/", middleware.AuthMiddleware(h.GetTransactionStatistics))
 	router.HandleFunc("/transactions/", middleware.AuthMiddleware(h.GetTransactionsByAccountToken))
 	router.HandleFunc("/transactions/{id}", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
@@ -134,7 +135,7 @@ func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *htt
 
 	response := &types.TransactionsResponse{
 		Transactions: transactions,
-		Totals:  creditTotal,
+		Totals:       creditTotal,
 	}
 
 	middleware.WriteDataResponse(w, response)
@@ -222,4 +223,42 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.WriteSuccessResponse(w)
+}
+
+func (h *Handler) GetTransactionStatistics(w http.ResponseWriter, r *http.Request) {
+	// extract account token from URL path (/transactions/statistics/{accountToken})
+	accountToken, ok := middleware.ExtractPathParamAndRespond(w, r, 2)
+	if !ok {
+		return
+	}
+
+	// require authentication
+	_, ok = middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// Parse query parameters for month and year
+	var month, year *int
+
+	if monthStr := r.URL.Query().Get("month"); monthStr != "" {
+		if monthInt, err := strconv.Atoi(monthStr); err == nil {
+			month = &monthInt
+		}
+	}
+
+	if yearStr := r.URL.Query().Get("year"); yearStr != "" {
+		if yearInt, err := strconv.Atoi(yearStr); err == nil {
+			year = &yearInt
+		}
+	}
+
+	// Get statistics from store
+	statistics, err := h.store.GetTransactionStatistics(accountToken, month, year)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, statistics)
 }

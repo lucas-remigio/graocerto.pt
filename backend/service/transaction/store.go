@@ -332,3 +332,154 @@ func (s *Store) CalculateTransactionTotals(transactions []*types.TransactionDTO)
 
 	return total, nil
 }
+
+func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) (*types.TransactionStatistics, error) {
+	// Get transactions for the specified period
+	transactions, err := s.GetTransactionsDTOByAccountToken(accountToken, month, year)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions: %w", err)
+	}
+
+	// Calculate totals
+	totals, err := s.CalculateTransactionTotals(transactions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate totals: %w", err)
+	}
+
+	// Initialize statistics
+	stats := &types.TransactionStatistics{
+		TotalTransactions:       len(transactions),
+		AverageTransaction:      0,
+		LargestDebit:            0,
+		LargestCredit:           0,
+		DailyAverage:            0,
+		CreditCategoryBreakdown: []*types.CategoryStatistic{},
+		DebitCategoryBreakdown:  []*types.CategoryStatistic{},
+		Totals:                  totals,
+	}
+
+	// If no transactions, return empty stats
+	if len(transactions) == 0 {
+		return stats, nil
+	}
+
+	// Calculate basic statistics
+	var totalAmount float64
+	var largestDebit, largestCredit float64
+	categoryMap := make(map[string]*types.CategoryStatistic)
+	creditCategoryMap := make(map[string]*types.CategoryStatistic)
+	debitCategoryMap := make(map[string]*types.CategoryStatistic)
+
+	creditCount := 0
+	debitCount := 0
+
+	for _, tx := range transactions {
+		absAmount := tx.Amount
+		if absAmount < 0 {
+			absAmount = -absAmount
+		}
+		totalAmount += absAmount
+
+		// Track largest amounts
+		if tx.Amount < 0 && tx.Amount < largestDebit {
+			largestDebit = tx.Amount
+		}
+		if tx.Amount > 0 && tx.Amount > largestCredit {
+			largestCredit = tx.Amount
+		}
+
+		// Category breakdown
+		categoryName := "Unknown"
+		if tx.Category != nil {
+			categoryName = tx.Category.CategoryName
+		}
+
+		// Overall category breakdown
+		if _, exists := categoryMap[categoryName]; !exists {
+			categoryMap[categoryName] = &types.CategoryStatistic{
+				Name:       categoryName,
+				Count:      0,
+				Total:      0,
+				Percentage: 0,
+			}
+		}
+		categoryMap[categoryName].Count++
+		categoryMap[categoryName].Total += absAmount
+
+		// Separate breakdowns by transaction type
+		if tx.Category != nil && tx.Category.TransactionType.ID == int(types.CreditTransactionType) {
+			creditCount++
+			if _, exists := creditCategoryMap[categoryName]; !exists {
+				creditCategoryMap[categoryName] = &types.CategoryStatistic{
+					Name:       categoryName,
+					Count:      0,
+					Total:      0,
+					Percentage: 0,
+				}
+			}
+			creditCategoryMap[categoryName].Count++
+			creditCategoryMap[categoryName].Total += absAmount
+		} else if tx.Category != nil && tx.Category.TransactionType.ID == int(types.DebitTransactionType) {
+			debitCount++
+			if _, exists := debitCategoryMap[categoryName]; !exists {
+				debitCategoryMap[categoryName] = &types.CategoryStatistic{
+					Name:       categoryName,
+					Count:      0,
+					Total:      0,
+					Percentage: 0,
+				}
+			}
+			debitCategoryMap[categoryName].Count++
+			debitCategoryMap[categoryName].Total += absAmount
+		}
+	}
+
+	// Process credit category breakdown
+	for _, categoryStat := range creditCategoryMap {
+		if creditCount > 0 {
+			categoryStat.Percentage = (float64(categoryStat.Count) / float64(creditCount)) * 100
+		}
+		stats.CreditCategoryBreakdown = append(stats.CreditCategoryBreakdown, categoryStat)
+	}
+
+	// Process debit category breakdown
+	for _, categoryStat := range debitCategoryMap {
+		if debitCount > 0 {
+			categoryStat.Percentage = (float64(categoryStat.Count) / float64(debitCount)) * 100
+		}
+		stats.DebitCategoryBreakdown = append(stats.DebitCategoryBreakdown, categoryStat)
+	}
+
+	// Sort all breakdowns by total amount (descending)
+	sortByTotal := func(breakdown []*types.CategoryStatistic) {
+		for i := 0; i < len(breakdown)-1; i++ {
+			for j := i + 1; j < len(breakdown); j++ {
+				if breakdown[i].Total < breakdown[j].Total {
+					breakdown[i], breakdown[j] = breakdown[j], breakdown[i]
+				}
+			}
+		}
+	}
+
+	sortByTotal(stats.CreditCategoryBreakdown)
+	sortByTotal(stats.DebitCategoryBreakdown)
+
+	// Set final calculations
+	stats.AverageTransaction = totalAmount / float64(len(transactions))
+	stats.LargestDebit = largestDebit
+	stats.LargestCredit = largestCredit
+
+	// Calculate daily average (assume 30 days for monthly view, 365 for all)
+	daysInPeriod := 30
+	if month == nil && year == nil {
+		daysInPeriod = 365
+	}
+
+	if totals.Difference < 0 {
+		stats.DailyAverage = (-totals.Difference) / float64(daysInPeriod)
+	} else {
+		stats.DailyAverage = totals.Difference / float64(daysInPeriod)
+	}
+
+	return stats, nil
+}

@@ -10,6 +10,7 @@ type TransactionStore interface {
 	DeleteTransaction(transactionId int, userId int) error
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
+	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
 }
 
 type CreateTransactionPayload struct {
@@ -66,4 +67,22 @@ type TransactionTotals struct {
 type TransactionsResponse struct {
 	Transactions []*TransactionDTO  `json:"transactions"`
 	Totals       *TransactionTotals `json:"totals"`
+}
+
+type CategoryStatistic struct {
+	Name       string  `json:"name"`
+	Count      int     `json:"count"`
+	Total      float64 `json:"total"`
+	Percentage float64 `json:"percentage"`
+}
+
+type TransactionStatistics struct {
+	TotalTransactions       int                  `json:"total_transactions"`
+	AverageTransaction      float64              `json:"average_transaction"`
+	LargestDebit            float64              `json:"largest_debit"`
+	LargestCredit           float64              `json:"largest_credit"`
+	DailyAverage            float64              `json:"daily_average"`
+	CreditCategoryBreakdown []*CategoryStatistic `json:"credit_category_breakdown"`
+	DebitCategoryBreakdown  []*CategoryStatistic `json:"debit_category_breakdown"`
+	Totals                  *TransactionTotals   `json:"totals"`
 }

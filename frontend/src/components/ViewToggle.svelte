@@ -24,15 +24,17 @@
 			class="btn btn-sm {currentView === 'transactions' ? 'btn-primary' : 'btn-outline'}"
 			on:click={() => handleViewChange('transactions')}
 		>
-			<List size={16} />
-			{$t('views.transactions')}
+			<List size={16} class="mr-1" />
+			<span class="hidden sm:inline">{$t('views.transactions')}</span>
+			<span class="sm:hidden">Txn</span>
 		</button>
 		<button
 			class="btn btn-sm {currentView === 'statistics' ? 'btn-primary' : 'btn-outline'}"
 			on:click={() => handleViewChange('statistics')}
 		>
-			<BarChart3 size={16} />
-			{$t('views.statistics')}
+			<BarChart3 size={16} class="mr-1" />
+			<span class="hidden sm:inline">{$t('views.statistics')}</span>
+			<span class="sm:hidden">Stats</span>
 		</button>
 	</div>
 </div>

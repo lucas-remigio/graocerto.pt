@@ -1,7 +1,7 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
 	import type { Account, CategoryDto, TransactionDto, TransactionsTotals } from '$lib/types';
-	import { Bot, CircleDollarSign, Plus, Trash } from 'lucide-svelte';
+	import { Bot, CircleDollarSign, List, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
@@ -17,6 +17,7 @@
 	export let transactionsTotals: TransactionsTotals;
 	export let account: Account;
 	export let categories: CategoryDto[] = [];
+	export let formatedDate: string = ''; // Formatted date for the account transactions
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
 
 	let showCreateTransactionModal = false;
@@ -47,22 +48,10 @@
 		// the format should be just month and year, in extense portuguese, without the "de" between
 		const formattedDate = new Date(date).toLocaleDateString(currentLocale, {
 			day: 'numeric',
-			month: 'long',
+			month: 'long'
 		});
 
 		return `${formattedDate}`;
-	}
-
-	function transactionsFormattedDate(): string {
-		// get the first transactions from the list
-		if (transactions.length === 0) {
-			return '';
-		}
-		const firstTransaction = transactions[0];
-		return new Date(firstTransaction.date).toLocaleDateString(currentLocale, {
-			month: 'long',
-			year: 'numeric'
-		});
 	}
 
 	$: {
@@ -227,13 +216,16 @@
 
 {#if transactions && transactions.length > 0}
 	<div class="mb-2 flex justify-between">
-		<h2 class="mb-4 text-2xl font-semibold">
-			{$t('page.transactions-for')}
-			{account.account_name}
-			{#if !isAll}
-				- {transactionsFormattedDate()}
-			{/if}
-		</h2>
+		<div class="flex items-center gap-3">
+			<List size={24} class="text-primary" />
+			<h2 class="text-2xl font-bold">
+				{$t('page.transactions-for')}
+				{account.account_name}
+				{#if !isAll}
+					- {formatedDate}
+				{/if}
+			</h2>
+		</div>
 		<div class="flex items-center gap-4">
 			<!-- Button to get feedback -->
 			{#if !isAll}

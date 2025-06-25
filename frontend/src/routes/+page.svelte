@@ -13,7 +13,9 @@
 	} from '$lib/types';
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
+	import TransactionStatistics from '$components/TransactionStatistics.svelte';
 	import MonthSelector from '$components/MonthSelector.svelte';
+	import ViewToggle from '$components/ViewToggle.svelte';
 	import { userEmail } from '$lib/stores/auth';
 	import { t, locale } from '$lib/i18n';
 
@@ -73,6 +75,11 @@
 
 	// Track screen size for responsive layout
 	let isLargeScreen: boolean = false;
+
+	// View toggle state
+	let currentView: 'transactions' | 'statistics' = 'transactions';
+
+	$: currentLocale = $locale || 'en-US'; // Default to 'en-US' if locale is not set
 
 	// Update screen size tracking
 	function updateScreenSize() {
@@ -255,6 +262,7 @@
 		localStorage.setItem('selectedAccount', selectedAccount.token);
 		selectedMonth = currentMonth;
 		selectedYear = currentYear;
+		currentView = 'transactions'; // Reset to transactions view when switching accounts
 		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 	}
 
@@ -263,6 +271,17 @@
 		selectedYear = year;
 
 		fetchTransactions(selectedAccount.token, month, year);
+	}
+
+	$: selectedFormatedDate = (() => {
+		const year = selectedYear ?? currentYear;
+		const month = selectedMonth ?? currentMonth;
+		const date = new Date(year, month - 1); // month is 0-indexed in JavaScript
+		return date.toLocaleString(currentLocale, { month: 'long', year: 'numeric' });
+	})();
+
+	function handleViewToggle(event: CustomEvent<{ view: 'transactions' | 'statistics' }>) {
+		currentView = event.detail.view;
 	}
 
 	function handleNewTransaction() {
@@ -369,19 +388,34 @@
 						/>
 					</div>
 
-					<!-- Transactions Table with scroll container -->
+					<!-- View Toggle Component -->
+					<div class="lg:flex-shrink-0">
+						<ViewToggle {currentView} on:viewChange={handleViewToggle} />
+					</div>
+
+					<!-- Content Container with scroll -->
 					<div class="lg:min-h-0 lg:flex-1 lg:overflow-auto">
-						<TransactionsTable
-							{transactions}
-							{categories}
-							{transactionsTotals}
-							account={selectedAccount}
-							isAll={selectedMonth === null && selectedYear === null}
-							on:newTransaction={handleNewTransaction}
-							on:updatedTransaction={handleUpdateTransaction}
-							on:deleteTransaction={({ detail: { transaction } }) =>
-								handleDeleteTransaction(transaction)}
-						/>
+						{#if currentView === 'transactions'}
+							<TransactionsTable
+								{transactions}
+								{categories}
+								{transactionsTotals}
+								account={selectedAccount}
+								formatedDate={selectedFormatedDate}
+								isAll={selectedMonth === null && selectedYear === null}
+								on:newTransaction={handleNewTransaction}
+								on:updatedTransaction={handleUpdateTransaction}
+								on:deleteTransaction={({ detail: { transaction } }) =>
+									handleDeleteTransaction(transaction)}
+							/>
+						{:else}
+							<TransactionStatistics
+								account={selectedAccount}
+								{selectedMonth}
+								{selectedYear}
+								formatedDate={selectedFormatedDate}
+							/>
+						{/if}
 					</div>
 				</div>
 			{/if}

@@ -26,6 +26,30 @@
 		"success": "Success"
 	},
 
+	"views": {
+		"transactions": "Transactions",
+		"statistics": "Statistics"
+	},
+
+	"statistics": {
+		"title": "Transaction Statistics",
+		"no-data": "No Data Available",
+		"no-data-description": "Select an account and month to view statistics",
+		"balance-change": "Balance Change",
+		"total-transactions": "Total Transactions",
+		"average-transaction": "Average Transaction",
+		"daily-average": "Daily Average",
+		"total-credits": "Total Credits",
+		"total-debits": "Total Debits",
+		"largest-amounts": "Largest Amounts",
+		"largest-credit": "Largest Credit",
+		"largest-debit": "Largest Debit",
+		"category-breakdown": "Overall Category Breakdown",
+		"credit-categories": "Credit Categories",
+		"debit-categories": "Debit Categories",
+		"transactions": "transactions"
+	},
+
 	"errors": {
 		"failed-create-account": "Failed to create account",
 		"failed-load-accounts": "Failed to load accounts",
