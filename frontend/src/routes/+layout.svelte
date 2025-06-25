@@ -44,9 +44,11 @@
 			await axios.get('/verify-token');
 
 			isAuthenticated.set(true); // Token is valid
-		} catch (error) {
-			console.error('Token verification failed:', error);
-			goto('/login'); // Redirect to login if verification fails
+		} catch (error: any) {
+			// Only redirect for actual authentication failures (401, invalid token, etc.)
+			if (error.response?.status === 401) {
+				goto('/login');
+			}
 		}
 	}
 

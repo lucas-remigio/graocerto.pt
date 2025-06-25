@@ -47,6 +47,8 @@
 		"category-breakdown": "Overall Category Breakdown",
 		"credit-categories": "Credit Categories",
 		"debit-categories": "Debit Categories",
+		"no-credit-categories": "No credit transactions found",
+		"no-debit-categories": "No debit transactions found",
 		"transactions": "transactions"
 	},
 

@@ -2,10 +2,13 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Chart, registerables } from 'chart.js';
+	import { PieChart } from 'lucide-svelte';
+	import { t } from '$lib/i18n';
 	import type { CategoryStatistic } from '$lib/types';
 
 	export let data: CategoryStatistic[] = [];
 	export let title: string = '';
+	export let isCredit: boolean = false;
 
 	let canvas: HTMLCanvasElement;
 	let chart: Chart | null = null;
@@ -148,10 +151,14 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="text-base-content/50 flex h-80 items-center justify-center">
+		<!-- Enhanced placeholder for empty data -->
+		<div class="flex h-80 items-center justify-center">
 			<div class="text-center">
-				<div class="text-lg font-medium">No data available</div>
-				<div class="text-sm">No categories found for {title.toLowerCase()}</div>
+				<PieChart size={48} class="text-base-content/30 mx-auto mb-3" />
+				<p class="text-base-content/60 text-base font-medium">{$t('statistics.no-data')}</p>
+				<p class="text-base-content/50 text-sm">
+					{isCredit ? $t('statistics.no-credit-categories') : $t('statistics.no-debit-categories')}
+				</p>
 			</div>
 		</div>
 	{/if}

@@ -47,6 +47,8 @@
 		"category-breakdown": "Distribuição Geral por Categoria",
 		"credit-categories": "Categorias de Crédito",
 		"debit-categories": "Categorias de Débito",
+		"no-credit-categories": "Nenhuma transação de crédito encontrada",
+		"no-debit-categories": "Nenhuma transação de débito encontrada",
 		"transactions": "transações"
 	},
 
