@@ -7,7 +7,6 @@
 	import type { CategoryStatistic } from '$lib/types';
 
 	export let data: CategoryStatistic[] = [];
-	export let title: string = '';
 	export let isCredit: boolean = false;
 
 	let canvas: HTMLCanvasElement;
@@ -15,18 +14,6 @@
 
 	// Register Chart.js components
 	Chart.register(...registerables);
-
-	// Generate a palette of colors
-	function generateColors(count: number, baseHue: number = 140): string[] {
-		const colors: string[] = [];
-		for (let i = 0; i < count; i++) {
-			const hue = (baseHue + i * 137.5) % 360; // Golden angle for good distribution
-			const saturation = 70 + (i % 3) * 10; // Vary saturation slightly
-			const lightness = 50 + (i % 2) * 15; // Vary lightness slightly
-			colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-		}
-		return colors;
-	}
 
 	function createChart() {
 		if (!canvas || data.length === 0) return;

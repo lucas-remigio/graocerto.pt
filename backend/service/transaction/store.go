@@ -3,6 +3,7 @@ package transaction
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
@@ -310,27 +311,136 @@ func scanMonthYear(rows *sql.Rows) (*types.MonthYear, error) {
 }
 
 func (s *Store) CalculateTransactionTotals(transactions []*types.TransactionDTO) (*types.TransactionTotals, error) {
+	if transactions == nil {
+		return nil, fmt.Errorf("transactions cannot be nil")
+	}
+
 	total := &types.TransactionTotals{
 		Debit:      0,
 		Credit:     0,
 		Difference: 0,
 	}
 
-	if transactions == nil {
-		return total, fmt.Errorf("transactions cannot be nil")
+	// Early return for empty slice
+	if len(transactions) == 0 {
+		return total, nil
 	}
 
 	for _, tx := range transactions {
-		if tx.Category.TransactionType.ID == int(types.CreditTransactionType) {
+		// Skip transactions without category info
+		if tx.Category == nil || tx.Category.TransactionType == nil {
+			continue
+		}
+
+		switch tx.Category.TransactionType.ID {
+		case int(types.CreditTransactionType):
 			total.Credit += tx.Amount
-		} else if tx.Category.TransactionType.ID == int(types.DebitTransactionType) {
+		case int(types.DebitTransactionType):
 			total.Debit += tx.Amount
 		}
 	}
 
 	total.Difference = total.Credit - total.Debit
-
 	return total, nil
+}
+
+// Helper function to get absolute value for float64
+func abs(x float64) float64 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+// Process transactions and calculate largest amounts
+func (s *Store) calculateLargestAmounts(transactions []*types.TransactionDTO) (largestCredit, largestDebit float64) {
+	for _, tx := range transactions {
+		if tx.Category == nil {
+			continue
+		}
+
+		switch tx.Category.TransactionType.ID {
+		case int(types.DebitTransactionType):
+			if absAmount := abs(tx.Amount); absAmount > largestDebit {
+				largestDebit = absAmount
+			}
+		case int(types.CreditTransactionType):
+			if tx.Amount > largestCredit {
+				largestCredit = tx.Amount
+			}
+		}
+	}
+	return largestCredit, largestDebit
+}
+
+// Build category breakdown maps from transactions
+func (s *Store) buildCategoryBreakdowns(transactions []*types.TransactionDTO) (
+	creditCategoryMap, debitCategoryMap map[string]*types.CategoryStatistic) {
+
+	creditCategoryMap = make(map[string]*types.CategoryStatistic)
+	debitCategoryMap = make(map[string]*types.CategoryStatistic)
+
+	for _, tx := range transactions {
+		categoryName := "Unknown"
+		categoryColor := "#6b7280" // Default gray color
+
+		if tx.Category != nil {
+			categoryName = tx.Category.CategoryName
+			categoryColor = tx.Category.Color
+		}
+
+		absAmount := abs(tx.Amount)
+
+		// Process based on transaction type
+		if tx.Category != nil {
+			switch tx.Category.TransactionType.ID {
+			case int(types.CreditTransactionType):
+				s.updateCategoryMap(creditCategoryMap, categoryName, categoryColor, absAmount)
+			case int(types.DebitTransactionType):
+				s.updateCategoryMap(debitCategoryMap, categoryName, categoryColor, absAmount)
+			}
+		}
+	}
+
+	return creditCategoryMap, debitCategoryMap
+}
+
+// Helper to update category map (reduces code duplication)
+func (s *Store) updateCategoryMap(categoryMap map[string]*types.CategoryStatistic,
+	categoryName, categoryColor string, amount float64) {
+
+	if _, exists := categoryMap[categoryName]; !exists {
+		categoryMap[categoryName] = &types.CategoryStatistic{
+			Name:       categoryName,
+			Count:      0,
+			Total:      0,
+			Percentage: 0,
+			Color:      categoryColor,
+		}
+	}
+	categoryMap[categoryName].Count++
+	categoryMap[categoryName].Total += amount
+}
+
+// Calculate percentages and convert map to slice
+func (s *Store) processCategoryBreakdown(categoryMap map[string]*types.CategoryStatistic,
+	totalAmount float64) []*types.CategoryStatistic {
+
+	breakdown := make([]*types.CategoryStatistic, 0, len(categoryMap))
+
+	for _, categoryStat := range categoryMap {
+		if totalAmount > 0 {
+			categoryStat.Percentage = (categoryStat.Total / totalAmount) * 100
+		}
+		breakdown = append(breakdown, categoryStat)
+	}
+
+	// Sort by total amount (descending) - O(n log n)
+	sort.Slice(breakdown, func(i, j int) bool {
+		return breakdown[i].Total > breakdown[j].Total
+	})
+
+	return breakdown
 }
 
 func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) (*types.TransactionStatistics, error) {
@@ -346,7 +456,7 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 		return nil, fmt.Errorf("failed to calculate totals: %w", err)
 	}
 
-	// Initialize statistics
+	// Initialize statistics with early return for empty transactions
 	stats := &types.TransactionStatistics{
 		TotalTransactions:       len(transactions),
 		LargestDebit:            0,
@@ -356,125 +466,19 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 		Totals:                  totals,
 	}
 
-	// If no transactions, return empty stats
 	if len(transactions) == 0 {
 		return stats, nil
 	}
 
-	// Calculate basic statistics
-	var totalAmount float64
-	var largestDebit, largestCredit float64 // These will store positive values for display
-	categoryMap := make(map[string]*types.CategoryStatistic)
-	creditCategoryMap := make(map[string]*types.CategoryStatistic)
-	debitCategoryMap := make(map[string]*types.CategoryStatistic)
+	// Calculate largest amounts
+	stats.LargestCredit, stats.LargestDebit = s.calculateLargestAmounts(transactions)
 
-	creditCount := 0
-	debitCount := 0
+	// Build category breakdowns
+	creditCategoryMap, debitCategoryMap := s.buildCategoryBreakdowns(transactions)
 
-	for _, tx := range transactions {
-		absAmount := tx.Amount
-		if absAmount < 0 {
-			absAmount = -absAmount
-		}
-		totalAmount += absAmount
-
-		// Track largest amounts
-		if tx.Category != nil && tx.Category.TransactionType.ID == int(types.DebitTransactionType) {
-			// For debits, we want the largest absolute value (most negative becomes largest positive)
-			if absAmount > largestDebit {
-				largestDebit = absAmount
-			}
-		}
-		if tx.Category != nil && tx.Category.TransactionType.ID == int(types.CreditTransactionType) {
-			// For credits, we want the largest positive value
-			if tx.Amount > largestCredit {
-				largestCredit = tx.Amount
-			}
-		}
-
-		// Category breakdown
-		categoryName := "Unknown"
-		categoryColor := "#6b7280" // Default gray color
-		if tx.Category != nil {
-			categoryName = tx.Category.CategoryName
-			categoryColor = tx.Category.Color
-		}
-
-		// Overall category breakdown
-		if _, exists := categoryMap[categoryName]; !exists {
-			categoryMap[categoryName] = &types.CategoryStatistic{
-				Name:       categoryName,
-				Count:      0,
-				Total:      0,
-				Percentage: 0,
-				Color:      categoryColor,
-			}
-		}
-		categoryMap[categoryName].Count++
-		categoryMap[categoryName].Total += absAmount
-
-		// Separate breakdowns by transaction type
-		if tx.Category != nil && tx.Category.TransactionType.ID == int(types.CreditTransactionType) {
-			creditCount++
-			if _, exists := creditCategoryMap[categoryName]; !exists {
-				creditCategoryMap[categoryName] = &types.CategoryStatistic{
-					Name:       categoryName,
-					Count:      0,
-					Total:      0,
-					Percentage: 0,
-					Color:      categoryColor,
-				}
-			}
-			creditCategoryMap[categoryName].Count++
-			creditCategoryMap[categoryName].Total += absAmount
-		} else if tx.Category != nil && tx.Category.TransactionType.ID == int(types.DebitTransactionType) {
-			debitCount++
-			if _, exists := debitCategoryMap[categoryName]; !exists {
-				debitCategoryMap[categoryName] = &types.CategoryStatistic{
-					Name:       categoryName,
-					Count:      0,
-					Total:      0,
-					Percentage: 0,
-					Color:      categoryColor,
-				}
-			}
-			debitCategoryMap[categoryName].Count++
-			debitCategoryMap[categoryName].Total += absAmount
-		}
-	}
-
-	// Process credit category breakdown
-	for _, categoryStat := range creditCategoryMap {
-		if totals.Credit > 0 {
-			categoryStat.Percentage = (categoryStat.Total / totals.Credit) * 100
-		}
-		stats.CreditCategoryBreakdown = append(stats.CreditCategoryBreakdown, categoryStat)
-	}
-
-	// Process debit category breakdown
-	for _, categoryStat := range debitCategoryMap {
-		if totals.Debit > 0 {
-			categoryStat.Percentage = (categoryStat.Total / totals.Debit) * 100
-		}
-		stats.DebitCategoryBreakdown = append(stats.DebitCategoryBreakdown, categoryStat)
-	}
-
-	// Sort all breakdowns by total amount (descending)
-	sortByTotal := func(breakdown []*types.CategoryStatistic) {
-		for i := 0; i < len(breakdown)-1; i++ {
-			for j := i + 1; j < len(breakdown); j++ {
-				if breakdown[i].Total < breakdown[j].Total {
-					breakdown[i], breakdown[j] = breakdown[j], breakdown[i]
-				}
-			}
-		}
-	}
-
-	sortByTotal(stats.CreditCategoryBreakdown)
-	sortByTotal(stats.DebitCategoryBreakdown)
-	// Set final calculations
-	stats.LargestDebit = largestDebit
-	stats.LargestCredit = largestCredit
+	// Process breakdowns with percentages and sorting
+	stats.CreditCategoryBreakdown = s.processCategoryBreakdown(creditCategoryMap, totals.Credit)
+	stats.DebitCategoryBreakdown = s.processCategoryBreakdown(debitCategoryMap, totals.Debit)
 
 	return stats, nil
 }

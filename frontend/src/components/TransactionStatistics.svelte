@@ -148,7 +148,6 @@
 					</h3>
 					<PieChartComponent
 						data={statistics.credit_category_breakdown}
-						title={$t('statistics.credit-categories')}
 						isCredit={true}
 					/>
 				</div>
@@ -164,7 +163,6 @@
 					</h3>
 					<PieChartComponent
 						data={statistics.debit_category_breakdown}
-						title={$t('statistics.debit-categories')}
 						isCredit={false}
 					/>
 				</div>
