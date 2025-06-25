@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import { connected, socket, messages, sendMessage } from '$lib/ws'; // Import WebSocket utilities
-	import api_axios from '$lib/axios';
 	import type {
 		Account,
-		AccountsResponse,
 		TransactionDto,
-		TransactionsResponseDto,
 		CategoryDto,
 		MonthYear,
 		TransactionsTotals,
 		TransactionStatistics
 	} from '$lib/types';
+	import { dataService } from '$lib/services/dataService';
 	import Accounts from '$components/Accounts.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
 	import TransactionStatisticsComponent from '$components/TransactionStatistics.svelte';
@@ -56,7 +54,9 @@
 
 	// Local component state
 	let accounts: Account[] = [];
-	let transactions: TransactionDto[] = []; // Store all transactions
+	let accountsLoading = false;
+	let transactions: TransactionDto[] = [];
+	let transactionsLoading = false;
 	let transactionsTotals: TransactionsTotals = {
 		debit: 0,
 		credit: 0,
@@ -82,13 +82,6 @@
 
 	// View toggle state
 	let currentView: 'transactions' | 'statistics' = 'transactions';
-
-	// Caches to avoid unnecessary API calls
-	let statisticsCache = new Map<string, TransactionStatistics>();
-	let transactionsCache = new Map<
-		string,
-		{ transactions: TransactionDto[]; totals: TransactionsTotals }
-	>();
 
 	$: currentLocale = $locale || 'en-US'; // Default to 'en-US' if locale is not set
 
@@ -119,50 +112,29 @@
 
 	async function deleteAccount(account: Account) {
 		try {
-			const response = await api_axios.delete(`accounts/${account.token}`);
-
-			if (response.status !== 200) {
-				console.error('Non-200 response status:', response.status);
-				error = `Error: ${response.status}`;
-				return;
-			}
-
-			fetchAccounts();
+			await dataService.deleteAccount(account.token);
+			await fetchAccounts();
 		} catch (err) {
-			console.error('Error in handleSubmit:', err);
+			console.error('Error deleting account:', err);
 			error = $t('errors.failed-create-account');
 		}
 	}
 
 	async function deleteTransaction(transaction: TransactionDto) {
 		try {
-			const response = await api_axios.delete(`transactions/${transaction.id}`);
-
-			if (response.status !== 200) {
-				console.error('Non-200 response status:', response.status);
-				error = `Error: ${response.status}`;
-				return;
-			}
-
-			fetchAccounts();
+			await dataService.deleteTransaction(transaction);
+			await fetchAccounts();
 		} catch (err) {
-			console.error('Error in handleSubmit:', err);
+			console.error('Error deleting transaction:', err);
 			error = $t('errors.failed-create-account');
 		}
 	}
 
 	// Function to fetch accounts and then fetch transactions for the first account
 	async function fetchAccounts() {
+		accountsLoading = true;
 		try {
-			const res = await api_axios('accounts');
-
-			if (res.status !== 200) {
-				console.error('Non-200 response status:', res.status);
-				error = `Error: ${res.status}`;
-				return;
-			}
-			const data: AccountsResponse = res.data;
-			accounts = data.accounts;
+			accounts = await dataService.fetchAccounts();
 
 			// If we have at least one account, fetch its transactions
 			if (accounts && accounts.length > 0) {
@@ -172,6 +144,8 @@
 		} catch (err) {
 			console.error('Error in fetchAccounts:', err);
 			error = $t('errors.failed-load-accounts');
+		} finally {
+			accountsLoading = false;
 		}
 	}
 
@@ -192,66 +166,28 @@
 		}
 	}
 
-	// Function to generate cache key for transactions and statistics
-	function getCacheKey(accountToken: string, month: number | null, year: number | null): string {
-		return `${accountToken}-${month ?? 'null'}-${year ?? 'null'}`;
-	}
-
 	async function fetchTransactions(
 		accountToken: string,
 		month: number | null,
 		year: number | null
 	) {
-		const cacheKey = getCacheKey(accountToken, month, year);
-
-		// Check cache first
-		if (transactionsCache.has(cacheKey)) {
-			const cached = transactionsCache.get(cacheKey)!;
-			transactions = cached.transactions;
-			transactionsTotals = cached.totals;
-			return;
-		}
-
+		transactionsLoading = true;
 		try {
-			const res = await api_axios('transactions/dto/' + accountToken, {
-				params: {
-					month,
-					year
-				}
-			});
-
-			if (res.status !== 200) {
-				console.error('Non-200 response status for transactions:', res.status);
-				error = `Error: ${res.status}`;
-				return;
-			}
-
-			const data: TransactionsResponseDto = res.data;
-			transactions = data.transactions;
-			transactionsTotals = data.totals;
-
-			// Cache the result
-			transactionsCache.set(cacheKey, {
-				transactions: data.transactions,
-				totals: data.totals
-			});
+			const result = await dataService.fetchTransactions(accountToken, month, year);
+			transactions = result.transactions;
+			transactionsTotals = result.totals;
 		} catch (err) {
-			console.error('Error in fetchAccountTransactions:', err);
+			console.error('Error fetching transactions:', err);
 			error = $t('errors.failed-load-transactions');
+		} finally {
+			transactionsLoading = false;
 		}
 	}
 
 	async function fetchAvailableMonths(accountToken: string) {
 		try {
-			const res = await api_axios('transactions/months/' + accountToken);
+			availableMonths = await dataService.fetchAvailableMonths(accountToken);
 
-			if (res.status !== 200) {
-				console.error('Non-200 response status for months:', res.status);
-				error = `Error: ${res.status}`;
-				return;
-			}
-
-			availableMonths = res.data.months as MonthYear[];
 			// check if there is this current month in the available months. if not, add it
 			if (
 				!availableMonths.some(
@@ -268,33 +204,11 @@
 
 	// Function to fetch statistics for a given account token and month/year
 	async function fetchStatistics(accountToken: string, month: number | null, year: number | null) {
-		const cacheKey = getCacheKey(accountToken, month, year);
-
-		// Check cache first
-		if (statisticsCache.has(cacheKey)) {
-			statistics = statisticsCache.get(cacheKey)!;
-			return;
-		}
-
 		statisticsLoading = true;
 		statisticsError = '';
 
 		try {
-			const params: any = {};
-			if (month !== null) params.month = month;
-			if (year !== null) params.year = year;
-
-			const response = await api_axios.get(`transactions/statistics/${accountToken}`, { params });
-
-			if (response.status === 200) {
-				statistics = response.data;
-				// Cache the result (only if not null)
-				if (statistics) {
-					statisticsCache.set(cacheKey, statistics);
-				}
-			} else {
-				statisticsError = `Failed to load statistics: ${response.status}`;
-			}
+			statistics = await dataService.fetchStatistics(accountToken, month, year);
 		} catch (err) {
 			console.error('Error fetching statistics:', err);
 			statisticsError = $t('errors.failed-load-transactions');
@@ -303,11 +217,14 @@
 		}
 	}
 
-	// Function to clear caches when data changes
-	function clearCaches() {
-		statisticsCache.clear();
-		transactionsCache.clear();
-		statistics = null;
+	// Function to fetch categories
+	async function fetchCategories() {
+		try {
+			categories = await dataService.fetchCategories();
+		} catch (err) {
+			console.error('Error fetching categories:', err);
+			error = $t('errors.failed-load-categories');
+		}
 	}
 
 	function addCurrentMonth() {
@@ -320,25 +237,11 @@
 		availableMonths.unshift(currentMonthYear);
 	}
 
-	// Function to fetch categories
-	async function fetchCategories() {
-		try {
-			const res = await api_axios('categories/dto');
-			if (res.status === 200) {
-				categories = res.data.categories;
-			}
-		} catch (err) {
-			console.error('Error fetching categories:', err);
-			error = $t('errors.failed-load-categories');
-		}
-	}
-
 	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
 		localStorage.setItem('selectedAccount', selectedAccount.token);
 		selectedMonth = currentMonth;
 		selectedYear = currentYear;
-		clearCaches(); // Clear caches when switching accounts
 		currentView = 'transactions'; // Reset to transactions view when switching accounts
 		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 	}
@@ -380,42 +283,42 @@
 	}
 
 	function handleNewTransaction() {
-		clearCaches(); // Clear caches since data changed
+		dataService.clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleNewAccount() {
-		clearCaches(); // Clear caches since data changed
+		dataService.clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleUpdateTransaction() {
-		clearCaches(); // Clear caches since data changed
+		dataService.clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleUpdateAccount() {
-		clearCaches(); // Clear caches since data changed
+		dataService.clearCaches(); // Clear caches since data changed
 		fetchAccounts();
 
 		wsUpdateScreen();
 	}
 
 	function handleDeleteAccount(account: Account) {
-		clearCaches(); // Clear caches since data changed
+		// No need to clear all caches - the service will handle targeted cache clearing
 		deleteAccount(account);
 
 		wsUpdateScreen();
 	}
 
 	function handleDeleteTransaction(transaction: TransactionDto) {
-		clearCaches(); // Clear caches since data changed
+		// No need to clear all caches - the service will handle targeted cache clearing
 		deleteTransaction(transaction);
 
 		wsUpdateScreen();
@@ -463,6 +366,7 @@
 					{accounts}
 					{selectedAccount}
 					isVertical={isLargeScreen}
+					loading={accountsLoading}
 					on:select={handleSelectAccount}
 					on:updatedAccount={handleUpdateAccount}
 					on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
@@ -504,6 +408,7 @@
 								account={selectedAccount}
 								formatedDate={selectedFormatedDate}
 								isAll={selectedMonth === null && selectedYear === null}
+								loading={transactionsLoading}
 								on:newTransaction={handleNewTransaction}
 								on:updatedTransaction={handleUpdateTransaction}
 								on:deleteTransaction={({ detail: { transaction } }) =>

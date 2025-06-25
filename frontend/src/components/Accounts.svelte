@@ -13,6 +13,7 @@
 	export let accounts: Account[] = [];
 	export let selectedAccount: Account | null = null;
 	export let isVertical: boolean = false;
+	export let loading: boolean = false;
 
 	let openEditAccountModal: boolean = false;
 	let openDeleteAccountModal: boolean = false;
@@ -80,7 +81,13 @@
 	</button>
 </div>
 
-{#if accounts.length > 0}
+{#if loading}
+	<!-- Loading State -->
+	<div class="py-12 text-center">
+		<div class="loading loading-spinner loading-lg mx-auto mb-4"></div>
+		<p class="text-base-content/70">{$t('common.loading')}</p>
+	</div>
+{:else if accounts.length > 0}
 	<div
 		class="p-1 {isVertical
 			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto pr-2'

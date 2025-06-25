@@ -19,6 +19,7 @@
 	export let categories: CategoryDto[] = [];
 	export let formatedDate: string = ''; // Formatted date for the account transactions
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
+	export let loading: boolean = false;
 
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
@@ -214,7 +215,13 @@
 			];
 </script>
 
-{#if transactions && transactions.length > 0}
+{#if loading}
+	<!-- Loading State -->
+	<div class="py-12 text-center">
+		<div class="loading loading-spinner loading-lg mx-auto mb-4"></div>
+		<p class="text-base-content/70">{$t('common.loading')}</p>
+	</div>
+{:else if transactions && transactions.length > 0}
 	<div class="mb-2 flex justify-between">
 		<div class="flex items-center gap-3">
 			<List size={24} class="text-primary" />
