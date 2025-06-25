@@ -60,7 +60,7 @@
 
 		// Get theme colors from theme service
 		const themeColors = themeService.getThemeColors();
-		
+
 		console.log('Theme detection:', {
 			...themeColors,
 			dataTheme: document.documentElement.getAttribute('data-theme')
@@ -190,7 +190,7 @@
 
 	onMount(() => {
 		createChart();
-		
+
 		// Subscribe to theme changes
 		unsubscribeTheme = themeService.subscribe(() => {
 			console.log('Theme changed, recreating investment chart...');

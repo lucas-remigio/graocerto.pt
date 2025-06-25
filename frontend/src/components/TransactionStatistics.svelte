@@ -50,8 +50,8 @@
 	</div>
 {:else}
 	<!-- Compact Statistics Summary -->
-	<div class="card bg-base-100 shadow-lg">
-		<div class="card-body p-6">
+	<div class="bg-base-100">
+		<div class="p-6">
 			<!-- Main Statistics Row -->
 			<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
 				<!-- Total Transactions -->
@@ -104,7 +104,8 @@
 				</div>
 			</div>
 
-			<div class="divider my-1"></div>
+			<!-- Gap between sections -->
+			<div class="mt-2"></div>
 
 			<!-- Largest Transactions Row -->
 			<div class="grid grid-cols-2 gap-4">
@@ -137,34 +138,30 @@
 		</div>
 	</div>
 
+	<div class="divider my-0"></div>
+
 	<!-- Category Breakdowns with Pie Charts -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		<!-- Credit Categories -->
 		{#if statistics.credit_category_breakdown && statistics.credit_category_breakdown.length > 0}
-			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body px-6 py-0">
-					<h3 class="card-title text-success mb-4">
+			<div class="bg-base-100">
+				<div class="px-6 py-4">
+					<h3 class="text-success mb-4 text-lg font-semibold">
 						{$t('statistics.credit-categories')}
 					</h3>
-					<PieChartComponent
-						data={statistics.credit_category_breakdown}
-						isCredit={true}
-					/>
+					<PieChartComponent data={statistics.credit_category_breakdown} isCredit={true} />
 				</div>
 			</div>
 		{/if}
 
 		<!-- Debit Categories -->
 		{#if statistics.debit_category_breakdown && statistics.debit_category_breakdown.length > 0}
-			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body px-6 py-0">
-					<h3 class="card-title text-error mb-4">
+			<div class="bg-base-100">
+				<div class="px-6 py-4">
+					<h3 class="text-error mb-4 text-lg font-semibold">
 						{$t('statistics.debit-categories')}
 					</h3>
-					<PieChartComponent
-						data={statistics.debit_category_breakdown}
-						isCredit={false}
-					/>
+					<PieChartComponent data={statistics.debit_category_breakdown} isCredit={false} />
 				</div>
 			</div>
 		{/if}

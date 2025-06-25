@@ -55,7 +55,7 @@ class ThemeService {
 
 	public subscribe(callback: () => void): () => void {
 		this.listeners.add(callback);
-		
+
 		// Return unsubscribe function
 		return () => {
 			this.listeners.delete(callback);
@@ -78,7 +78,7 @@ class ThemeService {
 
 	public getThemeColors() {
 		const isDark = this.isDarkMode();
-		
+
 		return {
 			isDarkMode: isDark,
 			legendColor: isDark ? '#e5e7eb' : '#374151',
