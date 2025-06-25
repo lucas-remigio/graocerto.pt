@@ -6,7 +6,6 @@
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
-	import TransactionFilters from './TransactionFilters.svelte';
 	import TransactionsStats from './TransactionsStats.svelte';
 	import AiFeedback from './AiFeedback.svelte';
 	import { t } from '$lib/i18n';
@@ -16,7 +15,6 @@
 	export let transactions: TransactionDto[] = [];
 	export let transactionsTotals: TransactionsTotals;
 	export let account: Account;
-	export let categories: CategoryDto[] = [];
 	export let formatedDate: string = ''; // Formatted date for the account transactions
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
 	export let loading: boolean = false;
@@ -31,8 +29,6 @@
 	let year: number = new Date().getFullYear(); // Current year
 
 	let selectedTransaction: TransactionDto | null = null;
-	let activeFilter: any = null;
-	let filteredTransactions: TransactionDto[] = transactions;
 
 	$: currentLocale = $locale || 'en';
 
@@ -53,63 +49,6 @@
 		});
 
 		return `${formattedDate}`;
-	}
-
-	$: {
-		// Update filtered transactions whenever transactions change or when filter is applied
-		filteredTransactions = activeFilter
-			? transactions.filter((transaction) => {
-					// Date range filter
-					if (
-						activeFilter.dateFrom &&
-						new Date(transaction.date) < new Date(activeFilter.dateFrom)
-					) {
-						return false;
-					}
-					if (activeFilter.dateTo && new Date(transaction.date) > new Date(activeFilter.dateTo)) {
-						return false;
-					}
-
-					// Transaction type filter
-					if (
-						activeFilter.transactionTypes.length > 0 &&
-						!activeFilter.transactionTypes.includes(transaction.category.transaction_type.type_slug)
-					) {
-						return false;
-					}
-
-					// Categories filter
-					if (
-						activeFilter.categories.length > 0 &&
-						!activeFilter.categories.includes(transaction.category.id)
-					) {
-						return false;
-					}
-
-					// Amount range filter
-					if (activeFilter.amountFrom !== null && transaction.amount < activeFilter.amountFrom) {
-						return false;
-					}
-					if (activeFilter.amountTo !== null && transaction.amount > activeFilter.amountTo) {
-						return false;
-					}
-
-					return true;
-				})
-			: transactions;
-	}
-
-	function handleFilter(
-		event: CustomEvent<{
-			dateFrom: string;
-			dateTo: string;
-			transactionTypes: string[];
-			categories: number[];
-			amountFrom: number | null;
-			amountTo: number | null;
-		}>
-	) {
-		activeFilter = event.detail;
 	}
 
 	function openCreateTransactionModal() {
@@ -149,11 +88,11 @@
 
 	function openAiFeedbackModal() {
 		// this should get the first transactions's month and year
-		if (filteredTransactions.length === 0) {
+		if (transactions.length === 0) {
 			error = $t('transactions.no-transactions-ai');
 			return;
 		}
-		const firstTransaction = filteredTransactions[0];
+		const firstTransaction = transactions[0];
 		month = new Date(firstTransaction.date).getMonth() + 1; // Get month (1-12)
 		year = new Date(firstTransaction.date).getFullYear();
 		error = '';
@@ -206,11 +145,11 @@
 	}
 
 	$: groupedTransactions = isAll
-		? groupTransactionsByMonth(filteredTransactions)
+		? groupTransactionsByMonth(transactions)
 		: [
 				{
 					month: '',
-					transactions: filteredTransactions
+					transactions: transactions
 				}
 			];
 </script>
@@ -255,16 +194,12 @@
 	</div>
 
 	<div class="overflow-x-auto">
-		<div class="flex items-center justify-between">
-			<div>
-				<TransactionFilters {categories} on:filter={handleFilter} />
-			</div>
-
+		<div class="flex items-center justify-end">
 			<!-- Totals Summary -->
 			<TransactionsStats totals={transactionsTotals} />
 		</div>
 
-		{#if filteredTransactions.length === 0}
+		{#if transactions.length === 0}
 			<p class="text-center text-gray-500">{$t('transactions.no-transactions')}</p>
 		{:else}
 			<table class="table w-full">

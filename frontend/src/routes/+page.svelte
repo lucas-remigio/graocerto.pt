@@ -110,6 +110,14 @@
 		selectedAccount = foundAccount;
 	}
 
+	function getSelectedView() {
+		const storedView = localStorage.getItem('selectedView');
+		if (storedView === 'statistics' || storedView === 'transactions') {
+			currentView = storedView;
+		}
+		// If no stored view or invalid value, keep default 'transactions'
+	}
+
 	async function deleteAccount(account: Account) {
 		try {
 			await dataService.deleteAccount(account.token);
@@ -139,6 +147,7 @@
 			// If we have at least one account, fetch its transactions
 			if (accounts && accounts.length > 0) {
 				getSelectedAccount();
+				getSelectedView();
 				await fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 			}
 		} catch (err) {
@@ -156,10 +165,16 @@
 		year: number | null
 	) {
 		try {
-			await Promise.all([
-				fetchTransactions(accountToken, month, year),
-				fetchAvailableMonths(accountToken)
-			]);
+			const promises = [fetchAvailableMonths(accountToken)];
+
+			// If current view is statistics, also fetch statistics
+			if (currentView === 'statistics') {
+				promises.push(fetchStatistics(accountToken, month, year));
+			} else {
+				promises.push(fetchTransactions(accountToken, month, year));
+			}
+
+			await Promise.all(promises);
 		} catch (err) {
 			console.error('Error in fetchAccountTransactions:', err);
 			error = $t('errors.failed-load-transactions');
@@ -243,6 +258,7 @@
 		selectedMonth = currentMonth;
 		selectedYear = currentYear;
 		currentView = 'transactions'; // Reset to transactions view when switching accounts
+		localStorage.setItem('selectedView', currentView);
 		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
 	}
 
@@ -269,6 +285,7 @@
 
 	function handleViewToggle(event: CustomEvent<{ view: 'transactions' | 'statistics' }>) {
 		currentView = event.detail.view;
+		localStorage.setItem('selectedView', currentView);
 
 		// Fetch appropriate data for current view if not cached
 		if (selectedAccount) {
@@ -403,7 +420,6 @@
 						{#if currentView === 'transactions'}
 							<TransactionsTable
 								{transactions}
-								{categories}
 								{transactionsTotals}
 								account={selectedAccount}
 								formatedDate={selectedFormatedDate}
