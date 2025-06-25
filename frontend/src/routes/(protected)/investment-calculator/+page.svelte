@@ -6,14 +6,6 @@
 	import InvestmentCalculatorResults from '$components/InvestmentCalculatorResults.svelte';
 	import type { InvestmentCalculatorInput, InvestmentCalculatorResponse } from '$lib/types';
 
-	// Form data - using input object
-	let input: InvestmentCalculatorInput = {
-		initial_investment: 0,
-		monthly_contribution: 0,
-		annual_return_rate: 10, // Default 10%
-		investment_duration_years: 0
-	};
-
 	// Loading and error states
 	let isLoading = false;
 	let error = '';
@@ -57,11 +49,10 @@
 	}
 </script>
 
-<div class="container mx-auto max-w-4xl p-4">
+<div class="container mx-auto p-4">
 	<InvestmentCalculatorHeader />
 
 	<InvestmentCalculatorForm
-		bind:input
 		{isLoading}
 		{error}
 		on:calculate={handleCalculate}

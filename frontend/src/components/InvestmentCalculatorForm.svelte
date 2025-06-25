@@ -228,7 +228,9 @@
 						<span class="loading loading-spinner loading-sm"></span>
 						{$t('common.calculating')}
 					{:else}
-						{$t('investment-calculator.form.calculate')}
+                        <span class="text-base-content">
+                            {$t('investment-calculator.form.calculate')}
+                        </span>
 					{/if}
 				</button>
 			</div>

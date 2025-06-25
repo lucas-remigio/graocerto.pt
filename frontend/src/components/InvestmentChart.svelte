@@ -39,9 +39,9 @@
 	let chart: ChartJS | null = null;
 
 	function formatCurrency(value: number): string {
-		return new Intl.NumberFormat('en-US', {
+		return new Intl.NumberFormat('pt-PT', {
 			style: 'currency',
-			currency: 'USD',
+			currency: 'EUR',
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 0
 		}).format(value);

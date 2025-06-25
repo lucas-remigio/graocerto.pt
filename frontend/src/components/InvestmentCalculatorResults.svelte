@@ -6,10 +6,10 @@
 	export let results: InvestmentCalculatorResponse;
 
 	function formatCurrency(value: number): string {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD'
-		}).format(value);
+        return new Intl.NumberFormat('pt-PT', {
+            style: 'currency',
+            currency: 'EUR'
+        }).format(value);
 	}
 </script>
 
