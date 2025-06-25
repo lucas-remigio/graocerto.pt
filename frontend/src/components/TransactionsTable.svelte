@@ -154,24 +154,33 @@
 			];
 </script>
 
+<div class="flex items-center gap-3">
+	<List size={24} class="text-primary" />
+	<h2 class="text-2xl font-bold">
+		{$t('page.transactions-for')}
+		{account.account_name}
+		{#if !isAll}
+			- {formatedDate}
+		{/if}
+	</h2>
+</div>
 {#if loading}
 	<!-- Loading State -->
 	<div class="py-12 text-center">
 		<div class="loading loading-spinner loading-lg mx-auto mb-4"></div>
 		<p class="text-base-content/70">{$t('common.loading')}</p>
 	</div>
+{:else if error}
+	<!-- Error State -->
+	<div class="alert alert-error">
+		<p>{error}</p>
+	</div>
 {:else if transactions && transactions.length > 0}
-	<div class="mb-2 flex justify-between">
-		<div class="flex items-center gap-3">
-			<List size={24} class="text-primary" />
-			<h2 class="text-2xl font-bold">
-				{$t('page.transactions-for')}
-				{account.account_name}
-				{#if !isAll}
-					- {formatedDate}
-				{/if}
-			</h2>
-		</div>
+	<div class="my-2 flex items-center justify-between">
+		<!-- Totals Summary on the left -->
+		<TransactionsStats totals={transactionsTotals} />
+
+		<!-- Buttons aligned to the right -->
 		<div class="flex items-center gap-4">
 			<!-- Button to get feedback -->
 			{#if !isAll}
@@ -194,11 +203,6 @@
 	</div>
 
 	<div class="overflow-x-auto">
-		<div class="flex items-center justify-end">
-			<!-- Totals Summary -->
-			<TransactionsStats totals={transactionsTotals} />
-		</div>
-
 		{#if transactions.length === 0}
 			<p class="text-center text-gray-500">{$t('transactions.no-transactions')}</p>
 		{:else}

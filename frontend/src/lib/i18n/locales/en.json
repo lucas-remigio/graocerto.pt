@@ -33,6 +33,7 @@
 
 	"statistics": {
 		"title": "Transaction Statistics",
+		"summary": "Summary",
 		"no-data": "No Data Available",
 		"no-data-description": "Select an account and month to view statistics",
 		"total-transactions": "Total Transactions",
