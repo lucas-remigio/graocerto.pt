@@ -107,7 +107,7 @@
 			<div class="divider my-1"></div>
 
 			<!-- Largest Transactions Row -->
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+			<div class="grid grid-cols-2 gap-4">
 				<!-- Largest Credit -->
 				<div class="bg-success/10 flex items-center justify-between rounded-lg p-3">
 					<div>
