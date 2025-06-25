@@ -85,7 +85,7 @@
 			: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
 	>
 		{#each accounts as account}
-			<div class="relative">
+			<div class="group relative">
 				<button
 					type="button"
 					class="card bg-base-100 w-full cursor-pointer p-0 outline-none transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl
@@ -99,9 +99,11 @@
 						<p class="text-3xl font-bold">{formatCurrency(account.balance)}€</p>
 					</div>
 				</button>
-				<!-- Action buttons container -->
+				<!-- Action buttons container - only visible on hover -->
 				{#if account.token === selectedAccount?.token}
-					<div class="absolute right-2 top-2 flex gap-1">
+					<div
+						class="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+					>
 						<button
 							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
 							on:click|stopPropagation={() => handleEditAccount(account)}
