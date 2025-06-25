@@ -6,6 +6,7 @@
 
 	let isDropdownOpen = false;
 	let categoriesUrl = '/categories';
+	let investmentCalculatorUrl = '/investment-calculator';
 
 	// Track theme state
 	let theme: 'light' | 'dark' = 'light';
@@ -100,6 +101,14 @@
 							aria-label="Categories">{$t('navbar.categories')}</button
 						>
 					</li>
+					<li>
+						<button
+							type="button"
+							on:click={() => handleNavigation(investmentCalculatorUrl)}
+							class="text-lg"
+							aria-label="Investment Calculator">{$t('navbar.calculator')}</button
+						>
+					</li>
 				</ul>
 			{/if}
 		</div>
@@ -113,6 +122,14 @@
 					on:click={() => handleNavigation(categoriesUrl)}
 					class="text-lg"
 					aria-label="Categories">{$t('navbar.categories')}</button
+				>
+			</li>
+			<li>
+				<button
+					type="button"
+					on:click={() => handleNavigation(investmentCalculatorUrl)}
+					class="text-lg"
+					aria-label="Investment Calculator">{$t('navbar.calculator')}</button
 				>
 			</li>
 		</ul>

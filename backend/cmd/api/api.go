@@ -11,6 +11,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
+	"github.com/lucas-remigio/wallet-tracker/service/investment_calculator"
 	"github.com/lucas-remigio/wallet-tracker/service/openai"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
@@ -57,6 +58,10 @@ func (s *APIServer) Run() error {
 	transactionHandler.RegisterRoutes(apiV1Router)
 
 	accountStore.SetTransactionStore(transactionStore)
+
+	investmentCalculatorStore := investment_calculator.NewStore()
+	investmentCalculatorHandler := investment_calculator.NewHandler(investmentCalculatorStore)
+	investmentCalculatorHandler.RegisterRoutes(apiV1Router)
 
 	// Create a rate limiter: 10 requests per second with burst of 20
 	// Clean up unused rate limiters after 5 minutes

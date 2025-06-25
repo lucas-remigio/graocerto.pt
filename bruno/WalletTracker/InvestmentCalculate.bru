@@ -1,0 +1,25 @@
+meta {
+  name: InvestmentCalculate
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://localhost:3001/api/v1/investment-calculator
+  body: json
+  auth: inherit
+}
+
+headers {
+  Accept: application/json, text/plain, */*
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkX2F0IjoxNzQ3MDgzNTQwLCJ1c2VyX2lkIjoiMSJ9.k1Xs3V5lVGopK_T6kgle1og9h4K8_UKPJ87p-ZeiD0g
+}
+
+body:json {
+  {
+    "initial_investment": 0,
+   "monthly_contribution": 300,
+    "annual_return_rate": 10,
+    "investment_duration_years": 40
+  }
+}

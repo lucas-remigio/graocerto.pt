@@ -1,7 +1,9 @@
 {
 	"navbar": {
 		"categories": "Categorias",
-		"notifications": "Notificações"
+		"notifications": "Notificações",
+		"calculator": "Calculadora",
+		"investment-calculator": "Calculadora de Investimentos"
 	},
 
 	"page": {
@@ -18,6 +20,8 @@
 		"save": "Guardar",
 		"close": "Fechar",
 		"loading": "A carregar...",
+		"calculating": "A calcular...",
+		"reset": "Limpar",
 		"error": "Erro",
 		"success": "Sucesso"
 	},
@@ -35,7 +39,8 @@
 		"failed-edit-category": "Falha ao editar categoria",
 		"balance-negative": "O saldo deve ser maior ou igual a 0",
 		"balance-too-large": "O saldo deve ser menor que 999999999",
-		"account-name-too-short": "O nome da conta deve ter pelo menos 3 caracteres"
+		"account-name-too-short": "O nome da conta deve ter pelo menos 3 caracteres",
+		"server-error": "Erro do servidor"
 	},
 
 	"months": {
@@ -150,5 +155,43 @@
 		"debit": "Débito",
 		"credit": "Crédito",
 		"transfer": "Transferência"
+	},
+
+	"investment-calculator": {
+		"title": "Calculadora de Investimentos",
+		"description": "Calcule os retornos futuros dos seus investimentos com juros compostos",
+		"form": {
+			"title": "Detalhes do Investimento",
+			"initial-investment": "Investimento Inicial",
+			"monthly-contribution": "Contribuição Mensal",
+			"annual-return-rate": "Taxa de Retorno Anual",
+			"percentage-per-year": "% por ano",
+			"investment-duration-years": "Duração do Investimento (Anos)",
+			"calculate": "Calcular Retornos"
+		},
+		"errors": {
+			"initial-investment-negative": "O investimento inicial não pode ser negativo",
+			"initial-investment-max": "O investimento inicial não pode exceder $100.000",
+			"monthly-contribution-positive": "A contribuição mensal deve ser positiva",
+			"monthly-contribution-max": "A contribuição mensal não pode exceder $10.000",
+			"annual-return-rate-range": "A taxa de retorno anual deve estar entre 0% e 100%",
+			"investment-duration-years-positive": "A duração do investimento deve ser positiva",
+			"investment-duration-years-max": "A duração do investimento não pode exceder 100 anos",
+			"calculation-failed": "Falha no cálculo. Tente novamente."
+		},
+		"results": {
+			"title": "Resultados do Investimento",
+			"total-investment": "Investimento Total",
+			"total-return": "Retornos Totais",
+			"total-value": "Valor Final",
+			"yearly-breakdown": "Detalhes Anuais",
+			"year": "Ano",
+			"invested": "Investido",
+			"returns": "Retornos",
+			"total": "Total"
+		},
+		"chart": {
+			"amount": "Valor"
+		}
 	}
 }

@@ -1,7 +1,9 @@
 {
 	"navbar": {
 		"categories": "Categories",
-		"notifications": "Notifications"
+		"notifications": "Notifications",
+		"calculator": "Calculator",
+		"investment-calculator": "Investment Calculator"
 	},
 
 	"page": {
@@ -18,6 +20,8 @@
 		"save": "Save",
 		"close": "Close",
 		"loading": "Loading...",
+		"calculating": "Calculating...",
+		"reset": "Reset",
 		"error": "Error",
 		"success": "Success"
 	},
@@ -35,7 +39,8 @@
 		"failed-edit-category": "Failed to edit category",
 		"balance-negative": "Balance must be greater than or equal to 0",
 		"balance-too-large": "Balance must be less than 999999999",
-		"account-name-too-short": "Account name must be at least 3 characters"
+		"account-name-too-short": "Account name must be at least 3 characters",
+		"server-error": "Server error"
 	},
 
 	"months": {
@@ -150,5 +155,43 @@
 		"debit": "Debit",
 		"credit": "Credit",
 		"transfer": "Transfer"
+	},
+
+	"investment-calculator": {
+		"title": "Investment Calculator",
+		"description": "Calculate your future investment returns with compound interest",
+		"form": {
+			"title": "Investment Details",
+			"initial-investment": "Initial Investment",
+			"monthly-contribution": "Monthly Contribution",
+			"annual-return-rate": "Annual Return Rate",
+			"percentage-per-year": "% per year",
+			"investment-duration-years": "Investment Duration (Years)",
+			"calculate": "Calculate Returns"
+		},
+		"errors": {
+			"initial-investment-negative": "Initial investment cannot be negative",
+			"initial-investment-max": "Initial investment cannot exceed $100,000",
+			"monthly-contribution-positive": "Monthly contribution must be positive",
+			"monthly-contribution-max": "Monthly contribution cannot exceed $10,000",
+			"annual-return-rate-range": "Annual return rate must be between 0% and 100%",
+			"investment-duration-years-positive": "Investment duration must be positive",
+			"investment-duration-years-max": "Investment duration cannot exceed 100 years",
+			"calculation-failed": "Calculation failed. Please try again."
+		},
+		"results": {
+			"title": "Investment Results",
+			"total-investment": "Total Investment",
+			"total-return": "Total Returns",
+			"total-value": "Final Value",
+			"yearly-breakdown": "Yearly Breakdown",
+			"year": "Year",
+			"invested": "Invested",
+			"returns": "Returns",
+			"total": "Total"
+		},
+		"chart": {
+			"amount": "Amount"
+		}
 	}
 }

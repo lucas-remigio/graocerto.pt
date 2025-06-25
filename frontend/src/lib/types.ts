@@ -78,3 +78,24 @@ export interface MonthYear {
 	year: number;
 	count: number; // Number of transactions in that month/year
 }
+
+export interface InvestmentCalculatorResponse {
+	total_investment: number;
+	total_return: number;
+	total_value: number;
+	yearly_breakdown: YearlyBreakdown[];
+}
+
+export interface YearlyBreakdown {
+	year: number;
+	total_investment: number;
+	total_return: number;
+	total_value: number;
+}
+
+export interface InvestmentCalculatorInput {
+	initial_investment: number;
+	monthly_contribution: number;
+	annual_return_rate: number; // As a percentage (e.g., 5 for 5%)
+	investment_duration_years: number; // Number of years to calculate
+}

@@ -59,7 +59,7 @@
 	let transactionsTotals: TransactionsTotals = {
 		debit: 0,
 		credit: 0,
-		transfer: 0
+		difference: 0
 	};
 	let categories: CategoryDto[] = [];
 	let error: string = '';
