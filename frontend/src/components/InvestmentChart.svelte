@@ -56,6 +56,18 @@
 			chart = null;
 		}
 
+		// Detect dark mode and set appropriate colors (same pattern as CategoriesPieChart)
+		const isDarkMode =
+			document.documentElement.getAttribute('data-theme')?.includes('dark') ||
+			window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const legendColor = isDarkMode ? '#e5e7eb' : '#374151'; // light gray for dark mode, dark gray for light mode
+		const axisTextColor = isDarkMode ? '#e5e7eb' : '#111827'; // light gray for dark mode, dark text for light mode
+		const gridColor = isDarkMode ? '#374151' : '#f3f4f6'; // darker grid for dark mode, light grid for light mode
+		const tooltipBg = isDarkMode ? '#1f2937' : '#ffffff';
+		const tooltipTitleColor = isDarkMode ? '#e5e7eb' : '#111827';
+		const tooltipBodyColor = isDarkMode ? '#e5e7eb' : '#374151';
+		const tooltipBorderColor = isDarkMode ? '#374151' : '#d1d5db';
+
 		const config: ChartConfiguration = {
 			type: 'line',
 			data: {
@@ -103,7 +115,7 @@
 						position: 'bottom',
 						labels: {
 							padding: 15,
-							color: '#374151', // gray-700 for light mode
+							color: 'fafafa', // Dynamic color based on theme
 							font: {
 								size: 12,
 								weight: 'normal'
@@ -111,10 +123,10 @@
 						}
 					},
 					tooltip: {
-						backgroundColor: '#ffffff',
-						titleColor: '#111827', // gray-900
-						bodyColor: '#374151', // gray-700
-						borderColor: '#d1d5db', // gray-300
+						backgroundColor: tooltipBg,
+						titleColor: tooltipTitleColor,
+						bodyColor: tooltipBodyColor,
+						borderColor: tooltipBorderColor,
 						borderWidth: 1,
 						cornerRadius: 8,
 						callbacks: {
@@ -130,11 +142,11 @@
 					x: {
 						display: true,
 						grid: {
-							color: '#f3f4f6', // gray-100
+							color: gridColor, // Dynamic grid color
 							lineWidth: 1
 						},
 						ticks: {
-							color: '#6b7280', // gray-500
+							color: axisTextColor, // Dynamic axis text color
 							font: {
 								size: 11
 							}
@@ -143,11 +155,11 @@
 					y: {
 						display: true,
 						grid: {
-							color: '#f3f4f6', // gray-100
+							color: gridColor, // Dynamic grid color
 							lineWidth: 1
 						},
 						ticks: {
-							color: '#6b7280', // gray-500
+							color: axisTextColor, // Dynamic axis text color
 							font: {
 								size: 11
 							},
@@ -163,8 +175,8 @@
 		chart = new ChartJS(canvasElement, config);
 	}
 
-	// Recreate chart when data changes
-	$: if (yearlyBreakdown && yearlyBreakdown.length > 0 && canvasElement && !chart) {
+	// Reactive updates when data changes
+	$: if (canvasElement && yearlyBreakdown) {
 		createChart();
 	}
 
