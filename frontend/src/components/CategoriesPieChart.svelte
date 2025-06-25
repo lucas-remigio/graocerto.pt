@@ -5,12 +5,14 @@
 	import { PieChart } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import type { CategoryStatistic } from '$lib/types';
+	import { themeService } from '$lib/services/themeService';
 
 	export let data: CategoryStatistic[] = [];
 	export let isCredit: boolean = false;
 
 	let canvas: HTMLCanvasElement;
 	let chart: Chart | null = null;
+	let unsubscribeTheme: (() => void) | null = null;
 
 	// Register Chart.js components
 	Chart.register(...registerables);
@@ -26,11 +28,10 @@
 		// Use category colors from data, with fallback to generated colors
 		const colors = data.map((item) => item.color || '#6b7280');
 
-		// Detect dark mode and set appropriate text color
-		const isDarkMode =
-			document.documentElement.getAttribute('data-theme')?.includes('dark') ||
-			window.matchMedia('(prefers-color-scheme: dark)').matches;
-		const legendColor = isDarkMode ? '#e5e7eb' : '#374151'; // light gray for dark mode, dark gray for light mode
+		// Get theme colors from theme service
+		const themeColors = themeService.getThemeColors();
+		const { legendColor, tooltipBg, tooltipTitleColor, tooltipBodyColor, tooltipBorderColor } =
+			themeColors;
 
 		chart = new Chart(canvas, {
 			type: 'pie',
@@ -64,10 +65,10 @@
 						}
 					},
 					tooltip: {
-						backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-						titleColor: legendColor,
-						bodyColor: legendColor,
-						borderColor: isDarkMode ? '#374151' : '#e5e7eb',
+						backgroundColor: tooltipBg,
+						titleColor: tooltipTitleColor,
+						bodyColor: tooltipBodyColor,
+						borderColor: tooltipBorderColor,
 						borderWidth: 1,
 						callbacks: {
 							label: function (context) {
@@ -102,11 +103,22 @@
 
 	onMount(() => {
 		createChart();
+
+		// Subscribe to theme changes
+		unsubscribeTheme = themeService.subscribe(() => {
+			console.log('Theme changed, recreating pie chart...');
+			if (chart) {
+				createChart();
+			}
+		});
 	});
 
 	onDestroy(() => {
 		if (chart) {
 			chart.destroy();
+		}
+		if (unsubscribeTheme) {
+			unsubscribeTheme();
 		}
 	});
 </script>

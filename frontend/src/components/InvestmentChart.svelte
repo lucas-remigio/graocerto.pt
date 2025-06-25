@@ -14,6 +14,7 @@
 		type ChartConfiguration
 	} from 'chart.js';
 	import { t } from '$lib/i18n';
+	import { themeService } from '$lib/services/themeService';
 
 	// Register Chart.js components
 	ChartJS.register(
@@ -37,6 +38,7 @@
 
 	let canvasElement: HTMLCanvasElement;
 	let chart: ChartJS | null = null;
+	let unsubscribeTheme: (() => void) | null = null;
 
 	function formatCurrency(value: number): string {
 		return new Intl.NumberFormat('pt-PT', {
@@ -56,17 +58,23 @@
 			chart = null;
 		}
 
-		// Detect dark mode and set appropriate colors (same pattern as CategoriesPieChart)
-		const isDarkMode =
-			document.documentElement.getAttribute('data-theme')?.includes('dark') ||
-			window.matchMedia('(prefers-color-scheme: dark)').matches;
-		const legendColor = isDarkMode ? '#e5e7eb' : '#374151'; // light gray for dark mode, dark gray for light mode
-		const axisTextColor = isDarkMode ? '#e5e7eb' : '#111827'; // light gray for dark mode, dark text for light mode
-		const gridColor = isDarkMode ? '#374151' : '#f3f4f6'; // darker grid for dark mode, light grid for light mode
-		const tooltipBg = isDarkMode ? '#1f2937' : '#ffffff';
-		const tooltipTitleColor = isDarkMode ? '#e5e7eb' : '#111827';
-		const tooltipBodyColor = isDarkMode ? '#e5e7eb' : '#374151';
-		const tooltipBorderColor = isDarkMode ? '#374151' : '#d1d5db';
+		// Get theme colors from theme service
+		const themeColors = themeService.getThemeColors();
+		
+		console.log('Theme detection:', {
+			...themeColors,
+			dataTheme: document.documentElement.getAttribute('data-theme')
+		});
+
+		const {
+			legendColor,
+			axisTextColor,
+			gridColor,
+			tooltipBg,
+			tooltipTitleColor,
+			tooltipBodyColor,
+			tooltipBorderColor
+		} = themeColors;
 
 		const config: ChartConfiguration = {
 			type: 'line',
@@ -115,7 +123,7 @@
 						position: 'bottom',
 						labels: {
 							padding: 15,
-							color: 'fafafa', // Dynamic color based on theme
+							color: legendColor, // Dynamic color based on theme
 							font: {
 								size: 12,
 								weight: 'normal'
@@ -182,11 +190,22 @@
 
 	onMount(() => {
 		createChart();
+		
+		// Subscribe to theme changes
+		unsubscribeTheme = themeService.subscribe(() => {
+			console.log('Theme changed, recreating investment chart...');
+			if (chart) {
+				createChart();
+			}
+		});
 	});
 
 	onDestroy(() => {
 		if (chart) {
 			chart.destroy();
+		}
+		if (unsubscribeTheme) {
+			unsubscribeTheme();
 		}
 	});
 </script>
