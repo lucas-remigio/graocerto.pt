@@ -3,6 +3,7 @@
 	import type { Account, TransactionStatistics } from '$lib/types';
 	import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
+	import PieChartComponent from './CategoriesPieChart.svelte';
 
 	export let account: Account;
 	export let selectedMonth: number | null;
@@ -16,12 +17,6 @@
 
 	function formatCurrency(amount: number): string {
 		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-	}
-
-	function getProgressColor(percentage: number): string {
-		if (percentage >= 30) return 'bg-error';
-		if (percentage >= 15) return 'bg-warning';
-		return 'bg-success';
 	}
 </script>
 
@@ -58,67 +53,40 @@
 		</div>
 	{:else}
 		<!-- Overview Cards -->
-		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-			<!-- Total Balance Change -->
-			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body">
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="text-sm opacity-70">{$t('statistics.balance-change')}</p>
-							<p
-								class="text-2xl font-bold {statistics.totals.difference >= 0
-									? 'text-success'
-									: 'text-error'}"
-							>
-								{statistics.totals.difference >= 0 ? '+' : ''}{formatCurrency(
-									statistics.totals.difference
-								)}€
-							</p>
-						</div>
-						{#if statistics.totals.difference >= 0}
-							<TrendingUp size={24} class="text-success" />
-						{:else}
-							<TrendingDown size={24} class="text-error" />
-						{/if}
-					</div>
-				</div>
-			</div>
-
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 			<!-- Total Transactions -->
 			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body">
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="text-sm opacity-70">{$t('statistics.total-transactions')}</p>
-							<p class="text-2xl font-bold">{statistics.total_transactions}</p>
-						</div>
+				<div class="card-body text-center">
+					<p class="text-sm opacity-70">{$t('statistics.total-transactions')}</p>
+					<div class="flex items-center justify-center gap-2">
+						<p class="text-2xl font-bold">{statistics.total_transactions}</p>
 						<DollarSign size={24} class="text-primary" />
 					</div>
 				</div>
 			</div>
 
-			<!-- Average Transaction -->
+			<!-- Largest Credit -->
 			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body">
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="text-sm opacity-70">{$t('statistics.average-transaction')}</p>
-							<p class="text-2xl font-bold">{formatCurrency(statistics.average_transaction)}€</p>
-						</div>
-						<BarChart3 size={24} class="text-info" />
+				<div class="card-body text-center">
+					<p class="text-sm opacity-70">{$t('statistics.largest-credit')}</p>
+					<div class="flex items-center justify-center gap-2">
+						<p class="text-success text-2xl font-bold">
+							+{formatCurrency(statistics.largest_credit)}€
+						</p>
+						<TrendingUp size={24} class="text-success" />
 					</div>
 				</div>
 			</div>
 
-			<!-- Daily Average -->
+			<!-- Largest Debit -->
 			<div class="card bg-base-100 shadow-lg">
-				<div class="card-body">
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="text-sm opacity-70">{$t('statistics.daily-average')}</p>
-							<p class="text-2xl font-bold">{formatCurrency(statistics.daily_average)}€</p>
-						</div>
-						<TrendingUp size={24} class="text-secondary" />
+				<div class="card-body text-center">
+					<p class="text-sm opacity-70">{$t('statistics.largest-debit')}</p>
+					<div class="flex items-center justify-center gap-2">
+						<p class="text-error text-2xl font-bold">
+							-{formatCurrency(statistics.largest_debit)}€
+						</p>
+						<TrendingDown size={24} class="text-error" />
 					</div>
 				</div>
 			</div>
@@ -126,34 +94,43 @@
 
 		<!-- Totals Summary -->
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+			<!-- Total Credits -->
 			<div class="card bg-base-100 shadow-lg">
 				<div class="card-body text-center">
-					<h3 class="text-success text-lg font-semibold">{$t('statistics.total-credits')}</h3>
+					<h3 class="text-lg font-semibold">{$t('statistics.total-credits')}</h3>
 					<p class="text-success text-3xl font-bold">
 						+{formatCurrency(statistics.totals.credit)}€
 					</p>
 				</div>
 			</div>
 
+			<!-- Total Debits -->
 			<div class="card bg-base-100 shadow-lg">
 				<div class="card-body text-center">
-					<h3 class="text-error text-lg font-semibold">{$t('statistics.total-debits')}</h3>
+					<h3 class=" text-lg font-semibold">{$t('statistics.total-debits')}</h3>
 					<p class="text-error text-3xl font-bold">-{formatCurrency(statistics.totals.debit)}€</p>
 				</div>
 			</div>
 
+			<!-- Balance Change -->
 			<div class="card bg-base-100 shadow-lg">
 				<div class="card-body text-center">
-					<h3 class="text-lg font-semibold">{$t('statistics.largest-amounts')}</h3>
-					<div class="space-y-1">
-						<p class="text-sm">
-							<span class="font-medium">{$t('statistics.largest-credit')}:</span>
-							<span class="text-success">+{formatCurrency(statistics.largest_credit)}€</span>
+					<h3 class="mb-2 text-lg font-semibold">{$t('transactions.net-balance')}</h3>
+					<div class="flex items-center justify-center gap-2">
+						<p
+							class="text-3xl font-bold {statistics.totals.difference >= 0
+								? 'text-success'
+								: 'text-error'}"
+						>
+							{statistics.totals.difference >= 0 ? '+' : ''}{formatCurrency(
+								statistics.totals.difference
+							)}€
 						</p>
-						<p class="text-sm">
-							<span class="font-medium">{$t('statistics.largest-debit')}:</span>
-							<span class="text-error">-{formatCurrency(statistics.largest_debit)}€</span>
-						</p>
+						{#if statistics.totals.difference >= 0}
+							<TrendingUp size={20} class="text-success" />
+						{:else}
+							<TrendingDown size={20} class="text-error" />
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -168,28 +145,10 @@
 						<h3 class="card-title text-success mb-4">
 							{$t('statistics.credit-categories')}
 						</h3>
-						<div class="space-y-3">
-							{#each statistics.credit_category_breakdown as category}
-								<div class="flex items-center justify-between">
-									<div class="flex-1">
-										<div class="mb-1 flex items-center justify-between">
-											<span class="font-medium">{category.name}</span>
-											<span class="text-sm opacity-70">
-												{category.count}
-												{$t('statistics.transactions')} • +{formatCurrency(category.total)}€
-											</span>
-										</div>
-										<div class="bg-base-200 h-2 w-full rounded-full">
-											<div
-												class="bg-success h-2 rounded-full"
-												style="width: {Math.min(category.percentage, 100)}%"
-											></div>
-										</div>
-										<span class="text-xs opacity-50">{category.percentage.toFixed(1)}%</span>
-									</div>
-								</div>
-							{/each}
-						</div>
+						<PieChartComponent
+							data={statistics.credit_category_breakdown}
+							title={$t('statistics.credit-categories')}
+						/>
 					</div>
 				</div>
 			{/if}
@@ -201,28 +160,10 @@
 						<h3 class="card-title text-error mb-4">
 							{$t('statistics.debit-categories')}
 						</h3>
-						<div class="space-y-3">
-							{#each statistics.debit_category_breakdown as category}
-								<div class="flex items-center justify-between">
-									<div class="flex-1">
-										<div class="mb-1 flex items-center justify-between">
-											<span class="font-medium">{category.name}</span>
-											<span class="text-sm opacity-70">
-												{category.count}
-												{$t('statistics.transactions')} • -{formatCurrency(category.total)}€
-											</span>
-										</div>
-										<div class="bg-base-200 h-2 w-full rounded-full">
-											<div
-												class="bg-error h-2 rounded-full"
-												style="width: {Math.min(category.percentage, 100)}%"
-											></div>
-										</div>
-										<span class="text-xs opacity-50">{category.percentage.toFixed(1)}%</span>
-									</div>
-								</div>
-							{/each}
-						</div>
+						<PieChartComponent
+							data={statistics.debit_category_breakdown}
+							title={$t('statistics.debit-categories')}
+						/>
 					</div>
 				</div>
 			{/if}

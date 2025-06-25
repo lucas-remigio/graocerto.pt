@@ -105,14 +105,13 @@ export interface CategoryStatistic {
 	count: number;
 	total: number;
 	percentage: number;
+	color: string;
 }
 
 export interface TransactionStatistics {
 	total_transactions: number;
-	average_transaction: number;
 	largest_debit: number;
 	largest_credit: number;
-	daily_average: number;
 	credit_category_breakdown: CategoryStatistic[];
 	debit_category_breakdown: CategoryStatistic[];
 	totals: TransactionsTotals;

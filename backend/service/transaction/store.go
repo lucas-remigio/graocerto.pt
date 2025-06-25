@@ -349,10 +349,8 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	// Initialize statistics
 	stats := &types.TransactionStatistics{
 		TotalTransactions:       len(transactions),
-		AverageTransaction:      0,
 		LargestDebit:            0,
 		LargestCredit:           0,
-		DailyAverage:            0,
 		CreditCategoryBreakdown: []*types.CategoryStatistic{},
 		DebitCategoryBreakdown:  []*types.CategoryStatistic{},
 		Totals:                  totals,
@@ -365,7 +363,7 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 
 	// Calculate basic statistics
 	var totalAmount float64
-	var largestDebit, largestCredit float64
+	var largestDebit, largestCredit float64 // These will store positive values for display
 	categoryMap := make(map[string]*types.CategoryStatistic)
 	creditCategoryMap := make(map[string]*types.CategoryStatistic)
 	debitCategoryMap := make(map[string]*types.CategoryStatistic)
@@ -381,17 +379,25 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 		totalAmount += absAmount
 
 		// Track largest amounts
-		if tx.Amount < 0 && tx.Amount < largestDebit {
-			largestDebit = tx.Amount
+		if tx.Category != nil && tx.Category.TransactionType.ID == int(types.DebitTransactionType) {
+			// For debits, we want the largest absolute value (most negative becomes largest positive)
+			if absAmount > largestDebit {
+				largestDebit = absAmount
+			}
 		}
-		if tx.Amount > 0 && tx.Amount > largestCredit {
-			largestCredit = tx.Amount
+		if tx.Category != nil && tx.Category.TransactionType.ID == int(types.CreditTransactionType) {
+			// For credits, we want the largest positive value
+			if tx.Amount > largestCredit {
+				largestCredit = tx.Amount
+			}
 		}
 
 		// Category breakdown
 		categoryName := "Unknown"
+		categoryColor := "#6b7280" // Default gray color
 		if tx.Category != nil {
 			categoryName = tx.Category.CategoryName
+			categoryColor = tx.Category.Color
 		}
 
 		// Overall category breakdown
@@ -401,6 +407,7 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 				Count:      0,
 				Total:      0,
 				Percentage: 0,
+				Color:      categoryColor,
 			}
 		}
 		categoryMap[categoryName].Count++
@@ -415,6 +422,7 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 					Count:      0,
 					Total:      0,
 					Percentage: 0,
+					Color:      categoryColor,
 				}
 			}
 			creditCategoryMap[categoryName].Count++
@@ -427,6 +435,7 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 					Count:      0,
 					Total:      0,
 					Percentage: 0,
+					Color:      categoryColor,
 				}
 			}
 			debitCategoryMap[categoryName].Count++
@@ -436,16 +445,16 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 
 	// Process credit category breakdown
 	for _, categoryStat := range creditCategoryMap {
-		if creditCount > 0 {
-			categoryStat.Percentage = (float64(categoryStat.Count) / float64(creditCount)) * 100
+		if totals.Credit > 0 {
+			categoryStat.Percentage = (categoryStat.Total / totals.Credit) * 100
 		}
 		stats.CreditCategoryBreakdown = append(stats.CreditCategoryBreakdown, categoryStat)
 	}
 
 	// Process debit category breakdown
 	for _, categoryStat := range debitCategoryMap {
-		if debitCount > 0 {
-			categoryStat.Percentage = (float64(categoryStat.Count) / float64(debitCount)) * 100
+		if totals.Debit > 0 {
+			categoryStat.Percentage = (categoryStat.Total / totals.Debit) * 100
 		}
 		stats.DebitCategoryBreakdown = append(stats.DebitCategoryBreakdown, categoryStat)
 	}
@@ -463,23 +472,9 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 
 	sortByTotal(stats.CreditCategoryBreakdown)
 	sortByTotal(stats.DebitCategoryBreakdown)
-
 	// Set final calculations
-	stats.AverageTransaction = totalAmount / float64(len(transactions))
 	stats.LargestDebit = largestDebit
 	stats.LargestCredit = largestCredit
-
-	// Calculate daily average (assume 30 days for monthly view, 365 for all)
-	daysInPeriod := 30
-	if month == nil && year == nil {
-		daysInPeriod = 365
-	}
-
-	if totals.Difference < 0 {
-		stats.DailyAverage = (-totals.Difference) / float64(daysInPeriod)
-	} else {
-		stats.DailyAverage = totals.Difference / float64(daysInPeriod)
-	}
 
 	return stats, nil
 }

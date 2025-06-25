@@ -13,18 +13,18 @@
 	<div class="stats stats-horizontal shadow-sm">
 		<div class="stat px-4 py-2 text-right">
 			<div class="stat-title text-base-content/70 text-right text-xs">
-				{$t('transactions.total-debit')}
-			</div>
-			<div class="stat-value text-error text-right text-sm">
-				-{formatCurrency(totals.debit)}€
-			</div>
-		</div>
-		<div class="stat px-4 py-2 text-right">
-			<div class="stat-title text-base-content/70 text-right text-xs">
 				{$t('transactions.total-credit')}
 			</div>
 			<div class="stat-value text-success text-right text-sm">
 				+{formatCurrency(totals.credit)}€
+			</div>
+		</div>
+		<div class="stat px-4 py-2 text-right">
+			<div class="stat-title text-base-content/70 text-right text-xs">
+				{$t('transactions.total-debit')}
+			</div>
+			<div class="stat-value text-error text-right text-sm">
+				-{formatCurrency(totals.debit)}€
 			</div>
 		</div>
 		<div class="stat px-4 py-2 text-right">

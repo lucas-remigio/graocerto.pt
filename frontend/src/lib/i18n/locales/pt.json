@@ -35,7 +35,6 @@
 		"title": "Estatísticas de Transações",
 		"no-data": "Nenhum Dado Disponível",
 		"no-data-description": "Selecione uma conta e mês para visualizar estatísticas",
-		"balance-change": "Mudança de Saldo",
 		"total-transactions": "Total de Transações",
 		"average-transaction": "Transação Média",
 		"daily-average": "Média Diária",

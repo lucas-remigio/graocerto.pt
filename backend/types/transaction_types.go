@@ -74,14 +74,13 @@ type CategoryStatistic struct {
 	Count      int     `json:"count"`
 	Total      float64 `json:"total"`
 	Percentage float64 `json:"percentage"`
+	Color      string  `json:"color"`
 }
 
 type TransactionStatistics struct {
 	TotalTransactions       int                  `json:"total_transactions"`
-	AverageTransaction      float64              `json:"average_transaction"`
 	LargestDebit            float64              `json:"largest_debit"`
 	LargestCredit           float64              `json:"largest_credit"`
-	DailyAverage            float64              `json:"daily_average"`
 	CreditCategoryBreakdown []*CategoryStatistic `json:"credit_category_breakdown"`
 	DebitCategoryBreakdown  []*CategoryStatistic `json:"debit_category_breakdown"`
 	Totals                  *TransactionTotals   `json:"totals"`
