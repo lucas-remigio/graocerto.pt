@@ -14,9 +14,9 @@
 	}
 </script>
 
-<div class="card bg-base-100 shadow-lg">
-	<div class="card-body">
-		<h3 class="card-title text-success mb-4 justify-center">
+<div class="bg-base-100 ">
+	<div class="p-6">
+		<h3 class="text-success mb-4 text-center text-lg font-semibold">
 			{$t('investment-calculator.results.title')}
 		</h3>
 

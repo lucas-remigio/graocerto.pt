@@ -18,23 +18,21 @@
 	}
 </script>
 
-<div class="mb-4 flex justify-center">
+<div class="mb-2 flex justify-center">
 	<div class="btn-group">
 		<button
 			class="btn btn-sm {currentView === 'transactions' ? 'btn-primary' : 'btn-outline'}"
 			on:click={() => handleViewChange('transactions')}
 		>
 			<List size={16} class="mr-1" />
-			<span class="hidden sm:inline">{$t('views.transactions')}</span>
-			<span class="sm:hidden">Txn</span>
+			<span>{$t('views.transactions')}</span>
 		</button>
 		<button
 			class="btn btn-sm {currentView === 'statistics' ? 'btn-primary' : 'btn-outline'}"
 			on:click={() => handleViewChange('statistics')}
 		>
 			<BarChart3 size={16} class="mr-1" />
-			<span class="hidden sm:inline">{$t('views.statistics')}</span>
-			<span class="sm:hidden">Stats</span>
+			<span>{$t('views.statistics')}</span>
 		</button>
 	</div>
 </div>

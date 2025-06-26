@@ -7,8 +7,7 @@
 	},
 
 	"page": {
-		"my-accounts": "My Accounts",
-		"transactions-for": "Transactions for"
+		"my-accounts": "My Accounts"
 	},
 
 	"common": {
@@ -33,9 +32,9 @@
 
 	"statistics": {
 		"title": "Transaction Statistics",
-		"summary": "Summary",
 		"no-data": "No Data Available",
 		"no-data-description": "Select an account and month to view statistics",
+		"balance-change": "Balance Change",
 		"total-transactions": "Total Transactions",
 		"average-transaction": "Average Transaction",
 		"daily-average": "Daily Average",
@@ -44,11 +43,7 @@
 		"largest-amounts": "Largest Amounts",
 		"largest-credit": "Largest Credit",
 		"largest-debit": "Largest Debit",
-		"category-breakdown": "Overall Category Breakdown",
-		"credit-categories": "Credit Categories",
-		"debit-categories": "Debit Categories",
-		"no-credit-categories": "No credit transactions found",
-		"no-debit-categories": "No debit transactions found",
+		"category-breakdown": "Category Breakdown",
 		"transactions": "transactions"
 	},
 

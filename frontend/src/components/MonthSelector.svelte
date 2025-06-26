@@ -31,7 +31,7 @@
 	$: currentLocale = $locale || 'en-US';
 </script>
 
-<div class="mb-4">
+<div class="mb-2">
 	<div class="flex items-center gap-2 overflow-x-auto pb-2">
 		<button
 			class="btn btn-sm btn-circle {selectedMonth === null && selectedYear === null

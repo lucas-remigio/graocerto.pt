@@ -73,7 +73,7 @@
 </script>
 
 <!-- Header with title and create button -->
-<div class="mb-6 flex justify-between">
+<div class="mb-2 flex items-center justify-between">
 	<h1 class="text-3xl font-bold">{$t('page.my-accounts')}</h1>
 	<button class="btn btn-primary" on:click={createAccount}>
 		<Plus size={20} class="text-base-content" />

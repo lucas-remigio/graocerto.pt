@@ -20,17 +20,6 @@
 	}
 </script>
 
-<!-- Header -->
-<div class="flex items-center gap-3">
-	<BarChart3 size={24} class="text-primary" />
-	<h2 class="text-2xl font-bold">
-		{$t('statistics.title')}
-		{account.account_name}
-		{#if !isAll}
-			- {formatedDate}
-		{/if}
-	</h2>
-</div>
 {#if loading}
 	<!-- Loading State -->
 	<div class="py-12 text-center">
@@ -51,7 +40,7 @@
 {:else}
 	<!-- Compact Statistics Summary -->
 	<div class="bg-base-100">
-		<div class="p-6">
+		<div class="p-6 pt-2LLL">
 			<!-- Main Statistics Row -->
 			<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
 				<!-- Total Transactions -->
@@ -137,8 +126,6 @@
 			</div>
 		</div>
 	</div>
-
-	<div class="divider my-0"></div>
 
 	<!-- Category Breakdowns with Pie Charts -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">

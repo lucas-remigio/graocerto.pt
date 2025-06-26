@@ -415,6 +415,8 @@
 						<ViewToggle {currentView} on:viewChange={handleViewToggle} />
 					</div>
 
+					<div class="divider my-0"></div>
+
 					<!-- Content Container with scroll -->
 					<div class="lg:min-h-0 lg:flex-1 lg:overflow-auto">
 						{#if currentView === 'transactions'}

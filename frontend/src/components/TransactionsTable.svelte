@@ -154,16 +154,6 @@
 			];
 </script>
 
-<div class="flex items-center gap-3">
-	<List size={24} class="text-primary" />
-	<h2 class="text-2xl font-bold">
-		{$t('page.transactions-for')}
-		{account.account_name}
-		{#if !isAll}
-			- {formatedDate}
-		{/if}
-	</h2>
-</div>
 {#if loading}
 	<!-- Loading State -->
 	<div class="py-12 text-center">
