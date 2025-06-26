@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import api_axios from '$lib/axios';
+	import { dataService } from '$lib/services/dataService';
 	import type {
 		Category,
 		CategoriesResponse,
@@ -25,17 +26,12 @@
 
 	async function fetchCategories() {
 		try {
-			const res = await api_axios.get('categories/dto');
+			const groupedCategories = await dataService.fetchCategoriesGrouped();
 
-			if (res.status !== 200) {
-				console.error('Non-200 response status:', res.status);
-				error = `Error: ${res.status}`;
-				return;
-			}
+			// Convert grouped categories to flat arrays for each type
+			categories = Object.values(groupedCategories).flat();
 
-			const data: CategoriesDtoResponse = res.data;
-			categories = data.categories;
-
+			// Filter categories by transaction type slug instead of hardcoded IDs
 			debitCategories = categories.filter(
 				(category) => category.transaction_type.type_slug === 'debit'
 			);
@@ -50,6 +46,7 @@
 
 	async function deleteCategory(categoryId: number) {
 		try {
+			// We'll still use direct API call for delete since it's not a frequently cached operation
 			const res = await api_axios.delete(`categories/${categoryId}`);
 
 			if (res.status !== 200) {
@@ -58,6 +55,8 @@
 				return;
 			}
 
+			// Clear category caches and refetch
+			dataService.clearCategoryCaches();
 			fetchCategories();
 		} catch (err: any) {
 			console.error('Error in deleteCategory:', err);
@@ -90,6 +89,8 @@
 	}
 
 	function handleCreateCategorySuccess() {
+		// Clear category caches and refetch
+		dataService.clearCategoryCaches();
 		fetchCategories();
 		closeCreateCategoryModal();
 	}
@@ -159,11 +160,12 @@
 			</div>
 		</div>
 	</div>
-	{#if showCreateCategoryModal && selectedTransactionType}
-		<CreateCategory
-			transactionType={selectedTransactionType}
-			on:closeModal={closeCreateCategoryModal}
-			on:newCategory={handleCreateCategorySuccess}
-		/>
-	{/if}
+{/if}
+
+{#if showCreateCategoryModal && selectedTransactionType}
+	<CreateCategory
+		transactionType={selectedTransactionType}
+		on:closeModal={closeCreateCategoryModal}
+		on:newCategory={handleCreateCategorySuccess}
+	/>
 {/if}

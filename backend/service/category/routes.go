@@ -24,6 +24,7 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 		}),
 	))
 	router.HandleFunc("/categories/dto", middleware.AuthMiddleware(h.GetCategoriesDtoByUserId))
+	router.HandleFunc("/categories/dto/grouped", middleware.AuthMiddleware(h.GetCategoriesDtoGroupedByUserId))
 	router.HandleFunc("/categories/{id}", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
 			http.MethodPut:    h.UpdateCategory,
@@ -98,6 +99,34 @@ func (h *Handler) GetCategoriesDtoByUserId(w http.ResponseWriter, r *http.Reques
 
 	response := map[string]interface{}{
 		"categories": categories,
+	}
+
+	middleware.WriteDataResponse(w, response)
+}
+
+func (h *Handler) GetCategoriesDtoGroupedByUserId(w http.ResponseWriter, r *http.Request) {
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// get categories by user id
+	categories, err := h.store.GetCategoryDtoByUserId(userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// group categories by transaction type slug
+	groupedCategories := make(map[string][]*types.CategoryDTO)
+	for _, category := range categories {
+		transactionTypeSlug := category.TransactionType.TypeSlug
+		groupedCategories[transactionTypeSlug] = append(groupedCategories[transactionTypeSlug], category)
+	}
+
+	response := map[string]interface{}{
+		"categories": groupedCategories,
 	}
 
 	middleware.WriteDataResponse(w, response)

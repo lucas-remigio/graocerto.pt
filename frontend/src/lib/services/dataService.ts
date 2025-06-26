@@ -7,6 +7,7 @@ import type {
 	GroupedTransactionsResponse,
 	TransactionGroup,
 	CategoryDto,
+	CategoriesDtoResponse,
 	MonthYear,
 	TransactionsTotals,
 	TransactionStatistics
@@ -22,6 +23,7 @@ class DataService {
 	private statisticsCache = new Map<string, TransactionStatistics>();
 	private transactionsCache = new Map<string, TransactionsCacheValue>();
 	private availableMonthsCache = new Map<string, MonthYear[]>();
+	private categoriesCache: { [key: number]: CategoryDto[] } | null = null;
 
 	// Generate cache key for account/month/year combination
 	private getCacheKey(accountToken: string, month: number | null, year: number | null): string {
@@ -33,6 +35,7 @@ class DataService {
 		this.statisticsCache.clear();
 		this.transactionsCache.clear();
 		this.availableMonthsCache.clear();
+		this.categoriesCache = null;
 	}
 
 	// Clear caches for a specific account
@@ -49,6 +52,11 @@ class DataService {
 			}
 		}
 		this.availableMonthsCache.delete(accountToken);
+	}
+
+	// Clear category and transaction type caches (when categories are modified)
+	clearCategoryCaches(): void {
+		this.categoriesCache = null;
 	}
 
 	// Fetch accounts
@@ -151,15 +159,30 @@ class DataService {
 		return months;
 	}
 
-	// Fetch categories
+	// Fetch categories with caching (returns flat array for backward compatibility)
 	async fetchCategories(): Promise<CategoryDto[]> {
-		const res = await api_axios('categories/dto');
+		const groupedCategories = await this.fetchCategoriesGrouped();
+		// Flatten the grouped categories into a single array
+		return Object.values(groupedCategories).flat();
+	}
+
+	// Fetch categories grouped by transaction type ID with caching
+	async fetchCategoriesGrouped(): Promise<{ [key: number]: CategoryDto[] }> {
+		// Check cache first
+		if (this.categoriesCache !== null) {
+			return this.categoriesCache;
+		}
+
+		const res = await api_axios('categories/dto/grouped');
 
 		if (res.status !== 200) {
 			throw new Error(`Failed to fetch categories: ${res.status}`);
 		}
 
-		return res.data.categories;
+		const data: CategoriesDtoResponse = res.data;
+		// Cache the result
+		this.categoriesCache = data.categories;
+		return this.categoriesCache;
 	}
 
 	// Delete account

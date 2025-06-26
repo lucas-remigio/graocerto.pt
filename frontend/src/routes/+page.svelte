@@ -233,16 +233,6 @@
 		}
 	}
 
-	// Function to fetch categories
-	async function fetchCategories() {
-		try {
-			categories = await dataService.fetchCategories();
-		} catch (err) {
-			console.error('Error fetching categories:', err);
-			error = $t('errors.failed-load-categories');
-		}
-	}
-
 	function addCurrentMonth() {
 		const currentMonthYear: MonthYear = {
 			month: currentMonth,
@@ -355,7 +345,7 @@
 	}
 
 	onMount(async () => {
-		await Promise.all([fetchAccounts(), fetchCategories()]);
+		await fetchAccounts();
 
 		// Set up screen size tracking
 		updateScreenSize();

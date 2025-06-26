@@ -62,7 +62,7 @@ export interface CategoriesResponse {
 }
 
 export interface CategoriesDtoResponse {
-	categories: CategoryDto[];
+	categories: { [key: number]: CategoryDto[] };
 }
 
 export interface TransactionType {
