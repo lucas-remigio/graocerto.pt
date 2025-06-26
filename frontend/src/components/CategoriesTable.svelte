@@ -56,19 +56,19 @@
 	<p class="text-base-content/70 py-8 text-center">{$t('categories.no-categories')}</p>
 {:else}
 	<table class="table-zebra table w-full border-2 {modalBorderClass}">
-		<thead>
+		<thead class="text-center">
 			<tr>
 				<th>{$t('categories.category-name')}</th>
 				<th>{$t('categories.color')}</th>
 				<th>{$t('categories.actions')}</th>
 			</tr>
 		</thead>
-		<tbody>
+		<tbody class="text-center">
 			{#each categories as category (category.id)}
 				<tr>
 					<td>{category.category_name}</td>
 					<td>
-						<div class="flex items-center space-x-2">
+						<div class="flex items-center justify-center space-x-2">
 							<span
 								class="inline-block h-4 w-4 rounded-full"
 								style="background-color: {category.color};"
