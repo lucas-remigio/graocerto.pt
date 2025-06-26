@@ -112,7 +112,10 @@
 				</ul>
 			{/if}
 		</div>
-		<a href="/" class="btn btn-ghost text-xl">Wallet Tracker</a>
+		<a href="/" class="btn btn-ghost text-xl">
+			<img src="/logo.png" alt="Logo" class="mr-2 h-8 w-8" />
+			Grão Certo
+		</a>
 	</div>
 	<div class="navbar-center hidden lg:flex">
 		<ul class="menu menu-horizontal px-1">

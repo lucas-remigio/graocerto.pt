@@ -1,4 +1,4 @@
-# 💰 Wallet Tracker - A Modern Full-Stack Financial Management Platform
+# 💰 Grão Certo - A Modern Full-Stack Financial Management Platform
 
 > **"Empowering Portuguese speakers with financial literacy through intelligent expense tracking"**
 
