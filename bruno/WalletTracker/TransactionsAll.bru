@@ -1,18 +1,13 @@
 meta {
-  name: Transactions
+  name: TransactionsAll
   type: http
-  seq: 4
+  seq: 5
 }
 
 get {
-  url: http://localhost:3001/api/v1/transactions/dto/fb883458ee5746fa9e2ed2e5b78a914e?month=06&year=2025
+  url: http://localhost:3001/api/v1/transactions/dto/fb883458ee5746fa9e2ed2e5b78a914e
   body: none
   auth: inherit
-}
-
-params:query {
-  month: 06
-  year: 2025
 }
 
 headers {

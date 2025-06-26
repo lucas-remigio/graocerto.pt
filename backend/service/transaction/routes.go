@@ -120,25 +120,14 @@ func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *htt
 		year = &yearVal
 	}
 
-	// get transactions DTO by account token
-	transactions, err := h.store.GetTransactionsDTOByAccountToken(accountToken, month, year)
+	// Always return grouped transactions (with optional month/year filter)
+	groupedResponse, err := h.store.GetGroupedTransactionsDTOByAccountToken(accountToken, month, year)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	creditTotal, err := h.store.CalculateTransactionTotals(transactions)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	response := &types.TransactionsResponse{
-		Transactions: transactions,
-		Totals:       creditTotal,
-	}
-
-	middleware.WriteDataResponse(w, response)
+	middleware.WriteDataResponse(w, groupedResponse)
 }
 
 func (h *Handler) GetTransactionsMonthsAndYears(w http.ResponseWriter, r *http.Request) {

@@ -5,6 +5,7 @@ import "time"
 type TransactionStore interface {
 	GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*Transaction, error)
 	GetTransactionsDTOByAccountToken(accountToken string, month, year *int) ([]*TransactionDTO, error)
+	GetGroupedTransactionsDTOByAccountToken(accountToken string, month, year *int) (*GroupedTransactionsResponse, error)
 	CreateTransaction(transaction *Transaction) error
 	UpdateTransaction(transaction *UpdateTransactionPayload) error
 	DeleteTransaction(transactionId int, userId int) error
@@ -67,6 +68,18 @@ type TransactionTotals struct {
 type TransactionsResponse struct {
 	Transactions []*TransactionDTO  `json:"transactions"`
 	Totals       *TransactionTotals `json:"totals"`
+}
+
+// New types for grouped transactions
+type TransactionGroup struct {
+	Month        int               `json:"month"`
+	Year         int               `json:"year"`
+	Transactions []*TransactionDTO `json:"transactions"`
+}
+
+type GroupedTransactionsResponse struct {
+	Groups []*TransactionGroup `json:"groups"`
+	Totals *TransactionTotals  `json:"totals"`
 }
 
 type CategoryStatistic struct {

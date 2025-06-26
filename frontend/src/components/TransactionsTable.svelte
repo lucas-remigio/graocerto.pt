@@ -1,6 +1,12 @@
 <!-- src/components/TransactionsTable.svelte -->
 <script lang="ts">
-	import type { Account, CategoryDto, TransactionDto, TransactionsTotals } from '$lib/types';
+	import type {
+		Account,
+		CategoryDto,
+		TransactionDto,
+		TransactionsTotals,
+		TransactionGroup
+	} from '$lib/types';
 	import { Bot, CircleDollarSign, List, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
@@ -12,10 +18,9 @@
 	import { format, locale } from 'svelte-i18n';
 
 	// Export props for transactions array and the account name.
-	export let transactions: TransactionDto[] = [];
+	export let transactionsGroups: TransactionGroup[] = [];
 	export let transactionsTotals: TransactionsTotals;
 	export let account: Account;
-	export let formatedDate: string = ''; // Formatted date for the account transactions
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
 	export let loading: boolean = false;
 
@@ -49,6 +54,16 @@
 		});
 
 		return `${formattedDate}`;
+	}
+
+	function formatMonthYear(month: number, year: number): string {
+		// Create a date object with the given month (1-12) and year
+		// Using day 1 to avoid timezone issues
+		const date = new Date(year, month - 1, 1);
+		return date.toLocaleDateString(currentLocale, {
+			month: 'long',
+			year: 'numeric'
+		});
 	}
 
 	function openCreateTransactionModal() {
@@ -88,11 +103,11 @@
 
 	function openAiFeedbackModal() {
 		// this should get the first transactions's month and year
-		if (transactions.length === 0) {
+		if (transactionsGroups.length === 0 || transactionsGroups[0].transactions.length === 0) {
 			error = $t('transactions.no-transactions-ai');
 			return;
 		}
-		const firstTransaction = transactions[0];
+		const firstTransaction = transactionsGroups[0].transactions[0];
 		month = new Date(firstTransaction.date).getMonth() + 1; // Get month (1-12)
 		year = new Date(firstTransaction.date).getFullYear();
 		error = '';
@@ -114,44 +129,6 @@
 		closeEditTransactionModal();
 		dispatch('updateTransaction');
 	}
-
-	// Add this function to group transactions by month
-	function groupTransactionsByMonth(transactions: TransactionDto[]) {
-		const groups = new Map<string, TransactionDto[]>();
-
-		transactions.forEach((tx) => {
-			const date = new Date(tx.date);
-			// Use YYYY-MM format for consistent sorting
-			const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-			if (!groups.has(sortKey)) {
-				groups.set(sortKey, []);
-			}
-			groups.get(sortKey)!.push(tx);
-		});
-
-		// Convert to array and sort by key (most recent first)
-		return Array.from(groups.entries())
-			.sort((a, b) => b[0].localeCompare(a[0]))
-			.map(([key, transactions]) => ({
-				month: new Date(transactions[0].date).toLocaleDateString('pt-PT', {
-					month: 'long',
-					year: 'numeric'
-				}),
-				transactions: transactions.sort(
-					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-				)
-			}));
-	}
-
-	$: groupedTransactions = isAll
-		? groupTransactionsByMonth(transactions)
-		: [
-				{
-					month: '',
-					transactions: transactions
-				}
-			];
 </script>
 
 {#if loading}
@@ -165,7 +142,7 @@
 	<div class="alert alert-error">
 		<p>{error}</p>
 	</div>
-{:else if transactions && transactions.length > 0}
+{:else if transactionsGroups && transactionsGroups.length > 0}
 	<div class="my-2 flex items-center justify-between">
 		<!-- Totals Summary on the left -->
 		<TransactionsStats totals={transactionsTotals} />
@@ -193,7 +170,7 @@
 	</div>
 
 	<div class="overflow-x-auto">
-		{#if transactions.length === 0}
+		{#if transactionsGroups.length === 0}
 			<p class="text-center text-gray-500">{$t('transactions.no-transactions')}</p>
 		{:else}
 			<table class="table w-full">
@@ -207,12 +184,12 @@
 					</tr>
 				</thead>
 				<tbody class="text-center">
-					{#each groupedTransactions as group}
-						<!-- Only show month header if isAll is true and month is not empty -->
-						{#if isAll && group.month}
+					{#each transactionsGroups as group}
+						<!-- Show month header only if isAll is true -->
+						{#if isAll}
 							<tr class="bg-base-200">
 								<td colspan="5" class="px-4 py-2 text-left font-bold">
-									{group.month}
+									{formatMonthYear(group.month, group.year)}
 								</td>
 							</tr>
 						{/if}

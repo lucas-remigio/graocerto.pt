@@ -4,6 +4,7 @@
 	import type {
 		Account,
 		TransactionDto,
+		TransactionGroup,
 		CategoryDto,
 		MonthYear,
 		TransactionsTotals,
@@ -55,7 +56,7 @@
 	// Local component state
 	let accounts: Account[] = [];
 	let accountsLoading = false;
-	let transactions: TransactionDto[] = [];
+	let transactionGroups: TransactionGroup[] = [];
 	let transactionsLoading = false;
 	let transactionsTotals: TransactionsTotals = {
 		debit: 0,
@@ -189,7 +190,7 @@
 		transactionsLoading = true;
 		try {
 			const result = await dataService.fetchTransactions(accountToken, month, year);
-			transactions = result.transactions;
+			transactionGroups = result.transactionGroups;
 			transactionsTotals = result.totals;
 		} catch (err) {
 			console.error('Error fetching transactions:', err);
@@ -421,10 +422,9 @@
 					<div class="lg:min-h-0 lg:flex-1 lg:overflow-auto">
 						{#if currentView === 'transactions'}
 							<TransactionsTable
-								{transactions}
+								transactionsGroups={transactionGroups}
 								{transactionsTotals}
 								account={selectedAccount}
-								formatedDate={selectedFormatedDate}
 								isAll={selectedMonth === null && selectedYear === null}
 								loading={transactionsLoading}
 								on:newTransaction={handleNewTransaction}
@@ -434,10 +434,8 @@
 							/>
 						{:else}
 							<TransactionStatisticsComponent
-								account={selectedAccount}
 								{selectedMonth}
 								{selectedYear}
-								formatedDate={selectedFormatedDate}
 								{statistics}
 								loading={statisticsLoading}
 								error={statisticsError}

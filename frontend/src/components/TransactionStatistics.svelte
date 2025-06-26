@@ -5,10 +5,8 @@
 	import { t } from '$lib/i18n';
 	import PieChartComponent from './CategoriesPieChart.svelte';
 
-	export let account: Account;
 	export let selectedMonth: number | null;
 	export let selectedYear: number | null;
-	export let formatedDate: string = '';
 	export let statistics: TransactionStatistics | null = null;
 	export let loading: boolean = false;
 	export let error: string = '';

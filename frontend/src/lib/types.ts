@@ -11,8 +11,15 @@ export interface AccountsResponse {
 	accounts: Account[];
 }
 
-export interface TransactionsResponseDto {
+// Types for grouped transactions
+export interface TransactionGroup {
+	month: number; // Month number (1-12)
+	year: number;
 	transactions: TransactionDto[];
+}
+
+export interface GroupedTransactionsResponse {
+	groups: TransactionGroup[];
 	totals: TransactionsTotals;
 }
 
