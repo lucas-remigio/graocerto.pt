@@ -75,7 +75,7 @@
 								const category = data[context.dataIndex];
 								return [
 									`${category.name}: ${category.percentage.toFixed(1)}%`,
-									`${category.count} transactions`,
+									`${category.count} ${$t('statistics.transactions')}`,
 									`€${category.total.toFixed(2)}`
 								];
 							}
@@ -139,11 +139,12 @@
 							style="background-color: {category.color || '#6b7280'}"
 						></div>
 						<span class="font-medium">{category.name}</span>
+						<span class="text-xs opacity-70">({category.count})</span>
 					</div>
 					<div class="text-right">
 						<div class="font-semibold">{category.percentage.toFixed(1)}%</div>
 						<div class="text-xs opacity-70">
-							{category.count} • €{category.total.toFixed(2)}
+							€{category.total.toFixed(2)}
 						</div>
 					</div>
 				</div>
