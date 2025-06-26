@@ -1,7 +1,7 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
 	import { dataService } from '$lib/services/dataService';
-	import type { Account, Category, TransactionDto, TransactionType } from '$lib/types';
+	import type { Account, Category, CategoryDto, TransactionDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -13,8 +13,9 @@
 	let error: string = '';
 	let transactionTypes: TransactionType[] = [];
 	let transaction_type_id: number = transaction.category.transaction_type.id;
-	let categories: Category[] = [];
-	let categoriesMappedById: Map<number, Category> = new Map();
+	let categories: CategoryDto[] = [];
+	let categoriesMappedById: Map<number, CategoryDto> = new Map();
+	let isLoading: boolean = true;
 
 	$: if (transactionTypes.length > 0 && !transaction_type_id) {
 		transaction_type_id = transactionTypes[0].id;
@@ -33,7 +34,7 @@
 
 	// Filter categories based on the selected transaction type id.
 	$: filteredCategories = categories.filter(
-		(cat) => cat.transaction_type_id === transaction_type_id
+		(cat) => cat.transaction_type.id === transaction_type_id
 	);
 
 	$: selectedCategory = categoriesMappedById.get(Number(category_id));
@@ -87,13 +88,15 @@
 		amount = Math.round(amount * 100) / 100;
 
 		// category must be from transaction type
-		const category: Category | undefined = categories.find((cat) => cat.id === Number(category_id));
+		const category: CategoryDto | undefined = categories.find(
+			(cat) => cat.id === Number(category_id)
+		);
 		if (!category) {
 			error = $t('transactions.category-required');
 			return false;
 		}
 
-		if (category.transaction_type_id !== Number(transaction_type_id)) {
+		if (category.transaction_type.id !== Number(transaction_type_id)) {
 			error = $t('transactions.category-must-match');
 			return false;
 		}
@@ -138,16 +141,7 @@
 
 	async function fetchCategories() {
 		try {
-			const categoriesDto = await dataService.fetchCategories();
-			// Convert CategoryDto to Category format for backward compatibility
-			categories = categoriesDto.map((catDto) => ({
-				id: catDto.id,
-				transaction_type_id: catDto.transaction_type.id,
-				category_name: catDto.category_name,
-				color: catDto.color,
-				created_at: catDto.created_at,
-				updated_at: catDto.updated_at
-			}));
+			categories = await dataService.fetchCategories();
 
 			categoriesMappedById = new Map(categories.map((cat) => [cat.id, cat]));
 		} catch (err) {
@@ -156,9 +150,21 @@
 		}
 	}
 
+	async function fetchData() {
+		isLoading = true;
+		error = '';
+		try {
+			await Promise.all([fetchTransactionTypes(), fetchCategories()]);
+		} catch (err) {
+			console.error('Error in fetchData:', err);
+			error = $t('errors.failed-load-data');
+		} finally {
+			isLoading = false;
+		}
+	}
+
 	onMount(() => {
-		fetchTransactionTypes();
-		fetchCategories();
+		fetchData();
 	});
 </script>
 
@@ -177,12 +183,60 @@
 				<p class="text-gray-100">{error}</p>
 			</div>
 		{/if}
-		<form on:submit|preventDefault={handleSubmit}>
-			{#if filteredCategories.length > 0}
-				<!-- Display both Transaction Type and Category side by side -->
-				<div class="mt-4 flex flex-col gap-4 md:flex-row">
-					<!-- Transaction Type Field -->
-					<div class="form-control flex-1">
+
+		{#if isLoading}
+			<!-- Loading State -->
+			<div class="py-12 text-center">
+				<div class="loading loading-spinner loading-lg mx-auto mb-4"></div>
+				<p class="text-base-content/70">{$t('common.loading')}</p>
+			</div>
+		{:else}
+			<form on:submit|preventDefault={handleSubmit}>
+				{#if filteredCategories.length > 0}
+					<!-- Display both Transaction Type and Category side by side -->
+					<div class="mt-4 flex flex-col gap-4 md:flex-row">
+						<!-- Transaction Type Field -->
+						<div class="form-control flex-1">
+							<label class="label" for="transaction-type">
+								<span class="label-text">{$t('transactions.transaction-type')}</span>
+							</label>
+							<select
+								id="transaction-type"
+								class="select select-bordered w-full"
+								bind:value={transaction_type_id}
+								required
+							>
+								<option value="" disabled selected
+									>{$t('transactions.select-transaction-type')}</option
+								>
+								{#each transactionTypes as type}
+									<option value={type.id}>{$t('transaction-types.' + type.type_slug)}</option>
+								{/each}
+							</select>
+						</div>
+
+						<!-- Category Field -->
+						<div class="form-control flex-1">
+							<label class="label" for="category">
+								<span class="label-text">{$t('transactions.category')}</span>
+							</label>
+							<select
+								id="category"
+								class="select select-bordered w-full border-2"
+								bind:value={category_id}
+								required
+								style="border-color: {borderColor} !important;"
+							>
+								<option value="" disabled selected>{$t('transactions.select-category')}</option>
+								{#each filteredCategories as cat}
+									<option value={cat.id}>{cat.category_name}</option>
+								{/each}
+							</select>
+						</div>
+					</div>
+				{:else}
+					<!-- If no categories, show the Transaction Type field and a message -->
+					<div class="form-control mt-4">
 						<label class="label" for="transaction-type">
 							<span class="label-text">{$t('transactions.transaction-type')}</span>
 						</label>
@@ -200,100 +254,65 @@
 							{/each}
 						</select>
 					</div>
-
-					<!-- Category Field -->
-					<div class="form-control flex-1">
-						<label class="label" for="category">
-							<span class="label-text">{$t('transactions.category')}</span>
-						</label>
-						<select
-							id="category"
-							class="select select-bordered w-full border-2"
-							bind:value={category_id}
-							required
-							style="border-color: {borderColor} !important;"
-						>
-							<option value="" disabled selected>{$t('transactions.select-category')}</option>
-							{#each filteredCategories as cat}
-								<option value={cat.id}>{cat.category_name}</option>
-							{/each}
-						</select>
+					<div class="form-control mt-4">
+						<p class="text-base-content/70">
+							{$t('transactions.no-categories-available')}
+							<a href="/categories" class="link">{$t('transactions.click-to-create')}</a>
+						</p>
 					</div>
-				</div>
-			{:else}
-				<!-- If no categories, show the Transaction Type field and a message -->
-				<div class="form-control mt-4">
-					<label class="label" for="transaction-type">
-						<span class="label-text">{$t('transactions.transaction-type')}</span>
-					</label>
-					<select
-						id="transaction-type"
-						class="select select-bordered w-full"
-						bind:value={transaction_type_id}
-						required
-					>
-						<option value="" disabled selected>{$t('transactions.select-transaction-type')}</option>
-						{#each transactionTypes as type}
-							<option value={type.id}>{type.type_name}</option>
-						{/each}
-					</select>
-				</div>
-				<div class="form-control mt-4">
-					<p class="text-base-content/70">
-						{$t('transactions.no-categories-available')}
-						<a href="/categories" class="link">{$t('transactions.click-to-create')}</a>
-					</p>
-				</div>
-			{/if}
+				{/if}
 
-			<!-- Description Field -->
-			<div class="form-control mt-4">
-				<label class="label" for="description">
-					<span class="label-text">{$t('transactions.description')}</span>
-				</label>
-				<input
-					id="description"
-					type="text"
-					placeholder={$t('transactions.transaction-description')}
-					class="input input-bordered"
-					bind:value={description}
-				/>
-			</div>
-
-			<div class="mt-4 flex gap-4">
-				<!-- Amount Field -->
-				<div class="form-control flex-1">
-					<label class="label" for="amount">
-						<span class="label-text">{$t('transactions.amount')}</span>
+				<!-- Description Field -->
+				<div class="form-control mt-4">
+					<label class="label" for="description">
+						<span class="label-text">{$t('transactions.description')}</span>
 					</label>
 					<input
-						id="amount"
-						type="number"
-						placeholder={$t('transactions.transaction-amount')}
-						class="input input-bordered w-full"
-						bind:value={amount}
-						min="0"
-						step="0.01"
-						max="999999999"
-						required
+						id="description"
+						type="text"
+						placeholder={$t('transactions.transaction-description')}
+						class="input input-bordered"
+						bind:value={description}
 					/>
 				</div>
 
-				<!-- Date Field -->
-				<div class="form-control flex-1">
-					<label class="label" for="date">
-						<span class="label-text">{$t('transactions.date')}</span>
-					</label>
-					<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
+				<div class="mt-4 flex gap-4">
+					<!-- Amount Field -->
+					<div class="form-control flex-1">
+						<label class="label" for="amount">
+							<span class="label-text">{$t('transactions.amount')}</span>
+						</label>
+						<input
+							id="amount"
+							type="number"
+							placeholder={$t('transactions.transaction-amount')}
+							class="input input-bordered w-full"
+							bind:value={amount}
+							min="0"
+							step="0.01"
+							max="999999999"
+							required
+						/>
+					</div>
+
+					<!-- Date Field -->
+					<div class="form-control flex-1">
+						<label class="label" for="date">
+							<span class="label-text">{$t('transactions.date')}</span>
+						</label>
+						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
+					</div>
 				</div>
-			</div>
-			<!-- Form Actions -->
-			<div class="modal-action mt-6">
-				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
-				<button type="submit" class="btn btn-primary"
-					>{$t('transactions.update-transaction')}</button
-				>
-			</div>
-		</form>
+				<!-- Form Actions -->
+				<div class="modal-action mt-6">
+					<button type="button" class="btn" on:click={handleCloseModal}
+						>{$t('common.cancel')}</button
+					>
+					<button type="submit" class="btn btn-primary"
+						>{$t('transactions.update-transaction')}</button
+					>
+				</div>
+			</form>
+		{/if}
 	</div>
 </div>
