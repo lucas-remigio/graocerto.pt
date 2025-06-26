@@ -1,5 +1,5 @@
 <script lang="ts">
-	import api_axios from '$lib/axios';
+	import { dataService } from '$lib/services/dataService';
 	import type { Category, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
@@ -21,25 +21,18 @@
 			return;
 		}
 
-		const category = {
+		const categoryData = {
 			transaction_type_id: transactionType.id,
 			category_name: category_name,
 			color: color
 		};
 
 		try {
-			const response = await api_axios.post('categories', category);
-
-			if (response.status !== 200) {
-				console.error('Non-200 response status:', response.status);
-				error = `Error: ${response.status}`;
-				return;
-			}
-
+			await dataService.createCategory(categoryData);
 			handleNewCategory();
-		} catch (err) {
+		} catch (err: any) {
 			console.error('Error in handleSubmit:', err);
-			error = $t('errors.failed-create-category');
+			error = err.message || $t('errors.failed-create-category');
 		}
 	}
 

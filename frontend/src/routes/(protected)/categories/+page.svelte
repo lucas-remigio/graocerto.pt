@@ -1,14 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import api_axios from '$lib/axios';
 	import { dataService } from '$lib/services/dataService';
-	import type {
-		Category,
-		CategoriesResponse,
-		CategoryDto,
-		CategoriesDtoResponse,
-		TransactionType
-	} from '$lib/types';
+	import type { Category, CategoryDto, TransactionType } from '$lib/types';
 	import CategoriesTable from '$components/CategoriesTable.svelte';
 	import { Plus, Tag } from 'lucide-svelte';
 	import { TransactionTypes, TransactionTypeSlug } from '$lib/transaction_types_types';
@@ -18,55 +11,67 @@
 	let showCreateCategoryModal = false;
 	let selectedTransactionType: TransactionType | undefined;
 
-	let categories: CategoryDto[] = [];
 	let debitCategories: CategoryDto[] = [];
 	let creditCategories: CategoryDto[] = [];
 	let error: string = '';
 	let deleteError: string = '';
+	let loading: boolean = true;
 
 	async function fetchCategories() {
+		loading = true;
 		try {
-			const groupedCategories = await dataService.fetchCategoriesGrouped();
+			creditCategories = [];
+			debitCategories = [];
+			const categories = await dataService.fetchCategories();
 
-			// Convert grouped categories to flat arrays for each type
-			categories = Object.values(groupedCategories).flat();
-
-			// Filter categories by transaction type slug instead of hardcoded IDs
-			debitCategories = categories.filter(
-				(category) => category.transaction_type.type_slug === 'debit'
-			);
-			creditCategories = categories.filter(
-				(category) => category.transaction_type.type_slug === 'credit'
-			);
+			// Use the grouped categories directly instead of filtering
+			categories.forEach((c) => {
+				switch (c.transaction_type.type_slug) {
+					case TransactionTypeSlug.Credit:
+						creditCategories.push(c);
+						break;
+					case TransactionTypeSlug.Debit:
+						debitCategories.push(c);
+						break;
+					default:
+						console.warn(`Unknown transaction type slug: ${c.transaction_type.type_slug}`);
+				}
+			});
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
 			error = $t('errors.failed-load-categories');
+		} finally {
+			loading = false;
 		}
 	}
 
 	async function deleteCategory(categoryId: number) {
 		try {
-			// We'll still use direct API call for delete since it's not a frequently cached operation
-			const res = await api_axios.delete(`categories/${categoryId}`);
-
-			if (res.status !== 200) {
-				console.error('Non-200 response status:', res.status);
-				showErrorMessage(res.data.error);
-				return;
-			}
-
-			// Clear category caches and refetch
-			dataService.clearCategoryCaches();
+			await dataService.deleteCategory(categoryId);
 			fetchCategories();
 		} catch (err: any) {
 			console.error('Error in deleteCategory:', err);
-			const error = err.response.data.error;
+			const error = err.message || 'Unknown error';
+			showErrorMessage(error);
+		}
+	}
+
+	async function editCategory(
+		categoryId: number,
+		categoryData: { category_name: string; color: string }
+	) {
+		try {
+			await dataService.editCategory(categoryId, categoryData);
+			fetchCategories();
+		} catch (err: any) {
+			console.error('Error in editCategory:', err);
+			const error = err.message || 'Unknown error';
 			showErrorMessage(error);
 		}
 	}
 
 	function showErrorMessage(error: string) {
-		deleteError = `Failed to delete category: ${error}`;
+		deleteError = `Failed to process category: ${error}`;
 		setTimeout(() => {
 			deleteError = '';
 		}, 5000);
@@ -95,6 +100,16 @@
 		closeCreateCategoryModal();
 	}
 
+	function handleEditCategorySuccess(
+		event: CustomEvent<{
+			categoryId: number;
+			categoryData: { category_name: string; color: string };
+		}>
+	) {
+		const { categoryId, categoryData } = event.detail;
+		editCategory(categoryId, categoryData);
+	}
+
 	function handleDeleteCategory(categoryId: number) {
 		deleteCategory(categoryId);
 	}
@@ -106,6 +121,13 @@
 
 {#if error}
 	<p class="text-red-500">{error}</p>
+{:else if loading}
+	<div class="container mx-auto p-4">
+		<h1 class="mb-6 text-3xl font-bold">{$t('navbar.categories')}</h1>
+		<div class="flex min-h-64 items-center justify-center">
+			<div class="loading loading-spinner loading-lg text-primary"></div>
+		</div>
+	</div>
 {:else}
 	<div class="container mx-auto p-4">
 		{#if deleteError}
@@ -129,7 +151,7 @@
 				<CategoriesTable
 					categories={creditCategories}
 					categoryType={TransactionTypeSlug.Credit}
-					on:editCategory={fetchCategories}
+					on:editCategory={handleEditCategorySuccess}
 					on:deleteCategory={({ detail: { categoryId } }) => {
 						handleDeleteCategory(categoryId);
 					}}
@@ -152,7 +174,7 @@
 				<CategoriesTable
 					categories={debitCategories}
 					categoryType={TransactionTypeSlug.Debit}
-					on:editCategory={fetchCategories}
+					on:editCategory={handleEditCategorySuccess}
 					on:deleteCategory={({ detail: { categoryId } }) => {
 						handleDeleteCategory(categoryId);
 					}}

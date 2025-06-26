@@ -1,13 +1,7 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
-	import type {
-		Account,
-		CategoriesResponse,
-		Category,
-		TransactionDto,
-		TransactionType,
-		TransactionTypesResponse
-	} from '$lib/types';
+	import { dataService } from '$lib/services/dataService';
+	import type { Account, Category, TransactionDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -132,17 +126,8 @@
 
 	async function fetchTransactionTypes() {
 		try {
-			const res = await api_axios('transaction-types');
-
-			if (res.status !== 200) {
-				console.error('Non-200 response status:', res.status);
-				error = `Error: ${res.status}`;
-				return;
-			}
-
-			const data: TransactionTypesResponse = res.data;
-			transactionTypes = data.transaction_types;
-			// pop the slug with transfer
+			transactionTypes = await dataService.fetchTransactionTypes();
+			// Filter out transfer types
 			transactionTypes = transactionTypes.filter((type) => type.type_slug !== 'transfer');
 		} catch (err) {
 			console.error('Error in fetchTransactionTypes:', err);
@@ -152,16 +137,16 @@
 
 	async function fetchCategories() {
 		try {
-			const res = await api_axios('categories');
-
-			if (res.status !== 200) {
-				console.error('Non-200 response status:', res.status);
-				error = `Error: ${res.status}`;
-				return;
-			}
-
-			const data: CategoriesResponse = res.data;
-			categories = data.categories;
+			const categoriesDto = await dataService.fetchCategories();
+			// Convert CategoryDto to Category format for backward compatibility
+			categories = categoriesDto.map((catDto) => ({
+				id: catDto.id,
+				transaction_type_id: catDto.transaction_type.id,
+				category_name: catDto.category_name,
+				color: catDto.color,
+				created_at: catDto.created_at,
+				updated_at: catDto.updated_at
+			}));
 
 			categoriesMappedById = new Map(categories.map((cat) => [cat.id, cat]));
 		} catch (err) {

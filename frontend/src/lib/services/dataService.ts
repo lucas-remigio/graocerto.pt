@@ -10,7 +10,9 @@ import type {
 	CategoriesDtoResponse,
 	MonthYear,
 	TransactionsTotals,
-	TransactionStatistics
+	TransactionStatistics,
+	TransactionType,
+	TransactionTypesResponse
 } from '$lib/types';
 
 // Cache types
@@ -23,7 +25,8 @@ class DataService {
 	private statisticsCache = new Map<string, TransactionStatistics>();
 	private transactionsCache = new Map<string, TransactionsCacheValue>();
 	private availableMonthsCache = new Map<string, MonthYear[]>();
-	private categoriesCache: { [key: number]: CategoryDto[] } | null = null;
+	private categoriesCache: CategoryDto[] | null = null;
+	private transactionTypesCache: TransactionType[] | null = null;
 
 	// Generate cache key for account/month/year combination
 	private getCacheKey(accountToken: string, month: number | null, year: number | null): string {
@@ -36,6 +39,7 @@ class DataService {
 		this.transactionsCache.clear();
 		this.availableMonthsCache.clear();
 		this.categoriesCache = null;
+		this.transactionTypesCache = null;
 	}
 
 	// Clear caches for a specific account
@@ -57,6 +61,7 @@ class DataService {
 	// Clear category and transaction type caches (when categories are modified)
 	clearCategoryCaches(): void {
 		this.categoriesCache = null;
+		this.transactionTypesCache = null;
 	}
 
 	// Fetch accounts
@@ -161,19 +166,12 @@ class DataService {
 
 	// Fetch categories with caching (returns flat array for backward compatibility)
 	async fetchCategories(): Promise<CategoryDto[]> {
-		const groupedCategories = await this.fetchCategoriesGrouped();
-		// Flatten the grouped categories into a single array
-		return Object.values(groupedCategories).flat();
-	}
-
-	// Fetch categories grouped by transaction type ID with caching
-	async fetchCategoriesGrouped(): Promise<{ [key: number]: CategoryDto[] }> {
 		// Check cache first
 		if (this.categoriesCache !== null) {
 			return this.categoriesCache;
 		}
 
-		const res = await api_axios('categories/dto/grouped');
+		const res = await api_axios('categories/dto');
 
 		if (res.status !== 200) {
 			throw new Error(`Failed to fetch categories: ${res.status}`);
@@ -183,6 +181,68 @@ class DataService {
 		// Cache the result
 		this.categoriesCache = data.categories;
 		return this.categoriesCache;
+	}
+
+	// Fetch transaction types with caching
+	async fetchTransactionTypes(): Promise<TransactionType[]> {
+		// Check cache first
+		if (this.transactionTypesCache !== null) {
+			return this.transactionTypesCache;
+		}
+
+		const res = await api_axios('transaction-types');
+
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch transaction types: ${res.status}`);
+		}
+
+		const data: TransactionTypesResponse = res.data;
+		// Cache the result
+		this.transactionTypesCache = data.transaction_types;
+		return this.transactionTypesCache;
+	}
+
+	// Create category
+	async createCategory(categoryData: {
+		transaction_type_id: number;
+		category_name: string;
+		color: string;
+	}): Promise<void> {
+		const response = await api_axios.post('categories', categoryData);
+
+		if (response.status !== 200) {
+			throw new Error(`Failed to create category: ${response.status}`);
+		}
+
+		// Clear category and transaction type caches since category data changed
+		this.clearCategoryCaches();
+	}
+
+	// Edit category
+	async editCategory(
+		categoryId: number,
+		categoryData: { category_name: string; color: string }
+	): Promise<void> {
+		const response = await api_axios.put(`categories/${categoryId}`, categoryData);
+
+		if (response.status !== 200) {
+			throw new Error(`Failed to edit category: ${response.status}`);
+		}
+
+		// Clear category and transaction type caches since category data changed
+		this.clearCategoryCaches();
+	}
+
+	// Delete category
+	async deleteCategory(categoryId: number): Promise<void> {
+		const response = await api_axios.delete(`categories/${categoryId}`);
+
+		if (response.status !== 200) {
+			throw new Error(`Failed to delete category: ${response.status}`);
+		}
+
+		// Clear category and transaction type caches since category data changed
+		this.clearCategoryCaches();
 	}
 
 	// Delete account

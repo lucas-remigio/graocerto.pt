@@ -1,5 +1,4 @@
 <script lang="ts">
-	import api_axios from '$lib/axios';
 	import type { Category, CategoryDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
@@ -21,25 +20,13 @@
 			return;
 		}
 
-		const editCategory = {
+		const editCategoryData = {
 			category_name: category_name,
 			color: color
 		};
 
-		try {
-			const response = await api_axios.put(`categories/${category.id}`, editCategory);
-
-			if (response.status !== 200) {
-				console.error('Non-200 response status:', response.status);
-				error = `Error: ${response.status}`;
-				return;
-			}
-
-			handleEditCategory();
-		} catch (err) {
-			console.error('Error in handleSubmit:', err);
-			error = $t('errors.failed-edit-category');
-		}
+		// Dispatch the edit data to the parent component
+		dispatch('editCategory', { categoryId: category.id, categoryData: editCategoryData });
 	}
 
 	function validateForm(): boolean {
@@ -90,10 +77,6 @@
 
 	function handleCloseModal() {
 		dispatch('closeModal');
-	}
-
-	function handleEditCategory() {
-		dispatch('editCategory');
 	}
 </script>
 

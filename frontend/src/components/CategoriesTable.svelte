@@ -32,9 +32,14 @@
 
 	const dispatch = createEventDispatcher();
 
-	function handleEditCategory() {
+	function handleEditCategory(
+		event: CustomEvent<{
+			categoryId: number;
+			categoryData: { category_name: string; color: string };
+		}>
+	) {
 		closeEditCategoryModal();
-		dispatch('editCategory');
+		dispatch('editCategory', event.detail);
 	}
 
 	function handlePromptDeleteCategory(category: CategoryDto) {
