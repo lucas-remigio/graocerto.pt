@@ -1,7 +1,9 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -76,19 +78,60 @@ func (c *ClientRateLimiter) GetLimiter(ip string) *rate.Limiter {
 func RateLimitMiddleware(limiter *ClientRateLimiter) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Get client IP
-			ip := r.RemoteAddr
+			// Get real client IP (handles proxies, load balancers)
+			ip := getClientIP(r)
 
 			// Get rate limiter for this client
 			clientLimiter := limiter.GetLimiter(ip)
 
 			// Check if this request is allowed
 			if !clientLimiter.Allow() {
-				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+				// Calculate remaining tokens and retry after time
+				remaining := int(clientLimiter.Tokens())
+				if remaining < 0 {
+					remaining = 0
+				}
+
+				// Calculate retry after based on rate limit
+				retryAfter := max(int(1.0 / float64(limiter.rps)), 1)
+
+				// Add headers to inform client about rate limiting using actual values
+				w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", limiter.rps))
+				w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+				w.Header().Set("Retry-After", fmt.Sprintf("%d", retryAfter))
+				http.Error(w, "Rate limit exceeded. Try again later.", http.StatusTooManyRequests)
 				return
 			}
 
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// getClientIP extracts the real client IP from request headers
+func getClientIP(r *http.Request) string {
+	// Check X-Forwarded-For header (most common)
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// Take the first IP in the chain
+		if idx := strings.Index(xff, ","); idx != -1 {
+			return strings.TrimSpace(xff[:idx])
+		}
+		return strings.TrimSpace(xff)
+	}
+
+	// Check X-Real-IP header
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return strings.TrimSpace(xri)
+	}
+
+	// Check CF-Connecting-IP (Cloudflare)
+	if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
+		return strings.TrimSpace(cfip)
+	}
+
+	// Fallback to RemoteAddr
+	if idx := strings.LastIndex(r.RemoteAddr, ":"); idx != -1 {
+		return r.RemoteAddr[:idx]
+	}
+	return r.RemoteAddr
 }

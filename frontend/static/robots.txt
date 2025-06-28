@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+
+# Allow crawling of login and register pages for SEO
+Allow: /login
+Allow: /register
+
+# Disallow crawling of user-specific/private areas
+Disallow: /dashboard
+Disallow: /accounts
+Disallow: /transactions
+Disallow: /categories
+Disallow: /api/
+Disallow: /ws
+
+# Allow static assets
+Allow: /logo.png
+Allow: /_app/
+Allow: /favicon.ico
+
+# Sitemap location 
+Sitemap: https://lucas-remigio-dev.pt/sitemap.xml
+
+# Crawl delay (optional - be nice to servers)
+Crawl-delay: 1

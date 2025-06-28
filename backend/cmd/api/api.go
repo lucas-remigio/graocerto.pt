@@ -63,9 +63,9 @@ func (s *APIServer) Run() error {
 	investmentCalculatorHandler := investment_calculator.NewHandler(investmentCalculatorStore)
 	investmentCalculatorHandler.RegisterRoutes(apiV1Router)
 
-	// Create a rate limiter: 10 requests per second with burst of 20
-	// Clean up unused rate limiters after 5 minutes
-	rateLimiter := middlewares.NewClientRateLimiter(10, 20, 5*time.Minute)
+	// Set up rate limiting middleware
+	// Allow 2 requests per second, with a burst of 5 requests, and a
+	rateLimiter := middlewares.NewClientRateLimiter(2, 5, 2*time.Minute)
 
 	// Register a handler for paths starting with /api/v1
 	apiHandlerChain := chainMiddleware(

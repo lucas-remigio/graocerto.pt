@@ -15,18 +15,18 @@ type TransactionStore interface {
 }
 
 type CreateTransactionPayload struct {
-	AccountToken string  `json:"account_token" validate:"required"`
-	CategoryID   int     `json:"category_id" validate:"numeric,min=1"`
-	Amount       float64 `json:"amount" validate:"required,numeric"`
-	Description  string  `json:"description"`
+	AccountToken string  `json:"account_token" validate:"required,min=1,max=255"`
+	CategoryID   int     `json:"category_id" validate:"numeric,min=1,max=999999999"`
+	Amount       float64 `json:"amount" validate:"required,numeric,gte=0,lte=999999999"`
+	Description  string  `json:"description" validate:"max=255"`
 	Date         string  `json:"date" validate:"required"`
 }
 
 type UpdateTransactionPayload struct {
 	ID          int     `json:"id" validate:"required,numeric"`
-	Amount      float64 `json:"amount" validate:"required,numeric"`
-	CategoryID  int     `json:"category_id" validate:"numeric,min=1"`
-	Description string  `json:"description"`
+	Amount      float64 `json:"amount" validate:"required,numeric,gte=0,lte=999999999"`
+	CategoryID  int     `json:"category_id" validate:"numeric,min=1,max=999999999"`
+	Description string  `json:"description" validate:"max=255"`
 	Date        string  `json:"date" validate:"required"`
 }
 
