@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Search, Bell, LogOut, Menu, Moon, Sun } from 'lucide-svelte';
+	import { LogIn, LogOut, Menu, Moon, Sun } from 'lucide-svelte';
 	import { t, locale, setLocale } from '$lib/i18n';
 	import { onMount } from 'svelte';
+	import { isAuthenticated } from './stores/auth';
 
 	let isDropdownOpen = false;
 	let categoriesUrl = '/categories';
 	let investmentCalculatorUrl = '/investment-calculator';
+	let loginUrl = '/login';
 
 	// Track theme state
 	let theme: 'light' | 'dark' = 'light';
@@ -155,20 +157,20 @@
 			{/if}
 		</button>
 
-		<!-- Notifications Button -->
-		<button aria-label="notifications" class="btn btn-ghost btn-circle">
-			<div class="indicator">
-				<Bell size={20} class="h-5 w-5" />
-				<span class="badge badge-xs badge-primary indicator-item"></span>
-			</div>
-		</button>
-
 		<!-- Logout Button -->
-		<button aria-label="logout" class="btn btn-ghost" on:click={logout}>
-			<div class="flex w-full items-center">
-				<LogOut size={20} class="h-5 w-5 flex-shrink-0" />
-			</div>
-		</button>
+		{#if $isAuthenticated}
+			<button aria-label="logout" class="btn btn-ghost" on:click={logout}>
+				<div class="flex w-full items-center">
+					<LogOut size={20} class="h-5 w-5 flex-shrink-0" />
+				</div>
+			</button>
+		{:else}
+			<a href={loginUrl} class="btn btn-ghost">
+				<div class="flex w-full items-center">
+					<LogIn size={20} class="h-5 w-5 flex-shrink-0" />
+				</div>
+			</a>
+		{/if}
 	</div>
 </div>
 

@@ -173,7 +173,10 @@
 		"first-name": "Primeiro Nome",
 		"last-name": "Último Nome",
 		"enter-first": "Insira o seu primeiro nome",
-		"enter-last": "Insira o seu último nome"
+		"enter-last": "Insira o seu último nome",
+		"welcome-back": "Bem-vindo de volta",
+		"or": "ou",
+		"create-account": "Criar Conta"
 	},
 
 	"transaction-types": {

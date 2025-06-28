@@ -169,7 +169,10 @@
 		"first-name": "First Name",
 		"last-name": "Last Name",
 		"enter-first": "Enter your first name",
-		"enter-last": "Enter your last name"
+		"enter-last": "Enter your last name",
+		"welcome-back": "Welcome back",
+		"or": "or",
+		"create-account": "Create Account"
 	},
 
 	"transaction-types": {
