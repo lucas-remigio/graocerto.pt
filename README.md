@@ -1,6 +1,23 @@
 # 💰 Grão Certo - A Modern Full-Stack Financial Management Platform
 
-> **"Empowering Portuguese speakers with financial literacy through intelligent expense tracking"**
+Portugal faces significant challenges in financial literacy, ranking among the lowest in Europe according to OECD studies. Many Portuguese families struggle with:
+
+- **Low financial awareness** - Limited understanding of personal finance fundamentals
+- **Poor spending visibility** - Lack of tools to track where money actually goes
+- **Budget management gaps** - Difficulty knowing how much remains at month's end
+- **Cultural barriers** - Financial planning not being part of everyday conversations
+
+While numerous expense tracking solutions exist globally, this project tackles the **root cause** with a **Portuguese-first approach**, focusing on being the **fastest**, **most secure**, and **aesthetically pleasing** platform specifically designed for Portuguese users.
+
+**Why Another Expense Tracker?**
+
+- ⚡ **Performance-First**: Sub-second load times and lightning-fast interactions
+- 🔒 **Security-Focused**: Enterprise-grade security with JWT authentication and encrypted data
+- 🎨 **Modern Design**: Clean, intuitive interface that makes financial tracking enjoyable
+- 🇵🇹 **Portuguese-Centric**: Built specifically for Portuguese financial behaviors and cultural context
+- 🤝 **Community-Driven**: Open to feature requests and changes to ensure everyone feels comfortable using the platform
+
+Before you can improve your finances, you need to understand your spending patterns, identify cost-cutting opportunities, and gain visibility into your monthly cash flow.
 
 ## 📱 Platform Demo
 
@@ -14,14 +31,13 @@
 
 ## 🎯 Project Vision
 
-This project serves a **dual purpose**:
-
 ### 💡 **Social Impact**
 
-- **Financial Education**: Helping Portuguese-speaking communities improve their financial literacy
-- **Expense Intelligence**: Smart categorization and insights to promote better spending habits
-- **Accessible Design**: User-friendly interface that makes financial tracking approachable
-- **Cultural Relevance**: Tailored specifically for Portuguese markets and financial behaviors
+- **Financial Education**: Helping Portuguese-speaking communities improve their financial literacy through practical expense tracking
+- **Expense Intelligence**: Smart categorization and insights that reveal spending patterns and highlight areas for improvement
+- **Accessible Design**: User-friendly interface that makes financial tracking approachable for all education levels
+- **Cultural Relevance**: Tailored specifically for Portuguese markets, financial behaviors, and common expense categories
+- **Practical Foundation**: Starting with basic expense tracking - the essential first step toward financial awareness
 
 ### 🚀 **Technical Excellence & Learning**
 
@@ -72,10 +88,11 @@ API Response Times:
 └── AI Categorization: <500ms
 
 Frontend Performance:
-├── First Contentful Paint: <0.9s
-├── Perfomance: 98%
+├── First Contentful Paint: ˜0.4s
+├── Largest Contentful Paint: ˜0.5s
+├── Perfomance: 100%
 ├── Acessibility: 100%
-├── Best Practices: 96%
+├── Best Practices: 100%
 ```
 
 ### **Lighthouse Performance Report** 🎯
@@ -84,7 +101,14 @@ Frontend Performance:
 
 ## 🤝 Contributing
 
-This project welcomes contributions in both **technical improvements** and **financial education content**:
+This project welcomes contributions in both **technical improvements** and **financial education content**. I'm particularly open to **feature requests** and **usability improvements** to ensure everyone feels comfortable using the platform.
+
+### **Community Feedback** 💬
+
+- **Feature Requests**: Suggest new features that would improve your financial tracking experience
+- **UI/UX Improvements**: Help make the platform more intuitive and accessible
+- **Usability Testing**: Share feedback on what works well and what could be improved
+- **Cultural Adaptations**: Suggest Portuguese-specific features or financial categories
 
 ### **Technical Contributions** 🔧
 
@@ -121,10 +145,10 @@ git clone https://github.com/lucas-remigio/wallet-tracker.git
 cd wallet-tracker
 
 # Start all services
-docker-compose up -d
+docker compose up --build
 
 # Access the application
 # Frontend: http://localhost:3000
-# Backend API: http://localhost:8080
-# WebSockets: http://localhost:8090
+# Backend API: http://localhost:3001
+# WebSockets: http://localhost:3002
 ```
