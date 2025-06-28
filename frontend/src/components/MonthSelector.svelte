@@ -51,6 +51,7 @@
 						? 'btn-outline btn-primary'
 						: 'btn-ghost'} 
                     flex-shrink-0 whitespace-nowrap"
+				aria-label={formatDate(monthData.month, monthData.year)}
 				on:click={() => handleMonthSelect(monthData.month, monthData.year)}
 			>
 				{formatDate(monthData.month, monthData.year)}

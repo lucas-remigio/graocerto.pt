@@ -162,7 +162,11 @@
 				</button>
 			{/if}
 			<!-- Button to add a new transaction-->
-			<button class="btn btn-primary shadow-lg" on:click={openCreateTransactionModal}>
+			<button
+				class="btn btn-primary shadow-lg"
+				aria-label="Create New Transaction"
+				on:click={openCreateTransactionModal}
+			>
 				<Plus size={20} class="text-base-content" />
 				<CircleDollarSign size={20} class="text-base-content" />
 			</button>
@@ -217,6 +221,7 @@
 								<td class="text-gray-900">
 									<button
 										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
+										aria-label="Delete Transaction"
 										on:click={() => handleDeleteTransaction(tx)}
 									>
 										<Trash size={20} />

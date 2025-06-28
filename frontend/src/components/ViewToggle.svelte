@@ -22,6 +22,7 @@
 	<div class="btn-group">
 		<button
 			class="btn btn-sm {currentView === 'transactions' ? 'btn-primary' : 'btn-outline'}"
+			aria-label="View Transactions"
 			on:click={() => handleViewChange('transactions')}
 		>
 			<List size={16} class="mr-1" />
@@ -29,6 +30,7 @@
 		</button>
 		<button
 			class="btn btn-sm {currentView === 'statistics' ? 'btn-primary' : 'btn-outline'}"
+			aria-label="View Statistics"
 			on:click={() => handleViewChange('statistics')}
 		>
 			<BarChart3 size={16} class="mr-1" />
