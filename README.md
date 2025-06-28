@@ -2,6 +2,16 @@
 
 > **"Empowering Portuguese speakers with financial literacy through intelligent expense tracking"**
 
+## 📱 Platform Demo
+
+### **Transaction Management** 🌙
+
+![Transactions Dark Mode](./transactions_dark.png)
+
+### **Financial Insights** ☀️
+
+![Graphs Light Mode](./graphs_light.png)
+
 ## 🎯 Project Vision
 
 This project serves a **dual purpose**:
@@ -57,8 +67,8 @@ This project serves a **dual purpose**:
 ```
 API Response Times:
 ├── Authentication: <150ms
-├── Transaction CRUD: <70ms
-├── Account Operations: <75ms
+├── Transaction CRUD: <65ms
+├── Account Operations: <65ms
 └── AI Categorization: <500ms
 
 Frontend Performance:
@@ -67,6 +77,10 @@ Frontend Performance:
 ├── Acessibility: 100%
 ├── Best Practices: 96%
 ```
+
+### **Lighthouse Performance Report** 🎯
+
+![Frontend Performance Stats](./frontend_stats.png)
 
 ## 🤝 Contributing
 
