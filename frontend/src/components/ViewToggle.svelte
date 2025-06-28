@@ -21,7 +21,9 @@
 <div class="mb-2 flex justify-center">
 	<div class="btn-group">
 		<button
-			class="btn btn-sm {currentView === 'transactions' ? 'btn-primary' : 'btn-outline'}"
+			class="btn btn-sm {currentView === 'transactions'
+				? 'btn-primary text-base-100'
+				: 'btn-ghost'}"
 			aria-label="View Transactions"
 			on:click={() => handleViewChange('transactions')}
 		>
@@ -29,7 +31,9 @@
 			<span>{$t('views.transactions')}</span>
 		</button>
 		<button
-			class="btn btn-sm {currentView === 'statistics' ? 'btn-primary' : 'btn-outline'}"
+			class="btn btn-sm {currentView === 'statistics'
+				? 'btn-primary text-base-100'
+				: 'btn-ghost'}"
 			aria-label="View Statistics"
 			on:click={() => handleViewChange('statistics')}
 		>

@@ -144,8 +144,8 @@
 						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Credit)}
 						aria-label={$t('categories.create-category')}
 					>
-						<Plus size={20} class="text-base-content" />
-						<Tag size={20} class="text-base-content" />
+						<Plus size={20} class="text-base-100" />
+						<Tag size={20} class="text-base-100" />
 					</button>
 				</div>
 				<CategoriesTable
@@ -167,8 +167,8 @@
 						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Debit)}
 						aria-label={$t('categories.create-category')}
 					>
-						<Plus size={20} class="text-base-content" />
-						<Tag size={20} class="text-base-content" />
+						<Plus size={20} class="text-base-100" />
+						<Tag size={20} class="text-base-100" />
 					</button>
 				</div>
 				<CategoriesTable

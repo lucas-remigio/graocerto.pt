@@ -76,8 +76,8 @@
 <div class="mb-2 flex items-center justify-between">
 	<h1 class="text-3xl font-bold">{$t('page.my-accounts')}</h1>
 	<button class="btn btn-primary" on:click={createAccount} aria-label="Create new account">
-		<Plus size={20} class="text-base-content" />
-		<Wallet size={20} class="text-base-content" />
+		<Plus size={20} class="text-base-100" />
+		<Wallet size={20} class="text-base-100" />
 	</button>
 </div>
 
@@ -90,7 +90,7 @@
 {:else if accounts.length > 0}
 	<div
 		class="p-1 {isVertical
-			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto pr-2'
+			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto p-2'
 			: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
 	>
 		{#each accounts as account}

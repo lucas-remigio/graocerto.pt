@@ -125,7 +125,7 @@
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
 				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
-				<button type="submit" class="btn btn-primary">{$t('accounts.create-account')}</button>
+				<button type="submit" class="btn btn-primary text-base-100">{$t('accounts.create-account')}</button>
 			</div>
 		</form>
 	</div>

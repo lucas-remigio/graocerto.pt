@@ -1,4 +1,19 @@
 {
+	"landing": {
+		"intro": "é seu gestor financeiro pessoal moderno e focado em privacidade. Gerencie contas, acompanhe transações e obtenha insights para crescer seu patrimônio—com segurança e beleza.",
+		"accounts-title": "Todas as Suas Contas em Um Só Lugar",
+		"accounts-desc": "Conecte e organize todas as suas contas bancárias, cartões e investimentos em um único painel. Chega de planilhas ou apps espalhados.",
+		"analytics-title": "Análises e Insights Poderosos",
+		"analytics-desc": "Visualize seus gastos, defina metas e descubra tendências com gráficos bonitos e estatísticas inteligentes. Tome decisões informadas para seu futuro financeiro.",
+		"privacy-title": "Privacidade e Segurança em Primeiro Lugar",
+		"privacy-desc": "Seus dados são seus. O Grão Certo nunca vende suas informações e utiliza as melhores práticas de segurança para proteger suas finanças.",
+		"intuitive-title": "Intuitivo e Rápido",
+		"intuitive-desc": "Desfrute de uma experiência fluida em qualquer dispositivo. Adicione transações, categorize despesas e receba feedback instantâneo—sem curva de aprendizado.",
+		"cta-title": "Pronto para controlar sua vida financeira?",
+		"cta-desc": "Junte-se ao Grão Certo hoje e comece sua jornada rumo à clareza e crescimento financeiro.",
+		"cta-button": "Comece Grátis"
+	},
+
 	"navbar": {
 		"categories": "Categorias",
 		"notifications": "Notificações",

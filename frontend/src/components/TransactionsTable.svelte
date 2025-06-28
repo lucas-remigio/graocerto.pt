@@ -179,7 +179,7 @@
 					aria-label="Get AI Feedback"
 				>
 					<div class="flex items-center gap-1">
-						<Bot size={20} class="text-base-content" />
+						<Bot size={20} class="text-base-100" />
 					</div>
 				</button>
 			{/if}
@@ -189,8 +189,8 @@
 				aria-label="Create New Transaction"
 				on:click={openCreateTransactionModal}
 			>
-				<Plus size={20} class="text-base-content" />
-				<CircleDollarSign size={20} class="text-base-content" />
+				<Plus size={20} class="text-base-100" />
+				<CircleDollarSign size={20} class="text-base-100" />
 			</button>
 		</div>
 	</div>

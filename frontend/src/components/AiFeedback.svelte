@@ -76,20 +76,20 @@
 		<!-- Gradient header (fixed) -->
 		<div class="from-primary to-secondary sticky top-0 z-10 bg-gradient-to-r px-6 py-5 shadow-lg">
 			<div class="flex items-center gap-2">
-				<BarChart class="text-base-content h-5 w-5" />
-				<h3 class="text-base-content text-xl font-bold">
+				<BarChart class="text-base-100 h-5 w-5" />
+				<h3 class="text-base-100 text-xl font-bold">
 					Financial Insights: {account.account_name}
 				</h3>
 			</div>
 			<!-- Close button -->
 			<button
-				class="btn btn-sm btn-circle bg-base-content/20 hover:bg-base-content/30 absolute right-2 top-2 border-none"
+				class="btn btn-sm btn-circle bg-base-100/20 hover:bg-base-100/30 absolute right-2 top-2 border-none"
 				on:click={handleCloseModal}
 			>
-				<X class="text-base-content" />
+				<X class="text-base-100" />
 			</button>
-			<div class="text-base-content/80 mt-1 flex items-center gap-2 text-sm">
-				<CalendarClock class="text-base-content h-4 w-4" />
+			<div class="text-base-100/80 mt-1 flex items-center gap-2 text-sm">
+				<CalendarClock class="text-base-100 h-4 w-4" />
 				<span>Monthly analysis for {formattedDate()}</span>
 			</div>
 		</div>

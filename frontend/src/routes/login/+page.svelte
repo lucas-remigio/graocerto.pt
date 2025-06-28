@@ -28,7 +28,7 @@
 				login(authToken, email);
 			}
 
-			goto('/');
+			goto('/home');
 		} catch (error) {
 			// Type the error as AxiosError
 			const axiosError = error as AxiosError;
@@ -53,7 +53,7 @@
 			<p class="text-base-content/70 mt-2 text-sm">{$t('auth.welcome-back')}</p>
 		</div>
 
-		<form class="space-y-6" on:submit|preventDefault={handleLogin}>
+		<form class="space-y-3" on:submit|preventDefault={handleLogin}>
 			<div class="form-control">
 				<label for="email" class="label">
 					<span class="label-text font-medium">{$t('auth.email')}</span>

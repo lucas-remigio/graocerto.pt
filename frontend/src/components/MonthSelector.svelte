@@ -35,7 +35,7 @@
 	<div class="flex items-center gap-2 overflow-x-auto pb-2">
 		<button
 			class="btn btn-sm btn-circle {selectedMonth === null && selectedYear === null
-				? 'btn-primary'
+				? 'btn-primary text-base-100'
 				: 'btn-ghost'} flex-shrink-0"
 			on:click={() => handleMonthSelect(null, null)}
 			title={$t('months.show-all-transactions')}
@@ -46,7 +46,7 @@
 		{#each availableMonths as monthData}
 			<button
 				class="btn btn-sm {selectedMonth === monthData.month && selectedYear === monthData.year
-					? 'btn-primary'
+					? 'btn-primary text-base-100'
 					: isCurrentMonth(monthData)
 						? 'btn-outline btn-primary'
 						: 'btn-ghost'} 
