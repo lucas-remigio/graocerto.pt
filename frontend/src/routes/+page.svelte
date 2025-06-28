@@ -2,7 +2,9 @@
 	import { t } from '$lib/i18n';
 </script>
 
-<div class="bg-base-100 flex min-h-screen flex-col items-center justify-center px-4 py-12">
+<div
+	class="bg-base-100 flex flex-col items-center justify-center px-4 py-12 lg:h-[calc(100vh-64px)]"
+>
 	<div
 		class="flex w-full max-w-6xl flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-between"
 	>
