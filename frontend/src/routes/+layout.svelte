@@ -6,7 +6,7 @@
 	import { isAuthenticated, token, authHydrated } from '$lib/stores/auth';
 	import axios from '$lib/axios';
 	import { get } from 'svelte/store';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { isLoading, setupI18n, t, i18nReady } from '$lib/i18n';
 
 	let { children } = $props();
@@ -16,6 +16,10 @@
 	// add app-wide loading state - using $state() for Svelte 5 reactivity
 	let appReady = $state(false);
 
+	// Prevent multiple simultaneous auth checks
+	let authCheckInProgress = false;
+	let authCheckTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
 	async function checkAuth(currentPath: string) {
 		if (!browser) return; // Ensure this logic runs only in the browser
 
@@ -23,6 +27,13 @@
 		if (!get(authHydrated)) {
 			return;
 		}
+
+		// Prevent duplicate auth checks
+		if (authCheckInProgress) {
+			return;
+		}
+
+		authCheckInProgress = true;
 
 		const isPublicRoute = publicRoutes.includes(currentPath);
 		const authToken = get(token);
@@ -32,6 +43,7 @@
 			if (authToken) {
 				goto('/');
 			}
+			authCheckInProgress = false;
 			return;
 		}
 
@@ -49,22 +61,44 @@
 			if (error.response?.status === 401) {
 				goto('/login');
 			}
+		} finally {
+			authCheckInProgress = false;
 		}
+	}
+
+	function debouncedCheckAuth(currentPath: string) {
+		// Clear any existing timeout
+		if (authCheckTimeoutId) {
+			clearTimeout(authCheckTimeoutId);
+		}
+
+		// Set a new timeout to debounce rapid calls
+		authCheckTimeoutId = setTimeout(() => {
+			checkAuth(currentPath);
+			authCheckTimeoutId = null;
+		}, 50); // 50ms debounce
 	}
 
 	if (browser) {
 		// Wait for auth hydration before checking auth on initial load
 		authHydrated.subscribe((hydrated) => {
 			if (hydrated) {
-				checkAuth(window.location.pathname);
+				debouncedCheckAuth(window.location.pathname);
 			}
 		});
 
 		// Run on every navigation (auth will already be hydrated by then)
 		afterNavigate((navigation) => {
-			checkAuth(navigation.to?.url.pathname || '/');
+			debouncedCheckAuth(navigation.to?.url.pathname || '/');
 		});
 	}
+
+	onDestroy(() => {
+		// Cleanup timeout if component is destroyed
+		if (authCheckTimeoutId) {
+			clearTimeout(authCheckTimeoutId);
+		}
+	});
 
 	onMount(() => {
 		setupI18n();
