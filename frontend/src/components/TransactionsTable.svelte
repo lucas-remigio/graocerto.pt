@@ -66,6 +66,28 @@
 		});
 	}
 
+	function getTextColor(backgroundColor: string): string {
+		// Remove # if present
+		const hex = backgroundColor.replace('#', '');
+
+		// Convert hex to RGB
+		const r = parseInt(hex.substr(0, 2), 16);
+		const g = parseInt(hex.substr(2, 2), 16);
+		const b = parseInt(hex.substr(4, 2), 16);
+
+		// Calculate relative luminance (WCAG formula)
+		const getLuminance = (color: number) => {
+			const c = color / 255;
+			return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+		};
+
+		const luminance =
+			0.2126 * getLuminance(r) + 0.7152 * getLuminance(g) + 0.0722 * getLuminance(b);
+
+		// Use white text on dark backgrounds, dark text on light backgrounds
+		return luminance > 0.5 ? 'text-gray-900' : 'text-gray-100';
+	}
+
 	function openCreateTransactionModal() {
 		showCreateTransactionModal = true;
 	}
@@ -210,7 +232,7 @@
 								</td>
 								<td class="text-gray-900">
 									<span
-										class="rounded px-2 py-1 text-white"
+										class="rounded px-2 py-1 {getTextColor(tx.category.color)}"
 										style="background-color: {tx.category.color};"
 									>
 										{tx.category.category_name}
