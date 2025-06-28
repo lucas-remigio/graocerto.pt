@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { LogIn, LogOut, Menu, Moon, Sun } from 'lucide-svelte';
+	import { LogIn, LogOut, Menu, Moon, Sun, User } from 'lucide-svelte';
 	import { t, locale, setLocale } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import { isAuthenticated } from './stores/auth';
@@ -16,6 +16,9 @@
 
 	// Flag to indicate that a touch event already handled the toggle
 	let touchHandled = false;
+
+	// Profile dropdown state
+	let isProfileDropdownOpen = false;
 
 	function toggleLanguage() {
 		const newLang = $locale === 'en' ? 'pt' : 'en';
@@ -158,17 +161,46 @@
 			{/if}
 		</button>
 
-		<!-- Logout Button -->
+		<!-- Profile Dropdown (if authenticated) -->
 		{#if $isAuthenticated}
-			<button aria-label="logout" class="btn btn-ghost" on:click={logout}>
-				<div class="flex w-full items-center">
-					<LogOut size={20} class="h-5 w-5 flex-shrink-0" />
-				</div>
-			</button>
+			<div class="dropdown dropdown-end {isProfileDropdownOpen ? 'dropdown-open' : ''}">
+				<button
+					class="btn btn-ghost btn-circle"
+					on:click={() => (isProfileDropdownOpen = !isProfileDropdownOpen)}
+					aria-haspopup="true"
+					aria-expanded={isProfileDropdownOpen}
+					aria-label="User menu"
+				>
+					<User size={20} class="h-5 w-5" />
+				</button>
+
+				{#if isProfileDropdownOpen}
+					<ul class="dropdown-content menu bg-base-100 rounded-box z-[100] mt-4 w-64 p-4 shadow">
+						<li class="mb-2 flex items-center justify-center">
+							<span
+								class="text-base-content select-text rounded px-2 py-1 text-center text-sm font-medium"
+							>
+								{localStorage.getItem('userEmail') || 'unknown@anonymous.pt'}
+							</span>
+						</li>
+						<li class="border-base-200 mt-2 border-t pt-2">
+							<button
+								class="btn btn-error btn-sm w-full"
+								on:click={() => {
+									logout();
+									isProfileDropdownOpen = false;
+								}}
+							>
+								<LogOut size={18} class="mr-2" />
+							</button>
+						</li>
+					</ul>
+				{/if}
+			</div>
 		{:else}
 			<a href={loginUrl} class="btn btn-ghost">
 				<div class="flex w-full items-center">
-					<LogIn size={20} class="h-5 w-5 flex-shrink-0" />
+					<LogIn size={20} class="text-base-100 h-5 w-5 flex-shrink-0" />
 				</div>
 			</a>
 		{/if}

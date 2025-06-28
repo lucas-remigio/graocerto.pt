@@ -11,7 +11,7 @@
 
 	let { children } = $props();
 
-	const publicRoutes = ['/login', '/register'];
+	const publicRoutes = ['/login', '/register', '/'];
 
 	// add app-wide loading state - using $state() for Svelte 5 reactivity
 	let appReady = $state(false);
@@ -40,9 +40,6 @@
 
 		if (isPublicRoute) {
 			// If user is authenticated but on a public route (login/register), redirect to dashboard
-			if (authToken) {
-				goto('/');
-			}
 			authCheckInProgress = false;
 			return;
 		}
