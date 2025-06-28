@@ -13,19 +13,27 @@
 
 		<div class="mb-8 grid w-full grid-cols-1 gap-6 md:grid-cols-2">
 			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-xl font-bold">{$t('landing.accounts-title')}</h2>
+				<h2 class="text-primary mb-2 text-center text-xl font-bold">
+					{$t('landing.accounts-title')}
+				</h2>
 				<p class="text-base-content/70 text-center">{$t('landing.accounts-desc')}</p>
 			</div>
 			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-xl font-bold">{$t('landing.analytics-title')}</h2>
+				<h2 class="text-primary mb-2 text-center text-xl font-bold">
+					{$t('landing.analytics-title')}
+				</h2>
 				<p class="text-base-content/70 text-center">{$t('landing.analytics-desc')}</p>
 			</div>
 			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-xl font-bold">{$t('landing.privacy-title')}</h2>
+				<h2 class="text-primary mb-2 text-center text-xl font-bold">
+					{$t('landing.privacy-title')}
+				</h2>
 				<p class="text-base-content/70 text-center">{$t('landing.privacy-desc')}</p>
 			</div>
 			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-xl font-bold">{$t('landing.intuitive-title')}</h2>
+				<h2 class="text-primary mb-2 text-center text-xl font-bold">
+					{$t('landing.intuitive-title')}
+				</h2>
 				<p class="text-base-content/70 text-center">{$t('landing.intuitive-desc')}</p>
 			</div>
 		</div>
