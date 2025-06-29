@@ -193,7 +193,7 @@
 			<form on:submit|preventDefault={handleSubmit}>
 				{#if filteredCategories.length > 0}
 					<!-- Display both Transaction Type and Category side by side -->
-					<div class="mt-4 flex flex-col gap-4 md:flex-row">
+					<div class="mt-4 flex flex-row gap-4">
 						<!-- Transaction Type Field -->
 						<div class="form-control flex-1">
 							<label class="label" for="transaction-type">
@@ -276,6 +276,14 @@
 				</div>
 
 				<div class="mt-4 flex gap-4">
+					<!-- Date Field -->
+					<div class="form-control flex-1">
+						<label class="label" for="date">
+							<span class="label-text">{$t('transactions.date')}</span>
+						</label>
+						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
+					</div>
+
 					<!-- Amount Field -->
 					<div class="form-control flex-1">
 						<label class="label" for="amount">
@@ -292,14 +300,6 @@
 							max="999999999"
 							required
 						/>
-					</div>
-
-					<!-- Date Field -->
-					<div class="form-control flex-1">
-						<label class="label" for="date">
-							<span class="label-text">{$t('transactions.date')}</span>
-						</label>
-						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
 					</div>
 				</div>
 				<!-- Form Actions -->

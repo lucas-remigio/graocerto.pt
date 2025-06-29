@@ -165,12 +165,11 @@
 		<p>{error}</p>
 	</div>
 {:else if transactionsGroups && transactionsGroups.length > 0}
-	<div class="my-2 flex items-center justify-between">
-		<!-- Totals Summary on the left -->
-		<TransactionsStats totals={transactionsTotals} />
-
-		<!-- Buttons aligned to the right -->
-		<div class="flex items-center gap-4">
+	<div class="my-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+		<!-- Buttons: above stats on mobile, right on md+ -->
+		<div
+			class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
+		>
 			<!-- Button to get feedback -->
 			{#if !isAll}
 				<button
@@ -192,6 +191,11 @@
 				<Plus size={20} class="text-base-100" />
 				<CircleDollarSign size={20} class="text-base-100" />
 			</button>
+		</div>
+
+		<!-- Totals Summary below buttons on mobile, left on md+ -->
+		<div class="order-2 flex justify-center md:order-1 md:justify-start">
+			<TransactionsStats totals={transactionsTotals} />
 		</div>
 	</div>
 
@@ -268,7 +272,7 @@
 			on:click={openCreateTransactionModal}
 			aria-label="Add New Transaction"
 		>
-			<CircleDollarSign size={20} class="h-5 w-5 text-base-100" />
+			<CircleDollarSign size={20} class="text-base-100 h-5 w-5" />
 			<span class="text-base-100">{$t('transactions.create-first')}</span>
 		</button>
 	</div>
