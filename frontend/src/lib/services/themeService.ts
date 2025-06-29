@@ -24,7 +24,6 @@ class ThemeService {
 		this.observer = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-					console.log('Theme changed via data-theme attribute');
 					this.notifyListeners();
 				}
 			});
@@ -41,7 +40,6 @@ class ThemeService {
 		// Listen for system theme changes
 		this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		const handleMediaChange = () => {
-			console.log('System theme changed');
 			this.notifyListeners();
 		};
 		this.mediaQuery.addEventListener('change', handleMediaChange);

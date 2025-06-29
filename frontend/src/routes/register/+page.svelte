@@ -49,7 +49,9 @@
 	};
 </script>
 
-<main class="bg-base-200 flex h-[calc(100vh-64px)] items-center justify-center p-4">
+<main
+	class="bg-base-200 flex items-center justify-center overflow-auto p-4 md:h-[calc(100vh-64px)]"
+>
 	<div class="bg-base-100 w-full max-w-lg rounded-xl p-6 shadow-lg">
 		<!-- Logo and Brand -->
 		<div class="mb-6 text-center">
@@ -61,8 +63,8 @@
 		</div>
 
 		<form class="space-y-3" on:submit|preventDefault={handleRegister}>
-			<div class="flex gap-2">
-				<div class="form-control w-1/2">
+			<div class="flex flex-col gap-2 md:flex-row">
+				<div class="form-control w-full md:w-1/2">
 					<label for="first_name" class="label">
 						<span class="label-text font-medium">{$t('auth.first-name')}</span>
 					</label>
@@ -75,7 +77,7 @@
 						placeholder={$t('auth.enter-first')}
 					/>
 				</div>
-				<div class="form-control w-1/2">
+				<div class="form-control w-full md:w-1/2">
 					<label for="last_name" class="label">
 						<span class="label-text font-medium">{$t('auth.last-name')}</span>
 					</label>
@@ -104,8 +106,8 @@
 				/>
 			</div>
 
-			<div class="flex gap-2">
-				<div class="form-control w-1/2">
+			<div class="flex flex-col gap-2 md:flex-row">
+				<div class="form-control w-full md:w-1/2">
 					<label for="password" class="label">
 						<span class="label-text font-medium">{$t('auth.password')}</span>
 					</label>
@@ -118,7 +120,7 @@
 						placeholder={$t('auth.enter-password')}
 					/>
 				</div>
-				<div class="form-control w-1/2">
+				<div class="form-control w-full md:w-1/2">
 					<label for="confirmPassword" class="label">
 						<span class="label-text font-medium">{$t('auth.confirm-password')}</span>
 					</label>

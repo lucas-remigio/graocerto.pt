@@ -4,6 +4,7 @@
 	import { t, locale, setLocale } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import { isAuthenticated } from './stores/auth';
+	import UserMenu from './UserMenu.svelte';
 
 	let isDropdownOpen = false;
 	let categoriesUrl = '/categories';
@@ -147,7 +148,7 @@
 		<!-- Language Selector -->
 		<div class="dropdown dropdown-end">
 			<!-- Language Selector Toggle -->
-			<button class="btn btn-ghost" on:click={toggleLanguage}>
+			<button class="btn btn-ghost btn-circle" on:click={toggleLanguage}>
 				<span class="font-bold">{$locale === 'en' ? '🇬🇧' : '🇵🇹'}</span>
 			</button>
 		</div>
@@ -163,45 +164,10 @@
 
 		<!-- Profile Dropdown (if authenticated) -->
 		{#if $isAuthenticated}
-			<div class="dropdown dropdown-end {isProfileDropdownOpen ? 'dropdown-open' : ''}">
-				<button
-					class="btn btn-ghost btn-circle"
-					on:click={() => (isProfileDropdownOpen = !isProfileDropdownOpen)}
-					aria-haspopup="true"
-					aria-expanded={isProfileDropdownOpen}
-					aria-label="User menu"
-				>
-					<User size={20} class="h-5 w-5" />
-				</button>
-
-				{#if isProfileDropdownOpen}
-					<ul class="dropdown-content menu bg-base-100 rounded-box z-[100] mt-4 w-64 p-4 shadow">
-						<li class="mb-2 flex items-center justify-center">
-							<span
-								class="text-base-content select-text rounded px-2 py-1 text-center text-sm font-medium"
-							>
-								{localStorage.getItem('userEmail') || 'unknown@anonymous.pt'}
-							</span>
-						</li>
-						<li class="border-base-200 mt-2 border-t pt-2">
-							<button
-								class="btn btn-error btn-sm w-full"
-								on:click={() => {
-									logout();
-									isProfileDropdownOpen = false;
-								}}
-							>
-								<LogOut size={18} class="mr-2" />
-							</button>
-						</li>
-					</ul>
-				{/if}
-			</div>
+			<UserMenu {logout} />
 		{:else}
-			<a href={loginUrl} class="btn btn-ghost">
-				<div class="flex w-full items-center">
-					<LogIn size={20} class="text-base-100 h-5 w-5 flex-shrink-0" />
-				</div>
+			<a href={loginUrl} class="btn btn-ghost btn-circle" aria-label="Login">
+				<LogIn size={20} class="h-5 w-5" />
 			</a>
 		{/if}
 	</div>

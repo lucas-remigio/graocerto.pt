@@ -106,7 +106,6 @@
 
 		// Subscribe to theme changes
 		unsubscribeTheme = themeService.subscribe(() => {
-			console.log('Theme changed, recreating pie chart...');
 			if (chart) {
 				createChart();
 			}

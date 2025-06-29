@@ -61,11 +61,6 @@
 		// Get theme colors from theme service
 		const themeColors = themeService.getThemeColors();
 
-		console.log('Theme detection:', {
-			...themeColors,
-			dataTheme: document.documentElement.getAttribute('data-theme')
-		});
-
 		const {
 			legendColor,
 			axisTextColor,
@@ -193,7 +188,6 @@
 
 		// Subscribe to theme changes
 		unsubscribeTheme = themeService.subscribe(() => {
-			console.log('Theme changed, recreating investment chart...');
 			if (chart) {
 				createChart();
 			}
