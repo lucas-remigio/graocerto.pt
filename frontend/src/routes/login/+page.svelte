@@ -69,7 +69,7 @@
 </script>
 
 <main
-	class="bg-base-200 flex items-center justify-center overflow-auto p-4 md:h-[calc(100vh-64px)]"
+	class="bg-base-200 flex min-h-screen items-center justify-center overflow-auto p-4 md:h-[calc(100vh-64px)] md:min-h-0"
 >
 	<div class="bg-base-100 w-full max-w-md rounded-xl p-8 shadow-lg">
 		<!-- Logo and Brand -->
