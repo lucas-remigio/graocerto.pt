@@ -285,6 +285,7 @@
 						<input
 							id="amount"
 							type="number"
+							inputmode="decimal"
 							placeholder={$t('transactions.transaction-amount')}
 							class="input input-bordered w-full"
 							bind:value={amount}

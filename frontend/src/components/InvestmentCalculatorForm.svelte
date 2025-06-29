@@ -17,6 +17,13 @@
 		investment_duration_years: 0
 	};
 
+	export let prevInput: InvestmentCalculatorInput = {
+		initial_investment: 0,
+		monthly_contribution: 0,
+		annual_return_rate: 10,
+		investment_duration_years: 0
+	};
+
 	// Loading and error states
 	export let isLoading = false;
 	export let error = '';
@@ -81,7 +88,27 @@
 			return;
 		}
 
+		if (isInputEqualToPrevious(input, prevInput)) {
+			return;
+		}
+
 		dispatch('calculate', input);
+
+		prevInput = {
+			...input
+		};
+	}
+
+	function isInputEqualToPrevious(
+		input: InvestmentCalculatorInput,
+		prev: InvestmentCalculatorInput
+	): boolean {
+		return (
+			input.initial_investment === prev.initial_investment &&
+			input.monthly_contribution === prev.monthly_contribution &&
+			input.annual_return_rate === prev.annual_return_rate &&
+			input.investment_duration_years === prev.investment_duration_years
+		);
 	}
 
 	function handleReset() {
@@ -126,6 +153,7 @@
 					<input
 						id="initial-investment"
 						type="number"
+						inputmode="decimal"
 						step="0.01"
 						min="0"
 						max="100000"
@@ -150,6 +178,7 @@
 					<input
 						id="monthly-contribution"
 						type="number"
+						inputmode="decimal"
 						step="0.01"
 						min="0"
 						max="10000"
@@ -178,6 +207,7 @@
 					<input
 						id="annual-return-rate"
 						type="number"
+						inputmode="decimal"
 						step="0.1"
 						min="0"
 						max="100"
@@ -203,6 +233,7 @@
 					<input
 						id="investment-duration-years"
 						type="number"
+						inputmode="numeric"
 						min="1"
 						max="100"
 						bind:value={input.investment_duration_years}
@@ -228,9 +259,9 @@
 						<span class="loading loading-spinner loading-sm"></span>
 						{$t('common.calculating')}
 					{:else}
-                        <span class="text-base-100">
-                            {$t('investment-calculator.form.calculate')}
-                        </span>
+						<span class="text-base-100">
+							{$t('investment-calculator.form.calculate')}
+						</span>
 					{/if}
 				</button>
 			</div>
