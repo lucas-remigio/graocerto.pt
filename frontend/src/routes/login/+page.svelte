@@ -68,7 +68,9 @@
 	};
 </script>
 
-<main class="bg-base-200 flex h-[calc(100vh-64px)] items-center justify-center p-4">
+<main
+	class="bg-base-200 flex items-center justify-center overflow-auto p-4 md:h-[calc(100vh-64px)]"
+>
 	<div class="bg-base-100 w-full max-w-md rounded-xl p-8 shadow-lg">
 		<!-- Logo and Brand -->
 		<div class="mb-8 text-center">
