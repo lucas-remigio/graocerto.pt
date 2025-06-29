@@ -64,3 +64,11 @@ func GetIntFromQuery(r *http.Request, key string) (int, error) {
 	}
 	return intValue, nil
 }
+
+func GetStringFromQuery(r *http.Request, key string) (string, error) {
+	value := r.URL.Query().Get(key)
+	if value == "" {
+		return "", fmt.Errorf("query parameter %s is missing", key)
+	}
+	return value, nil
+}

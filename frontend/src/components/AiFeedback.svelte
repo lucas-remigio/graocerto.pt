@@ -12,6 +12,7 @@
 		AlertCircle
 	} from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import { locale, t } from 'svelte-i18n';
 	import { fade, fly } from 'svelte/transition';
 
 	export let account: Account;
@@ -26,11 +27,13 @@
 
 	async function getTransactionsAiFeedback() {
 		isLoading = true;
+		const language = $locale || 'en'; // Default to English if locale is not set
 		try {
 			const res = await api_axios('accounts/' + account.token + '/feedback-month', {
 				params: {
 					month,
-					year
+					year,
+					language
 				}
 			});
 
@@ -53,7 +56,7 @@
 
 	function formattedDate(): string {
 		const date = new Date(year, month - 1); // month is 0-indexed in JS
-		return date.toLocaleDateString('default', {
+		return date.toLocaleDateString(currentLocale, {
 			month: 'long',
 			year: 'numeric'
 		});
@@ -62,6 +65,8 @@
 	function handleCloseModal() {
 		closeModal();
 	}
+
+	$: currentLocale = $locale || 'en-US';
 
 	onMount(() => {
 		getTransactionsAiFeedback();
@@ -78,7 +83,7 @@
 			<div class="flex items-center gap-2">
 				<BarChart class="text-base-100 h-5 w-5" />
 				<h3 class="text-base-100 text-xl font-bold">
-					Financial Insights: {account.account_name}
+					{$t('ai-feedback.title') + ' ' + account.account_name}
 				</h3>
 			</div>
 			<!-- Close button -->
@@ -90,7 +95,7 @@
 			</button>
 			<div class="text-base-100/80 mt-1 flex items-center gap-2 text-sm">
 				<CalendarClock class="text-base-100 h-4 w-4" />
-				<span>Monthly analysis for {formattedDate()}</span>
+				<span>{$t('ai-feedback.monthly-analysis-for') + ' ' + formattedDate()}</span>
 			</div>
 		</div>
 
@@ -99,13 +104,13 @@
 			{#if isLoading}
 				<div class="flex flex-col items-center justify-center py-12" in:fade>
 					<Loader2 class="text-primary mb-4 h-12 w-12 animate-spin" />
-					<p class="text-base-content/70">Analyzing your financial data...</p>
+					<p class="text-base-content/70">{$t('ai-feedback.analyzing')}</p>
 				</div>
 			{:else if error}
 				<div class="border-error bg-error/10 rounded border-l-4 p-4" in:fade>
 					<p class="text-error flex items-center gap-2">
 						<AlertCircle class="text-error h-5 w-5" />
-						{error}
+						{$t('ai-feedback.error') + ' ' + error}
 					</p>
 				</div>
 			{:else}
@@ -119,7 +124,9 @@
 								<Lightbulb class="text-primary h-5 w-5" />
 							</div>
 							<div>
-								<h3 class="text-primary mb-2 text-lg font-medium">Key Insights</h3>
+								<h3 class="text-primary mb-2 text-lg font-medium">
+									{$t('ai-feedback.key-insights')}
+								</h3>
 								<p class="text-base-content/80">{feedbackMessage}</p>
 							</div>
 						</div>
@@ -129,7 +136,9 @@
 					<div class="mt-6">
 						<div class="mb-4 flex items-center gap-2">
 							<PieChart class="text-secondary h-5 w-5" />
-							<h3 class="text-base-content text-lg font-semibold">Detailed Analysis</h3>
+							<h3 class="text-base-content text-lg font-semibold">
+								{$t('ai-feedback.detailed-analysis')}
+							</h3>
 						</div>
 
 						<div
@@ -142,7 +151,7 @@
 						<div class="mt-8 flex justify-end">
 							<div class="text-success inline-flex items-center gap-1.5 text-sm">
 								<ArrowUpRight class="h-4 w-4" />
-								<span>Based on your transaction history</span>
+								<span>{$t('ai-feedback.based-on-history')}</span>
 							</div>
 						</div>
 					</div>

@@ -85,7 +85,7 @@ func (s *Store) UpdateAccount(account *types.Account) error {
 		account.AccountName, account.Balance, account.ID)
 }
 
-func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string, month, year int) (*types.MonthlyFeedback, error) {
+func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*types.MonthlyFeedback, error) {
 
 	// check if the account belongs to the user
 	account, err := s.GetAccountByToken(accountToken)
@@ -154,7 +154,8 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken string, month
 	}
 
 	// Combine template with transactions data
-	fullPrompt := string(promptTemplate) + "\n" + transactionsData.String()
+	feedbackLanguage := fmt.Sprintf("\n\n\n Give the feedback in the following language: %s", language)
+	fullPrompt := string(promptTemplate) + "\n" + transactionsData.String() + feedbackLanguage
 
 	log.Println("Full prompt:", fullPrompt)
 

@@ -6,7 +6,7 @@ type AccountStore interface {
 	CreateAccount(account *Account) error
 	UpdateAccount(account *Account) error
 	DeleteAccount(token string, userId int) error
-	GetAccountFeedbackMonthly(userId int, accountToken string, month, year int) (*MonthlyFeedback, error)
+	GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*MonthlyFeedback, error)
 }
 
 type CreateAccountPayload struct {

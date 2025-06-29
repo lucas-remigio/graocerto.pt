@@ -202,6 +202,16 @@
 		"user-not-found": "Utilizador não encontrado. Verifica o email e a palavra-passe e tenta novamente."
 	},
 
+	"ai-feedback": {
+		"title": "Insights Financeiros:",
+		"monthly-analysis-for": "Análise mensal de",
+		"analyzing": "A analisar os teus dados financeiros...",
+		"error": "Erro:",
+		"key-insights": "Principais Conclusões",
+		"detailed-analysis": "Análise Detalhada",
+		"based-on-history": "Com base no teu histórico de transações"
+	},
+
 	"transaction-types": {
 		"debit": "Débito",
 		"credit": "Crédito",

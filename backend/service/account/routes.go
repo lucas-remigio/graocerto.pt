@@ -162,9 +162,14 @@ func (h *Handler) GetAccountFeedbackMonthly(w http.ResponseWriter, r *http.Reque
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
+	language, err := utils.GetStringFromQuery(r, "language")
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
 
 	// get the account feedback monthly
-	feedback, err := h.store.GetAccountFeedbackMonthly(userId, accountToken, month, year)
+	feedback, err := h.store.GetAccountFeedbackMonthly(userId, accountToken, language, month, year)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

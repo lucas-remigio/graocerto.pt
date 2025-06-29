@@ -1,0 +1,22 @@
+meta {
+  name: MonthlyFeedback
+  type: http
+  seq: 8
+}
+
+get {
+  url: http://localhost:3001/api/v1/accounts/4693890b43074b16626934a453a11f51/feedback-month?month=6&year=2025&language=pt
+  body: none
+  auth: inherit
+}
+
+params:query {
+  month: 6
+  year: 2025
+  language: pt
+}
+
+headers {
+  Accept: application/json, text/plain, */*
+  Authorization: Bearer {{token}}
+}
