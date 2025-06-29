@@ -268,8 +268,8 @@
 			on:click={openCreateTransactionModal}
 			aria-label="Add New Transaction"
 		>
-			<CircleDollarSign size={20} class="h-5 w-5" />
-			<span>{$t('transactions.create-first')}</span>
+			<CircleDollarSign size={20} class="h-5 w-5 text-base-100" />
+			<span class="text-base-100">{$t('transactions.create-first')}</span>
 		</button>
 	</div>
 {/if}

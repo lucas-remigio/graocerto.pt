@@ -37,7 +37,11 @@
 		"calculating": "A calcular...",
 		"reset": "Limpar",
 		"error": "Erro",
-		"success": "Sucesso"
+		"success": "Sucesso",
+		"invalid": "Inválido",
+		"required": "Obrigatório",
+		"too-short": "Muito curto",
+		"too-long": "Muito longo"
 	},
 
 	"views": {
@@ -191,7 +195,11 @@
 		"enter-last": "Insere o teu último nome",
 		"welcome-back": "Bem-vindo de volta",
 		"or": "ou",
-		"create-account": "Criar Conta"
+		"create-account": "Criar Conta",
+		"create-account-desc": "Cria uma conta para começar a usar o Grão Certo",
+		"password-invalid": "A palavra-passe deve ter pelo menos 8 caracteres, incluindo 1 letra maiúscula, 1 minúscula, 1 número e 1 caractere especial.",
+		"password-length-invalid": "A palavra-passe deve ter pelo menos 8 caracteres.",
+		"user-not-found": "Utilizador não encontrado. Verifica o email e a palavra-passe e tenta novamente."
 	},
 
 	"transaction-types": {

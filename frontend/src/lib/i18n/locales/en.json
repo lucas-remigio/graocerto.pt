@@ -37,7 +37,11 @@
 		"calculating": "Calculating...",
 		"reset": "Reset",
 		"error": "Error",
-		"success": "Success"
+		"success": "Success",
+		"invalid": "Invalid",
+		"required": "Required",
+		"too-short": "Too Short",
+		"too-long": "Too Long"
 	},
 
 	"views": {
@@ -187,7 +191,11 @@
 		"enter-last": "Enter your last name",
 		"welcome-back": "Welcome back",
 		"or": "or",
-		"create-account": "Create Account"
+		"create-account": "Create Account",
+		"create-account-desc": "Create an account to start using Grão Certo",
+		"password-invalid": "Password must be at least 8 characters long, including 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.",
+		"password-length-invalid": "Password must be at least 8 characters long.",
+		"user-not-found": "User not found. Please check your email and password and try again."
 	},
 
 	"transaction-types": {

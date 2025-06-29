@@ -74,3 +74,57 @@ func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	return user, nil
 
 }
+
+func isUpper(c rune) bool {
+	return c >= 'A' && c <= 'Z'
+}
+
+func isLower(c rune) bool {
+	return c >= 'a' && c <= 'z'
+}
+
+func isDigit(c rune) bool {
+	return c >= '0' && c <= '9'
+}
+
+func isSpecial(c rune) bool {
+	return !isUpper(c) && !isLower(c) && !isDigit(c)
+}
+
+func (s *Store) ValidatePassword(password string) error {
+	if password == "" {
+		return fmt.Errorf("password cannot be empty")
+	}
+
+	hasUpper := false
+	hasLower := false
+	hasDigit := false
+	hasSpecial := false
+
+	for _, c := range password {
+		if isUpper(c) {
+			hasUpper = true
+		} else if isLower(c) {
+			hasLower = true
+		} else if isDigit(c) {
+			hasDigit = true
+		} else if isSpecial(c) {
+			hasSpecial = true
+		}
+	}
+
+	if !hasUpper {
+		return fmt.Errorf("password must contain at least one uppercase letter")
+	}
+	if !hasLower {
+		return fmt.Errorf("password must contain at least one lowercase letter")
+	}
+	if !hasDigit {
+		return fmt.Errorf("password must contain at least one number")
+	}
+	if !hasSpecial {
+		return fmt.Errorf("password must contain at least one special character")
+	}
+
+	return nil
+}

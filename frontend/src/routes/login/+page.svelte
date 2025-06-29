@@ -4,6 +4,8 @@
 	import { login, token } from '$lib/stores/auth';
 	import { t } from '$lib/i18n';
 	import type { AxiosError } from 'axios';
+	import { validateEmail, isPasswordValid, isPasswordLengthValid } from '$lib/authValidation';
+	import { XIcon } from 'lucide-svelte';
 
 	let email = '';
 	let password = '';
@@ -14,8 +16,28 @@
 		error?: string; // Optional error code or additional details
 	}
 
+	const validateForm = (): boolean => {
+		if (!email || !validateEmail(email)) {
+			errorMessage = $t('auth.email') + ' ' + $t('common.invalid');
+			return false;
+		}
+
+		if (!password || !isPasswordLengthValid(password)) {
+			errorMessage = $t('auth.password-length-invalid');
+			return false;
+		}
+
+		errorMessage = '';
+		return true;
+	};
+
 	const handleLogin = async () => {
 		errorMessage = '';
+
+		const isValid = validateForm();
+		if (!isValid) {
+			return;
+		}
 
 		// Send the login request to the backend
 		try {
@@ -33,7 +55,11 @@
 			// Type the error as AxiosError
 			const axiosError = error as AxiosError;
 			const apiResponse = axiosError.response?.data as APIErrorResponse;
-			errorMessage = apiResponse?.error || $t('auth.error-occurred');
+			if (axiosError.response?.status === 404) {
+				errorMessage = $t('auth.user-not-found');
+			} else {
+				errorMessage = apiResponse?.error || $t('auth.error-occurred');
+			}
 
 			// Clear any existing tokens on error
 			localStorage.removeItem('token');
@@ -84,20 +110,8 @@
 
 			{#if errorMessage}
 				<div class="alert alert-error shadow-sm">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-6 w-6 shrink-0 stroke-current"
-						fill="none"
-						viewBox="0 0 24 24"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-					<span class="text-sm">{errorMessage}</span>
+					<XIcon class="text-base-100 h-6 w-6" />
+					<span class="text-base-100 text-sm">{errorMessage}</span>
 				</div>
 			{/if}
 

@@ -3,6 +3,8 @@
 	import axios from '$lib/axios';
 	import { t } from '$lib/i18n';
 	import type { AxiosError } from 'axios';
+	import { CheckCircle, XIcon } from 'lucide-svelte';
+	import { validateEmail, isPasswordValid } from '$lib/authValidation';
 
 	let first_name = '';
 	let last_name = '';
@@ -17,14 +19,53 @@
 		error?: string; // Optional error code or additional details
 	}
 
+	const validateForm = (): boolean => {
+		const checks = [
+			{
+				valid: first_name && first_name.length <= 32,
+				error: `${$t('auth.first-name')} ${first_name ? $t('common.too-long') : $t('common.required')}`
+			},
+			{
+				valid: last_name && last_name.length <= 32,
+				error: `${$t('auth.last-name')} ${last_name ? $t('common.too-long') : $t('common.required')}`
+			},
+			{
+				valid: email && email.length <= 255 && validateEmail(email),
+				error: `${$t('auth.email')} ${!email ? $t('common.required') : !validateEmail(email) ? $t('common.invalid') : $t('common.too-long')}`
+			},
+			{
+				valid: password && password.length >= 8 && password.length <= 64,
+				error: `${$t('auth.password')} ${!password ? $t('common.required') : password.length < 8 ? $t('common.too-short') : $t('common.too-long')}`
+			}
+		];
+
+		for (const { valid, error } of checks) {
+			if (!valid) {
+				errorMessage = error;
+				return false;
+			}
+		}
+
+		if (!isPasswordValid(password)) {
+			errorMessage = $t('auth.password-invalid');
+			return false;
+		}
+
+		if (password !== confirmPassword) {
+			errorMessage = $t('auth.passwords-no-match');
+			return false;
+		}
+
+		return true;
+	};
+
 	const handleRegister = async () => {
 		errorMessage = '';
 		successMessage = '';
 
-		// Validate passwords match
-		if (password !== confirmPassword) {
-			errorMessage = $t('auth.passwords-no-match');
-			return;
+		const isValid = validateForm();
+		if (!isValid) {
+			return; // Stop if validation fails
 		}
 
 		try {
@@ -137,39 +178,15 @@
 
 			{#if errorMessage}
 				<div class="alert alert-error shadow-sm">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-6 w-6 shrink-0 stroke-current"
-						fill="none"
-						viewBox="0 0 24 24"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-					<span class="text-sm">{errorMessage}</span>
+					<XIcon class="text-base-100 h-6 w-6" />
+					<span class="text-base-100 text-sm">{errorMessage}</span>
 				</div>
 			{/if}
 
 			{#if successMessage}
 				<div class="alert alert-success shadow-sm">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-6 w-6 shrink-0 stroke-current"
-						fill="none"
-						viewBox="0 0 24 24"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M5 13l4 4L19 7"
-						/>
-					</svg>
-					<span class="text-sm">{successMessage}</span>
+					<CheckCircle class="text-base-100 h-6 w-6" />
+					<span class="text-base-100 text-sm">{successMessage}</span>
 				</div>
 			{/if}
 

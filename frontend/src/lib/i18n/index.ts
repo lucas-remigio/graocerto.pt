@@ -37,10 +37,11 @@ export function setupI18n() {
 	initialized = true;
 
 	// Wait for i18n to be fully ready
-	const unsubscribe = svelteI18nLoading.subscribe((loading) => {
+	let unsub: (() => void) | null = null;
+	unsub = svelteI18nLoading.subscribe((loading) => {
 		if (!loading) {
 			i18nReady.set(true);
-			unsubscribe();
+			if (unsub) unsub();
 		}
 	});
 }
