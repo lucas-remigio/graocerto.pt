@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"database/sql"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -79,8 +82,20 @@ func parseDatabaseUrl(dbUrl string, isRemote bool) *mysql.Config {
 	}
 
 	if isRemote {
-		// Set the TLS config for remote connections
-		config.TLSConfig = "skip-verify"
+		// Load your CA certificate
+		rootCertPool := x509.NewCertPool()
+		pem, err := os.ReadFile("db/DigiCertGlobalRootCA.crt.pem")
+		if err != nil {
+			log.Fatalf("Failed to read CA cert: %v", err)
+		}
+		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+			log.Fatal("Failed to append CA cert")
+		}
+		tlsConfig := &tls.Config{
+			RootCAs: rootCertPool,
+		}
+		mysql.RegisterTLSConfig("custom", tlsConfig)
+		config.TLSConfig = "custom"
 	}
 
 	return config

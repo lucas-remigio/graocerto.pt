@@ -44,6 +44,9 @@ COPY --from=builder /app/cmd/migrate/migrations ./migrations/
 # Copy prompts folder
 COPY --from=builder /app/prompts ./prompts/
 
+# Copy database certificate
+COPY --from=builder /app/db/DigiCertGlobalRootCA.crt.pem ./db/
+
 # Set environment variable for migrations path
 ENV MIGRATIONS_PATH=file://migrations
 

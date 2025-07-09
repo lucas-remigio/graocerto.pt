@@ -35,3 +35,5 @@ node_modules/
 
 
 data/*
+
+backend/db/DigiCertGlobalRootCA.crt.pem
