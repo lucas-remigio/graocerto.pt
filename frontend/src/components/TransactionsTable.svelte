@@ -8,7 +8,7 @@
 		TransactionGroup,
 		Transaction
 	} from '$lib/types';
-	import { Bot, CircleDollarSign, List, Plus, Trash } from 'lucide-svelte';
+	import { Bot, CircleDollarSign, List, Pencil, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import EditTransaction from './EditTransaction.svelte';
@@ -156,6 +156,7 @@
 
 	const dispatch = createEventDispatcher();
 	function handleNewTransaction() {
+		setDraftTransaction(null);
 		closeCreateTransactionModal();
 		dispatch('newTransaction');
 	}
@@ -257,7 +258,14 @@
 								</td>
 								<td class="text-gray-900">{formatCurrency(tx.amount)}€</td>
 								<td class="text-gray-900">{tx.description || 'N/A'}</td>
-								<td class="text-gray-900">
+								<td class="flex justify-center gap-x-2 text-gray-900">
+									<button
+										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-info hover:bg-info/20 backdrop-blur-sm"
+										aria-label="Edit Transaction"
+										on:click={() => handleEditTransaction(tx)}
+									>
+										<Pencil size={20} />
+									</button>
 									<button
 										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
 										aria-label="Delete Transaction"

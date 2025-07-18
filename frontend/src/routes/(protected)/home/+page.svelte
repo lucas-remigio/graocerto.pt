@@ -418,7 +418,7 @@
 								isAll={selectedMonth === null && selectedYear === null}
 								loading={transactionsLoading}
 								on:newTransaction={handleNewTransaction}
-								on:updatedTransaction={handleUpdateTransaction}
+								on:updateTransaction={handleUpdateTransaction}
 								on:deleteTransaction={({ detail: { transaction } }) =>
 									handleDeleteTransaction(transaction)}
 							/>

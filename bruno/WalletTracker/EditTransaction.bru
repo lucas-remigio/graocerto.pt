@@ -1,0 +1,40 @@
+meta {
+  name: EditTransaction
+  type: http
+  seq: 11
+}
+
+put {
+  url: http://localhost:3001/api/v1/transactions/30
+  body: json
+  auth: inherit
+}
+
+headers {
+  Accept: application/json, text/plain, */*
+  Accept-Language: en-US,en;q=0.9
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkX2F0IjoxNzUzNDY1Njk4LCJ1c2VyX2lkIjoiNCJ9.CFyJyxp3CRlWlNmL89bzL-kUNf0RW6x2uEsM5psUPYQ
+  Cache-Control: no-cache
+  Connection: keep-alive
+  Content-Type: application/json
+  Origin: http://localhost:5173
+  Pragma: no-cache
+  Referer: http://localhost:5173/
+  Sec-Fetch-Dest: empty
+  Sec-Fetch-Mode: cors
+  Sec-Fetch-Site: same-site
+  User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
+  sec-ch-ua: "Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"
+  sec-ch-ua-mobile: ?0
+  sec-ch-ua-platform: "macOS"
+}
+
+body:json {
+  {
+    "id": 30,
+    "category_id": 12,
+    "amount": 100,
+    "description": "123 ola!!!",
+    "date": "2025-07-18"
+  }
+}

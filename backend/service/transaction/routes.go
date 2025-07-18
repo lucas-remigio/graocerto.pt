@@ -39,7 +39,7 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// require authentication
-	_, ok := middleware.RequireAuth(w, r)
+	userId, ok := middleware.RequireAuth(w, r)
 	if !ok {
 		return
 	}
@@ -51,7 +51,7 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		CategoryId:   payload.CategoryID,
 		Description:  payload.Description,
 		Date:         payload.Date,
-	})
+	}, userId)
 
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -171,7 +171,7 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// require authentication
-	_, ok = middleware.RequireAuth(w, r)
+	userId, ok := middleware.RequireAuth(w, r)
 	if !ok {
 		return
 	}
@@ -182,7 +182,7 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		CategoryID:  payload.CategoryID,
 		Description: payload.Description,
 		Date:        payload.Date,
-	})
+	}, userId)
 
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)

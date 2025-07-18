@@ -6,8 +6,8 @@ type TransactionStore interface {
 	GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*Transaction, error)
 	GetTransactionsDTOByAccountToken(accountToken string, month, year *int) ([]*TransactionDTO, error)
 	GetGroupedTransactionsDTOByAccountToken(accountToken string, month, year *int) (*GroupedTransactionsResponse, error)
-	CreateTransaction(transaction *Transaction) error
-	UpdateTransaction(transaction *UpdateTransactionPayload) error
+	CreateTransaction(transaction *Transaction, userId int) error
+	UpdateTransaction(transaction *UpdateTransactionPayload, userId int) error
 	DeleteTransaction(transactionId int, userId int) error
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)

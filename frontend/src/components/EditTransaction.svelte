@@ -45,7 +45,9 @@
 	let category_id: number | string = transaction.category.id;
 	let amount: number = transaction.amount;
 	let description = transaction.description;
-	let date = transaction.date; // expects format "YYYY-MM-DD" from the date input
+	let date = transaction.date
+		? transaction.date.split('T')[0]
+		: new Date().toISOString().split('T')[0];
 
 	// Create event dispatcher (to emit events to the parent)
 	const dispatch = createEventDispatcher();
@@ -200,19 +202,14 @@
 							<label class="label" for="transaction-type">
 								<span class="label-text">{$t('transactions.transaction-type')}</span>
 							</label>
-							<select
+							<!-- Display the transaction type as readonly text -->
+							<input
 								id="transaction-type"
-								class="select select-bordered w-full"
-								bind:value={transaction_type_id}
-								required
-							>
-								<option value="" disabled selected
-									>{$t('transactions.select-transaction-type')}</option
-								>
-								{#each transactionTypes as type}
-									<option value={type.id}>{$t('transaction-types.' + type.type_slug)}</option>
-								{/each}
-							</select>
+								type="text"
+								class="input input-bordered w-full"
+								value={$t('transaction-types.' + selectedTransactionType?.type_slug)}
+								readonly
+							/>
 						</div>
 
 						<!-- Category Field -->
@@ -277,6 +274,14 @@
 				</div>
 
 				<div class="mt-4 flex gap-4">
+					<!-- Date Field -->
+					<div class="form-control flex-1">
+						<label class="label" for="date">
+							<span class="label-text">{$t('transactions.date')}</span>
+						</label>
+						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
+					</div>
+
 					<!-- Amount Field -->
 					<div class="form-control flex-1">
 						<label class="label" for="amount">
@@ -294,14 +299,6 @@
 							max="999999999"
 							required
 						/>
-					</div>
-
-					<!-- Date Field -->
-					<div class="form-control flex-1">
-						<label class="label" for="date">
-							<span class="label-text">{$t('transactions.date')}</span>
-						</label>
-						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
 					</div>
 				</div>
 				<!-- Form Actions -->

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
-	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
@@ -58,7 +57,7 @@ func scanTransactionDTO(rows *sql.Rows) (*types.TransactionDTO, error) {
 	return t, nil
 }
 
-func (s *Store) CreateTransaction(transaction *types.Transaction) error {
+func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) error {
 	catStore := category.NewStore(s.db)
 	category, err := catStore.GetCategoryById(transaction.CategoryId)
 	if err != nil {
@@ -75,10 +74,15 @@ func (s *Store) CreateTransaction(transaction *types.Transaction) error {
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
+	// check if the user is the owner of the account
+	if err := db.ValidateOwnership(account.UserID, account.UserID, "account"); err != nil {
+		return err
+	}
+
 	// category transaction type id == 1 means credit
 	// if category.TransactionTypeID == 2 means debit
 	amount := transaction.Amount
-	if category.TransactionTypeID == 2 {
+	if category.TransactionTypeID == (int)(types.DebitTransactionType) {
 		amount = amount * -1
 	}
 	newBalance := account.Balance + amount
@@ -152,7 +156,7 @@ func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
 	return db.QuerySingle(s.db, query, scanTransactionRow, id)
 }
 
-func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload) error {
+func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, userId int) error {
 	// get the current transaction before the update
 	tx, err := s.GetTransactionById(transaction.ID)
 	if err != nil {
@@ -165,60 +169,63 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload) e
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
+	// check if the user is the owner of the account
+	if err := db.ValidateOwnership(account.UserID, account.UserID, "account"); err != nil {
+		return err
+	}
+
 	// there are a lot of things that can happen here
 	// most simple case: from credit to credit. if it was 100 and now is 130, we add 30 to the balance
 	// if it was debit to debit, if it was 100 and now is 70, we add 30 to the balance
 	// if it was credit to debit, if it was 100 and now is 70, we subtract 30 from the balance
 	// if it was debit to credit, if it was 100 and now is 130, we subtract 30 from the balance
 
+	// For now, we cannot change the transaction type. If it is debit, it will remain a debit.
+	// We only need to calculate the difference in amount and update the balance accordingly.
+
 	// get the current category
 	catStore := category.NewStore(s.db)
 	currentCategory, err := catStore.GetCategoryById(tx.CategoryId)
 	if err != nil {
-		return fmt.Errorf("failed to get category: %w", err)
+		return fmt.Errorf("failed to get previous category: %w", err)
 	}
 
-	// get the new category
 	newCategory, err := catStore.GetCategoryById(transaction.CategoryID)
 	if err != nil {
-		return fmt.Errorf("failed to get category: %w", err)
+		return fmt.Errorf("failed to get new category: %w", err)
 	}
 
 	// get the current balance
 	currentBalance := account.Balance
 
 	// get the new balance
-	amount := transaction.Amount
+
+	// So for a credit, if the user had 200 registered and now is 300, we add 100 to the balance
+	// If the user has 200 registered and now is 100, we subtract 100 from the balance
+	// For a debit, if the user had 200 registered and now is 100, we add 100 to the balance
+	// If the user has 200 registered and now is 300, we subtract 100
+	// Having in mind, in the database, the amount is always positive
+	// Get the current transaction amount (positive for both credit and debit)
+	currentAmount := tx.Amount
 	if currentCategory.TransactionTypeID == (int)(types.DebitTransactionType) {
-		amount = amount * -1
-	}
-	amountDifference := amount - tx.Amount
-	var newBalance float64 = currentBalance
-
-	// Helper function to check transaction type
-	isTransactionType := func(categoryTypeID int, expectedType types.TransactionTypeID) bool {
-		return categoryTypeID == int(expectedType)
+		currentAmount = currentAmount * -1 // Negate for debit
 	}
 
-	// Both transactions are of the same type (both credit or both debit)
-	if isTransactionType(currentCategory.TransactionTypeID, types.CreditTransactionType) ==
-		isTransactionType(newCategory.TransactionTypeID, types.CreditTransactionType) {
-		newBalance = currentBalance + amountDifference
-	} else {
-		// Transaction types are different (switching between credit and debit)
-		newBalance = currentBalance - amountDifference
+	// Get the new transaction amount (positive for both credit and debit)
+	newAmount := transaction.Amount
+	if newCategory.TransactionTypeID == (int)(types.DebitTransactionType) {
+		newAmount = newAmount * -1 // Negate for debit
 	}
 
-	parsedDate, err := time.Parse(time.RFC3339, transaction.Date)
-	if err != nil {
-		return fmt.Errorf("failed to parse date: %w", err)
-	}
+	// Calculate the new balance
+	amountDifference := newAmount - currentAmount
+	newBalance := currentBalance + amountDifference
 
 	err = db.ExecWithValidation(s.db, "UPDATE transactions SET amount = ?, category_id = ?, description = ?, date = ? WHERE id = ?",
 		transaction.Amount,
 		transaction.CategoryID,
 		transaction.Description,
-		parsedDate.Format("2006-01-02"),
+		transaction.Date,
 		transaction.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update transaction: %w", err)
