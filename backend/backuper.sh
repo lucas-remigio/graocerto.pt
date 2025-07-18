@@ -2,7 +2,7 @@
 export PATH="/opt/homebrew/bin:$PATH"
 
 # Remote MySQL credentials
-REMOTE_HOST="lucas-remigio-dev.pt"  
+REMOTE_HOST="graocerto.pt"  
 REMOTE_PORT=""                 
 REMOTE_USER=""
 REMOTE_PASS=""
