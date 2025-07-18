@@ -17,6 +17,14 @@ class ThemeService {
 		return ThemeService.instance;
 	}
 
+	public updateThemeColor(theme: 'light' | 'dark') {
+		const themeColorMetaTag = document.querySelector('meta[name="theme-color"]');
+		if (themeColorMetaTag) {
+			const themeColor = theme === 'dark' ? '#4F99FF' : '#006FF9'; // Adjust colors as needed
+			themeColorMetaTag.setAttribute('content', themeColor);
+		}
+	}
+
 	private initialize() {
 		if (this.initialized || typeof window === 'undefined') return;
 

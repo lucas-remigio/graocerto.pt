@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { isAuthenticated } from './stores/auth';
 	import UserMenu from './UserMenu.svelte';
+	import { themeService } from './services/themeService';
 
 	let isDropdownOpen = false;
 	let categoriesUrl = '/categories';
@@ -45,6 +46,7 @@
 	function applyTheme(newTheme: string) {
 		document.documentElement.setAttribute('data-theme', newTheme);
 		document.documentElement.classList.toggle('dark', newTheme === 'dark');
+		themeService.updateThemeColor(newTheme as 'light' | 'dark');
 	}
 
 	function handleNavigation(url: string) {
