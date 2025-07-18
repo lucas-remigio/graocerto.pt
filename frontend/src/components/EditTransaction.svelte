@@ -202,14 +202,19 @@
 							<label class="label" for="transaction-type">
 								<span class="label-text">{$t('transactions.transaction-type')}</span>
 							</label>
-							<!-- Display the transaction type as readonly text -->
-							<input
+							<select
 								id="transaction-type"
-								type="text"
-								class="input input-bordered w-full"
-								value={$t('transaction-types.' + selectedTransactionType?.type_slug)}
-								readonly
-							/>
+								class="select select-bordered w-full"
+								bind:value={transaction_type_id}
+								required
+							>
+								<option value="" disabled selected
+									>{$t('transactions.select-transaction-type')}</option
+								>
+								{#each transactionTypes as type}
+									<option value={type.id}>{$t('transaction-types.' + type.type_slug)}</option>
+								{/each}
+							</select>
 						</div>
 
 						<!-- Category Field -->
