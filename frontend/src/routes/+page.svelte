@@ -30,30 +30,90 @@
 			</div>
 		</div>
 
-		<div class=" grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:w-1/2">
-			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-center text-xl font-bold">
-					{$t('landing.accounts-title')}
-				</h2>
-				<p class="text-base-content/70 text-center">{$t('landing.accounts-desc')}</p>
+		<div class="grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:w-1/2">
+			<!-- Card 1: Accounts -->
+			<div class="bg-base-200 rounded-xl shadow">
+				<!-- Desktop: Always show full content -->
+				<div class="hidden flex-col items-center p-6 lg:flex">
+					<h2 class="text-primary mb-2 text-center text-xl font-bold">
+						{$t('landing.accounts-title')}
+					</h2>
+					<p class="text-base-content/70 text-center">{$t('landing.accounts-desc')}</p>
+				</div>
+
+				<!-- Mobile: DaisyUI Accordion -->
+				<div tabindex="-1" class="collapse-arrow bg-base-200 collapse lg:hidden">
+					<div class="collapse-title text-primary font-bold">
+						{$t('landing.accounts-title')}
+					</div>
+					<div class="collapse-content">
+						<p class="text-base-content/70">{$t('landing.accounts-desc')}</p>
+					</div>
+				</div>
 			</div>
-			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-center text-xl font-bold">
-					{$t('landing.analytics-title')}
-				</h2>
-				<p class="text-base-content/70 text-center">{$t('landing.analytics-desc')}</p>
+
+			<!-- Card 2: Analytics -->
+			<div class="bg-base-200 rounded-xl shadow">
+				<!-- Desktop: Always show full content -->
+				<div class="hidden flex-col items-center p-6 lg:flex">
+					<h2 class="text-primary mb-2 text-center text-xl font-bold">
+						{$t('landing.analytics-title')}
+					</h2>
+					<p class="text-base-content/70 text-center">{$t('landing.analytics-desc')}</p>
+				</div>
+
+				<!-- Mobile: DaisyUI Accordion -->
+				<div tabindex="-2" class="collapse-arrow bg-base-200 collapse lg:hidden">
+					<div class="collapse-title text-primary font-bold">
+						{$t('landing.analytics-title')}
+					</div>
+					<div class="collapse-content">
+						<p class="text-base-content/70">{$t('landing.analytics-desc')}</p>
+					</div>
+				</div>
 			</div>
-			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-center text-xl font-bold">
-					{$t('landing.privacy-title')}
-				</h2>
-				<p class="text-base-content/70 text-center">{$t('landing.privacy-desc')}</p>
+
+			<!-- Card 3: Privacy -->
+			<div class="bg-base-200 rounded-xl shadow">
+				<!-- Desktop: Always show full content -->
+				<div class="hidden flex-col items-center p-6 lg:flex">
+					<h2 class="text-primary mb-2 text-center text-xl font-bold">
+						{$t('landing.privacy-title')}
+					</h2>
+					<p class="text-base-content/70 text-center">{$t('landing.privacy-desc')}</p>
+				</div>
+
+				<!-- Mobile: DaisyUI Accordion -->
+				<div tabindex="-3" class="collapse-arrow bg-base-200 collapse lg:hidden">
+					<div class="collapse-title text-primary font-bold">
+						{$t('landing.privacy-title')}
+					</div>
+					<div class="collapse-content">
+						<p class="text-base-content/70">{$t('landing.privacy-desc')}</p>
+					</div>
+				</div>
 			</div>
-			<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
-				<h2 class="text-primary mb-2 text-center text-xl font-bold">
-					{$t('landing.intuitive-title')}
-				</h2>
-				<p class="text-base-content/70 text-center">{$t('landing.intuitive-desc')}</p>
+
+			<!-- Card 4: Intuitive -->
+			<div class="bg-base-200 rounded-xl shadow">
+				<!-- Desktop: Always show full content -->
+				<div class="hidden flex-col items-center p-6 lg:flex">
+					<h2 class="text-primary mb-2 text-center text-xl font-bold">
+						{$t('landing.intuitive-title')}
+					</h2>
+					<p class="text-base-content/70 text-center">{$t('landing.intuitive-desc')}</p>
+				</div>
+
+				<!-- Mobile: DaisyUI Accordion -->
+				<div tabindex="-4" class="collapse-arrow bg-base-200 collapse lg:hidden">
+					<input type="radio" name="landing-accordion" />
+					<div class="collapse-title text-primary font-bold">
+						{$t('landing.intuitive-title')}
+					</div>
+					<div class="collapse-content">
+						<p class="text-base-content/70">{$t('landing.intuitive-desc')}</p>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
