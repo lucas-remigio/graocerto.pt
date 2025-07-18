@@ -13,6 +13,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { getDraftTransaction } from '$lib/services/draftTransactionService';
+	import { TransactionTypes } from '$lib/transaction_types_types';
 
 	// Input account
 	export let account: Account;
@@ -56,6 +57,9 @@
 	let amount: number = draftTransaction?.amount || 0;
 	let description = draftTransaction?.description || '';
 	let date = draftTransaction?.date || new Date().toISOString().split('T')[0]; // expects format "YYYY-MM-DD" from the date input
+
+	const firstTransactionType = TransactionTypes.length > 0 ? TransactionTypes[0] : null;
+	transaction_type_id = draftTransaction?.transaction_type_id || firstTransactionType?.id || 1;
 
 	// Create event dispatcher (to emit events to the parent)
 	const dispatch = createEventDispatcher();
@@ -136,6 +140,7 @@
 			category_id: Number(category_id),
 			amount,
 			description,
+			transaction_type_id,
 			date: date || new Date().toISOString().split('T')[0] // Default to today if no date
 		};
 

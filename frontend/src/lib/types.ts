@@ -39,6 +39,7 @@ export interface Transaction {
 	amount: number;
 	description: string;
 	date: string;
+	transaction_type_id: number; // Foreign key to TransactionType
 	category_id: number; // Foreign key to Category
 }
 
