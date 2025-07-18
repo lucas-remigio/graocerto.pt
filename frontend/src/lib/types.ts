@@ -33,6 +33,15 @@ export interface TransactionDto {
 	created_at: string;
 	category: CategoryDto;
 }
+
+export interface Transaction {
+	account_token: string;
+	amount: number;
+	description: string;
+	date: string;
+	category_id: number; // Foreign key to Category
+}
+
 export interface TransactionsTotals {
 	debit: number;
 	credit: number;

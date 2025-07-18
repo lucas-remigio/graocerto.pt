@@ -5,7 +5,8 @@
 		CategoryDto,
 		TransactionDto,
 		TransactionsTotals,
-		TransactionGroup
+		TransactionGroup,
+		Transaction
 	} from '$lib/types';
 	import { Bot, CircleDollarSign, List, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
@@ -16,6 +17,10 @@
 	import AiFeedback from './AiFeedback.svelte';
 	import { t } from '$lib/i18n';
 	import { format, locale } from 'svelte-i18n';
+	import {
+		setDraftTransaction,
+		setDraftTransactionAccountToken
+	} from '$lib/services/draftTransactionService';
 
 	// Export props for transactions array and the account name.
 	export let transactionsGroups: TransactionGroup[] = [];
@@ -23,6 +28,11 @@
 	export let account: Account;
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
 	export let loading: boolean = false;
+
+	// clean the draft transaction when the account changes
+	$: if (account) {
+		setDraftTransactionAccountToken(account.token);
+	}
 
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
@@ -92,7 +102,10 @@
 		showCreateTransactionModal = true;
 	}
 
-	function closeCreateTransactionModal() {
+	function closeCreateTransactionModal(event?: CustomEvent) {
+		if (event?.detail) {
+			setDraftTransaction(event.detail.transaction);
+		}
 		showCreateTransactionModal = false;
 	}
 
