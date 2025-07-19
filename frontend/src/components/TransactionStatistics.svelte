@@ -39,7 +39,7 @@
 {:else}
 	<!-- Compact Statistics Summary -->
 	<div class="bg-base-100">
-		<div class="pt-2LLL p-6">
+		<div class="p-6 pt-2">
 			<!-- Main Statistics Row -->
 			<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
 				<!-- Total Transactions -->
@@ -126,16 +126,6 @@
 		</div>
 	</div>
 
-	<div class="mt-6 px-20">
-		<TransactionsHeatmap
-			dailyTransactions={statistics.daily_totals}
-			startDate={statistics.start_date}
-			endDate={statistics.end_date}
-			largestDebit={statistics.largest_debit}
-			largestCredit={statistics.largest_credit}
-		/>
-	</div>
-
 	<!-- Category Breakdowns with Pie Charts -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		<!-- Credit Categories -->
@@ -157,5 +147,15 @@
 				<PieChartComponent data={statistics.debit_category_breakdown} isCredit={false} />
 			</div>
 		</div>
+	</div>
+
+	<div class="my-6 mx-4">
+		<TransactionsHeatmap
+			dailyTransactions={statistics.daily_totals}
+			startDate={statistics.start_date}
+			endDate={statistics.end_date}
+			largestDebit={statistics.largest_debit}
+			largestCredit={statistics.largest_credit}
+		/>
 	</div>
 {/if}

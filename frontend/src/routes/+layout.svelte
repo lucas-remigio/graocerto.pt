@@ -112,10 +112,9 @@
 </script>
 
 {#if !appReady}
-	<div class="flex h-screen items-center justify-center">
+	<div class="bg-neutral flex h-screen items-center justify-center">
 		<div class="text-center">
-			<span class="loading loading-spinner loading-lg"></span>
-			<p class="ml-4">Loading application...</p>
+			<span class="loading loading-spinner loading-lg text-primary"></span>
 		</div>
 	</div>
 {:else}

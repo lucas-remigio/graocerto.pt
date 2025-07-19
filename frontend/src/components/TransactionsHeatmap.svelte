@@ -1,28 +1,43 @@
 <script lang="ts">
+	// Import types and Svelte utilities
 	import type { DailyTotals } from '$lib/types';
 	import { onMount } from 'svelte';
 	import { locale, t } from 'svelte-i18n';
 
+	// Props received from parent component
 	export let dailyTransactions: DailyTotals[] = [];
 	export let startDate: string;
 	export let endDate: string;
 	export let largestDebit: number = 0;
 	export let largestCredit: number = 0;
 
+	// Today's date in YYYY-MM-DD format
+	let today: string = new Date().toISOString().split('T')[0];
+
+	// Array of all days to display in the heatmap
 	let days: string[] = [];
 
+	// Current locale for date formatting
 	$: currentLocale = $locale || 'pt';
 
+	// Format a day string to a localized date string
 	function formatDay(day: string): string {
+		// input is a day in the format YYYY-MM-DD
 		if (!day) return '';
 		const date = new Date(day);
+		// should return the day in the format dd-mm if portuguese or mm-dd if english, so depending on the locale
 		return date.toLocaleDateString(currentLocale, {
-			year: 'numeric',
 			month: 'short',
 			day: 'numeric'
 		});
 	}
 
+	// Check if a given day is today
+	function isToday(day: string): boolean {
+		return day === today;
+	}
+
+	// Generate an array of day strings from start to end date (inclusive)
 	function generateDays(start: string, end: string) {
 		const startDate = new Date(start);
 		const endDate = new Date(end);
@@ -33,17 +48,19 @@
 		return days;
 	}
 
+	// Map of date string to transaction total for quick lookup
 	let transactionMap: { [key: string]: number } = {};
 	$: transactionMap = dailyTransactions.reduce((map: { [key: string]: number }, tx) => {
 		map[tx.date] = tx.total;
 		return map;
 	}, {});
 
+	// Generate the days array when the component mounts
 	onMount(() => {
 		days = generateDays(startDate, endDate);
 	});
 
-	// Group days by week (array of arrays)
+	// Group days into weeks for table display
 	let weeks: string[][] = [];
 	$: {
 		weeks = [];
@@ -69,6 +86,58 @@
 		}
 	}
 
+	// Get the month key (YYYY-MM) from a date string
+	function getMonthKey(day: string): string {
+		return day.slice(0, 7); // "YYYY-MM"
+	}
+
+	// Group days by month for multi-month display
+	let months: Record<string, string[]> = {};
+	$: {
+		months = {};
+		if (days.length) {
+			for (const day of days) {
+				if (!day) continue;
+				const monthKey = getMonthKey(day);
+				if (!months[monthKey]) months[monthKey] = [];
+				months[monthKey].push(day);
+			}
+		}
+	}
+
+	// Helper to group days into weeks for each month
+	function groupWeeks(days: string[]) {
+		const weeks: string[][] = [];
+		let week: string[] = [];
+		for (let i = 0; i < days.length; i++) {
+			const dayOfWeek = new Date(days[i]).getDay();
+			if (week.length === 0 && dayOfWeek !== 0) {
+				for (let j = 0; j < dayOfWeek; j++) week.push('');
+			}
+			week.push(days[i]);
+			if (week.length === 7) {
+				weeks.push(week);
+				week = [];
+			}
+		}
+		if (week.length) {
+			while (week.length < 7) week.push('');
+			weeks.push(week);
+		}
+		return weeks;
+	}
+
+	// Format a month key (YYYY-MM) to a localized month/year string
+	function formatMonthYear(yearMonth: string): string {
+		const [year, month] = yearMonth.split('-').map(Number);
+		const date = new Date(year, month - 1, 1);
+		return date.toLocaleDateString(currentLocale, {
+			month: 'long',
+			year: 'numeric'
+		});
+	}
+
+	// Tailwind CSS classes for green and red backgrounds (for credits/debits)
 	const greenClasses = [
 		'bg-green-100',
 		'bg-green-200',
@@ -92,6 +161,7 @@
 		'bg-red-900'
 	];
 
+	// Get the color class for a transaction total, proportional to largest values
 	function getColor(total: number | undefined): string {
 		if (total === undefined) return 'bg-gray-200';
 		if (total > 0) {
@@ -106,26 +176,49 @@
 	}
 </script>
 
-<div class="flex w-full flex-col gap-2">
-	{#each weeks as week}
-		<div class="grid w-full grid-cols-7 gap-2">
-			{#each week as day}
-				{#if day}
-					<div
-						class="tooltip aspect-square h-6 w-6"
-						data-tip={`(${formatDay(day)})\n${transactionMap[day] ?? 0}€`}
-					>
-						<div class="heatmap-square h-full w-full rounded {getColor(transactionMap[day])}"></div>
-					</div>
-				{:else}
-					<div class="pointer-events-none aspect-square h-6 w-6 opacity-0"></div>
-				{/if}
-			{/each}
-		</div>
-	{/each}
-</div>
+<!-- Render each month that has at least one transaction -->
+{#each Object.entries(months) as [monthKey, monthDays]}
+	{#if monthDays.some((day) => transactionMap[day] !== undefined)}
+		<!-- Month label -->
+		<h3 class="mb-2 mt-4 font-semibold">{formatMonthYear(monthKey)}</h3>
+		<!-- Heatmap table for the month -->
+		<table class="w-full border-separate border-spacing-2 px-10">
+			<tbody>
+				<!-- Render each week as a table row -->
+				{#each groupWeeks(monthDays) as week}
+					<tr>
+						<!-- Render each day as a table cell -->
+						{#each week as day}
+							{#if day}
+								<!-- Cell with colored square and tooltip -->
+								<td class="text-center align-middle">
+									<div
+										class="tooltip mx-auto my-auto flex aspect-square h-6 w-6 items-center justify-center rounded {getColor(
+											transactionMap[day]
+										)} {isToday(day) ? 'border-primary border-2' : ''}"
+										data-tip={`📅 ${formatDay(day)} 💸 ${transactionMap[day] ?? 0} €`}
+									></div>
+								</td>
+							{:else}
+								<!-- Empty cell for days not in the current month -->
+								<td></td>
+							{/if}
+						{/each}
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+{/each}
 
 <style>
+	/* Ensures squares are always square and sized */
+	.aspect-square {
+		width: 1.5rem;
+		height: 1.5rem;
+		display: inline-block;
+	}
+	/* Transition effect for heatmap squares on hover */
 	.heatmap-square {
 		transition: transform 0.2s ease-in-out;
 	}

@@ -505,15 +505,30 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	stats.CreditCategoryBreakdown = s.processCategoryBreakdown(creditCategoryMap, totals.Credit)
 	stats.DebitCategoryBreakdown = s.processCategoryBreakdown(debitCategoryMap, totals.Debit)
 
-	stats.StartDate, stats.EndDate = getMonthDateRange(*month, *year)
+	if month != nil && year != nil {
+		stats.StartDate, stats.EndDate = getMonthDateRange(month, year)
+	} else if len(stats.DailyTotals) > 0 {
+		// Find min and max dates from daily totals
+		minDate := stats.DailyTotals[0].Date
+		for _, dt := range stats.DailyTotals {
+			if dt.Date < minDate {
+				minDate = dt.Date
+			}
+		}
+		stats.StartDate = minDate
+		stats.EndDate = time.Now().Format("2006-01-02")
+	} else {
+		stats.StartDate = ""
+		stats.EndDate = ""
+	}
 
 	return stats, nil
 }
 
 // Returns start and end date (YYYY-MM-DD) for a given month/year
-func getMonthDateRange(month, year int) (startDate, endDate string) {
+func getMonthDateRange(month, year *int) (startDate, endDate string) {
 	loc := time.UTC
-	start := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, loc)
+	start := time.Date(*year, time.Month(*month), 1, 0, 0, 0, 0, loc)
 	end := start.AddDate(0, 1, -1)
 	return start.Format("2006-01-02"), end.Format("2006-01-02")
 }
