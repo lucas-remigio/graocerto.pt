@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { DailyTotals } from '$lib/types';
 	import { onMount } from 'svelte';
+	import { locale, t } from 'svelte-i18n';
 
 	export let dailyTransactions: DailyTotals[] = [];
 	export let startDate: string;
@@ -9,6 +10,18 @@
 	export let largestCredit: number = 0;
 
 	let days: string[] = [];
+
+	$: currentLocale = $locale || 'pt';
+
+	function formatDay(day: string): string {
+		if (!day) return '';
+		const date = new Date(day);
+		return date.toLocaleDateString(currentLocale, {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric'
+		});
+	}
 
 	function generateDays(start: string, end: string) {
 		const startDate = new Date(start);
@@ -93,15 +106,20 @@
 	}
 </script>
 
-<div class="inline-flex w-full flex-col gap-2">
+<div class="flex w-full flex-col gap-2">
 	{#each weeks as week}
-		<div class="flex gap-2">
+		<div class="grid w-full grid-cols-7 gap-2">
 			{#each week as day}
-				<div class="tooltip" data-tip={day ? `${transactionMap[day] ?? 0}€` : ''}>
+				{#if day}
 					<div
-						class="heatmap-square aspect-square w-[32px] rounded {getColor(transactionMap[day])}"
-					></div>
-				</div>
+						class="tooltip aspect-square h-6 w-6"
+						data-tip={`(${formatDay(day)})\n${transactionMap[day] ?? 0}€`}
+					>
+						<div class="heatmap-square h-full w-full rounded {getColor(transactionMap[day])}"></div>
+					</div>
+				{:else}
+					<div class="pointer-events-none aspect-square h-6 w-6 opacity-0"></div>
+				{/if}
 			{/each}
 		</div>
 	{/each}

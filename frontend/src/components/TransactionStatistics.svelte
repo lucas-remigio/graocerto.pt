@@ -126,8 +126,7 @@
 		</div>
 	</div>
 
-	<div class="mt-6">
-		<h3 class="mb-4 text-lg font-semibold">Daily Transactions Heatmap</h3>
+	<div class="mt-6 px-20">
 		<TransactionsHeatmap
 			dailyTransactions={statistics.daily_totals}
 			startDate={statistics.start_date}

@@ -24,11 +24,11 @@ export function setupI18n() {
 	if (initialized) return;
 
 	const initialLocale = browser
-		? localStorage.getItem('preferred-language') || getLocaleFromNavigator() || 'en'
-		: 'en';
+		? localStorage.getItem('preferred-language') || getLocaleFromNavigator() || 'pt'
+		: 'pt';
 
 	init({
-		fallbackLocale: 'en',
+		fallbackLocale: 'pt',
 		initialLocale,
 		loadingDelay: 100 // Reduced for faster feedback in dev
 	});

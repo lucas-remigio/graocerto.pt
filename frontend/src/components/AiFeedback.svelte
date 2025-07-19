@@ -66,7 +66,7 @@
 		closeModal();
 	}
 
-	$: currentLocale = $locale || 'en-US';
+	$: currentLocale = $locale || 'pt';
 
 	onMount(() => {
 		getTransactionsAiFeedback();
