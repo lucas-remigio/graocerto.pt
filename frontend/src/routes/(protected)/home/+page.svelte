@@ -48,7 +48,7 @@
 
 			// Check if it's an update notification
 			if (latestMsg.type === 'account_update') {
-				fetchAccounts(); // Refresh data
+				fetchAccounts(false); // Refresh data
 			}
 		}
 	});
