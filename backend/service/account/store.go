@@ -57,21 +57,21 @@ func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 		scanRowsIntoAccount, userId)
 }
 
-func (s *Store) GetAccountByToken(token string) (*types.Account, error) {
+func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, error) {
 	return db.QuerySingle(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE token = ?",
-		scanRowIntoAccount, token)
+		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE token = ? AND user_id = ?",
+		scanRowIntoAccount, token, userId)
 }
 
-func (s *Store) GetAccountById(id int) (*types.Account, error) {
+func (s *Store) GetAccountById(id int, userId int) (*types.Account, error) {
 	return db.QuerySingle(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE id = ?",
-		scanRowIntoAccount, id)
+		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE id = ? AND user_id = ?",
+		scanRowIntoAccount, id, userId)
 }
 
-func (s *Store) UpdateAccount(account *types.Account) error {
+func (s *Store) UpdateAccount(account *types.Account, userId int) error {
 	// first get the current account so that we can check if the user is the owner of the account
-	currentAccount, err := s.GetAccountById(account.ID)
+	currentAccount, err := s.GetAccountById(account.ID, userId)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (s *Store) UpdateAccount(account *types.Account) error {
 func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*types.MonthlyFeedback, error) {
 
 	// check if the account belongs to the user
-	account, err := s.GetAccountByToken(accountToken)
+	account, err := s.GetAccountByToken(accountToken, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language str
 
 func (s *Store) DeleteAccount(token string, userId int) error {
 	// first get the account so that we can check if the user is the owner of the account
-	account, err := s.GetAccountByToken(token)
+	account, err := s.GetAccountByToken(token, userId)
 	if err != nil {
 		return err
 	}

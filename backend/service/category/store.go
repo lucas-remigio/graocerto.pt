@@ -29,10 +29,10 @@ func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
 		scanRowsIntoCategory, userId)
 }
 
-func (s *Store) GetCategoryById(id int) (*types.Category, error) {
+func (s *Store) GetCategoryById(id int, userId int) (*types.Category, error) {
 	return db.QuerySingle(s.db,
-		"SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at FROM categories WHERE id = ?",
-		scanRowIntoCategory, id)
+		"SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at FROM categories WHERE id = ? AND user_id = ?",
+		scanRowIntoCategory, id, userId)
 }
 
 func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
@@ -47,14 +47,14 @@ func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error)
 		scanRowIntoCategoryDto, userId)
 }
 
-func (s *Store) UpdateCategory(category *types.Category) error {
+func (s *Store) UpdateCategory(category *types.Category, userId int) error {
 	// get current category to check if incoming user is the same
-	currentCategory, err := s.GetCategoryById(category.ID)
+	currentCategory, err := s.GetCategoryById(category.ID, userId)
 	if err != nil {
 		return err
 	}
 
-	if err := db.ValidateOwnership(category.UserID, currentCategory.UserID, "category"); err != nil {
+	if err := db.ValidateOwnership(currentCategory.UserID, userId, "category"); err != nil {
 		return err
 	}
 
@@ -65,7 +65,7 @@ func (s *Store) UpdateCategory(category *types.Category) error {
 
 func (s *Store) DeleteCategory(id int, userId int) error {
 	// get current category to check if incoming user is the same
-	currentCategory, err := s.GetCategoryById(id)
+	currentCategory, err := s.GetCategoryById(id, userId)
 	if err != nil {
 		return err
 	}

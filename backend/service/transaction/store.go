@@ -60,7 +60,7 @@ func scanTransactionDTO(rows *sql.Rows) (*types.TransactionDTO, error) {
 
 func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) error {
 	catStore := category.NewStore(s.db)
-	category, err := catStore.GetCategoryById(transaction.CategoryId)
+	category, err := catStore.GetCategoryById(transaction.CategoryId, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get category: %w", err)
 	}
@@ -70,7 +70,7 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) er
 		return fmt.Errorf("transfers are not allowed here")
 	}
 
-	account, err := s.accountStore.GetAccountByToken(transaction.AccountToken)
+	account, err := s.accountStore.GetAccountByToken(transaction.AccountToken, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get account: %w", err)
 	}
@@ -165,13 +165,13 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	}
 
 	// get the account
-	account, err := s.accountStore.GetAccountByToken(tx.AccountToken)
+	account, err := s.accountStore.GetAccountByToken(tx.AccountToken, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
 	// check if the user is the owner of the account
-	if err := db.ValidateOwnership(account.UserID, account.UserID, "account"); err != nil {
+	if err := db.ValidateOwnership(account.UserID, userId, "account"); err != nil {
 		return err
 	}
 
@@ -186,12 +186,12 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 
 	// get the current category
 	catStore := category.NewStore(s.db)
-	currentCategory, err := catStore.GetCategoryById(tx.CategoryId)
+	currentCategory, err := catStore.GetCategoryById(tx.CategoryId, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get previous category: %w", err)
 	}
 
-	newCategory, err := catStore.GetCategoryById(transaction.CategoryID)
+	newCategory, err := catStore.GetCategoryById(transaction.CategoryID, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get new category: %w", err)
 	}
@@ -249,7 +249,7 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) error {
 	}
 
 	// get the account
-	account, err := s.accountStore.GetAccountByToken(tx.AccountToken)
+	account, err := s.accountStore.GetAccountByToken(tx.AccountToken, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get account: %w", err)
 	}
@@ -261,7 +261,7 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) error {
 
 	// get the transaction category
 	catStore := category.NewStore(s.db)
-	category, err := catStore.GetCategoryById(tx.CategoryId)
+	category, err := catStore.GetCategoryById(tx.CategoryId, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get category: %w", err)
 	}

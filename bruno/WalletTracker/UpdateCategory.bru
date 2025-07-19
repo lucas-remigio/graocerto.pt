@@ -1,0 +1,22 @@
+meta {
+  name: UpdateCategory
+  type: http
+  seq: 13
+}
+
+put {
+  url: http://localhost:3001/api/v1/categories/5
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "category_name": "Salario\u0021",
+    "color": "#50b135"
+  }
+}

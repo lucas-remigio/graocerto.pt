@@ -127,7 +127,7 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		UserID:       userId,
 		CategoryName: payload.CategoryName,
 		Color:        payload.Color,
-	})
+	}, userId)
 
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)

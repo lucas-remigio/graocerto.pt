@@ -105,7 +105,7 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 		UserID:      userId,
 		AccountName: payload.AccountName,
 		Balance:     *payload.Balance,
-	})
+	}, userId)
 
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)

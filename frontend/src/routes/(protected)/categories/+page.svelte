@@ -17,12 +17,12 @@
 	let deleteError: string = '';
 	let loading: boolean = true;
 
-	async function fetchCategories() {
-		loading = true;
+	async function fetchCategories(showLoading: boolean) {
+		loading = showLoading;
 		try {
+			const categories = await dataService.fetchCategories();
 			creditCategories = [];
 			debitCategories = [];
-			const categories = await dataService.fetchCategories();
 
 			// Use the grouped categories directly instead of filtering
 			categories.forEach((c) => {
@@ -48,7 +48,7 @@
 	async function deleteCategory(categoryId: number) {
 		try {
 			await dataService.deleteCategory(categoryId);
-			fetchCategories();
+			fetchCategories(false);
 		} catch (err: any) {
 			console.error('Error in deleteCategory:', err);
 			const error = err.message || 'Unknown error';
@@ -62,7 +62,7 @@
 	) {
 		try {
 			await dataService.editCategory(categoryId, categoryData);
-			fetchCategories();
+			fetchCategories(false);
 		} catch (err: any) {
 			console.error('Error in editCategory:', err);
 			const error = err.message || 'Unknown error';
@@ -96,7 +96,7 @@
 	function handleCreateCategorySuccess() {
 		// Clear category caches and refetch
 		dataService.clearCategoryCaches();
-		fetchCategories();
+		fetchCategories(false);
 		closeCreateCategoryModal();
 	}
 
@@ -115,7 +115,7 @@
 	}
 
 	onMount(async () => {
-		fetchCategories();
+		fetchCategories(true);
 	});
 </script>
 

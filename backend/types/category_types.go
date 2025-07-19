@@ -4,8 +4,8 @@ type CategoryStore interface {
 	GetCategoriesByUserId(userId int) ([]*Category, error)
 	CreateCategory(category *Category) error
 	GetCategoryDtoByUserId(userId int) ([]*CategoryDTO, error)
-	GetCategoryById(id int) (*Category, error)
-	UpdateCategory(category *Category) error
+	GetCategoryById(id int, userId int) (*Category, error)
+	UpdateCategory(category *Category, userId int) error
 	DeleteCategory(id int, userId int) error
 }
 
