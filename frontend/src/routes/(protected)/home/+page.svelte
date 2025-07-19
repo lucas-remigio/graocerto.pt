@@ -122,7 +122,7 @@
 	async function deleteAccount(account: Account) {
 		try {
 			await dataService.deleteAccount(account.token);
-			await fetchAccounts();
+			await fetchAccounts(false);
 		} catch (err) {
 			console.error('Error deleting account:', err);
 			error = $t('errors.failed-create-account');
@@ -132,7 +132,7 @@
 	async function deleteTransaction(transaction: TransactionDto) {
 		try {
 			await dataService.deleteTransaction(transaction);
-			await fetchAccounts();
+			await fetchAccounts(false);
 		} catch (err) {
 			console.error('Error deleting transaction:', err);
 			error = $t('errors.failed-create-account');
@@ -140,8 +140,8 @@
 	}
 
 	// Function to fetch accounts and then fetch transactions for the first account
-	async function fetchAccounts() {
-		accountsLoading = true;
+	async function fetchAccounts(showLoading: boolean) {
+		accountsLoading = showLoading;
 		try {
 			accounts = await dataService.fetchAccounts();
 
@@ -149,7 +149,12 @@
 			if (accounts && accounts.length > 0) {
 				getSelectedAccount();
 				getSelectedView();
-				await fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
+				await fetchAccountTransactions(
+					selectedAccount.token,
+					selectedMonth,
+					selectedYear,
+					showLoading
+				);
 			}
 		} catch (err) {
 			console.error('Error in fetchAccounts:', err);
@@ -163,16 +168,17 @@
 	async function fetchAccountTransactions(
 		accountToken: string,
 		month: number | null,
-		year: number | null
+		year: number | null,
+		showLoading: boolean
 	) {
 		try {
 			const promises = [fetchAvailableMonths(accountToken)];
 
 			// If current view is statistics, also fetch statistics
 			if (currentView === 'statistics') {
-				promises.push(fetchStatistics(accountToken, month, year));
+				promises.push(fetchStatistics(accountToken, month, year, showLoading));
 			} else {
-				promises.push(fetchTransactions(accountToken, month, year));
+				promises.push(fetchTransactions(accountToken, month, year, showLoading));
 			}
 
 			await Promise.all(promises);
@@ -185,9 +191,10 @@
 	async function fetchTransactions(
 		accountToken: string,
 		month: number | null,
-		year: number | null
+		year: number | null,
+		showLoading: boolean
 	) {
-		transactionsLoading = true;
+		transactionsLoading = showLoading;
 		try {
 			const result = await dataService.fetchTransactions(accountToken, month, year);
 			transactionGroups = result.transactionGroups;
@@ -219,8 +226,13 @@
 	}
 
 	// Function to fetch statistics for a given account token and month/year
-	async function fetchStatistics(accountToken: string, month: number | null, year: number | null) {
-		statisticsLoading = true;
+	async function fetchStatistics(
+		accountToken: string,
+		month: number | null,
+		year: number | null,
+		showLoading: boolean
+	) {
+		statisticsLoading = showLoading;
 		statisticsError = '';
 
 		try {
@@ -250,7 +262,7 @@
 		selectedYear = currentYear;
 		currentView = 'transactions'; // Reset to transactions view when switching accounts
 		localStorage.setItem('selectedView', currentView);
-		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear);
+		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 	}
 
 	function handleMonthSelect(month: number | null, year: number | null) {
@@ -260,10 +272,10 @@
 		// Fetch data based on current view
 		if (currentView === 'statistics') {
 			// Only fetch statistics when in statistics view
-			fetchStatistics(selectedAccount.token, month, year);
+			fetchStatistics(selectedAccount.token, month, year, true);
 		} else {
 			// Only fetch transactions when in transactions view
-			fetchTransactions(selectedAccount.token, month, year);
+			fetchTransactions(selectedAccount.token, month, year, true);
 		}
 	}
 
@@ -282,38 +294,38 @@
 		if (selectedAccount) {
 			if (currentView === 'statistics') {
 				// Switching to statistics view - fetch statistics
-				fetchStatistics(selectedAccount.token, selectedMonth, selectedYear);
+				fetchStatistics(selectedAccount.token, selectedMonth, selectedYear, true);
 			} else {
 				// Switching to transactions view - fetch transactions
-				fetchTransactions(selectedAccount.token, selectedMonth, selectedYear);
+				fetchTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 			}
 		}
 	}
 
 	function handleNewTransaction() {
 		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts();
+		fetchAccounts(false);
 
 		wsUpdateScreen();
 	}
 
 	function handleNewAccount() {
 		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts();
+		fetchAccounts(false);
 
 		wsUpdateScreen();
 	}
 
 	function handleUpdateTransaction() {
 		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts();
+		fetchAccounts(false);
 
 		wsUpdateScreen();
 	}
 
 	function handleUpdateAccount() {
 		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts();
+		fetchAccounts(false);
 
 		wsUpdateScreen();
 	}
@@ -345,7 +357,7 @@
 	}
 
 	onMount(async () => {
-		await fetchAccounts();
+		await fetchAccounts(true);
 
 		// Set up screen size tracking
 		updateScreenSize();
