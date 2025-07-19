@@ -4,6 +4,7 @@
 	import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import PieChartComponent from './CategoriesPieChart.svelte';
+	import TransactionsHeatmap from './TransactionsHeatmap.svelte';
 
 	export let selectedMonth: number | null;
 	export let selectedYear: number | null;
@@ -38,7 +39,7 @@
 {:else}
 	<!-- Compact Statistics Summary -->
 	<div class="bg-base-100">
-		<div class="p-6 pt-2LLL">
+		<div class="pt-2LLL p-6">
 			<!-- Main Statistics Row -->
 			<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
 				<!-- Total Transactions -->
@@ -123,6 +124,17 @@
 				</div>
 			</div>
 		</div>
+	</div>
+
+	<div class="mt-6">
+		<h3 class="mb-4 text-lg font-semibold">Daily Transactions Heatmap</h3>
+		<TransactionsHeatmap
+			dailyTransactions={statistics.daily_totals}
+			startDate={statistics.start_date}
+			endDate={statistics.end_date}
+			largestDebit={statistics.largest_debit}
+			largestCredit={statistics.largest_credit}
+		/>
 	</div>
 
 	<!-- Category Breakdowns with Pie Charts -->

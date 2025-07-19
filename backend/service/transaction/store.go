@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
@@ -360,24 +361,32 @@ func abs(x float64) float64 {
 }
 
 // Process transactions and calculate largest amounts
-func (s *Store) calculateLargestAmounts(transactions []*types.TransactionDTO) (largestCredit, largestDebit float64) {
+func (s *Store) calculateLargestAmountsAndDailyTotals(
+	transactions []*types.TransactionDTO,
+) (largestCredit, largestDebit float64, dailyTotals map[string]float64) {
+	dailyTotals = make(map[string]float64)
+
 	for _, tx := range transactions {
 		if tx.Category == nil {
 			continue
 		}
 
+		date := tx.Date.Format("2006-01-02")
+
 		switch tx.Category.TransactionType.ID {
 		case int(types.DebitTransactionType):
+			dailyTotals[date] -= tx.Amount
 			if absAmount := abs(tx.Amount); absAmount > largestDebit {
 				largestDebit = absAmount
 			}
 		case int(types.CreditTransactionType):
+			dailyTotals[date] += tx.Amount
 			if tx.Amount > largestCredit {
 				largestCredit = tx.Amount
 			}
 		}
 	}
-	return largestCredit, largestDebit
+	return largestCredit, largestDebit, dailyTotals
 }
 
 // Build category breakdown maps from transactions
@@ -478,7 +487,16 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	}
 
 	// Calculate largest amounts
-	stats.LargestCredit, stats.LargestDebit = s.calculateLargestAmounts(transactions)
+	var dailyTotals map[string]float64
+	stats.LargestCredit, stats.LargestDebit, dailyTotals = s.calculateLargestAmountsAndDailyTotals(transactions)
+
+	// Convert daily totals map to a slice
+	for date, total := range dailyTotals {
+		stats.DailyTotals = append(stats.DailyTotals, &types.DailyTotal{
+			Date:  date,
+			Total: total,
+		})
+	}
 
 	// Build category breakdowns
 	creditCategoryMap, debitCategoryMap := s.buildCategoryBreakdowns(transactions)
@@ -487,7 +505,17 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	stats.CreditCategoryBreakdown = s.processCategoryBreakdown(creditCategoryMap, totals.Credit)
 	stats.DebitCategoryBreakdown = s.processCategoryBreakdown(debitCategoryMap, totals.Debit)
 
+	stats.StartDate, stats.EndDate = getMonthDateRange(*month, *year)
+
 	return stats, nil
+}
+
+// Returns start and end date (YYYY-MM-DD) for a given month/year
+func getMonthDateRange(month, year int) (startDate, endDate string) {
+	loc := time.UTC
+	start := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, loc)
+	end := start.AddDate(0, 1, -1)
+	return start.Format("2006-01-02"), end.Format("2006-01-02")
 }
 
 func (s *Store) GetGroupedTransactionsDTOByAccountToken(accountToken string, month, year *int) (*types.GroupedTransactionsResponse, error) {

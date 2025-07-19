@@ -125,6 +125,11 @@ export interface CategoryStatistic {
 	color: string;
 }
 
+export interface DailyTotals {
+	date: string; // Format: YYYY-MM-DD
+	total: number;
+}
+
 export interface TransactionStatistics {
 	total_transactions: number;
 	largest_debit: number;
@@ -132,4 +137,7 @@ export interface TransactionStatistics {
 	credit_category_breakdown: CategoryStatistic[];
 	debit_category_breakdown: CategoryStatistic[];
 	totals: TransactionsTotals;
+	daily_totals: DailyTotals[];
+	start_date: string; // Format: YYYY-MM-DD
+	end_date: string; // Format: YYYY-MM-DD
 }

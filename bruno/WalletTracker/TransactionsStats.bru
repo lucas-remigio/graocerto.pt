@@ -5,12 +5,20 @@ meta {
 }
 
 get {
-  url: http://localhost:3001/api/v1/transactions/statistics/fb883458ee5746fa9e2ed2e5b78a914e
+  url: http://localhost:3001/api/v1/transactions/statistics/4693890b43074b16626934a453a11f51?month=7&year=2025
   body: none
-  auth: inherit
+  auth: bearer
+}
+
+params:query {
+  month: 7
+  year: 2025
 }
 
 headers {
   Accept: application/json, text/plain, */*
-  Authorization: Bearer {{token}}
+}
+
+auth:bearer {
+  token: {{token}}
 }

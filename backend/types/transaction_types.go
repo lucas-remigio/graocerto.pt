@@ -90,6 +90,11 @@ type CategoryStatistic struct {
 	Color      string  `json:"color"`
 }
 
+type DailyTotal struct {
+	Date  string  `json:"date"`
+	Total float64 `json:"total"`
+}
+
 type TransactionStatistics struct {
 	TotalTransactions       int                  `json:"total_transactions"`
 	LargestDebit            float64              `json:"largest_debit"`
@@ -97,4 +102,7 @@ type TransactionStatistics struct {
 	CreditCategoryBreakdown []*CategoryStatistic `json:"credit_category_breakdown"`
 	DebitCategoryBreakdown  []*CategoryStatistic `json:"debit_category_breakdown"`
 	Totals                  *TransactionTotals   `json:"totals"`
+	DailyTotals             []*DailyTotal        `json:"daily_totals"`
+	StartDate               string               `json:"start_date"` // Format: YYYY-MM-DD
+	EndDate                 string               `json:"end_date"`   // Format: YYYY-MM-DD
 }
