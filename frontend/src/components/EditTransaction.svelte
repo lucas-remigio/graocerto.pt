@@ -87,6 +87,7 @@
 
 	function isFormValid(): boolean {
 		// round the amount
+		amount = parseFloat(amount.toString().replace(',', '.'));
 		amount = Math.round(amount * 100) / 100;
 
 		// category must be from transaction type
@@ -113,8 +114,6 @@
 			error = $t('transactions.amount-too-large');
 			return false;
 		}
-
-		amount = parseFloat(amount.toString().replace(',', '.'));
 
 		if (!date) {
 			// default to today

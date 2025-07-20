@@ -39,7 +39,8 @@
 	}
 
 	function validateForm(): boolean {
-		// round the balance
+		// round and parse the balance
+		balance = parseFloat(balance.toString().replace(',', '.'));
 		balance = Math.round(balance * 100) / 100;
 
 		// validations
@@ -52,8 +53,6 @@
 			error = 'Balance must be less than 999999999';
 			return false;
 		}
-
-		balance = parseFloat(balance.toString().replace(',', '.'));
 
 		if (account_name.length < 3) {
 			error = 'Account name must be at least 3 characters';

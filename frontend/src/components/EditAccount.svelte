@@ -42,7 +42,8 @@
 	}
 
 	function validateForm(): boolean {
-		// round the balance
+		// round and parse the balance
+		balance = parseFloat(balance.toString().replace(',', '.'));
 		balance = Math.round(balance * 100) / 100;
 
 		// validations
@@ -55,8 +56,6 @@
 			error = $t('errors.balance-too-large');
 			return false;
 		}
-
-		balance = parseFloat(balance.toString().replace(',', '.'));
 
 		if (account_name.length < 3) {
 			error = $t('errors.account-name-too-short');
