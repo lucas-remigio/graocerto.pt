@@ -128,17 +128,29 @@
 				<label class="label" for="color">
 					<span class="label-text">{$t('categories.color')}</span>
 				</label>
-				<div class="flex items-center gap-4">
-					<!-- Native color input, visually hidden but accessible -->
-					<label class="cursor-pointer">
-						<input id="color" type="color" class="sr-only" bind:value={color} required />
-						<span
-							class="border-base-300 bg-base-100 inline-block h-10 w-10 rounded-full border-2 transition hover:scale-105"
-							style="background-color: {color};"
-						></span>
-					</label>
-					<!-- Hex value input -->
-					<span class="text-sm font-medium">{color}</span>
+				<div class="relative flex h-14 w-full items-center gap-4">
+					<!-- Color preview -->
+					<div
+						class="border-base-300 h-14 w-14 rounded-full border-2 shadow"
+						style="background-color: {color};"
+					></div>
+					<!-- Hex value -->
+					<input
+						type="text"
+						class="input input-bordered input-sm w-24 text-center"
+						value={color}
+						readonly
+						tabindex="-1"
+					/>
+					<!-- Full-size invisible color input -->
+					<input
+						id="color"
+						type="color"
+						class="absolute left-0 top-0 h-full w-full cursor-pointer opacity-0"
+						bind:value={color}
+						required
+						aria-label={$t('categories.color')}
+					/>
 				</div>
 			</div>
 
