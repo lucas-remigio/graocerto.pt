@@ -4,6 +4,7 @@
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
+	import { validateAccountForm } from '$lib/accountValidation';
 
 	export let account: Account;
 
@@ -17,7 +18,7 @@
 
 	async function handleSubmit() {
 		error = '';
-		if (!validateForm()) {
+		if (!isFormValid()) {
 			return;
 		}
 
@@ -41,32 +42,13 @@
 		}
 	}
 
-	function validateForm(): boolean {
-		// round and parse the balance
-		balance = parseFloat(balance.toString().replace(',', '.'));
-		balance = Math.round(balance * 100) / 100;
-
-		// validations
-		if (balance < 0) {
-			error = $t('errors.balance-negative');
+	function isFormValid(): boolean {
+		const result = validateAccountForm(balance, account_name, $t);
+		if (result.error) {
+			error = result.error;
 			return false;
 		}
-
-		if (balance > 999999999) {
-			error = $t('errors.balance-too-large');
-			return false;
-		}
-
-		if (account_name.length < 3) {
-			error = $t('errors.account-name-too-short');
-			return false;
-		}
-
-		if (account_name.length > 50) {
-			error = 'Account name must be less than 50 characters';
-			return false;
-		}
-
+		balance = result.balance; // use parsed/rounded balance
 		return true;
 	}
 

@@ -3,10 +3,11 @@
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
+	import { validateAccountForm } from '$lib/accountValidation';
 
 	let error: string = '';
 	// Form field variables
-	let balance: number = 0;
+	let balance: number | string = 0;
 	let account_name: string = '';
 
 	// Create event dispatcher (to emit events to the parent)
@@ -14,7 +15,7 @@
 
 	async function handleSubmit() {
 		error = '';
-		if (!validateForm()) {
+		if (!isFormValid()) {
 			return;
 		}
 
@@ -38,32 +39,13 @@
 		}
 	}
 
-	function validateForm(): boolean {
-		// round and parse the balance
-		balance = parseFloat(balance.toString().replace(',', '.'));
-		balance = Math.round(balance * 100) / 100;
-
-		// validations
-		if (balance < 0) {
-			error = 'Balance must be greater than 0';
+	function isFormValid(): boolean {
+		const result = validateAccountForm(balance, account_name, $t);
+		if (result.error) {
+			error = result.error;
 			return false;
 		}
-
-		if (balance > 999999999) {
-			error = 'Balance must be less than 999999999';
-			return false;
-		}
-
-		if (account_name.length < 3) {
-			error = 'Account name must be at least 3 characters';
-			return false;
-		}
-
-		if (account_name.length > 50) {
-			error = 'Account name must be less than 50 characters';
-			return false;
-		}
-
+		balance = result.balance; // use parsed/rounded balance
 		return true;
 	}
 

@@ -113,6 +113,7 @@
 		"category-must-match": "Category must be from the selected transaction type",
 		"amount-greater-zero": "Amount must be greater than 0",
 		"amount-too-large": "Amount must be less than 999999999",
+		"amount-must-be-number": "Amount must be a number",
 		"failed-load-types": "Failed to load transaction types",
 		"update-transaction": "Update Transaction",
 		"edit-transaction-for": "Edit Transaction for",
@@ -133,7 +134,13 @@
 		"delete-account": "Delete account",
 		"account-name-placeholder": "Enter account name",
 		"balance-placeholder": "Enter initial balance",
-		"update-account": "Update Account"
+		"update-account": "Update Account",
+		"balance-required": "Balance is required",
+		"balance-negative": "Balance must be greater than or equal to 0",
+		"balance-too-large": "Balance must be less than 999999999",
+		"account-name-required": "Account name is required",
+		"account-name-too-short": "Account name must be at least 3 characters",
+		"account-name-too-long": "Account name must be less than 50 characters"
 	},
 
 	"categories": {

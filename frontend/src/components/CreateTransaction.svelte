@@ -14,6 +14,7 @@
 	import { t } from '$lib/i18n';
 	import { getDraftTransaction } from '$lib/services/draftTransactionService';
 	import { TransactionTypes } from '$lib/transaction_types_types';
+	import { validateTransactionForm } from '$lib/transactionValidation';
 
 	// Input account
 	export let account: Account;
@@ -98,39 +99,22 @@
 	}
 
 	function isFormValid(): boolean {
-		// round the amount
-		amount = parseFloat(amount.toString().replace(',', '.'));
-		amount = Math.round(amount * 100) / 100;
-
-		// category must be from transaction type
-		const category: CategoryDto | undefined = categories.find(
-			(cat) => cat.id === Number(category_id)
+		const result = validateTransactionForm(
+			amount,
+			category_id,
+			transaction_type_id,
+			categories,
+			date,
+			$t
 		);
-		if (!category) {
-			error = $t('transactions.category-required');
+
+		if (result.error) {
+			error = result.error;
 			return false;
 		}
 
-		if (category.transaction_type.id !== Number(transaction_type_id)) {
-			error = $t('transactions.category-must-match');
-			return false;
-		}
-
-		// validations
-		if (amount <= 0) {
-			error = $t('transactions.amount-greater-zero');
-			return false;
-		}
-
-		if (amount > 999999999) {
-			error = $t('transactions.amount-too-large');
-			return false;
-		}
-
-		if (!date) {
-			// default to today
-			date = new Date().toISOString().split('T')[0];
-		}
+		amount = result.amount;
+		date = result.date;
 
 		return true;
 	}

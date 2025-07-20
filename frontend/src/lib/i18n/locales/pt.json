@@ -117,6 +117,7 @@
 		"category-must-match": "A categoria deve ser do tipo de transação selecionado",
 		"amount-greater-zero": "O valor deve ser maior que 0",
 		"amount-too-large": "O valor deve ser menor que 999999999",
+		"amount-must-be-number": "O valor deve ser um número",
 		"failed-load-types": "Falha ao carregar tipos de transação",
 		"update-transaction": "Atualizar Transação",
 		"edit-transaction-for": "Editar Transação para",
@@ -137,7 +138,13 @@
 		"delete-account": "Eliminar conta",
 		"account-name-placeholder": "Insira o nome da conta",
 		"balance-placeholder": "Insira o saldo inicial",
-		"update-account": "Atualizar Conta"
+		"update-account": "Atualizar Conta",
+		"balance-required": "O saldo é obrigatório",
+		"balance-negative": "O saldo deve ser maior ou igual a 0",
+		"balance-too-large": "O saldo deve ser menor que 999999999",
+		"account-name-required": "O nome da conta é obrigatório",
+		"account-name-too-short": "O nome da conta deve ter pelo menos 3 caracteres",
+		"account-name-too-long": "O nome da conta deve ter menos de 50 caracteres"
 	},
 
 	"categories": {
