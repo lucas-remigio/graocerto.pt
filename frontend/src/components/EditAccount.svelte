@@ -56,6 +56,8 @@
 			return false;
 		}
 
+		balance = parseFloat(balance.toString().replace(',', '.'));
+
 		if (account_name.length < 3) {
 			error = $t('errors.account-name-too-short');
 			return false;
@@ -114,7 +116,7 @@
 				</label>
 				<input
 					id="balance"
-					type="number"
+					type="text"
 					inputmode="decimal"
 					placeholder={$t('accounts.balance-placeholder')}
 					class="input input-bordered"

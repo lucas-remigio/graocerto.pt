@@ -53,6 +53,8 @@
 			return false;
 		}
 
+		balance = parseFloat(balance.toString().replace(',', '.'));
+
 		if (account_name.length < 3) {
 			error = 'Account name must be at least 3 characters';
 			return false;
@@ -111,7 +113,7 @@
 				</label>
 				<input
 					id="balance"
-					type="number"
+					type="text"
 					inputmode="decimal"
 					placeholder={$t('accounts.balance-placeholder')}
 					class="input input-bordered"

@@ -126,6 +126,8 @@
 			return false;
 		}
 
+		amount = parseFloat(amount.toString().replace(',', '.'));
+
 		if (!date) {
 			// default to today
 			date = new Date().toISOString().split('T')[0];
@@ -317,7 +319,7 @@
 						</label>
 						<input
 							id="amount"
-							type="number"
+							type="text"
 							inputmode="decimal"
 							placeholder={$t('transactions.transaction-amount')}
 							class="input input-bordered w-full"
