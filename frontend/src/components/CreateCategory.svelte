@@ -10,7 +10,7 @@
 	let error: string = '';
 	// Form field variables
 	let category_name: string = '';
-	let color: string = '';
+	let color: string = '#ffffff';
 
 	// Create event dispatcher (to emit events to the parent)
 	const dispatch = createEventDispatcher();
@@ -128,21 +128,16 @@
 				<label class="label" for="color">
 					<span class="label-text">{$t('categories.color')}</span>
 				</label>
-				<div class="flex items-center space-x-4">
-					<!-- The native color input -->
-					<input
-						id="color"
-						type="color"
-						class="h-10 w-80 border-0 p-0"
-						bind:value={color}
-						required
-					/>
-					<!-- A swatch preview showing the chosen color -->
-					<div
-						class="h-8 w-8 rounded-full border border-gray-300"
-						style="background-color: {color};"
-					></div>
-					<!-- Display the hex value -->
+				<div class="flex items-center gap-4">
+					<!-- Native color input, visually hidden but accessible -->
+					<label class="cursor-pointer">
+						<input id="color" type="color" class="sr-only" bind:value={color} required />
+						<span
+							class="border-base-300 bg-base-100 inline-block h-10 w-10 rounded-full border-2 transition hover:scale-105"
+							style="background-color: {color};"
+						></span>
+					</label>
+					<!-- Hex value input -->
 					<span class="text-sm font-medium">{color}</span>
 				</div>
 			</div>
@@ -150,7 +145,9 @@
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
 				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
-				<button type="submit" class="btn btn-primary text-base-100">{$t('categories.create-category')}</button>
+				<button type="submit" class="btn btn-primary text-base-100"
+					>{$t('categories.create-category')}</button
+				>
 			</div>
 		</form>
 	</div>
