@@ -1,19 +1,12 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
 	import { dataService } from '$lib/services/dataService';
-	import type {
-		Account,
-		Category,
-		CategoryDto,
-		Transaction,
-		TransactionDto,
-		TransactionType
-	} from '$lib/types';
+	import type { Account, CategoryDto, Transaction, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { getDraftTransaction } from '$lib/services/draftTransactionService';
-	import { TransactionTypes } from '$lib/transaction_types_types';
+	import { TransactionTypeId, TransactionTypes } from '$lib/transaction_types_types';
 	import { validateTransactionForm } from '$lib/transactionValidation';
 
 	// Input account
@@ -21,14 +14,10 @@
 
 	let error: string = '';
 	let transactionTypes: TransactionType[] = [];
-	let transaction_type_id: number = 0;
+	let transaction_type_id: number = TransactionTypeId.Debit;
 	let categories: CategoryDto[] = [];
 	let categoriesMappedById: Map<number, CategoryDto> = new Map();
 	let isLoading: boolean = true;
-
-	$: if (transactionTypes.length > 0 && !transaction_type_id) {
-		transaction_type_id = transactionTypes[0].id;
-	}
 
 	$: selectedTransactionType = transactionTypes.find((t) => t.id === transaction_type_id);
 
@@ -59,8 +48,7 @@
 	let description = draftTransaction?.description || '';
 	let date = draftTransaction?.date || new Date().toISOString().split('T')[0]; // expects format "YYYY-MM-DD" from the date input
 
-	const firstTransactionType = TransactionTypes.length > 0 ? TransactionTypes[0] : null;
-	transaction_type_id = draftTransaction?.transaction_type_id || firstTransactionType?.id || 1;
+	transaction_type_id = draftTransaction?.transaction_type_id || TransactionTypeId.Debit;
 
 	// Create event dispatcher (to emit events to the parent)
 	const dispatch = createEventDispatcher();
