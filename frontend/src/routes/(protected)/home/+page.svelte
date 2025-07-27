@@ -18,7 +18,7 @@
 	import ViewToggle from '$components/ViewToggle.svelte';
 	import { userEmail } from '$lib/stores/auth';
 	import { t, locale } from '$lib/i18n';
-	import { hideBalances } from '$lib/stores/uiPreferences';
+	import { selectedView } from '$lib/stores/uiPreferences';
 
 	// Track WebSocket connection status
 	let hasJoinedRoom = false;
@@ -82,9 +82,6 @@
 	// Track screen size for responsive layout
 	let isLargeScreen: boolean = false;
 
-	// View toggle state
-	let currentView: 'transactions' | 'statistics' = 'transactions';
-
 	$: currentLocale = $locale || 'en-US'; // Default to 'en-US' if locale is not set
 
 	// Update screen size tracking
@@ -110,14 +107,6 @@
 		}
 
 		selectedAccount = foundAccount;
-	}
-
-	function getSelectedView() {
-		const storedView = localStorage.getItem('selectedView');
-		if (storedView === 'statistics' || storedView === 'transactions') {
-			currentView = storedView;
-		}
-		// If no stored view or invalid value, keep default 'transactions'
 	}
 
 	async function deleteAccount(account: Account) {
@@ -149,7 +138,6 @@
 			// If we have at least one account, fetch its transactions
 			if (accounts && accounts.length > 0) {
 				getSelectedAccount();
-				getSelectedView();
 				await fetchAccountTransactions(
 					selectedAccount.token,
 					selectedMonth,
@@ -176,7 +164,7 @@
 			const promises = [fetchAvailableMonths(accountToken)];
 
 			// If current view is statistics, also fetch statistics
-			if (currentView === 'statistics') {
+			if ($selectedView === 'statistics') {
 				promises.push(fetchStatistics(accountToken, month, year, showLoading));
 			} else {
 				promises.push(fetchTransactions(accountToken, month, year, showLoading));
@@ -261,8 +249,7 @@
 		localStorage.setItem('selectedAccount', selectedAccount.token);
 		selectedMonth = currentMonth;
 		selectedYear = currentYear;
-		currentView = 'transactions'; // Reset to transactions view when switching accounts
-		localStorage.setItem('selectedView', currentView);
+		$selectedView = 'transactions'; // Reset to transactions view when switching accounts
 		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 	}
 
@@ -271,7 +258,7 @@
 		selectedYear = year;
 
 		// Fetch data based on current view
-		if (currentView === 'statistics') {
+		if ($selectedView === 'statistics') {
 			// Only fetch statistics when in statistics view
 			fetchStatistics(selectedAccount.token, month, year, true);
 		} else {
@@ -287,19 +274,12 @@
 		return date.toLocaleString(currentLocale, { month: 'long', year: 'numeric' });
 	})();
 
-	function handleViewToggle(event: CustomEvent<{ view: 'transactions' | 'statistics' }>) {
-		currentView = event.detail.view;
-		localStorage.setItem('selectedView', currentView);
-
-		// Fetch appropriate data for current view if not cached
-		if (selectedAccount) {
-			if (currentView === 'statistics') {
-				// Switching to statistics view - fetch statistics
-				fetchStatistics(selectedAccount.token, selectedMonth, selectedYear, true);
-			} else {
-				// Switching to transactions view - fetch transactions
-				fetchTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
-			}
+	$: if (selectedAccount && $selectedView) {
+		// Fetch data when selectedView changes
+		if ($selectedView === 'transactions') {
+			fetchTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
+		} else if ($selectedView === 'statistics') {
+			fetchStatistics(selectedAccount.token, selectedMonth, selectedYear, true);
 		}
 	}
 
@@ -388,7 +368,6 @@
 					{selectedAccount}
 					isVertical={isLargeScreen}
 					loading={accountsLoading}
-					hideBalances={$hideBalances}
 					on:select={handleSelectAccount}
 					on:updatedAccount={handleUpdateAccount}
 					on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
@@ -417,14 +396,14 @@
 
 					<!-- View Toggle Component -->
 					<div class="lg:flex-shrink-0">
-						<ViewToggle {currentView} on:viewChange={handleViewToggle} />
+						<ViewToggle bind:currentView={$selectedView} />
 					</div>
 
 					<div class="divider my-0"></div>
 
 					<!-- Content Container with scroll -->
 					<div class="lg:min-h-0 lg:flex-1 lg:overflow-auto">
-						{#if currentView === 'transactions'}
+						{#if $selectedView === 'transactions'}
 							<TransactionsTable
 								transactionsGroups={transactionGroups}
 								{transactionsTotals}

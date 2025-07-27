@@ -3,10 +3,10 @@
 	import type { Account } from '$lib/types';
 	import { createEventDispatcher } from 'svelte';
 	import { Pencil, Trash } from 'lucide-svelte';
+	import { hideBalances } from '$lib/stores/uiPreferences';
 
 	export let account: Account;
 	export let selectedAccount: Account | null = null;
-	export let hideBalance: boolean = false;
 
 	const dispatch = createEventDispatcher<{
 		select: { account: Account };
@@ -41,12 +41,14 @@
 		{isSelected ? 'ring-primary ring-2 ' : 'border-base-200 hover:border-primary/20 border shadow-lg'}"
 		on:click={handleCardClick}
 	>
-		<div class="card-body">
-			<h2 class="card-title">{account.account_name}</h2>
-			{#if hideBalance}
-				<p class="select-none text-3xl font-bold tracking-widest">••••••</p>
+		<div class="card-body items-start px-6 py-4">
+			<h2 class="text-base-content/80 mb-1 truncate text-base font-semibold">
+				{account.account_name}
+			</h2>
+			{#if $hideBalances}
+				<p class="text-base-content/60 select-none text-3xl font-bold tracking-widest">••••••</p>
 			{:else}
-				<p class="text-3xl font-bold">{formatCurrency(account.balance)}€</p>
+				<p class="text-base-content text-3xl font-bold">{formatCurrency(account.balance)}€</p>
 			{/if}
 		</div>
 	</button>

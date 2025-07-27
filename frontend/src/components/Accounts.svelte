@@ -14,7 +14,6 @@
 	export let selectedAccount: Account | null = null;
 	export let isVertical: boolean = false;
 	export let loading: boolean = false;
-	export let hideBalances: boolean = false;
 
 	let openEditAccountModal: boolean = false;
 	let openDeleteAccountModal: boolean = false;
@@ -98,7 +97,6 @@
 			<AccountCard
 				{account}
 				{selectedAccount}
-				hideBalance={hideBalances}
 				on:select={handleCardSelect}
 				on:edit={handleCardEdit}
 				on:delete={handleCardDelete}
