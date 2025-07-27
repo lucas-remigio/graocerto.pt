@@ -81,6 +81,7 @@
 
 	// Track screen size for responsive layout
 	let isLargeScreen: boolean = false;
+	let initialDataLoaded = false;
 
 	$: currentLocale = $locale || 'en-US'; // Default to 'en-US' if locale is not set
 
@@ -249,22 +250,17 @@
 		localStorage.setItem('selectedAccount', selectedAccount.token);
 		selectedMonth = currentMonth;
 		selectedYear = currentYear;
+		// by triggering the selected view, we ensure that the transactions are fetched
+		// so no need to manually call the fetch account transaction
 		$selectedView = 'transactions'; // Reset to transactions view when switching accounts
-		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 	}
 
 	function handleMonthSelect(month: number | null, year: number | null) {
 		selectedMonth = month;
 		selectedYear = year;
 
-		// Fetch data based on current view
-		if ($selectedView === 'statistics') {
-			// Only fetch statistics when in statistics view
-			fetchStatistics(selectedAccount.token, month, year, true);
-		} else {
-			// Only fetch transactions when in transactions view
-			fetchTransactions(selectedAccount.token, month, year, true);
-		}
+		// by changing the selected month, we ensure that the transactions are fetched
+		// by the reactive statement
 	}
 
 	$: selectedFormatedDate = (() => {
@@ -274,7 +270,7 @@
 		return date.toLocaleString(currentLocale, { month: 'long', year: 'numeric' });
 	})();
 
-	$: if (selectedAccount && $selectedView) {
+	$: if (selectedAccount && $selectedView && initialDataLoaded) {
 		// Fetch data when selectedView changes
 		if ($selectedView === 'transactions') {
 			fetchTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
@@ -339,6 +335,7 @@
 
 	onMount(async () => {
 		await fetchAccounts(true);
+		initialDataLoaded = true;
 
 		// Set up screen size tracking
 		updateScreenSize();
