@@ -263,13 +263,6 @@
 		// by the reactive statement
 	}
 
-	$: selectedFormatedDate = (() => {
-		const year = selectedYear ?? currentYear;
-		const month = selectedMonth ?? currentMonth;
-		const date = new Date(year, month - 1); // month is 0-indexed in JavaScript
-		return date.toLocaleString(currentLocale, { month: 'long', year: 'numeric' });
-	})();
-
 	$: if (selectedAccount && $selectedView && initialDataLoaded) {
 		// Fetch data when selectedView changes
 		if ($selectedView === 'transactions') {
@@ -280,30 +273,24 @@
 	}
 
 	function handleNewTransaction() {
-		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts(false);
-
-		wsUpdateScreen();
+		refreshAccountsAndNotify();
 	}
 
 	function handleNewAccount() {
-		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts(false);
-
-		wsUpdateScreen();
+		refreshAccountsAndNotify();
 	}
 
 	function handleUpdateTransaction() {
-		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts(false);
-
-		wsUpdateScreen();
+		refreshAccountsAndNotify();
 	}
 
 	function handleUpdateAccount() {
-		dataService.clearCaches(); // Clear caches since data changed
-		fetchAccounts(false);
+		refreshAccountsAndNotify();
+	}
 
+	function refreshAccountsAndNotify() {
+		dataService.clearCaches();
+		fetchAccounts(false);
 		wsUpdateScreen();
 	}
 
