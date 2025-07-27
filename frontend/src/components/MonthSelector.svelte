@@ -28,7 +28,7 @@
 		return monthData.month === currentMonth && monthData.year === currentYear;
 	}
 
-	$: currentLocale = $locale || 'en-US';
+	$: currentLocale = $locale || 'pt';
 </script>
 
 <div class="mb-2">

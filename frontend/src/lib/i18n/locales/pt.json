@@ -19,7 +19,14 @@
 		"notifications": "Notificações",
 		"calculator": "Calculadora",
 		"investment-calculator": "Calculadora de Investimentos",
-		"toggle-balance": "Alterar Visibilidade dos Saldos"
+		"toggle-balance": "Alterar Visibilidade dos Saldos",
+		"language": "Idioma",
+		"show-balance": "Mostrar Saldos",
+		"hide-balance": "Ocultar Saldos",
+		"light-mode": "Modo Claro",
+		"dark-mode": "Modo Escuro",
+		"logout": "Sair",
+		"settings": "Configurações"
 	},
 
 	"page": {

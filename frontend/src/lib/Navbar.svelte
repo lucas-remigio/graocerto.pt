@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { LogIn, LogOut, Menu, Moon, Sun, User } from 'lucide-svelte';
+	import { LogIn, Menu } from 'lucide-svelte';
 	import { t, locale, setLocale } from '$lib/i18n';
-	import { onMount } from 'svelte';
-	import { isAuthenticated } from './stores/auth';
+	import { isAuthenticated, logout } from '$stores/auth';
 	import UserMenu from './UserMenu.svelte';
-	import { themeService } from './services/themeService';
-	import { Eye, EyeOff } from 'lucide-svelte';
-	import { hideBalances } from '$stores/uiPreferences';
+	import NavActions from './NavActions.svelte';
+	import { theme } from '$stores/uiPreferences';
+	import { isLargeScreen } from '$stores/screen';
 
 	let isDropdownOpen = false;
 
@@ -15,9 +14,6 @@
 	let investmentCalculatorUrl = '/investment-calculator';
 	let loginUrl = '/login';
 	let homeUrl = '/home';
-
-	// Track theme state
-	let theme: 'light' | 'dark' = 'light';
 
 	// Flag to indicate that a touch event already handled the toggle
 	let touchHandled = false;
@@ -28,48 +24,15 @@
 		setLocale(newLang);
 	}
 
-	const logout = async () => {
-		localStorage.removeItem('token');
-		document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-
-		window.location.href = '/login';
-	};
-
 	// Toggle theme function
 	function toggleTheme() {
-		theme = theme === 'light' ? 'dark' : 'light';
-		applyTheme(theme);
-		localStorage.setItem('theme', theme);
-	}
-
-	// Apply theme to HTML element
-	function applyTheme(newTheme: string) {
-		document.documentElement.setAttribute('data-theme', newTheme);
-		document.documentElement.classList.toggle('dark', newTheme === 'dark');
-		themeService.updateThemeColor(newTheme as 'light' | 'dark');
+		theme.update((current) => (current === 'light' ? 'dark' : 'light'));
 	}
 
 	function handleNavigation(url: string) {
 		isDropdownOpen = false;
 		goto(url);
 	}
-
-	// Initialize theme on mount
-	onMount(() => {
-		// Check localStorage first (for user preference)
-		const savedTheme = localStorage.getItem('theme');
-
-		if (savedTheme) {
-			// User has a preference
-			theme = savedTheme as 'light' | 'dark';
-			applyTheme(theme);
-		} else {
-			// No saved preference, check system preference
-			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-			theme = prefersDark ? 'dark' : 'light';
-			applyTheme(theme);
-		}
-	});
 </script>
 
 <div class="navbar bg-base-100 border-base-300 h-16 min-h-16 border-b">
@@ -152,42 +115,27 @@
 		</div>
 	{/if}
 	<div class="navbar-end">
-		<!-- Balance Visibility Toggle -->
-		{#if $isAuthenticated}
-			<button
-				class="btn btn-ghost btn-circle"
-				on:click={() => hideBalances.update((v: boolean) => !v)}
-				aria-label={$t('navbar.toggle-balance')}
-				title={$t('navbar.toggle-balance')}
-			>
-				{#if $hideBalances}
-					<EyeOff size={20} />
-				{:else}
-					<Eye size={20} />
-				{/if}
-			</button>
-		{/if}
-
-		<!-- Theme Toggle Button -->
-		<button class="btn btn-ghost btn-circle" on:click={toggleTheme} aria-label="Toggle theme">
-			{#if theme === 'dark'}
-				<Sun size={20} class="h-5 w-5" />
-			{:else}
-				<Moon size={20} class="h-5 w-5" />
+		<!-- Desktop: show buttons inline -->
+		<div class="hidden items-center gap-1 lg:flex">
+			{#if $isAuthenticated}
+				<NavActions theme={$theme} {toggleTheme} locale={$locale || 'pt'} {toggleLanguage} t={$t} />
 			{/if}
-		</button>
-
-		<!-- Language Selector -->
-		<div class="dropdown dropdown-end">
-			<!-- Language Selector Toggle -->
-			<button class="btn btn-ghost btn-circle" on:click={toggleLanguage}>
-				<span class="font-bold">{$locale === 'en' ? '🇬🇧' : '🇵🇹'}</span>
-			</button>
 		</div>
 
-		<!-- Profile Dropdown (if authenticated) -->
+		<!-- Mobile: add to profile dropdown -->
 		{#if $isAuthenticated}
-			<UserMenu {logout} />
+			<UserMenu {logout}>
+				{#if !$isLargeScreen}
+					<NavActions
+						theme={$theme}
+						{toggleTheme}
+						locale={$locale || 'pt'}
+						{toggleLanguage}
+						t={$t}
+						isMenu={true}
+					/>
+				{/if}
+			</UserMenu>
 		{:else}
 			<a href={loginUrl} class="btn btn-ghost btn-circle" aria-label="Login">
 				<LogIn size={20} class="h-5 w-5" />

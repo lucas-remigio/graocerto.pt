@@ -83,8 +83,6 @@
 	let isLargeScreen: boolean = false;
 	let initialDataLoaded = false;
 
-	$: currentLocale = $locale || 'en-US'; // Default to 'en-US' if locale is not set
-
 	// Update screen size tracking
 	function updateScreenSize() {
 		isLargeScreen = window.innerWidth >= 1024; // lg breakpoint in Tailwind

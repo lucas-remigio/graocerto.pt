@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { goto } from '$app/navigation';
 
 // Initialize stores with null - will be hydrated on client
 export const token = writable<string | null>(null);
@@ -57,4 +58,12 @@ export function login(newToken: string, email: string) {
 export function logout() {
 	token.set(null);
 	userEmail.set(null);
+
+	// Remove auth cookie
+	if (typeof document !== 'undefined') {
+		document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+	}
+
+	// Redirect to login page
+	goto('/login');
 }

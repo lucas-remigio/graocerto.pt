@@ -27,7 +27,7 @@
 
 	async function getTransactionsAiFeedback() {
 		isLoading = true;
-		const language = $locale || 'en'; // Default to English if locale is not set
+		const language = $locale || 'pt'; 
 		try {
 			const res = await api_axios('accounts/' + account.token + '/feedback-month', {
 				params: {

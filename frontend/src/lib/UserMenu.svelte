@@ -31,6 +31,9 @@
 					{localStorage.getItem('userEmail') || 'unknown@anonymous.pt'}
 				</span>
 			</li>
+
+			<slot />
+
 			<li class="border-base-200 mt-2 border-t pt-2">
 				<button class="btn btn-error btn-sm w-full" on:click={handleLogout}>
 					<LogOut size={18} class="mr-2" />

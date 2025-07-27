@@ -19,7 +19,14 @@
 		"notifications": "Notifications",
 		"calculator": "Calculator",
 		"investment-calculator": "Investment Calculator",
-		"toggle-balance": "Toggle Balance Visibility"
+		"toggle-balance": "Toggle Balance Visibility",
+		"language": "Language",
+		"show-balance": "Show Balances",
+		"hide-balance": "Hide Balances",
+		"light-mode": "Light Mode",
+		"dark-mode": "Dark Mode",
+		"logout": "Logout",
+		"settings": "Settings"
 	},
 
 	"page": {

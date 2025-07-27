@@ -45,7 +45,7 @@
 
 	let selectedTransaction: TransactionDto | null = null;
 
-	$: currentLocale = $locale || 'en';
+	$: currentLocale = $locale || 'pt';
 
 	function formatCurrency(amount: number): string {
 		// make the currency have a , every 3 digits
