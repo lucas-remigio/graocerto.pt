@@ -6,8 +6,11 @@
 	import { isAuthenticated } from './stores/auth';
 	import UserMenu from './UserMenu.svelte';
 	import { themeService } from './services/themeService';
+	import { Eye, EyeOff } from 'lucide-svelte';
+	import { hideBalances } from '$stores/uiPreferences';
 
 	let isDropdownOpen = false;
+
 	let categoriesUrl = '/categories';
 	let investmentCalculatorUrl = '/investment-calculator';
 	let loginUrl = '/login';
@@ -18,9 +21,6 @@
 
 	// Flag to indicate that a touch event already handled the toggle
 	let touchHandled = false;
-
-	// Profile dropdown state
-	let isProfileDropdownOpen = false;
 
 	function toggleLanguage() {
 		const newLang = $locale === 'en' ? 'pt' : 'en';
@@ -152,13 +152,21 @@
 		</div>
 	{/if}
 	<div class="navbar-end">
-		<!-- Language Selector -->
-		<div class="dropdown dropdown-end">
-			<!-- Language Selector Toggle -->
-			<button class="btn btn-ghost btn-circle" on:click={toggleLanguage}>
-				<span class="font-bold">{$locale === 'en' ? '🇬🇧' : '🇵🇹'}</span>
+		<!-- Balance Visibility Toggle -->
+		{#if $isAuthenticated}
+			<button
+				class="btn btn-ghost btn-circle"
+				on:click={() => hideBalances.update((v: boolean) => !v)}
+				aria-label={$t('navbar.toggle-balance')}
+				title={$t('navbar.toggle-balance')}
+			>
+				{#if $hideBalances}
+					<EyeOff size={20} />
+				{:else}
+					<Eye size={20} />
+				{/if}
 			</button>
-		</div>
+		{/if}
 
 		<!-- Theme Toggle Button -->
 		<button class="btn btn-ghost btn-circle" on:click={toggleTheme} aria-label="Toggle theme">
@@ -168,6 +176,14 @@
 				<Moon size={20} class="h-5 w-5" />
 			{/if}
 		</button>
+
+		<!-- Language Selector -->
+		<div class="dropdown dropdown-end">
+			<!-- Language Selector Toggle -->
+			<button class="btn btn-ghost btn-circle" on:click={toggleLanguage}>
+				<span class="font-bold">{$locale === 'en' ? '🇬🇧' : '🇵🇹'}</span>
+			</button>
+		</div>
 
 		<!-- Profile Dropdown (if authenticated) -->
 		{#if $isAuthenticated}

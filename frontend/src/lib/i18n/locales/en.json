@@ -18,7 +18,8 @@
 		"categories": "Categories",
 		"notifications": "Notifications",
 		"calculator": "Calculator",
-		"investment-calculator": "Investment Calculator"
+		"investment-calculator": "Investment Calculator",
+		"toggle-balance": "Toggle Balance Visibility"
 	},
 
 	"page": {

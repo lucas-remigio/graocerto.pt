@@ -18,7 +18,8 @@
 		"categories": "Categorias",
 		"notifications": "Notificações",
 		"calculator": "Calculadora",
-		"investment-calculator": "Calculadora de Investimentos"
+		"investment-calculator": "Calculadora de Investimentos",
+		"toggle-balance": "Alterar Visibilidade dos Saldos"
 	},
 
 	"page": {

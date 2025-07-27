@@ -6,6 +6,7 @@
 
 	export let account: Account;
 	export let selectedAccount: Account | null = null;
+	export let hideBalance: boolean = false;
 
 	const dispatch = createEventDispatcher<{
 		select: { account: Account };
@@ -42,7 +43,11 @@
 	>
 		<div class="card-body">
 			<h2 class="card-title">{account.account_name}</h2>
-			<p class="text-3xl font-bold">{formatCurrency(account.balance)}€</p>
+			{#if hideBalance}
+				<p class="select-none text-3xl font-bold tracking-widest">••••••</p>
+			{:else}
+				<p class="text-3xl font-bold">{formatCurrency(account.balance)}€</p>
+			{/if}
 		</div>
 	</button>
 

@@ -18,6 +18,7 @@
 	import ViewToggle from '$components/ViewToggle.svelte';
 	import { userEmail } from '$lib/stores/auth';
 	import { t, locale } from '$lib/i18n';
+	import { hideBalances } from '$lib/stores/uiPreferences';
 
 	// Track WebSocket connection status
 	let hasJoinedRoom = false;
@@ -387,6 +388,7 @@
 					{selectedAccount}
 					isVertical={isLargeScreen}
 					loading={accountsLoading}
+					hideBalances={$hideBalances}
 					on:select={handleSelectAccount}
 					on:updatedAccount={handleUpdateAccount}
 					on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
