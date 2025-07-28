@@ -89,6 +89,11 @@
 	}
 
 	function getSelectedAccount() {
+		// if there is already a selected account, use it
+		if (selectedAccount) {
+			return;
+		}
+
 		if (accounts.length === 0) {
 			return;
 		}
