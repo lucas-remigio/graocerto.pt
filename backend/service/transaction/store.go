@@ -9,6 +9,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/types"
+	"github.com/lucas-remigio/wallet-tracker/utils"
 )
 
 type Store struct {
@@ -348,7 +349,10 @@ func (s *Store) CalculateTransactionTotals(transactions []*types.TransactionDTO)
 		}
 	}
 
-	total.Difference = total.Credit - total.Debit
+	total.Credit = utils.Round(total.Credit, 2)
+	total.Debit = utils.Round(total.Debit, 2)
+	difference := total.Credit - total.Debit
+	total.Difference = utils.Round(difference, 2)
 	return total, nil
 }
 
@@ -386,6 +390,8 @@ func (s *Store) calculateLargestAmountsAndDailyTotals(
 			}
 		}
 	}
+	largestCredit = utils.Round(largestCredit, 2)
+	largestDebit = utils.Round(largestDebit, 2)
 	return largestCredit, largestDebit, dailyTotals
 }
 
@@ -446,8 +452,10 @@ func (s *Store) processCategoryBreakdown(categoryMap map[string]*types.CategoryS
 
 	for _, categoryStat := range categoryMap {
 		if totalAmount > 0 {
-			categoryStat.Percentage = (categoryStat.Total / totalAmount) * 100
+			percentage := (categoryStat.Total / totalAmount) * 100
+			categoryStat.Percentage = utils.Round(percentage, 2)
 		}
+		categoryStat.Total = utils.Round(categoryStat.Total, 2)
 		breakdown = append(breakdown, categoryStat)
 	}
 
@@ -494,7 +502,7 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	for date, total := range dailyTotals {
 		stats.DailyTotals = append(stats.DailyTotals, &types.DailyTotal{
 			Date:  date,
-			Total: total,
+			Total: utils.Round(total, 2),
 		})
 	}
 

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -71,4 +72,9 @@ func GetStringFromQuery(r *http.Request, key string) (string, error) {
 		return "", fmt.Errorf("query parameter %s is missing", key)
 	}
 	return value, nil
+}
+
+func Round(val float64, places int) float64 {
+	pow := math.Pow(10, float64(places))
+	return math.Round(val*pow) / pow
 }
