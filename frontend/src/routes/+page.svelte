@@ -39,8 +39,8 @@
 
 <div class="bg-base-100 flex min-h-screen flex-col items-center px-4 py-8">
 	<!-- HERO SECTION -->
-	<div class="hero bg-base-100 mb-12 min-h-[60vh] rounded-xl px-4 shadow md:px-8">
-		<div class="hero-content mx-auto w-full max-w-6xl flex-col gap-12 lg:flex-row-reverse">
+	<div class="hero bg-base-100 mx-auto mb-12 w-full max-w-6xl rounded-xl px-4 shadow md:px-8">
+		<div class="hero-content w-full flex-col gap-12 lg:flex-row-reverse">
 			<div class="relative flex flex-1 justify-end">
 				<button
 					type="button"
@@ -51,7 +51,7 @@
 					<img
 						src={isDarkMode ? '/graphs_dark.png' : '/graphs_light.png'}
 						alt="App screenshot"
-						class="max-w-md cursor-pointer rounded-xl shadow-xl"
+						class="w-full max-w-xs cursor-pointer rounded-xl shadow-xl sm:max-w-sm md:max-w-md"
 						draggable="false"
 					/>
 					<!-- Click Me indicator with arrow -->
@@ -61,7 +61,7 @@
 						<CornerUpLeft class="text-primary h-6 w-6 animate-bounce" aria-hidden="true" />
 						<span
 							class="bg-primary text-base-100 mb-1 rounded-full px-3 py-1 text-sm font-semibold shadow-lg"
-							>Click Me!</span
+							>{$t('landing.click-me')}</span
 						>
 					</div>
 				</button>
@@ -169,47 +169,7 @@
 		<p class="text-base-content/70 mb-2">
 			{$t('landing.dev-presentation')}
 		</p>
-		<h6 class="text-primary mb-2 mt-4 text-base font-semibold">Contact me!</h6>
-		<div class="mt-2 flex justify-center gap-4">
-			<a
-				href="mailto:remigio@graocerto.pt"
-				class="btn btn-ghost btn-circle transition-transform duration-200 hover:scale-105"
-				aria-label="Email"
-			>
-				<Mail class="text-primary h-6 w-6" />
-			</a>
-			<a
-				href="https://linkedin.com/in/lucas-remigio"
-				target="_blank"
-				rel="noopener"
-				class="btn btn-ghost btn-circle transition-transform duration-200 hover:scale-105"
-				aria-label="LinkedIn"
-			>
-				<Linkedin class="text-primary h-6 w-6" />
-			</a>
-			<a
-				href="https://github.com/lucas-remigio"
-				target="_blank"
-				rel="noopener"
-				class="btn btn-ghost btn-circle transition-transform duration-200 hover:scale-105"
-				aria-label="GitHub"
-			>
-				<Github class="text-primary h-6 w-6" />
-			</a>
-		</div>
 	</div>
-
-	<!-- FOOTER -->
-	<footer
-		class="footer footer-center bg-base-200 text-base-content mt-auto w-full max-w-5xl rounded-xl p-6 shadow"
-	>
-		<small>
-			Grão Certo &mdash; {$t('landing.made-with')}
-
-			<span class="text-error"><Heart fill="currentColor" /></span>
-			{$t('common.by')} Lucas Remígio
-		</small>
-	</footer>
 </div>
 
 {#if zoomedImg}

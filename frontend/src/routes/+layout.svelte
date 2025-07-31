@@ -8,6 +8,7 @@
 	import { get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
 	import { isLoading, setupI18n, t, i18nReady } from '$lib/i18n';
+	import Footer from '$lib/Footer.svelte';
 
 	let { children } = $props();
 
@@ -122,4 +123,5 @@
 	<main>
 		{@render children()}
 	</main>
+	<Footer />
 {/if}

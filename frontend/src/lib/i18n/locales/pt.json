@@ -21,7 +21,8 @@
 		"dev-contact-me": "Contacta-me!",
 		"dev-about": "Sobre o Desenvolvedor",
 		"dev-presentation": "Olá, sou o Lucas, o criador do Grão Certo. Criei esta app para ajudar a mim e à minha namorada a termos mais clareza e tranquilidade nas nossas finanças. Depois de anos a experimentar várias ferramentas, desde Exceis a apps móveis, percebemos que precisávamos de algo simples e intuitivo para visualizar os nossos gastos e sentir paz de espírito. Espero que o Grão Certo te ajude a encontrar essa leveza também!",
-		"made-with": "Feito com"
+		"made-with": "Feito com",
+		"click-me": "Clica-me!"
 	},
 
 	"navbar": {
