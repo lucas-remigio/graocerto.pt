@@ -60,45 +60,47 @@
 {#if categories.length === 0}
 	<p class="text-base-content/70 py-8 text-center">{$t('categories.no-categories')}</p>
 {:else}
-	<table class="table-zebra table w-full border-2 {modalBorderClass}">
-		<thead class="text-center">
-			<tr>
-				<th>{$t('categories.category-name')}</th>
-				<th>{$t('categories.color')}</th>
-				<th>{$t('categories.actions')}</th>
-			</tr>
-		</thead>
-		<tbody class="text-center">
-			{#each categories as category (category.id)}
+	<div class="overflow-hidden rounded-xl border-2 {modalBorderClass}">
+		<table class="table-zebra table w-full">
+			<thead class="text-center">
 				<tr>
-					<td>{category.category_name}</td>
-					<td>
-						<div class="flex items-center justify-center space-x-2">
-							<span
-								class="inline-block h-4 w-4 rounded-full"
-								style="background-color: {category.color};"
-							></span>
-							<span>{category.color}</span>
-						</div>
-					</td>
-					<td>
-						<button
-							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
-							on:click={() => openEditCategoryModal(category)}
-						>
-							<Pencil size={20} />
-						</button>
-						<button
-							class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
-							on:click={() => handlePromptDeleteCategory(category)}
-						>
-							<Trash size={20} />
-						</button>
-					</td>
+					<th>{$t('categories.category-name')}</th>
+					<th>{$t('categories.color')}</th>
+					<th>{$t('categories.actions')}</th>
 				</tr>
-			{/each}
-		</tbody>
-	</table>
+			</thead>
+			<tbody class="text-center">
+				{#each categories as category (category.id)}
+					<tr>
+						<td>{category.category_name}</td>
+						<td>
+							<div class="flex items-center justify-center space-x-2">
+								<span
+									class="inline-block h-4 w-4 rounded-full"
+									style="background-color: {category.color};"
+								></span>
+								<span>{category.color}</span>
+							</div>
+						</td>
+						<td>
+							<button
+								class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
+								on:click={() => openEditCategoryModal(category)}
+							>
+								<Pencil size={20} />
+							</button>
+							<button
+								class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
+								on:click={() => handlePromptDeleteCategory(category)}
+							>
+								<Trash size={20} />
+							</button>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {/if}
 
 {#if editCategoryModalOpen}
