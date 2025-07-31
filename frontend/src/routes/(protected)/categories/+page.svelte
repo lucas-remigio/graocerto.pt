@@ -129,7 +129,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="container mx-auto p-4">
+	<div class="container mx-auto min-h-screen p-4">
 		{#if deleteError}
 			<p class="text-red-500">{deleteError}</p>
 		{/if}

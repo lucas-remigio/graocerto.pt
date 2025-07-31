@@ -340,7 +340,7 @@
 	});
 </script>
 
-<div class="container mx-auto p-4">
+<div class="container mx-auto flex min-h-screen flex-col p-4">
 	{#if error}
 		<div class="alert alert-error">
 			<p>{error}</p>
