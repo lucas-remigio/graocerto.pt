@@ -20,7 +20,8 @@
 		"testimonial-1-author": "Lara G.",
 		"dev-about": "About the Developer",
 		"dev-contact-me": "Contact me!",
-		"dev-presentation": "Hi, I'm Lucas, the creator of Grão Certo. I built this app to help myself and my girlfriend gain more clarity and peace of mind in our finances. After years of trying various tools, from spreadsheets to mobile apps, we realized we needed something simple and intuitive to visualize our spending and feel at ease. I hope Grão Certo helps you find that lightness too!"
+		"dev-presentation": "Hi, I'm Lucas, the creator of Grão Certo. I built this app to help myself and my girlfriend gain more clarity and peace of mind in our finances. After years of trying various tools, from spreadsheets to mobile apps, we realized we needed something simple and intuitive to visualize our spending and feel at ease. I hope Grão Certo helps you find that lightness too!",
+		"made-with": "Made with"
 	},
 
 	"navbar": {
@@ -45,6 +46,7 @@
 
 	"common": {
 		"at": "at",
+		"by": "by",
 		"all": "All",
 		"create": "Create",
 		"edit": "Edit",
