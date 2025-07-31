@@ -13,6 +13,14 @@
 	import { onMount } from 'svelte';
 	import { themeService } from '$lib/services/themeService';
 
+	let zoomedImg: string | null = null;
+	function openZoom(src: string) {
+		zoomedImg = src;
+	}
+	function closeZoom() {
+		zoomedImg = null;
+	}
+
 	let isDarkMode = false;
 
 	function updateTheme() {
@@ -53,11 +61,18 @@
 		</div>
 		<!-- Hero Illustration -->
 		<div class="flex flex-1 justify-center">
-			<img
-				src={isDarkMode ? '/graphs_dark.png' : '/graphs_light.png'}
-				alt="App screenshot"
-				class="w-full max-w-md rounded-xl shadow-xl"
-			/>
+			<button
+				type="button"
+				class="transition-transform duration-200 hover:scale-105"
+				on:click={() => openZoom('/graphs_light.png')}
+				aria-label="Open app screenshot"
+			>
+				<img
+					src={isDarkMode ? '/graphs_dark.png' : '/graphs_light.png'}
+					alt="App screenshot"
+					class="w-full max-w-md rounded-xl shadow-xl"
+				/>
+			</button>
 		</div>
 	</section>
 
@@ -123,11 +138,19 @@
 
 	<!-- ABOUT ME SECTION -->
 	<section class="mt-12 flex w-full max-w-3xl flex-col items-center text-center opacity-80">
-		<img
-			src="/the_dev.jpeg"
-			alt="Lucas Remigio"
-			class="mb-3 h-32 w-32 rounded-full object-cover shadow"
-		/>
+		<button
+			type="button"
+			class="mb-3 h-32 w-32 rounded-full transition-transform duration-200 hover:scale-105"
+			aria-label="Zoom image of Lucas Remigio"
+			on:click={() => openZoom('/the_dev.jpeg')}
+		>
+			<img
+				src="/the_dev.jpeg"
+				alt="Lucas Remigio"
+				class="h-full w-full rounded-full object-cover"
+				draggable="false"
+			/>
+		</button>
 		<h5 class="text-primary mb-1 text-lg font-semibold">{$t('landing.dev-about')}</h5>
 		<p class="text-base-content/70 mb-2">
 			{$t('landing.dev-presentation')}
@@ -136,14 +159,18 @@
 		<h6 class="text-primary mb-2 mt-4 text-base font-semibold">{$t('landing.dev-contact-me')}</h6>
 		<!-- Socials Section -->
 		<div class="mt-2 flex justify-center gap-4">
-			<a href="mailto:remigio@graocerto.pt" class="btn btn-ghost btn-circle" aria-label="Email">
+			<a
+				href="mailto:remigio@graocerto.pt"
+				class="btn btn-ghost btn-circle transition-transform duration-200 hover:scale-105"
+				aria-label="Email"
+			>
 				<Mail class="text-primary h-6 w-6" />
 			</a>
 			<a
 				href="https://linkedin.com/in/lucas-remigio"
 				target="_blank"
 				rel="noopener"
-				class="btn btn-ghost btn-circle"
+				class="btn btn-ghost btn-circle transition-transform duration-200 hover:scale-105"
 				aria-label="LinkedIn"
 			>
 				<Linkedin class="text-primary h-6 w-6" />
@@ -152,7 +179,7 @@
 				href="https://github.com/lucas-remigio"
 				target="_blank"
 				rel="noopener"
-				class="btn btn-ghost btn-circle"
+				class="btn btn-ghost btn-circle transition-transform duration-200 hover:scale-105"
 				aria-label="GitHub"
 			>
 				<Github class="text-primary h-6 w-6" />
@@ -160,3 +187,39 @@
 		</div>
 	</section>
 </div>
+
+{#if zoomedImg}
+	<button
+		type="button"
+		class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+		aria-label="Close zoomed image"
+		on:click={closeZoom}
+		on:keydown={(e) => {
+			if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') closeZoom();
+		}}
+		tabindex="0"
+	>
+		<img
+			src={zoomedImg}
+			alt="Zoomed"
+			class="animate-zoom-in max-h-[80vh] max-w-[90vw] rounded-xl shadow-lg"
+			draggable="false"
+		/>
+	</button>
+{/if}
+
+<style>
+	@keyframes zoom-in {
+		from {
+			transform: scale(0.7);
+			opacity: 0;
+		}
+		to {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+	.animate-zoom-in {
+		animation: zoom-in 0.25s cubic-bezier(0.4, 2, 0.3, 1) both;
+	}
+</style>
