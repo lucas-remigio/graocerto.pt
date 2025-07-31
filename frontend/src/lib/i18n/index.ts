@@ -1,12 +1,5 @@
 import { browser } from '$app/environment';
-import {
-	init,
-	register,
-	locale,
-	getLocaleFromNavigator,
-	_,
-	isLoading as svelteI18nLoading
-} from 'svelte-i18n';
+import { init, register, locale, _, isLoading as svelteI18nLoading } from 'svelte-i18n';
 import { derived, writable } from 'svelte/store';
 
 // Use svelte-i18n's built-in loading state
@@ -23,9 +16,7 @@ let initialized = false;
 export function setupI18n() {
 	if (initialized) return;
 
-	const initialLocale = browser
-		? localStorage.getItem('preferred-language') || getLocaleFromNavigator() || 'pt'
-		: 'pt';
+	const initialLocale = browser ? localStorage.getItem('preferred-language') || 'pt' : 'pt';
 
 	init({
 		fallbackLocale: 'pt',

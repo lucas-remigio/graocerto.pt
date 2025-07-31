@@ -115,14 +115,19 @@
 		</div>
 	{/if}
 	<div class="navbar-end">
-		<!-- Desktop: show buttons inline -->
+		<!-- Desktop: show theme/language always -->
 		<div class="hidden items-center gap-1 lg:flex">
-			{#if $isAuthenticated}
-				<NavActions theme={$theme} {toggleTheme} locale={$locale || 'pt'} {toggleLanguage} t={$t} />
-			{/if}
+			<NavActions
+				theme={$theme}
+				{toggleTheme}
+				locale={$locale || 'pt'}
+				{toggleLanguage}
+				t={$t}
+				isAuthenticated={$isAuthenticated}
+			/>
 		</div>
 
-		<!-- Mobile: add to profile dropdown -->
+		<!-- Mobile: add to profile dropdown if logged in, else show inline -->
 		{#if $isAuthenticated}
 			<UserMenu {logout}>
 				{#if !$isLargeScreen}
@@ -133,10 +138,15 @@
 						{toggleLanguage}
 						t={$t}
 						isMenu={true}
+						isAuthenticated={$isAuthenticated}
 					/>
 				{/if}
 			</UserMenu>
 		{:else}
+			<!-- Show theme/language inline on mobile if not logged in -->
+			<div class="flex items-center gap-1 lg:hidden">
+				<NavActions theme={$theme} {toggleTheme} locale={$locale || 'pt'} {toggleLanguage} t={$t} />
+			</div>
 			<a href={loginUrl} class="btn btn-ghost btn-circle" aria-label="Login">
 				<LogIn size={20} class="h-5 w-5" />
 			</a>

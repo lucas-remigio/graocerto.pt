@@ -7,15 +7,16 @@
 	export let toggleLanguage: () => void;
 	export let t: (key: string) => string;
 	export let isMenu = false; // If true, render as menu items (li), else as inline buttons
+	export let isAuthenticated: boolean = false;
 
 	// Helper for icon and text
-	const actions = [
+	$: actions = [
 		{
 			key: 'balance',
 			onClick: () => hideBalances.update((v) => !v),
 			icon: () => ($hideBalances ? EyeOff : Eye),
 			text: () => t($hideBalances ? 'navbar.show-balance' : 'navbar.hide-balance'),
-			show: true
+			show: isAuthenticated
 		},
 		{
 			key: 'theme',
@@ -36,7 +37,7 @@
 </script>
 
 {#if isMenu}
-	{#each actions as action (action.key)}
+	{#each actions.filter((a) => a.show) as action (action.key)}
 		<li>
 			<button class="btn btn-ghost w-full justify-start font-normal" on:click={action.onClick}>
 				{#if action.icon}
@@ -49,7 +50,7 @@
 		</li>
 	{/each}
 {:else}
-	{#each actions as action (action.key)}
+	{#each actions.filter((a) => a.show) as action (action.key)}
 		<button
 			class="btn btn-ghost btn-circle tooltip tooltip-bottom flex items-center justify-center"
 			on:click={action.onClick}

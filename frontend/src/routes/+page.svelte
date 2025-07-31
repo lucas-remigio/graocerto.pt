@@ -1,135 +1,114 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { CreditCard, BarChart3, Lock, Sparkles, Star } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { themeService } from '$lib/services/themeService';
+
+	let isDarkMode = false;
+
+	function updateTheme() {
+		isDarkMode = themeService.isDarkMode();
+	}
+
+	onMount(() => {
+		updateTheme();
+		const unsubscribe = themeService.subscribe(updateTheme);
+		return unsubscribe;
+	});
 </script>
 
-<div
-	class="bg-base-100 flex flex-col items-center justify-center px-4 py-12 lg:h-[calc(100vh-64px)]"
->
-	<div
-		class="flex w-full max-w-6xl flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-between"
+<div class="bg-base-100 flex min-h-screen flex-col items-center px-4 py-8">
+	<!-- HERO SECTION -->
+	<section
+		class="flex w-full max-w-5xl flex-col-reverse items-center justify-between gap-10 py-12 lg:flex-row"
 	>
-		<div class="flex flex-col items-center lg:w-1/2 lg:items-start">
-			<img src="/logo.png" alt="Grão Certo Logo" class="mb-6 h-20 w-auto" />
-			<h1 class="text-primary mb-4 text-center text-5xl font-extrabold lg:text-left">Grão Certo</h1>
-			<p class="text-base-content/80 text-center text-lg lg:text-left">
-				<strong>Grão Certo</strong>
-				{$t('landing.intro')}
+		<!-- Hero Text -->
+		<div class="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left">
+			<!-- Grão Certo Logo -->
+			<img src="/favicon.svg" alt="Grão Certo" class="mb-6 h-14 w-auto" />
+			<h1 class="text-primary mb-4 text-5xl font-extrabold">
+				{$t('landing.hero-title')}
+			</h1>
+			<p class="text-base-content/80 mb-6 max-w-xl text-lg">
+				{$t('landing.hero-desc')}
 			</p>
-
-			<!-- CTA only on large screens -->
-			<div class="hidden lg:block">
-				<div class="mb-10 mt-10 text-left">
-					<p class="text-base-content/90 mb-2 text-lg font-semibold">
-						{$t('landing.cta-title')}
-					</p>
-					<p class="text-base-content/70">{$t('landing.cta-desc')}</p>
-				</div>
-				<a href="/login" class="btn btn-primary btn-lg max-w-xs text-lg font-bold">
-					<span class="text-base-100">{$t('landing.cta-button')}</span>
-				</a>
-			</div>
-		</div>
-
-		<div class="grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:w-1/2">
-			<!-- Card 1: Accounts -->
-			<div class="bg-base-200 rounded-xl shadow">
-				<!-- Desktop: Always show full content -->
-				<div class="hidden flex-col items-center p-6 lg:flex">
-					<h2 class="text-primary mb-2 text-center text-xl font-bold">
-						{$t('landing.accounts-title')}
-					</h2>
-					<p class="text-base-content/70 text-center">{$t('landing.accounts-desc')}</p>
-				</div>
-
-				<!-- Mobile: DaisyUI Accordion -->
-				<div tabindex="-1" class="collapse-arrow bg-base-200 collapse lg:hidden">
-					<div class="collapse-title text-primary font-bold">
-						{$t('landing.accounts-title')}
-					</div>
-					<div class="collapse-content">
-						<p class="text-base-content/70">{$t('landing.accounts-desc')}</p>
-					</div>
-				</div>
-			</div>
-
-			<!-- Card 2: Analytics -->
-			<div class="bg-base-200 rounded-xl shadow">
-				<!-- Desktop: Always show full content -->
-				<div class="hidden flex-col items-center p-6 lg:flex">
-					<h2 class="text-primary mb-2 text-center text-xl font-bold">
-						{$t('landing.analytics-title')}
-					</h2>
-					<p class="text-base-content/70 text-center">{$t('landing.analytics-desc')}</p>
-				</div>
-
-				<!-- Mobile: DaisyUI Accordion -->
-				<div tabindex="-2" class="collapse-arrow bg-base-200 collapse lg:hidden">
-					<div class="collapse-title text-primary font-bold">
-						{$t('landing.analytics-title')}
-					</div>
-					<div class="collapse-content">
-						<p class="text-base-content/70">{$t('landing.analytics-desc')}</p>
-					</div>
-				</div>
-			</div>
-
-			<!-- Card 3: Privacy -->
-			<div class="bg-base-200 rounded-xl shadow">
-				<!-- Desktop: Always show full content -->
-				<div class="hidden flex-col items-center p-6 lg:flex">
-					<h2 class="text-primary mb-2 text-center text-xl font-bold">
-						{$t('landing.privacy-title')}
-					</h2>
-					<p class="text-base-content/70 text-center">{$t('landing.privacy-desc')}</p>
-				</div>
-
-				<!-- Mobile: DaisyUI Accordion -->
-				<div tabindex="-3" class="collapse-arrow bg-base-200 collapse lg:hidden">
-					<div class="collapse-title text-primary font-bold">
-						{$t('landing.privacy-title')}
-					</div>
-					<div class="collapse-content">
-						<p class="text-base-content/70">{$t('landing.privacy-desc')}</p>
-					</div>
-				</div>
-			</div>
-
-			<!-- Card 4: Intuitive -->
-			<div class="bg-base-200 rounded-xl shadow">
-				<!-- Desktop: Always show full content -->
-				<div class="hidden flex-col items-center p-6 lg:flex">
-					<h2 class="text-primary mb-2 text-center text-xl font-bold">
-						{$t('landing.intuitive-title')}
-					</h2>
-					<p class="text-base-content/70 text-center">{$t('landing.intuitive-desc')}</p>
-				</div>
-
-				<!-- Mobile: DaisyUI Accordion -->
-				<div tabindex="-4" class="collapse-arrow bg-base-200 collapse lg:hidden">
-					<input type="radio" name="landing-accordion" />
-					<div class="collapse-title text-primary font-bold">
-						{$t('landing.intuitive-title')}
-					</div>
-					<div class="collapse-content">
-						<p class="text-base-content/70">{$t('landing.intuitive-desc')}</p>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- CTA for mobile/tablet at the bottom -->
-	<div class="mt-8 block w-full max-w-2xl lg:hidden">
-		<div class="mb-4 text-center">
-			<p class="text-base-content/90 mb-2 text-lg font-semibold">
-				{$t('landing.cta-title')}
-			</p>
-			<p class="text-base-content/70">{$t('landing.cta-desc')}</p>
-		</div>
-		<div class="flex w-full justify-center">
-			<a href="/login" class="btn btn-primary btn-lg w-full max-w-xs text-lg font-bold">
+			<a
+				href="/register"
+				class="btn btn-primary btn-lg px-8 py-3 text-lg font-bold shadow-lg transition hover:scale-105"
+			>
 				<span class="text-base-100">{$t('landing.cta-button')}</span>
 			</a>
+			<p class="text-base-content/60 mt-2 text-xs">{$t('landing.no-credit-card')}</p>
+			<!-- Social proof -->
+			<!-- To be completed-->
 		</div>
-	</div>
+		<!-- Hero Illustration -->
+		<div class="flex flex-1 justify-center">
+			<img
+				src={isDarkMode ? '/graphs_dark.png' : '/graphs_light.png'}
+				alt="App screenshot"
+				class="w-full max-w-md rounded-xl shadow-xl"
+			/>
+		</div>
+	</section>
+
+	<!-- FEATURES SECTION -->
+	<section class="mt-8 grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+		<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
+			<CreditCard class="text-secondary mb-2 h-8 w-8" />
+			<h2 class="text-primary mb-1 text-center text-xl font-bold">
+				{$t('landing.accounts-title')}
+			</h2>
+			<p class="text-base-content/70 text-center">{$t('landing.accounts-desc')}</p>
+		</div>
+		<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
+			<BarChart3 class="text-secondary mb-2 h-8 w-8" />
+			<h2 class="text-primary mb-1 text-center text-xl font-bold">
+				{$t('landing.analytics-title')}
+			</h2>
+			<p class="text-base-content/70 text-center">{$t('landing.analytics-desc')}</p>
+		</div>
+		<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
+			<Lock class="text-secondary mb-2 h-8 w-8" />
+			<h2 class="text-primary mb-1 text-center text-xl font-bold">{$t('landing.privacy-title')}</h2>
+			<p class="text-base-content/70 text-center">{$t('landing.privacy-desc')}</p>
+		</div>
+		<div class="bg-base-200 flex flex-col items-center rounded-xl p-6 shadow">
+			<Sparkles class="text-secondary mb-2 h-8 w-8" />
+			<h2 class="text-primary mb-1 text-center text-xl font-bold">
+				{$t('landing.intuitive-title')}
+			</h2>
+			<p class="text-base-content/70 text-center">{$t('landing.intuitive-desc')}</p>
+		</div>
+	</section>
+
+	<!-- SOCIAL PROOF / TESTIMONIALS -->
+	<section class="mt-16 w-full max-w-3xl">
+		<h3 class="text-primary mb-6 text-center text-lg font-semibold">
+			{$t('landing.testimonials-title')}
+		</h3>
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-1">
+			<div class="bg-base-200 flex flex-col items-center rounded-xl p-4 shadow">
+				<div class="mb-2 flex flex-row gap-1">
+					<Star fill="currentColor" class="text-warning h-5 w-5" />
+					<Star fill="currentColor" class="text-warning h-5 w-5" />
+					<Star fill="currentColor" class="text-warning h-5 w-5" />
+					<Star fill="currentColor" class="text-warning h-5 w-5" />
+					<Star fill="currentColor" class="text-warning h-5 w-5" />
+				</div>
+				<p class="text-base-content/80 mb-2 text-center">{$t('landing.testimonial-1')}</p>
+				<span class="text-base-content/60 text-xs">— {$t('landing.testimonial-1-author')}</span>
+			</div>
+		</div>
+	</section>
+
+	<!-- SECONDARY CTA -->
+	<section class="mt-16 flex w-full max-w-2xl flex-col items-center">
+		<h4 class="text-primary mb-2 text-2xl font-bold">{$t('landing.cta-title')}</h4>
+		<p class="text-base-content/80 mb-4 text-center">{$t('landing.cta-desc')}</p>
+		<a href="/register" class="btn btn-primary btn-lg w-full max-w-xs text-lg font-bold">
+			<span class="text-base-100">{$t('landing.cta-button')}</span>
+		</a>
+		<p class="text-base-content/60 mt-2 text-xs">{$t('landing.no-credit-card')}</p>
+	</section>
 </div>

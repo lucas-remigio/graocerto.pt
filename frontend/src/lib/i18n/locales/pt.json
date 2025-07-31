@@ -1,6 +1,6 @@
 {
 	"landing": {
-		"intro": "é o primeiro passo para o controlo financeiro: o tracking dos teus gastos. Ao acompanhar para onde vai o teu dinheiro, percebes o teu orçamento, identificas despesas desnecessárias e descobre oportunidades para poupar ou investir para outros objetivos.",
+		"intro": "é o primeiro passo para o controlo financeiro: o tracking dos teus gastos. Ao acompanhar para onde vai o teu dinheiro, percebes o teu orçamento, identificas despesas desnecessárias e descobres oportunidades para poupar ou investir para outros objetivos.",
 		"accounts-title": "Todas as Tuas Contas em Um Só Lugar",
 		"accounts-desc": "Conecta e organiza todas as tuas contas bancárias, cartões e investimentos num único painel. Chega de excels ou apps espalhadas.",
 		"analytics-title": "Análises e Insights Poderosos",
@@ -11,7 +11,13 @@
 		"intuitive-desc": "Desfruta de uma experiência fluida em qualquer dispositivo. Adiciona transações, categoriza despesas e recebe feedback instantâneo — sem curva de aprendizagem.",
 		"cta-title": "Pronto para controlar a tua vida financeira?",
 		"cta-desc": "Junta-te ao Grão Certo hoje e começa a tua jornada rumo à clareza e crescimento financeiro.",
-		"cta-button": "Começa Grátis"
+		"cta-button": "Começa Grátis",
+		"hero-title": "Assume o Controlo das Tuas Finanças",
+		"hero-desc": "Acompanha os teus gastos, define objetivos e aumenta as tuas poupanças com o Grão Certo. Simples, seguro e gratuito.",
+		"no-credit-card": "Não é necessário cartão de crédito",
+		"testimonials-title": "O que dizem os nossos utilizadores",
+		"testimonial-1": "Esta app ajudou-me a poupar mais todos os meses. Recomendo!",
+		"testimonial-1-author": "Lara G."
 	},
 
 	"navbar": {

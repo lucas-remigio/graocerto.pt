@@ -1,17 +1,23 @@
 {
 	"landing": {
 		"intro": "is the first step to financial control: tracking your expenses. By understanding where your money goes, you get a clear view of your budget, spot unnecessary spending, and discover opportunities to save or invest for other goals.",
-		"accounts-title": "All Your Accounts, One Place",
+		"accounts-title": "All Your Accounts in One Place",
 		"accounts-desc": "Connect and organize all your bank accounts, cards, and investments in a single dashboard. No more spreadsheets or scattered apps.",
 		"analytics-title": "Powerful Analytics & Insights",
-		"analytics-desc": "Visualize your spending, set goals, and discover trends with beautiful charts and smart statistics. Make informed decisions for your financial future.",
+		"analytics-desc": "Visualize your spending and discover trends with beautiful charts and smart statistics. Make informed decisions for your financial future.",
 		"privacy-title": "Privacy & Security First",
-		"privacy-desc": "Your data is yours. Grão Certo never sells your information and uses best-in-class security practices to keep your finances safe.",
+		"privacy-desc": "Your data is yours. Grão Certo never sells your information and uses best-in-class security practices to keep your finances safe. What's yours is yours.",
 		"intuitive-title": "Intuitive & Fast",
-		"intuitive-desc": "Enjoy a seamless, responsive experience on any device. Add transactions, categorize expenses, and get instant feedback—no learning curve required.",
+		"intuitive-desc": "Enjoy a seamless experience on any device. Add transactions, categorize expenses, and get instant feedback—no learning curve required.",
 		"cta-title": "Ready to take control of your financial life?",
 		"cta-desc": "Join Grão Certo today and start your journey to financial clarity and growth.",
-		"cta-button": "Get Started Free"
+		"cta-button": "Get Started Free",
+		"hero-title": "Take Control of Your Finances",
+		"hero-desc": "Track your spending, set goals, and grow your savings with Grão Certo. Simple, secure, and free.",
+		"no-credit-card": "No credit card required",
+		"testimonials-title": "What our users say",
+		"testimonial-1": "This app helped me save more every month. Highly recommended!",
+		"testimonial-1-author": "Lara G."
 	},
 
 	"navbar": {

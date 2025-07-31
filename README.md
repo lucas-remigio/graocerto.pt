@@ -23,11 +23,11 @@ Before you can improve your finances, you need to understand your spending patte
 
 ### **Transaction Management** 🌙
 
-![Transactions Dark Mode](./transactions_dark.png)
+![Transactions Dark Mode](./transactions_light.png)
 
 ### **Financial Insights** ☀️
 
-![Graphs Light Mode](./graphs_light.png)
+![Graphs Light Mode](./graphs_dark.png)
 
 ## 🎯 Project Vision
 
