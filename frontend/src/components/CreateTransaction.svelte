@@ -280,7 +280,12 @@
 						<label class="label" for="date">
 							<span class="label-text">{$t('transactions.date')}</span>
 						</label>
-						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
+						<input
+							id="date"
+							type="date"
+							class="input input-bordered date-input w-full"
+							bind:value={date}
+						/>
 					</div>
 
 					<!-- Amount Field -->
@@ -315,3 +320,12 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	:global(.dark) input[type='date']::-webkit-calendar-picker-indicator {
+		filter: invert(1);
+	}
+	:global(.dark) input[type='date']::-moz-calendar-picker-indicator {
+		filter: invert(1);
+	}
+</style>
