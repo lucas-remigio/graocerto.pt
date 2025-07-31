@@ -1,6 +1,15 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { CreditCard, BarChart3, Lock, Sparkles, Star } from 'lucide-svelte';
+	import {
+		CreditCard,
+		BarChart3,
+		Lock,
+		Sparkles,
+		Star,
+		Mail,
+		Linkedin,
+		Github
+	} from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { themeService } from '$lib/services/themeService';
 
@@ -110,5 +119,44 @@
 			<span class="text-base-100">{$t('landing.cta-button')}</span>
 		</a>
 		<p class="text-base-content/60 mt-2 text-xs">{$t('landing.no-credit-card')}</p>
+	</section>
+
+	<!-- ABOUT ME SECTION -->
+	<section class="mt-12 flex w-full max-w-3xl flex-col items-center text-center opacity-80">
+		<img
+			src="/the_dev.jpeg"
+			alt="Lucas Remigio"
+			class="mb-3 h-32 w-32 rounded-full object-cover shadow"
+		/>
+		<h5 class="text-primary mb-1 text-lg font-semibold">{$t('landing.dev-about')}</h5>
+		<p class="text-base-content/70 mb-2">
+			{$t('landing.dev-presentation')}
+		</p>
+		<!-- Contact Me heading -->
+		<h6 class="text-primary mb-2 mt-4 text-base font-semibold">{$t('landing.dev-contact-me')}</h6>
+		<!-- Socials Section -->
+		<div class="mt-2 flex justify-center gap-4">
+			<a href="mailto:remigio@graocerto.pt" class="btn btn-ghost btn-circle" aria-label="Email">
+				<Mail class="text-primary h-6 w-6" />
+			</a>
+			<a
+				href="https://linkedin.com/in/lucas-remigio"
+				target="_blank"
+				rel="noopener"
+				class="btn btn-ghost btn-circle"
+				aria-label="LinkedIn"
+			>
+				<Linkedin class="text-primary h-6 w-6" />
+			</a>
+			<a
+				href="https://github.com/lucas-remigio"
+				target="_blank"
+				rel="noopener"
+				class="btn btn-ghost btn-circle"
+				aria-label="GitHub"
+			>
+				<Github class="text-primary h-6 w-6" />
+			</a>
+		</div>
 	</section>
 </div>

@@ -16,8 +16,11 @@
 		"hero-desc": "Track your spending, set goals, and grow your savings with Grão Certo. Simple, secure, and free.",
 		"no-credit-card": "No credit card required",
 		"testimonials-title": "What our users say",
-		"testimonial-1": "This app helped me save more every month. Highly recommended!",
-		"testimonial-1-author": "Lara G."
+		"testimonial-1": "Understanding my spending has given me the space to make better choices. What to save, what to spend, what to invest. A simple, complete tool that brings lightness to everyday life.",
+		"testimonial-1-author": "Lara G.",
+		"dev-about": "About the Developer",
+		"dev-contact-me": "Contact me!",
+		"dev-presentation": "Hi, I'm Lucas, the creator of Grão Certo. I built this app to help myself and my girlfriend gain more clarity and peace of mind in our finances. After years of trying various tools, from spreadsheets to mobile apps, we realized we needed something simple and intuitive to visualize our spending and feel at ease. I hope Grão Certo helps you find that lightness too!"
 	},
 
 	"navbar": {
