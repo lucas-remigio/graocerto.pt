@@ -36,14 +36,14 @@
 </script>
 
 <div class="navbar bg-base-100 border-base-300 h-16 min-h-16 border-b">
+	<!-- Hamburger menu always visible on the left -->
 	<div class="navbar-start">
 		{#if $isAuthenticated}
 			<div class="dropdown relative {isDropdownOpen ? 'dropdown-open' : ''}">
 				<button
 					type="button"
-					class="btn btn-ghost lg:hidden"
+					class="btn btn-ghost btn-circle"
 					on:touchend={(event) => {
-						// Prevent the synthetic click from firing after touchend
 						event.preventDefault();
 						event.stopPropagation();
 						touchHandled = true;
@@ -52,13 +52,13 @@
 					on:click={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
-						// If the touch event already toggled the state, ignore this click
 						if (touchHandled) {
 							touchHandled = false;
 							return;
 						}
 						isDropdownOpen = !isDropdownOpen;
 					}}
+					aria-label="Open menu"
 				>
 					<Menu size={20} class="h-5 w-5" />
 				</button>
@@ -66,6 +66,16 @@
 					<ul
 						class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[50] mt-3 w-52 p-2 shadow"
 					>
+						<li>
+							<button
+								type="button"
+								on:click={() => handleNavigation(homeUrl)}
+								class="text-lg"
+								aria-label="Home"
+							>
+								{$t('navbar.home') || 'Home'}
+							</button>
+						</li>
 						<li>
 							<button
 								type="button"
@@ -85,35 +95,18 @@
 					</ul>
 				{/if}
 			</div>
-			<a href={homeUrl} class="btn btn-ghost text-xl">
-				<img src="/logo.png" alt="Logo" class="mr-2 h-8 w-8" />
-				Grão Certo
-			</a>
 		{/if}
 	</div>
 
-	{#if $isAuthenticated}
-		<div class="navbar-center hidden lg:flex">
-			<ul class="menu menu-horizontal px-1">
-				<li>
-					<button
-						type="button"
-						on:click={() => handleNavigation(categoriesUrl)}
-						class="text-lg"
-						aria-label="Categories">{$t('navbar.categories')}</button
-					>
-				</li>
-				<li>
-					<button
-						type="button"
-						on:click={() => handleNavigation(investmentCalculatorUrl)}
-						class="text-lg"
-						aria-label="Investment Calculator">{$t('navbar.calculator')}</button
-					>
-				</li>
-			</ul>
-		</div>
-	{/if}
+	<!-- Logo always centered -->
+	<div class="navbar-center flex flex-1 justify-center">
+		<a href={homeUrl} class="btn btn-ghost flex items-center gap-2 text-xl">
+			<img src="/logo.png" alt="Logo" class="h-8 w-8" />
+			Grão Certo
+		</a>
+	</div>
+
+	<!-- End of the navbar -->
 	<div class="navbar-end">
 		<!-- Desktop: show theme/language always -->
 		<div class="hidden items-center gap-1 lg:flex">

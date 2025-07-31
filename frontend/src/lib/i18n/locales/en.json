@@ -21,6 +21,7 @@
 	},
 
 	"navbar": {
+		"home": "Home",
 		"categories": "Categories",
 		"notifications": "Notifications",
 		"calculator": "Calculator",
