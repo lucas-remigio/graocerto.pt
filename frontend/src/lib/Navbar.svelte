@@ -36,9 +36,15 @@
 </script>
 
 <div class="navbar bg-base-100 border-base-300 h-16 min-h-16 border-b">
-	<!-- Hamburger menu always visible on the left -->
 	<div class="navbar-start">
-		{#if $isAuthenticated}
+		<!--  If the user is not authenticated and on mobile, we show the logo on the left -->
+		{#if !$isAuthenticated}
+			<a href="/" class="btn btn-ghost flex items-center gap-2 text-xl lg:hidden">
+				<img src="/logo.png" alt="Logo" class="h-8 w-8" />
+				Grão Certo
+			</a>
+			<!-- Hamburger menu only visible on the left if user is logged on -->
+		{:else}
 			<div class="dropdown relative {isDropdownOpen ? 'dropdown-open' : ''}">
 				<button
 					type="button"
@@ -98,11 +104,14 @@
 		{/if}
 	</div>
 
-	<!-- Logo always centered -->
+	<!-- Navbar Center. If user authenticated will always be centered. If not authenticated, -->
+	<!-- will be either hidden or shown based on screen size -->
 	<div class="navbar-center flex flex-1 justify-center">
 		<a
 			href={$isAuthenticated ? homeUrl : '/'}
-			class="btn btn-ghost flex items-center gap-2 text-xl"
+			class="btn btn-ghost flex items-center gap-2 text-xl {!$isAuthenticated
+				? 'hidden lg:flex'
+				: ''}"
 		>
 			<img src="/logo.png" alt="Logo" class="h-8 w-8" />
 			Grão Certo
