@@ -41,6 +41,7 @@
 	},
 
 	"common": {
+		"at": "at",
 		"all": "All",
 		"create": "Create",
 		"edit": "Edit",
@@ -187,6 +188,8 @@
 		"confirm": "Confirm",
 		"are-you-sure": "Are you sure?",
 		"cannot-be-undone": "This action cannot be undone.",
+		"delete-transaction": "Delete Transaction",
+		"with-category": "with category",
 		"delete-transaction-confirm": "Are you sure you want to delete this transaction",
 		"delete-account-confirm": "Are you sure you want to delete the account"
 	},

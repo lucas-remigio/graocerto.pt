@@ -53,7 +53,7 @@
 	}
 
 	function getTransactionDetails(transaction: TransactionDto): string {
-		return `${transaction.description} (${formatCurrency(transaction.amount)}€) with category ${transaction.category.category_name} at ${formatDate(transaction.date)}`;
+		return `${transaction.description} (${formatCurrency(transaction.amount)}€) ${$t('modals.with-category')} ${transaction.category.category_name} ${$t('common.at')} ${formatDate(transaction.date)}`;
 	}
 
 	function formatDate(date: string): string {
@@ -318,7 +318,7 @@
 
 {#if showDeleteTransactionModal}
 	<ConfirmAction
-		title="Delete Transaction"
+		title={`${$t('modals.delete-transaction')}`}
 		message={`${$t('modals.delete-transaction-confirm')} ${getTransactionDetails(selectedTransaction!)}? ${$t('modals.cannot-be-undone')}`}
 		type="danger"
 		onConfirm={handleDeleteTransactionConfirm}

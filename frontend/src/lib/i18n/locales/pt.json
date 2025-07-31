@@ -41,6 +41,7 @@
 	},
 
 	"common": {
+		"at": "às",
 		"all": "Todas",
 		"create": "Criar",
 		"edit": "Editar",
@@ -191,6 +192,8 @@
 		"confirm": "Confirmar",
 		"are-you-sure": "Tem a certeza?",
 		"cannot-be-undone": "Esta ação não pode ser desfeita.",
+		"delete-transaction": "Eliminar Transação",
+		"with-category": "com categoria",
 		"delete-transaction-confirm": "Tem certeza de que deseja excluir esta transação",
 		"delete-account-confirm": "Tem certeza de que deseja excluir a conta"
 	},
