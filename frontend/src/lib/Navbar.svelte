@@ -100,7 +100,10 @@
 
 	<!-- Logo always centered -->
 	<div class="navbar-center flex flex-1 justify-center">
-		<a href={homeUrl} class="btn btn-ghost flex items-center gap-2 text-xl">
+		<a
+			href={$isAuthenticated ? homeUrl : '/'}
+			class="btn btn-ghost flex items-center gap-2 text-xl"
+		>
 			<img src="/logo.png" alt="Logo" class="h-8 w-8" />
 			Grão Certo
 		</a>
