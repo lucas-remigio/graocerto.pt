@@ -9,6 +9,7 @@
 	import AccountCard from './AccountCard.svelte';
 	import { t } from '$lib/i18n';
 	import api_axios from '$lib/axios';
+	import { flip } from 'svelte/animate';
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
@@ -133,18 +134,20 @@
 			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto p-2'
 			: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
 	>
-		{#each accounts as account, i}
-			<AccountCard
-				{account}
-				{selectedAccount}
-				canMoveUp={i > 0}
-				canMoveDown={i < accounts.length - 1}
-				on:select={handleCardSelect}
-				on:edit={handleCardEdit}
-				on:delete={handleCardDelete}
-				on:moveUp={handleMoveUp}
-				on:moveDown={handleMoveDown}
-			/>
+		{#each accounts as account, i (account.token)}
+			<div animate:flip={{ duration: 500 }}>
+				<AccountCard
+					{account}
+					{selectedAccount}
+					canMoveUp={i > 0}
+					canMoveDown={i < accounts.length - 1}
+					on:select={handleCardSelect}
+					on:edit={handleCardEdit}
+					on:delete={handleCardDelete}
+					on:moveUp={handleMoveUp}
+					on:moveDown={handleMoveDown}
+				/>
+			</div>
 		{/each}
 	</div>
 {:else}
