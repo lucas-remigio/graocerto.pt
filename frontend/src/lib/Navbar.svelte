@@ -25,7 +25,7 @@
 	}
 
 	// Toggle theme function
-	const themeCycle: ThemeOption[] = ['system', 'light', 'dark'];
+	const themeCycle: ThemeOption[] = ['system', 'dark', 'light'];
 
 	function toggleTheme() {
 		theme.update((current) => {
@@ -129,6 +129,7 @@
 		<div class="hidden items-center gap-1 lg:flex">
 			<NavActions
 				theme={$theme}
+				setTheme={theme.set}
 				{toggleTheme}
 				locale={$locale || 'pt'}
 				{toggleLanguage}
@@ -143,6 +144,7 @@
 				{#if !$isLargeScreen}
 					<NavActions
 						theme={$theme}
+						setTheme={theme.set}
 						{toggleTheme}
 						locale={$locale || 'pt'}
 						{toggleLanguage}
@@ -155,7 +157,14 @@
 		{:else}
 			<!-- Show theme/language inline on mobile if not logged in -->
 			<div class="flex items-center gap-1 lg:hidden">
-				<NavActions theme={$theme} {toggleTheme} locale={$locale || 'pt'} {toggleLanguage} t={$t} />
+				<NavActions
+					theme={$theme}
+					setTheme={theme.set}
+					{toggleTheme}
+					locale={$locale || 'pt'}
+					{toggleLanguage}
+					t={$t}
+				/>
 			</div>
 			<a href={loginUrl} class="btn btn-ghost btn-circle" aria-label="Login">
 				<LogIn size={20} class="h-5 w-5" />

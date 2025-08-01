@@ -2,6 +2,7 @@
 	import { Eye, EyeOff, MonitorSmartphone, Moon, Phone, Sun } from 'lucide-svelte';
 	import { hideBalances, type ThemeOption } from '$stores/uiPreferences';
 	export let theme: ThemeOption = 'system';
+	export let setTheme: (theme: ThemeOption) => void;
 	export let toggleTheme: () => void;
 	export let locale: string;
 	export let toggleLanguage: () => void;
@@ -9,12 +10,20 @@
 	export let isMenu = false; // If true, render as menu items (li), else as inline buttons
 	export let isAuthenticated: boolean = false;
 
+	const themeCycle: ThemeOption[] = ['system', 'dark', 'light'];
+
+	function getNextTheme(current: ThemeOption): ThemeOption {
+		const idx = themeCycle.indexOf(current);
+		return themeCycle[(idx + 1) % themeCycle.length];
+	}
+
 	function getThemeIcon() {
-		switch (theme) {
+		const next = getNextTheme(theme);
+		switch (next) {
 			case 'dark':
-				return Sun;
-			case 'light':
 				return Moon;
+			case 'light':
+				return Sun;
 			case 'system':
 				return MonitorSmartphone;
 			default:
@@ -23,11 +32,12 @@
 	}
 
 	function getThemeText() {
-		switch (theme) {
+		const next = getNextTheme(theme);
+		switch (next) {
 			case 'dark':
-				return t('navbar.light-mode');
-			case 'light':
 				return t('navbar.dark-mode');
+			case 'light':
+				return t('navbar.light-mode');
 			case 'system':
 				return t('navbar.system-mode');
 			default:
