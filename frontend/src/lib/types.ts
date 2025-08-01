@@ -5,6 +5,7 @@ export interface Account {
 	account_name: string;
 	balance: number;
 	created_at: string;
+	order_index: number;
 }
 
 export interface AccountsResponse {

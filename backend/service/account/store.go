@@ -60,7 +60,7 @@ func (s *Store) CreateAccount(account *types.Account) error {
 
 func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 	return db.QueryList(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE user_id = ?",
+		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE user_id = ? ORDER BY order_index",
 		scanRowsIntoAccount, userId)
 }
 
@@ -93,7 +93,6 @@ func (s *Store) UpdateAccount(account *types.Account, userId int) error {
 }
 
 func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*types.MonthlyFeedback, error) {
-
 	// check if the account belongs to the user
 	account, err := s.GetAccountByToken(accountToken, userId)
 	if err != nil {
@@ -205,6 +204,46 @@ func (s *Store) DeleteAccount(token string, userId int) error {
 	err = db.ExecWithValidation(s.db, "DELETE FROM accounts WHERE token = ? AND user_id = ?", token, userId)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *Store) ReorderAccounts(userId int, accounts []types.ReorderAccount) error {
+	// Check: all tokens belong to the user
+	tokens := make([]any, len(accounts))
+	for i, account := range accounts {
+		tokens[i] = account.Token
+	}
+	query := fmt.Sprintf(
+		"SELECT COUNT(*) FROM accounts WHERE user_id = ? AND token IN (%s)",
+		strings.TrimRight(strings.Repeat("?,", len(tokens)), ","),
+	)
+	args := append([]any{userId}, tokens...)
+	var count int
+	err := s.db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return fmt.Errorf("failed to verify account ownership: %w", err)
+	}
+	if count != len(accounts) {
+		return fmt.Errorf("one or more accounts do not belong to the user")
+	}
+
+	// Check: all order indexes are unique
+	orderIndexes := make(map[int]bool)
+	for _, account := range accounts {
+		if orderIndexes[account.OrderIndex] {
+			return fmt.Errorf("duplicate order_index found: %d", account.OrderIndex)
+		}
+		orderIndexes[account.OrderIndex] = true
+	}
+
+	// Proceed with update
+	for _, account := range accounts {
+		err := db.ExecWithValidation(s.db, "UPDATE accounts SET order_index = ? WHERE token = ? AND user_id = ?", account.OrderIndex, account.Token, userId)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -2,16 +2,20 @@
 <script lang="ts">
 	import type { Account } from '$lib/types';
 	import { createEventDispatcher } from 'svelte';
-	import { Pencil, Trash } from 'lucide-svelte';
+	import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-svelte';
 	import { hideBalances } from '$lib/stores/uiPreferences';
 
 	export let account: Account;
 	export let selectedAccount: Account | null = null;
+	export let canMoveUp: boolean = false;
+	export let canMoveDown: boolean = false;
 
 	const dispatch = createEventDispatcher<{
 		select: { account: Account };
 		edit: { account: Account };
 		delete: { account: Account };
+		moveUp: { account: Account };
+		moveDown: { account: Account };
 	}>();
 
 	function formatCurrency(amount: number): string {
@@ -29,6 +33,14 @@
 
 	function handleDeleteAccount() {
 		dispatch('delete', { account });
+	}
+
+	function handleMoveUp() {
+		dispatch('moveUp', { account });
+	}
+
+	function handleMoveDown() {
+		dispatch('moveDown', { account });
 	}
 
 	$: isSelected = selectedAccount?.token === account.token;
@@ -71,6 +83,27 @@
 				title="Delete account"
 			>
 				<Trash size={16} />
+			</button>
+		</div>
+		<!-- Up/Down arrows side by side at bottom right -->
+		<div
+			class="absolute bottom-2 right-2 flex flex-row gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+		>
+			<button
+				class="btn btn-ghost btn-xs btn-circle bg-base-100/80"
+				on:click|stopPropagation={handleMoveUp}
+				title="Move up"
+				disabled={!canMoveUp}
+			>
+				<ArrowUp size={16} />
+			</button>
+			<button
+				class="btn btn-ghost btn-xs btn-circle bg-base-100/80"
+				on:click|stopPropagation={handleMoveDown}
+				title="Move down"
+				disabled={!canMoveDown}
+			>
+				<ArrowDown size={16} />
 			</button>
 		</div>
 	{/if}

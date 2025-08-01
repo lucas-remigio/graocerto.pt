@@ -22,6 +22,11 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 			http.MethodPost: h.CreateAccount,
 			http.MethodGet:  h.GetAccountsByUserId,
 		})))
+	router.HandleFunc("/accounts/reorder", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.ReorderAccounts,
+		}),
+	))
 	router.HandleFunc("/accounts/{id}", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
 			http.MethodPut:    h.UpdateAccount,
@@ -29,6 +34,7 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 		}),
 	))
 	router.HandleFunc("/accounts/{id}/feedback-month", middleware.AuthMiddleware(h.GetAccountFeedbackMonthly))
+
 }
 
 func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
@@ -176,4 +182,27 @@ func (h *Handler) GetAccountFeedbackMonthly(w http.ResponseWriter, r *http.Reque
 	}
 
 	middleware.WriteDataResponse(w, feedback)
+}
+
+func (h *Handler) ReorderAccounts(w http.ResponseWriter, r *http.Request) {
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// parse and validate JSON payload
+	var payload types.ReorderAccountsPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	// call store to update order indexes
+	err := h.store.ReorderAccounts(userId, payload.Accounts)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteSuccessResponse(w)
 }

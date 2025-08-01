@@ -7,6 +7,7 @@ type AccountStore interface {
 	UpdateAccount(account *Account, userId int) error
 	DeleteAccount(token string, userId int) error
 	GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*MonthlyFeedback, error)
+	ReorderAccounts(userId int, accounts []ReorderAccount) error
 }
 
 type CreateAccountPayload struct {
@@ -17,6 +18,15 @@ type CreateAccountPayload struct {
 type UpdateAccountPayload struct {
 	AccountName string   `json:"account_name" validate:"required,min=3,max=50"`
 	Balance     *float64 `json:"balance" validate:"required,gte=0,lt=100000000"`
+}
+
+type ReorderAccountsPayload struct {
+	Accounts []ReorderAccount `json:"accounts" validate:"required,dive"`
+}
+
+type ReorderAccount struct {
+	Token      string `json:"token" validate:"required"`
+	OrderIndex int    `json:"order_index" validate:"required,gte=0"`
 }
 
 type Account struct {
