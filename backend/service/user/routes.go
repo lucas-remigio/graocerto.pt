@@ -64,6 +64,8 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	isSecure := r.TLS != nil
+	jwtExpiration := config.Envs.JWTExpirationInSeconds
+
 	// Set the authToken as a secure, HTTP-only cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "authToken",
@@ -72,7 +74,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,                    // Prevents client-side JavaScript from accessing the cookie
 		Secure:   isSecure,                // Only send the cookie over HTTPS
 		SameSite: http.SameSiteStrictMode, // Prevents CSRF attacks
-		MaxAge:   3600,                    // Token expires after 1 hour (adjust as needed)
+		MaxAge:   int(jwtExpiration),      // Token expires at the same time as the JWT
 	})
 
 	utils.WriteJson(w, http.StatusOK, map[string]string{"token": token})
