@@ -82,7 +82,7 @@
 				title={account.is_favorite ? 'Unfavorite' : 'Favorite'}
 			>
 				{#if account.is_favorite}
-					<Star fill="currentColor" size={16} />
+					<Star fill="currentColor" size={16} class="text-amber-400"/>
 				{:else}
 					<Star size={16} />
 				{/if}
