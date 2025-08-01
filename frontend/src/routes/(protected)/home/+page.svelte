@@ -267,12 +267,7 @@
 	}
 
 	$: if (selectedAccount && $selectedView && initialDataLoaded) {
-		// Fetch data when selectedView changes
-		if ($selectedView === 'transactions') {
-			fetchTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
-		} else if ($selectedView === 'statistics') {
-			fetchStatistics(selectedAccount.token, selectedMonth, selectedYear, true);
-		}
+		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 	}
 
 	function handleNewTransaction() {

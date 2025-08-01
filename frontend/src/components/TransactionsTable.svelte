@@ -102,8 +102,8 @@
 	function getRowClass(tx: TransactionDto): string {
 		const type = tx.category.transaction_type.type_slug;
 		if ($theme === 'dark') {
-			if (type === 'debit') return 'bg-red-900 bg-opacity-60'
-			if (type === 'credit') return 'bg-green-900 bg-opacity-60'
+			if (type === 'debit') return 'bg-red-900 bg-opacity-40';
+			if (type === 'credit') return 'bg-green-900 bg-opacity-100';
 			return 'bg-base-300';
 		} else {
 			if (type === 'debit') return 'bg-red-100';
