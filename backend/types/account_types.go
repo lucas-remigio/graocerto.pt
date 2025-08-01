@@ -26,4 +26,5 @@ type Account struct {
 	AccountName string  `json:"account_name"`
 	Balance     float64 `json:"balance"`
 	CreatedAt   string  `json:"created_at"`
+	OrderIndex  int     `json:"order_index"`
 }

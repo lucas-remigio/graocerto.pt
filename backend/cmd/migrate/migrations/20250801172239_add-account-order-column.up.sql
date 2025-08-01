@@ -1,0 +1,3 @@
+ALTER TABLE `accounts`
+ADD COLUMN `order_index` INT UNSIGNED NOT NULL DEFAULT 0;
+

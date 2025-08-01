@@ -39,9 +39,16 @@ func (s *Store) CreateAccount(account *types.Account) error {
 	}
 	account.Token = token
 
+	var maxOrderIndex int
+	err = s.db.QueryRow("SELECT COALESCE(MAX(order_index), 0) FROM accounts WHERE user_id = ?", account.UserID).Scan(&maxOrderIndex)
+	if err != nil {
+		return err
+	}
+	account.OrderIndex = maxOrderIndex + 1
+
 	err = db.ExecWithValidation(s.db,
-		"INSERT INTO accounts (token, user_id, account_name, balance) VALUES (?, ?, ?, ?)",
-		account.Token, account.UserID, account.AccountName, account.Balance,
+		"INSERT INTO accounts (token, user_id, account_name, balance, order_index) VALUES (?, ?, ?, ?, ?)",
+		account.Token, account.UserID, account.AccountName, account.Balance, account.OrderIndex,
 	)
 
 	if err != nil {
@@ -53,19 +60,19 @@ func (s *Store) CreateAccount(account *types.Account) error {
 
 func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 	return db.QueryList(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE user_id = ?",
+		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE user_id = ?",
 		scanRowsIntoAccount, userId)
 }
 
 func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, error) {
 	return db.QuerySingle(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE token = ? AND user_id = ?",
+		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE token = ? AND user_id = ?",
 		scanRowIntoAccount, token, userId)
 }
 
 func (s *Store) GetAccountById(id int, userId int) (*types.Account, error) {
 	return db.QuerySingle(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at FROM accounts WHERE id = ? AND user_id = ?",
+		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE id = ? AND user_id = ?",
 		scanRowIntoAccount, id, userId)
 }
 
@@ -206,7 +213,7 @@ func (s *Store) DeleteAccount(token string, userId int) error {
 func scanRowIntoAccount(row *sql.Row) (*types.Account, error) {
 	a := new(types.Account)
 
-	err := row.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt)
+	err := row.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt, &a.OrderIndex)
 
 	if err != nil {
 		return nil, err
@@ -218,7 +225,7 @@ func scanRowIntoAccount(row *sql.Row) (*types.Account, error) {
 func scanRowsIntoAccount(rows *sql.Rows) (*types.Account, error) {
 	a := new(types.Account)
 
-	err := rows.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt)
+	err := rows.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt, &a.OrderIndex)
 
 	if err != nil {
 		return nil, err
