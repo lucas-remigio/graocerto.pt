@@ -21,6 +21,7 @@
 		setDraftTransaction,
 		setDraftTransactionAccountToken
 	} from '$lib/services/draftTransactionService';
+	import { theme } from '$lib/stores/uiPreferences';
 
 	// Export props for transactions array and the account name.
 	export let transactionsGroups: TransactionGroup[] = [];
@@ -96,6 +97,19 @@
 
 		// Use white text on dark backgrounds, dark text on light backgrounds
 		return luminance > 0.5 ? 'text-gray-900' : 'text-gray-100';
+	}
+
+	function getRowClass(tx: TransactionDto): string {
+		const type = tx.category.transaction_type.type_slug;
+		if ($theme === 'dark') {
+			if (type === 'debit') return 'bg-red-900 bg-opacity-60'
+			if (type === 'credit') return 'bg-green-900 bg-opacity-60'
+			return 'bg-base-300';
+		} else {
+			if (type === 'debit') return 'bg-red-100';
+			if (type === 'credit') return 'bg-green-100';
+			return '';
+		}
 	}
 
 	function openCreateTransactionModal() {
@@ -238,17 +252,11 @@
 							</tr>
 						{/if}
 						{#each group.transactions as tx}
-							<tr
-								class={tx.category.transaction_type.type_slug === 'debit'
-									? 'bg-red-100'
-									: tx.category.transaction_type.type_slug === 'credit'
-										? 'bg-green-100'
-										: ''}
-							>
-								<td class="text-gray-900">
+							<tr class={getRowClass(tx)}>
+								<td class="text-base-content">
 									{formatDate(tx.date)}
 								</td>
-								<td class="text-gray-900">
+								<td class="text-base-content">
 									<span
 										class="rounded px-2 py-1 {getTextColor(tx.category.color)}"
 										style="background-color: {tx.category.color};"
@@ -256,9 +264,9 @@
 										{tx.category.category_name}
 									</span>
 								</td>
-								<td class="text-gray-900">{formatCurrency(tx.amount)}€</td>
-								<td class="text-gray-900">{tx.description || 'N/A'}</td>
-								<td class="flex justify-center gap-x-2 text-gray-900">
+								<td class="text-base-content">{formatCurrency(tx.amount)}€</td>
+								<td class="text-base-content">{tx.description || 'N/A'}</td>
+								<td class="text-base-content flex justify-center gap-x-2">
 									<button
 										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
 										aria-label="Edit Transaction"
