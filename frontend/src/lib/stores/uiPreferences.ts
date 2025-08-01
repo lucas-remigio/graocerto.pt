@@ -1,5 +1,7 @@
-import { writable } from 'svelte/store';
+import { derived, writable } from 'svelte/store';
 import { themeService } from '$lib/services/themeService';
+
+export type ThemeOption = 'light' | 'dark' | 'system';
 
 const LOCAL_STORAGE_HIDE_BALANCES = 'ui.hideBalances';
 const LOCAL_STORAGE_SELECTED_VIEW = 'ui.selectedView';
@@ -23,18 +25,14 @@ function getInitialSelectedView() {
 	return 'transactions';
 }
 
-function getInitialTheme(): 'light' | 'dark' {
+function getInitialTheme(): ThemeOption {
 	if (typeof localStorage !== 'undefined') {
 		const stored = localStorage.getItem(LOCAL_STORAGE_THEME);
-		if (stored === 'light' || stored === 'dark') {
+		if (stored === 'light' || stored === 'dark' || stored === 'system') {
 			return stored;
 		}
 	}
-	// Fallback to system preference
-	if (typeof window !== 'undefined') {
-		return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-	}
-	return 'light';
+	return 'system';
 }
 
 function getInitialShowNonFavorites() {
@@ -46,8 +44,47 @@ function getInitialShowNonFavorites() {
 
 export const hideBalances = writable(getInitialHideBalances());
 export const selectedView = writable<'transactions' | 'statistics'>(getInitialSelectedView());
-export const theme = writable<'light' | 'dark'>(getInitialTheme());
+export const theme = writable<ThemeOption>(getInitialTheme());
 export const showNonFavorites = writable(getInitialShowNonFavorites());
+
+// This derived store always returns 'light' or 'dark'
+export const appliedTheme = derived(theme, ($theme, set) => {
+	function resolveTheme(themeValue: ThemeOption): 'light' | 'dark' {
+		if (themeValue === 'system') {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+		return themeValue;
+	}
+
+	// Set initial value
+	set(resolveTheme($theme));
+
+	// Listen for system changes if theme is 'system'
+	let mql: MediaQueryList | null = null;
+	function handleChange() {
+		set(resolveTheme($theme));
+	}
+	if ($theme === 'system' && typeof window !== 'undefined') {
+		mql = window.matchMedia('(prefers-color-scheme: dark)');
+		mql.addEventListener('change', handleChange);
+	}
+	return () => {
+		if (mql) mql.removeEventListener('change', handleChange);
+	};
+});
+
+// Helper to apply theme
+function applyTheme(themeValue: ThemeOption) {
+	let applied: 'light' | 'dark';
+	if (themeValue === 'system') {
+		applied = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	} else {
+		applied = themeValue;
+	}
+	document.documentElement.setAttribute('data-theme', applied);
+	document.documentElement.classList.toggle('dark', applied === 'dark');
+	themeService.updateThemeColor(applied);
+}
 
 // Persist and apply theme changes
 if (typeof window !== 'undefined') {
@@ -59,9 +96,13 @@ if (typeof window !== 'undefined') {
 	});
 	theme.subscribe((value) => {
 		localStorage.setItem(LOCAL_STORAGE_THEME, value);
-		document.documentElement.setAttribute('data-theme', value);
-		document.documentElement.classList.toggle('dark', value === 'dark');
-		themeService.updateThemeColor(value);
+		applyTheme(value);
+	});
+	// Listen for system theme changes if "system" is selected
+	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+		if (localStorage.getItem(LOCAL_STORAGE_THEME) === 'system') {
+			applyTheme('system');
+		}
 	});
 	showNonFavorites.subscribe((value) => {
 		localStorage.setItem(LOCAL_STORAGE_SHOW_NON_FAVORITES, value.toString());

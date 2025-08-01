@@ -1,13 +1,39 @@
 <script lang="ts">
-	import { Eye, EyeOff, Moon, Sun } from 'lucide-svelte';
-	import { hideBalances } from '$stores/uiPreferences';
-	export let theme: 'light' | 'dark';
+	import { Eye, EyeOff, MonitorSmartphone, Moon, Phone, Sun } from 'lucide-svelte';
+	import { hideBalances, type ThemeOption } from '$stores/uiPreferences';
+	export let theme: ThemeOption = 'system';
 	export let toggleTheme: () => void;
 	export let locale: string;
 	export let toggleLanguage: () => void;
 	export let t: (key: string) => string;
 	export let isMenu = false; // If true, render as menu items (li), else as inline buttons
 	export let isAuthenticated: boolean = false;
+
+	function getThemeIcon() {
+		switch (theme) {
+			case 'dark':
+				return Sun;
+			case 'light':
+				return Moon;
+			case 'system':
+				return MonitorSmartphone;
+			default:
+				return MonitorSmartphone;
+		}
+	}
+
+	function getThemeText() {
+		switch (theme) {
+			case 'dark':
+				return t('navbar.light-mode');
+			case 'light':
+				return t('navbar.dark-mode');
+			case 'system':
+				return t('navbar.system-mode');
+			default:
+				return t('navbar.system-mode');
+		}
+	}
 
 	// Helper for icon and text
 	$: actions = [
@@ -21,8 +47,8 @@
 		{
 			key: 'theme',
 			onClick: toggleTheme,
-			icon: () => (theme === 'dark' ? Sun : Moon),
-			text: () => t(theme === 'dark' ? 'navbar.light-mode' : 'navbar.dark-mode'),
+			icon: () => getThemeIcon(),
+			text: () => getThemeText(),
 			show: true
 		},
 		{

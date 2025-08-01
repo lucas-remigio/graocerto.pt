@@ -21,7 +21,7 @@
 		setDraftTransaction,
 		setDraftTransactionAccountToken
 	} from '$lib/services/draftTransactionService';
-	import { theme } from '$lib/stores/uiPreferences';
+	import { appliedTheme } from '$lib/stores/uiPreferences';
 
 	// Export props for transactions array and the account name.
 	export let transactionsGroups: TransactionGroup[] = [];
@@ -101,7 +101,7 @@
 
 	function getRowClass(tx: TransactionDto): string {
 		const type = tx.category.transaction_type.type_slug;
-		if ($theme === 'dark') {
+		if ($appliedTheme === 'dark') {
 			if (type === 'debit') return 'bg-red-900 bg-opacity-40';
 			if (type === 'credit') return 'bg-green-900 bg-opacity-100';
 			return 'bg-base-300';
