@@ -1,0 +1,2 @@
+ALTER TABLE accounts
+ADD COLUMN is_favorite BOOLEAN NOT NULL DEFAULT TRUE AFTER order_index;

@@ -4,6 +4,7 @@ import { themeService } from '$lib/services/themeService';
 const LOCAL_STORAGE_HIDE_BALANCES = 'ui.hideBalances';
 const LOCAL_STORAGE_SELECTED_VIEW = 'ui.selectedView';
 const LOCAL_STORAGE_THEME = 'ui.theme';
+const LOCAL_STORAGE_SHOW_NON_FAVORITES = 'ui.showNonFavorites';
 
 function getInitialHideBalances() {
 	if (typeof localStorage !== 'undefined') {
@@ -36,9 +37,17 @@ function getInitialTheme(): 'light' | 'dark' {
 	return 'light';
 }
 
+function getInitialShowNonFavorites() {
+	if (typeof localStorage !== 'undefined') {
+		return localStorage.getItem(LOCAL_STORAGE_SHOW_NON_FAVORITES) === 'true';
+	}
+	return false;
+}
+
 export const hideBalances = writable(getInitialHideBalances());
 export const selectedView = writable<'transactions' | 'statistics'>(getInitialSelectedView());
 export const theme = writable<'light' | 'dark'>(getInitialTheme());
+export const showNonFavorites = writable(getInitialShowNonFavorites());
 
 // Persist and apply theme changes
 if (typeof window !== 'undefined') {
@@ -53,5 +62,8 @@ if (typeof window !== 'undefined') {
 		document.documentElement.setAttribute('data-theme', value);
 		document.documentElement.classList.toggle('dark', value === 'dark');
 		themeService.updateThemeColor(value);
+	});
+	showNonFavorites.subscribe((value) => {
+		localStorage.setItem(LOCAL_STORAGE_SHOW_NON_FAVORITES, value.toString());
 	});
 }

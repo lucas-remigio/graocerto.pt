@@ -10,6 +10,7 @@
 	import { t } from '$lib/i18n';
 	import api_axios from '$lib/axios';
 	import { flip } from 'svelte/animate';
+	import { showNonFavorites } from '$lib/stores/uiPreferences';
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
@@ -21,9 +22,13 @@
 	let openDeleteAccountModal: boolean = false;
 	let showCreateAccountModal: boolean = false;
 
-	let showAll = false;
 	$: favoriteAccounts = accounts.filter((acc) => acc.is_favorite);
 	$: nonFavoriteAccounts = accounts.filter((acc) => !acc.is_favorite);
+
+	function toggleShowNonFavorites(value: boolean) {
+		console.log('Toggling showNonFavorites:', value);
+		showNonFavorites.update(() => value);
+	}
 
 	const dispatch = createEventDispatcher<any>();
 
@@ -77,6 +82,18 @@
 		dispatch('newAccount');
 	}
 
+	function handleMoveUp(event: CustomEvent<{ account: Account }>) {
+		moveAccount(event.detail.account, 'up');
+	}
+
+	function handleMoveDown(event: CustomEvent<{ account: Account }>) {
+		moveAccount(event.detail.account, 'down');
+	}
+
+	function handleToggleFavorite(event: CustomEvent<{ account: Account }>) {
+		favoriteAccountRequest(event.detail.account);
+	}
+
 	function moveAccount(account: Account, direction: 'up' | 'down') {
 		// get the current index and calculate the target index
 		const idx = accounts.findIndex((acc) => acc.token === account.token);
@@ -92,15 +109,6 @@
 		accounts = newAccounts;
 		sendReorderRequest();
 	}
-
-	function handleMoveUp(event: CustomEvent<{ account: Account }>) {
-		moveAccount(event.detail.account, 'up');
-	}
-
-	function handleMoveDown(event: CustomEvent<{ account: Account }>) {
-		moveAccount(event.detail.account, 'down');
-	}
-
 	async function sendReorderRequest() {
 		const payload = {
 			accounts: accounts.map((acc, idx) => ({
@@ -115,12 +123,18 @@
 			console.error('Error reordering accounts:', error);
 		}
 	}
-
-	function handleToggleFavorite(event: CustomEvent<{ account: Account }>) {
-		const token = event.detail.account.token;
-		accounts = accounts.map((acc) =>
-			acc.token === token ? { ...acc, is_favorite: !acc.is_favorite } : acc
-		);
+	async function favoriteAccountRequest(account: Account) {
+		try {
+			await api_axios.patch(`/accounts/${account.token}/favorite`, {
+				is_favorite: !account.is_favorite
+			});
+			// Update the local accounts array
+			accounts = accounts.map((acc) =>
+				acc.token === account.token ? { ...acc, is_favorite: !acc.is_favorite } : acc
+			);
+		} catch (error) {
+			console.error('Error toggling favorite:', error);
+		}
 	}
 </script>
 
@@ -166,9 +180,9 @@
 
 	<!-- Non-favorites toggle and section -->
 	{#if nonFavoriteAccounts.length}
-		{#if showAll}
+		{#if $showNonFavorites}
 			<div
-				class="mt-4 opacity-60 {isVertical
+				class="mt-2 opacity-70 {isVertical
 					? 'flex flex-col gap-4'
 					: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
 			>
@@ -192,7 +206,7 @@
 			<div class="flex justify-center">
 				<button
 					class="btn btn-sm btn-ghost mt-2 flex items-center gap-1"
-					on:click={() => (showAll = false)}
+					on:click={() => toggleShowNonFavorites(false)}
 				>
 					<EyeOff size={16} />
 					{$t('page.hide-non-favorite')}
@@ -202,7 +216,7 @@
 			<div class="flex justify-center">
 				<button
 					class="btn btn-sm btn-ghost mt-2 flex items-center gap-1"
-					on:click={() => (showAll = true)}
+					on:click={() => toggleShowNonFavorites(true)}
 				>
 					<Eye size={16} />
 					{$t('page.show-all-accounts')}

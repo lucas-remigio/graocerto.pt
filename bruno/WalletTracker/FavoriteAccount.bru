@@ -1,0 +1,21 @@
+meta {
+  name: FavoriteAccount
+  type: http
+  seq: 16
+}
+
+patch {
+  url: http://localhost:3001/api/v1/accounts/4693890b43074b16626934a453a11f51/favorite
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+   "is_favorite": true
+  }
+}

@@ -8,6 +8,7 @@ type AccountStore interface {
 	DeleteAccount(token string, userId int) error
 	GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*MonthlyFeedback, error)
 	ReorderAccounts(userId int, accounts []ReorderAccount) error
+	FavoriteAccount(token string, userId int, isFavorite bool) error
 }
 
 type CreateAccountPayload struct {
@@ -29,6 +30,10 @@ type ReorderAccount struct {
 	OrderIndex int    `json:"order_index" validate:"required,gte=0"`
 }
 
+type FavoriteAccountPayload struct {
+	IsFavorite bool `json:"is_favorite"`
+}
+
 type Account struct {
 	ID          int     `json:"id"`
 	Token       string  `json:"token"`
@@ -37,4 +42,5 @@ type Account struct {
 	Balance     float64 `json:"balance"`
 	CreatedAt   string  `json:"created_at"`
 	OrderIndex  int     `json:"order_index"`
+	IsFavorite  bool    `json:"is_favorite"`
 }

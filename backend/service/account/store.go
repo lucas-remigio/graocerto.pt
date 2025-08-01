@@ -32,6 +32,49 @@ func (s *Store) SetTransactionStore(transactionsStore types.TransactionStore) {
 	s.transactionsStore = transactionsStore
 }
 
+const accountColumns = `
+    id, token, user_id, account_name, balance, created_at, order_index, is_favorite
+`
+
+func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
+	query := fmt.Sprintf(
+		`SELECT %s FROM accounts WHERE user_id = ? ORDER BY order_index`,
+		accountColumns,
+	)
+	return db.QueryList(
+		s.db,
+		query,
+		scanRowsIntoAccount,
+		userId,
+	)
+}
+
+func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, error) {
+	query := fmt.Sprintf(
+		`SELECT %s FROM accounts WHERE token = ? AND user_id = ?`,
+		accountColumns,
+	)
+	return db.QuerySingle(
+		s.db,
+		query,
+		scanRowIntoAccount,
+		token, userId,
+	)
+}
+
+func (s *Store) GetAccountById(id int, userId int) (*types.Account, error) {
+	query := fmt.Sprintf(
+		`SELECT %s FROM accounts WHERE id = ? AND user_id = ?`,
+		accountColumns,
+	)
+	return db.QuerySingle(
+		s.db,
+		query,
+		scanRowIntoAccount,
+		id, userId,
+	)
+}
+
 func (s *Store) CreateAccount(account *types.Account) error {
 	token, err := utils.GenerateToken(16)
 	if err != nil {
@@ -56,24 +99,6 @@ func (s *Store) CreateAccount(account *types.Account) error {
 	}
 
 	return nil
-}
-
-func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
-	return db.QueryList(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE user_id = ? ORDER BY order_index",
-		scanRowsIntoAccount, userId)
-}
-
-func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, error) {
-	return db.QuerySingle(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE token = ? AND user_id = ?",
-		scanRowIntoAccount, token, userId)
-}
-
-func (s *Store) GetAccountById(id int, userId int) (*types.Account, error) {
-	return db.QuerySingle(s.db,
-		"SELECT id, token, user_id, account_name, balance, created_at, order_index FROM accounts WHERE id = ? AND user_id = ?",
-		scanRowIntoAccount, id, userId)
 }
 
 func (s *Store) UpdateAccount(account *types.Account, userId int) error {
@@ -249,26 +274,54 @@ func (s *Store) ReorderAccounts(userId int, accounts []types.ReorderAccount) err
 	return nil
 }
 
+func (s *Store) FavoriteAccount(token string, userId int, isFavorite bool) error {
+	// first get the account so that we can check if the user is the owner of the account
+	account, err := s.GetAccountByToken(token, userId)
+	if err != nil {
+		return err
+	}
+
+	if account.UserID != userId {
+		return fmt.Errorf("user does not have permission to favorite this account")
+	}
+
+	return db.ExecWithValidation(s.db,
+		"UPDATE accounts SET is_favorite = ? WHERE token = ? AND user_id = ?",
+		isFavorite, token, userId)
+}
+
 func scanRowIntoAccount(row *sql.Row) (*types.Account, error) {
 	a := new(types.Account)
-
-	err := row.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt, &a.OrderIndex)
-
+	err := row.Scan(
+		&a.ID,
+		&a.Token,
+		&a.UserID,
+		&a.AccountName,
+		&a.Balance,
+		&a.CreatedAt,
+		&a.OrderIndex,
+		&a.IsFavorite,
+	)
 	if err != nil {
 		return nil, err
 	}
-
 	return a, nil
 }
 
 func scanRowsIntoAccount(rows *sql.Rows) (*types.Account, error) {
 	a := new(types.Account)
-
-	err := rows.Scan(&a.ID, &a.Token, &a.UserID, &a.AccountName, &a.Balance, &a.CreatedAt, &a.OrderIndex)
-
+	err := rows.Scan(
+		&a.ID,
+		&a.Token,
+		&a.UserID,
+		&a.AccountName,
+		&a.Balance,
+		&a.CreatedAt,
+		&a.OrderIndex,
+		&a.IsFavorite,
+	)
 	if err != nil {
 		return nil, err
 	}
-
 	return a, nil
 }

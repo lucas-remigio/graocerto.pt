@@ -260,7 +260,7 @@
 								<td class="text-gray-900">{tx.description || 'N/A'}</td>
 								<td class="flex justify-center gap-x-2 text-gray-900">
 									<button
-										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-info hover:bg-info/20 backdrop-blur-sm"
+										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
 										aria-label="Edit Transaction"
 										on:click={() => handleEditTransaction(tx)}
 									>

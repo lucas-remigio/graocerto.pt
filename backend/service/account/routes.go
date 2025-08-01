@@ -33,6 +33,11 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 			http.MethodDelete: h.DeleteAccount,
 		}),
 	))
+	router.HandleFunc("/accounts/{token}/favorite", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPatch: h.FavoriteAccount,
+		}),
+	))
 	router.HandleFunc("/accounts/{id}/feedback-month", middleware.AuthMiddleware(h.GetAccountFeedbackMonthly))
 
 }
@@ -199,6 +204,35 @@ func (h *Handler) ReorderAccounts(w http.ResponseWriter, r *http.Request) {
 
 	// call store to update order indexes
 	err := h.store.ReorderAccounts(userId, payload.Accounts)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteSuccessResponse(w)
+}
+
+func (h *Handler) FavoriteAccount(w http.ResponseWriter, r *http.Request) {
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// extract account token from URL path (/accounts/{token}/favorite)
+	accountToken, ok := middleware.ExtractPathParamAndRespond(w, r, 1)
+	if !ok {
+		return
+	}
+
+	// parse and validate JSON payload
+	var payload types.FavoriteAccountPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	// call store to update favorite status
+	err := h.store.FavoriteAccount(accountToken, userId, payload.IsFavorite)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
