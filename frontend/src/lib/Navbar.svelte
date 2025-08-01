@@ -129,7 +129,6 @@
 		<div class="hidden items-center gap-1 lg:flex">
 			<NavActions
 				theme={$theme}
-				setTheme={theme.set}
 				{toggleTheme}
 				locale={$locale || 'pt'}
 				{toggleLanguage}
@@ -144,7 +143,6 @@
 				{#if !$isLargeScreen}
 					<NavActions
 						theme={$theme}
-						setTheme={theme.set}
 						{toggleTheme}
 						locale={$locale || 'pt'}
 						{toggleLanguage}
@@ -159,7 +157,6 @@
 			<div class="flex items-center gap-1 lg:hidden">
 				<NavActions
 					theme={$theme}
-					setTheme={theme.set}
 					{toggleTheme}
 					locale={$locale || 'pt'}
 					{toggleLanguage}

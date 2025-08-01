@@ -38,6 +38,9 @@
 		"light-mode": "Modo Claro",
 		"dark-mode": "Modo Escuro",
 		"system-mode": "Modo Automático",
+		"switch-to-dark": "Mudar para Modo Escuro",
+		"switch-to-light": "Mudar para Modo Claro",
+		"switch-to-system": "Mudar para Modo Automático",
 		"logout": "Sair",
 		"settings": "Configurações"
 	},

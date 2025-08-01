@@ -2,7 +2,6 @@
 	import { Eye, EyeOff, MonitorSmartphone, Moon, Phone, Sun } from 'lucide-svelte';
 	import { hideBalances, type ThemeOption } from '$stores/uiPreferences';
 	export let theme: ThemeOption = 'system';
-	export let setTheme: (theme: ThemeOption) => void;
 	export let toggleTheme: () => void;
 	export let locale: string;
 	export let toggleLanguage: () => void;
@@ -18,8 +17,7 @@
 	}
 
 	function getThemeIcon() {
-		const next = getNextTheme(theme);
-		switch (next) {
+		switch (theme) {
 			case 'dark':
 				return Moon;
 			case 'light':
@@ -31,17 +29,17 @@
 		}
 	}
 
-	function getThemeText() {
+	function getNextThemeLabel() {
 		const next = getNextTheme(theme);
 		switch (next) {
 			case 'dark':
-				return t('navbar.dark-mode');
+				return t('navbar.switch-to-dark');
 			case 'light':
-				return t('navbar.light-mode');
+				return t('navbar.switch-to-light');
 			case 'system':
-				return t('navbar.system-mode');
+				return t('navbar.switch-to-system');
 			default:
-				return t('navbar.system-mode');
+				return t('navbar.switch-to-system');
 		}
 	}
 
@@ -58,7 +56,7 @@
 			key: 'theme',
 			onClick: toggleTheme,
 			icon: () => getThemeIcon(),
-			text: () => getThemeText(),
+			text: () => getNextThemeLabel(),
 			show: true
 		},
 		{
@@ -76,12 +74,15 @@
 	{#each actions.filter((a) => a.show) as action (action.key)}
 		<li>
 			<button class="btn btn-ghost w-full justify-start font-normal" on:click={action.onClick}>
-				{#if action.icon}
-					<svelte:component this={action.icon()} size={18} class="mr-2" />
-				{:else if action.emoji}
-					<span class="mr-2">{action.emoji()}</span>
-				{/if}
-				{action.text()}
+				<span class="flex items-center">
+					{#if action.icon}
+						<svelte:component this={action.icon()} size={18} class="mr-2" />
+					{/if}
+					{#if action.emoji}
+						<span class="mr-2">{action.emoji()}</span>
+					{/if}
+					<span class="whitespace-normal">{action.text()}</span>
+				</span>
 			</button>
 		</li>
 	{/each}
