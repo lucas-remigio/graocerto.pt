@@ -258,8 +258,11 @@
 								</td>
 								<td class="text-base-content">
 									<span
-										class="rounded px-2 py-1 {getTextColor(tx.category.color)}"
-										style="background-color: {tx.category.color};"
+										class="inline-flex items-center justify-center rounded px-3 py-1 {getTextColor(
+											tx.category.color
+										)}"
+										style="background-color: {tx.category
+											.color}; min-width: 4rem; text-align: center;"
 									>
 										{tx.category.category_name}
 									</span>
