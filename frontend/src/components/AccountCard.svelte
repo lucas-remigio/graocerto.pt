@@ -2,7 +2,7 @@
 <script lang="ts">
 	import type { Account } from '$lib/types';
 	import { createEventDispatcher } from 'svelte';
-	import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-svelte';
+	import { ArrowDown, ArrowUp, Pencil, Star, Trash } from 'lucide-svelte';
 	import { hideBalances } from '$lib/stores/uiPreferences';
 
 	export let account: Account;
@@ -16,6 +16,7 @@
 		delete: { account: Account };
 		moveUp: { account: Account };
 		moveDown: { account: Account };
+		toggleFavorite: { account: Account };
 	}>();
 
 	function formatCurrency(amount: number): string {
@@ -41,6 +42,10 @@
 
 	function handleMoveDown() {
 		dispatch('moveDown', { account });
+	}
+
+	function handleFavorite(): void {
+		dispatch('toggleFavorite', { account });
 	}
 
 	$: isSelected = selectedAccount?.token === account.token;
@@ -70,6 +75,18 @@
 		<div
 			class="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
 		>
+			<!-- Add a star button -->
+			<button
+				class="btn btn-ghost btn-sm btn-circle"
+				on:click|stopPropagation={handleFavorite}
+				title={account.is_favorite ? 'Unfavorite' : 'Favorite'}
+			>
+				{#if account.is_favorite}
+					<Star fill="currentColor" size={16} />
+				{:else}
+					<Star size={16} />
+				{/if}
+			</button>
 			<button
 				class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
 				on:click|stopPropagation={handleEditAccount}
@@ -90,7 +107,7 @@
 			class="absolute bottom-2 right-2 flex flex-row gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
 		>
 			<button
-				class="btn btn-ghost btn-xs btn-circle bg-base-100/80"
+				class="btn btn-ghost btn-sm btn-circle bg-base-100/80"
 				on:click|stopPropagation={handleMoveUp}
 				title="Move up"
 				disabled={!canMoveUp}
@@ -98,7 +115,7 @@
 				<ArrowUp size={16} />
 			</button>
 			<button
-				class="btn btn-ghost btn-xs btn-circle bg-base-100/80"
+				class="btn btn-ghost btn-sm btn-circle bg-base-100/80"
 				on:click|stopPropagation={handleMoveDown}
 				title="Move down"
 				disabled={!canMoveDown}

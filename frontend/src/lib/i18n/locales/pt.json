@@ -42,9 +42,11 @@
 	},
 
 	"page": {
-		"my-accounts": "Minhas contas"
+		"my-accounts": "Minhas contas",
+		"no-accounts": "Nenhuma conta encontrada",
+		"show-all-accounts": "Mostrar todas as contas",
+		"hide-non-favorite": "Esconder contas não favoritas"
 	},
-	
 
 	"common": {
 		"at": "às",

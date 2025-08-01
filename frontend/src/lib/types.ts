@@ -6,6 +6,7 @@ export interface Account {
 	balance: number;
 	created_at: string;
 	order_index: number;
+	is_favorite: boolean;
 }
 
 export interface AccountsResponse {

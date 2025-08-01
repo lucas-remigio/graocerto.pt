@@ -2,7 +2,7 @@
 <script lang="ts">
 	import type { Account } from '$lib/types';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { Pencil, Trash, Plus, Wallet } from 'lucide-svelte';
+	import { Pencil, Trash, Plus, Wallet, EyeOff, Eye } from 'lucide-svelte';
 	import EditAccount from './EditAccount.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import CreateAccount from './CreateAccount.svelte';
@@ -20,6 +20,10 @@
 	let openEditAccountModal: boolean = false;
 	let openDeleteAccountModal: boolean = false;
 	let showCreateAccountModal: boolean = false;
+
+	let showAll = false;
+	$: favoriteAccounts = accounts.filter((acc) => acc.is_favorite);
+	$: nonFavoriteAccounts = accounts.filter((acc) => !acc.is_favorite);
 
 	const dispatch = createEventDispatcher<any>();
 
@@ -111,6 +115,13 @@
 			console.error('Error reordering accounts:', error);
 		}
 	}
+
+	function handleToggleFavorite(event: CustomEvent<{ account: Account }>) {
+		const token = event.detail.account.token;
+		accounts = accounts.map((acc) =>
+			acc.token === token ? { ...acc, is_favorite: !acc.is_favorite } : acc
+		);
+	}
 </script>
 
 <!-- Header with title and create button -->
@@ -129,29 +140,78 @@
 		<p class="text-base-content/70">{$t('common.loading')}</p>
 	</div>
 {:else if accounts.length > 0}
+	<!-- Favorites -->
 	<div
-		class="p-1 {isVertical
+		class={isVertical
 			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto p-2'
-			: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
+			: 'grid grid-cols-1 gap-4 p-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}
 	>
-		{#each accounts as account, i (account.token)}
+		{#each favoriteAccounts as account, i (account.token)}
 			<div animate:flip={{ duration: 500 }}>
 				<AccountCard
 					{account}
 					{selectedAccount}
 					canMoveUp={i > 0}
-					canMoveDown={i < accounts.length - 1}
+					canMoveDown={i < favoriteAccounts.length - 1}
 					on:select={handleCardSelect}
 					on:edit={handleCardEdit}
 					on:delete={handleCardDelete}
 					on:moveUp={handleMoveUp}
 					on:moveDown={handleMoveDown}
+					on:toggleFavorite={handleToggleFavorite}
 				/>
 			</div>
 		{/each}
 	</div>
+
+	<!-- Non-favorites toggle and section -->
+	{#if nonFavoriteAccounts.length}
+		{#if showAll}
+			<div
+				class="mt-4 opacity-60 {isVertical
+					? 'flex flex-col gap-4'
+					: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
+			>
+				{#each nonFavoriteAccounts as account, i (account.token)}
+					<div animate:flip={{ duration: 500 }}>
+						<AccountCard
+							{account}
+							{selectedAccount}
+							canMoveUp={i > 0}
+							canMoveDown={i < nonFavoriteAccounts.length - 1}
+							on:select={handleCardSelect}
+							on:edit={handleCardEdit}
+							on:delete={handleCardDelete}
+							on:moveUp={handleMoveUp}
+							on:moveDown={handleMoveDown}
+							on:toggleFavorite={handleToggleFavorite}
+						/>
+					</div>
+				{/each}
+			</div>
+			<div class="flex justify-center">
+				<button
+					class="btn btn-sm btn-ghost mt-2 flex items-center gap-1"
+					on:click={() => (showAll = false)}
+				>
+					<EyeOff size={16} />
+					{$t('page.hide-non-favorite')}
+				</button>
+			</div>
+		{:else}
+			<div class="flex justify-center">
+				<button
+					class="btn btn-sm btn-ghost mt-2 flex items-center gap-1"
+					on:click={() => (showAll = true)}
+				>
+					<Eye size={16} />
+					{$t('page.show-all-accounts')}
+				</button>
+			</div>
+		{/if}
+	{/if}
 {:else}
-	<p class="text-gray-500">No accounts found.</p>
+	<p class="text-gray-500">{$t('page.no-accounts')}</p>
 {/if}
 
 {#if openEditAccountModal}

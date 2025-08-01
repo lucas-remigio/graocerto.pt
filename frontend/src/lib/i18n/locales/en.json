@@ -42,7 +42,10 @@
 	},
 
 	"page": {
-		"my-accounts": "My Accounts"
+		"my-accounts": "My Accounts",
+		"no-accounts": "No accounts found",
+		"show-all-accounts": "Show all accounts",
+		"hide-non-favorite": "Hide non-favorite accounts"
 	},
 
 	"common": {
