@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { LogIn, Menu } from 'lucide-svelte';
+	import { Calculator, Home, List, LogIn, Menu } from 'lucide-svelte';
 	import { t, locale, setLocale } from '$lib/i18n';
 	import { isAuthenticated, logout } from '$stores/auth';
 	import UserMenu from './UserMenu.svelte';
@@ -84,7 +84,8 @@
 								class="text-lg"
 								aria-label="Home"
 							>
-								{$t('navbar.home') || 'Home'}
+								<Home size={18} class="mr-2" />
+								{$t('navbar.home')}
 							</button>
 						</li>
 						<li>
@@ -92,16 +93,22 @@
 								type="button"
 								on:click={() => handleNavigation(categoriesUrl)}
 								class="text-lg"
-								aria-label="Categories">{$t('navbar.categories')}</button
+								aria-label="Categories"
 							>
+								<List size={18} class="mr-2" />
+								{$t('navbar.categories')}
+							</button>
 						</li>
 						<li>
 							<button
 								type="button"
 								on:click={() => handleNavigation(investmentCalculatorUrl)}
 								class="text-lg"
-								aria-label="Investment Calculator">{$t('navbar.calculator')}</button
+								aria-label="Investment Calculator"
 							>
+								<Calculator size={18} class="mr-2" />
+								{$t('navbar.calculator')}
+							</button>
 						</li>
 					</ul>
 				{/if}
@@ -155,13 +162,7 @@
 		{:else}
 			<!-- Show theme/language inline on mobile if not logged in -->
 			<div class="flex items-center gap-1 lg:hidden">
-				<NavActions
-					theme={$theme}
-					{toggleTheme}
-					locale={$locale || 'pt'}
-					{toggleLanguage}
-					t={$t}
-				/>
+				<NavActions theme={$theme} {toggleTheme} locale={$locale || 'pt'} {toggleLanguage} t={$t} />
 			</div>
 			<a href={loginUrl} class="btn btn-ghost btn-circle" aria-label="Login">
 				<LogIn size={20} class="h-5 w-5" />
