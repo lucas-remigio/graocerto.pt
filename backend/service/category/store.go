@@ -33,9 +33,10 @@ func (s *Store) GetCategoryById(id int, userId int) (*types.Category, error) {
 }
 
 func (s *Store) CreateCategory(category *types.Category) error {
-	return db.ExecWithValidation(s.db,
+	_, err := db.ExecWithValidation(s.db,
 		"INSERT INTO categories (user_id, transaction_type_id, category_name, color) VALUES (?, ?, ?, ?)",
 		category.UserID, category.TransactionTypeID, category.CategoryName, category.Color)
+	return err
 }
 
 func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
@@ -62,9 +63,11 @@ func (s *Store) UpdateCategory(category *types.Category, userId int) error {
 		return err
 	}
 
-	return db.ExecWithValidation(s.db,
+	_, err = db.ExecWithValidation(s.db,
 		"UPDATE categories SET category_name = ?, color = ? WHERE id = ?",
 		category.CategoryName, category.Color, category.ID)
+
+	return err
 }
 
 func (s *Store) DeleteCategory(id int, userId int) error {
@@ -95,7 +98,9 @@ func (s *Store) DeleteCategory(id int, userId int) error {
 	}
 
 	// Hard delete if not used
-	return db.ExecWithValidation(s.db, "DELETE FROM categories WHERE id = ?", id)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM categories WHERE id = ?", id)
+
+	return err
 }
 func (s *Store) SoftDeleteCategory(id int, userId int) error {
 	_, err := s.db.Exec(

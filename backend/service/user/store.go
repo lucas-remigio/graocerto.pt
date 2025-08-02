@@ -38,9 +38,11 @@ func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 }
 
 func (s *Store) CreateUser(user *types.User) error {
-	return db.ExecWithValidation(s.db,
+	_, err := db.ExecWithValidation(s.db,
 		"INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)",
 		user.FirstName, user.LastName, user.Email, user.Password)
+
+	return err
 }
 
 func (s *Store) GetUserById(id int) (*types.User, error) {

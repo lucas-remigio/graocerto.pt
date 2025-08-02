@@ -89,7 +89,7 @@ func (s *Store) CreateAccount(account *types.Account) error {
 	}
 	account.OrderIndex = maxOrderIndex + 1
 
-	err = db.ExecWithValidation(s.db,
+	_, err = db.ExecWithValidation(s.db,
 		"INSERT INTO accounts (token, user_id, account_name, balance, order_index) VALUES (?, ?, ?, ?, ?)",
 		account.Token, account.UserID, account.AccountName, account.Balance, account.OrderIndex,
 	)
@@ -112,9 +112,11 @@ func (s *Store) UpdateAccount(account *types.Account, userId int) error {
 		return err
 	}
 
-	return db.ExecWithValidation(s.db,
+	_, err = db.ExecWithValidation(s.db,
 		"UPDATE accounts SET account_name = ?, balance = ? WHERE id = ?",
 		account.AccountName, account.Balance, account.ID)
+
+	return err
 }
 
 func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*types.MonthlyFeedback, error) {
@@ -220,13 +222,13 @@ func (s *Store) DeleteAccount(token string, userId int) error {
 	}
 
 	// delete all transactions associated with the account
-	err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE account_token = ?", token)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE account_token = ?", token)
 	if err != nil {
 		return err
 	}
 
 	// delete the account
-	err = db.ExecWithValidation(s.db, "DELETE FROM accounts WHERE token = ? AND user_id = ?", token, userId)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM accounts WHERE token = ? AND user_id = ?", token, userId)
 	if err != nil {
 		return err
 	}
@@ -265,7 +267,7 @@ func (s *Store) ReorderAccounts(userId int, accounts []types.ReorderAccount) err
 
 	// Proceed with update
 	for _, account := range accounts {
-		err := db.ExecWithValidation(s.db, "UPDATE accounts SET order_index = ? WHERE token = ? AND user_id = ?", account.OrderIndex, account.Token, userId)
+		_, err := db.ExecWithValidation(s.db, "UPDATE accounts SET order_index = ? WHERE token = ? AND user_id = ?", account.OrderIndex, account.Token, userId)
 		if err != nil {
 			return err
 		}
@@ -285,9 +287,11 @@ func (s *Store) FavoriteAccount(token string, userId int, isFavorite bool) error
 		return fmt.Errorf("user does not have permission to favorite this account")
 	}
 
-	return db.ExecWithValidation(s.db,
+	_, err = db.ExecWithValidation(s.db,
 		"UPDATE accounts SET is_favorite = ? WHERE token = ? AND user_id = ?",
 		isFavorite, token, userId)
+
+	return err
 }
 
 func scanRowIntoAccount(row *sql.Row) (*types.Account, error) {

@@ -1,0 +1,19 @@
+meta {
+  name: DeleteTransaction
+  type: http
+  seq: 2
+}
+
+delete {
+  url: http://localhost:3001/api/v1/transactions/111
+  body: json
+  auth: bearer
+}
+
+headers {
+  Accept: application/json, text/plain, */*
+}
+
+auth:bearer {
+  token: {{token}}
+}

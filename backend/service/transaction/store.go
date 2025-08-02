@@ -43,12 +43,16 @@ func scanTransactionRow(row *sql.Row) (*types.Transaction, error) {
 	return t, nil
 }
 
-func scanTransactionDTO(rows *sql.Rows) (*types.TransactionDTO, error) {
+type scanner interface {
+	Scan(dest ...interface{}) error
+}
+
+func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 	t := new(types.TransactionDTO)
 	t.Category = &types.CategoryDTO{}
 	t.Category.TransactionType = &types.TransactionType{}
 
-	err := rows.Scan(
+	err := s.Scan(
 		&t.ID, &t.AccountToken, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt,
 		&t.Category.ID, &t.Category.CategoryName, &t.Category.Color, &t.Category.CreatedAt, &t.Category.UpdatedAt,
 		&t.Category.TransactionType.ID, &t.Category.TransactionType.TypeName, &t.Category.TransactionType.TypeSlug,
@@ -59,26 +63,36 @@ func scanTransactionDTO(rows *sql.Rows) (*types.TransactionDTO, error) {
 	return t, nil
 }
 
-func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) error {
+// For *sql.Rows
+func scanTransactionsDTOs(rows *sql.Rows) (*types.TransactionDTO, error) {
+	return scanTransactionDTOFromScanner(rows)
+}
+
+// For *sql.Row
+func scanTransactionDTO(row *sql.Row) (*types.TransactionDTO, error) {
+	return scanTransactionDTOFromScanner(row)
+}
+
+func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*types.Transaction, error) {
 	catStore := category.NewStore(s.db)
 	category, err := catStore.GetCategoryById(transaction.CategoryId, userId)
 	if err != nil {
-		return fmt.Errorf("failed to get category: %w", err)
+		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
 
 	// do not allow transfers here, they demand a different logic
 	if category.TransactionTypeID == 3 {
-		return fmt.Errorf("transfers are not allowed here")
+		return nil, fmt.Errorf("transfers are not allowed here")
 	}
 
 	account, err := s.accountStore.GetAccountByToken(transaction.AccountToken, userId)
 	if err != nil {
-		return fmt.Errorf("failed to get account: %w", err)
+		return nil, fmt.Errorf("failed to get account: %w", err)
 	}
 
 	// check if the user is the owner of the account
-	if err := db.ValidateOwnership(account.UserID, account.UserID, "account"); err != nil {
-		return err
+	if err := db.ValidateOwnership(account.UserID, userId, "account"); err != nil {
+		return nil, err
 	}
 
 	// category transaction type id == 1 means credit
@@ -89,7 +103,7 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) er
 	}
 	newBalance := account.Balance + amount
 
-	err = db.ExecWithValidation(s.db,
+	res, err := db.ExecWithValidation(s.db,
 		"INSERT INTO transactions (account_token, category_id, amount, description, date, balance) VALUES (?, ?, ?, ?, ?, ?)",
 		transaction.AccountToken,
 		transaction.CategoryId,
@@ -99,16 +113,43 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) er
 		newBalance,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
 	// update user account balance
-	err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, transaction.AccountToken)
+	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, transaction.AccountToken)
 	if err != nil {
-		return fmt.Errorf("failed to update account balance: %w", err)
+		return nil, fmt.Errorf("failed to update account balance: %w", err)
 	}
 
-	return nil
+	insertedId, err := res.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get last insert id: %w", err)
+	}
+
+	transaction.ID = int(insertedId)
+
+	return transaction, nil
+}
+
+func (s *Store) CreateTransactionAndReturn(transaction *types.Transaction, userId int) (*types.TransactionChangeResponse, error) {
+	createdTransaction, err := s.CreateTransaction(transaction, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	createdDTO, err := s.GetTransactionDTOById(createdTransaction.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get created transaction DTO: %w", err)
+	}
+
+	// Get available months for the account token
+	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(createdTransaction.AccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get available months: %w", err)
+	}
+
+	return &types.TransactionChangeResponse{Transaction: createdDTO, Months: availableMonths}, nil
 }
 
 func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*types.Transaction, error) {
@@ -147,10 +188,24 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 	query += "ORDER BY t.date DESC, t.id DESC"
 
 	if month != nil && year != nil {
-		return db.QueryList(s.db, query, scanTransactionDTO, accountToken, *month, *year)
+		return db.QueryList(s.db, query, scanTransactionsDTOs, accountToken, *month, *year)
 	}
 
-	return db.QueryList(s.db, query, scanTransactionDTO, accountToken)
+	return db.QueryList(s.db, query, scanTransactionsDTOs, accountToken)
+}
+
+func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
+	query := `
+		SELECT 
+			t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at,
+			c.id, c.category_name, c.color, c.created_at, c.updated_at,
+			tt.id, tt.type_name, tt.type_slug
+		FROM transactions t
+		JOIN categories c ON t.category_id = c.id
+		JOIN transaction_types tt ON c.transaction_type_id = tt.id
+		WHERE t.id = ?`
+
+	return db.QuerySingle(s.db, query, scanTransactionDTO, id)
 }
 
 func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
@@ -158,22 +213,22 @@ func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
 	return db.QuerySingle(s.db, query, scanTransactionRow, id)
 }
 
-func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, userId int) error {
+func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, userId int) (*types.Transaction, error) {
 	// get the current transaction before the update
 	tx, err := s.GetTransactionById(transaction.ID)
 	if err != nil {
-		return fmt.Errorf("failed to get transaction: %w", err)
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}
 
 	// get the account
 	account, err := s.accountStore.GetAccountByToken(tx.AccountToken, userId)
 	if err != nil {
-		return fmt.Errorf("failed to get account: %w", err)
+		return nil, fmt.Errorf("failed to get account: %w", err)
 	}
 
 	// check if the user is the owner of the account
 	if err := db.ValidateOwnership(account.UserID, userId, "account"); err != nil {
-		return err
+		return nil, err
 	}
 
 	// there are a lot of things that can happen here
@@ -189,12 +244,12 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	catStore := category.NewStore(s.db)
 	currentCategory, err := catStore.GetCategoryById(tx.CategoryId, userId)
 	if err != nil {
-		return fmt.Errorf("failed to get previous category: %w", err)
+		return nil, fmt.Errorf("failed to get previous category: %w", err)
 	}
 
 	newCategory, err := catStore.GetCategoryById(transaction.CategoryID, userId)
 	if err != nil {
-		return fmt.Errorf("failed to get new category: %w", err)
+		return nil, fmt.Errorf("failed to get new category: %w", err)
 	}
 
 	// get the current balance
@@ -223,48 +278,81 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	amountDifference := newAmount - currentAmount
 	newBalance := currentBalance + amountDifference
 
-	err = db.ExecWithValidation(s.db, "UPDATE transactions SET amount = ?, category_id = ?, description = ?, date = ? WHERE id = ?",
+	_, err = db.ExecWithValidation(s.db, "UPDATE transactions SET amount = ?, category_id = ?, description = ?, date = ?, balance = ? WHERE id = ?",
 		transaction.Amount,
 		transaction.CategoryID,
 		transaction.Description,
 		transaction.Date,
-		transaction.ID)
+		transaction.ID,
+		newBalance)
 	if err != nil {
-		return fmt.Errorf("failed to update transaction: %w", err)
+		return nil, fmt.Errorf("failed to update transaction: %w", err)
 	}
 
 	// update the account balance
-	err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
+	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
 	if err != nil {
-		return fmt.Errorf("failed to update account balance: %w", err)
+		return nil, fmt.Errorf("failed to update account balance: %w", err)
 	}
 
-	return nil
+	// Get the updated transaction
+	updatedTransaction := &types.Transaction{
+		ID:           tx.ID,
+		AccountToken: tx.AccountToken,
+		CategoryId:   transaction.CategoryID,
+		Amount:       transaction.Amount,
+		Description:  transaction.Description,
+		Date:         transaction.Date,
+		Balance:      newBalance,
+		CreatedAt:    tx.CreatedAt,
+	}
+
+	return updatedTransaction, nil
 }
 
-func (s *Store) DeleteTransaction(transactionId int, userId int) error {
+func (s *Store) UpdateTransactionAndReturn(payload *types.UpdateTransactionPayload, userId int) (*types.TransactionChangeResponse, error) {
+	updatedTx, err := s.UpdateTransaction(payload, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update transaction: %w", err)
+	}
+
+	transactionDTO, err := s.GetTransactionDTOById(updatedTx.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated transaction DTO: %w", err)
+	}
+
+	// Get available months for the account token
+	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(transactionDTO.AccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get available months: %w", err)
+	}
+
+	return &types.TransactionChangeResponse{Transaction: transactionDTO, Months: availableMonths}, nil
+}
+
+func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float64, err error) {
 	// get the transaction
 	tx, err := s.GetTransactionById(transactionId)
 	if err != nil {
-		return fmt.Errorf("failed to get transaction: %w", err)
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}
 
 	// get the account
 	account, err := s.accountStore.GetAccountByToken(tx.AccountToken, userId)
 	if err != nil {
-		return fmt.Errorf("failed to get account: %w", err)
+		return nil, fmt.Errorf("failed to get account: %w", err)
 	}
 
 	// check if the user is the owner of the account
 	if err := db.ValidateOwnership(userId, account.UserID, "transaction"); err != nil {
-		return err
+		return nil, err
 	}
 
 	// get the transaction category
 	catStore := category.NewStore(s.db)
 	category, err := catStore.GetCategoryById(tx.CategoryId, userId)
 	if err != nil {
-		return fmt.Errorf("failed to get category: %w", err)
+		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
 
 	// check if the category is a transfer
@@ -280,18 +368,39 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) error {
 	// get the new balance
 	newBalance := currentBalance + amount
 
-	err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = ?", transactionId)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = ?", transactionId)
 	if err != nil {
-		return fmt.Errorf("failed to delete transaction: %w", err)
+		return nil, fmt.Errorf("failed to delete transaction: %w", err)
 	}
 
 	// update the account balance
-	err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
+	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
 	if err != nil {
-		return fmt.Errorf("failed to update account balance: %w", err)
+		return nil, fmt.Errorf("failed to update account balance: %w", err)
 	}
 
-	return nil
+	return &newBalance, nil
+}
+
+func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*types.TransactionChangeResponse, error) {
+	transactionDTO, err := s.GetTransactionDTOById(transactionId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction DTO: %w", err)
+	}
+
+	balance, err := s.DeleteTransaction(transactionId, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete transaction: %w", err)
+	}
+
+	transactionDTO.Balance = *balance
+
+	// Get available months for the account token
+	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(transactionDTO.AccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get available months: %w", err)
+	}
+	return &types.TransactionChangeResponse{Transaction: transactionDTO, Months: availableMonths}, nil
 }
 
 // Store implementation

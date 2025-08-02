@@ -5,10 +5,14 @@ import "time"
 type TransactionStore interface {
 	GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*Transaction, error)
 	GetTransactionsDTOByAccountToken(accountToken string, month, year *int) ([]*TransactionDTO, error)
+	GetTransactionDTOById(id int) (*TransactionDTO, error)
 	GetGroupedTransactionsDTOByAccountToken(accountToken string, month, year *int) (*GroupedTransactionsResponse, error)
-	CreateTransaction(transaction *Transaction, userId int) error
-	UpdateTransaction(transaction *UpdateTransactionPayload, userId int) error
-	DeleteTransaction(transactionId int, userId int) error
+	CreateTransaction(transaction *Transaction, userId int) (*Transaction, error)
+	CreateTransactionAndReturn(transaction *Transaction, userId int) (*TransactionChangeResponse, error)
+	UpdateTransaction(transaction *UpdateTransactionPayload, userId int) (*Transaction, error)
+	UpdateTransactionAndReturn(payload *UpdateTransactionPayload, userId int) (*TransactionChangeResponse, error)
+	DeleteTransaction(transactionId int, userId int) (balance *float64, err error)
+	DeleteTransactionAndReturn(transactionId int, userId int) (*TransactionChangeResponse, error)
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
@@ -23,7 +27,8 @@ type CreateTransactionPayload struct {
 }
 
 type UpdateTransactionPayload struct {
-	ID          int     `json:"id" validate:"required,numeric"`
+	// id not required as it is sent on the url
+	ID          int     `json:"id" validate:"numeric"`
 	Amount      float64 `json:"amount" validate:"required,numeric,gte=0,lte=999999999"`
 	CategoryID  int     `json:"category_id" validate:"numeric,min=1,max=999999999"`
 	Description string  `json:"description" validate:"max=255"`
@@ -52,7 +57,27 @@ type TransactionDTO struct {
 	Category     *CategoryDTO `json:"category,omitempty"`
 }
 
-// New type for month/year data
+type TransactionChangeResponse struct {
+	Transaction *TransactionDTO `json:"transaction"`
+	Months      []*MonthYear    `json:"months"`
+}
+
+type TransactionsResponse struct {
+	Transactions []*TransactionDTO  `json:"transactions"`
+	Totals       *TransactionTotals `json:"totals"`
+}
+
+type GroupedTransactionsResponse struct {
+	Groups []*TransactionGroup `json:"groups"`
+	Totals *TransactionTotals  `json:"totals"`
+}
+
+type TransactionGroup struct {
+	Month        int               `json:"month"`
+	Year         int               `json:"year"`
+	Transactions []*TransactionDTO `json:"transactions"`
+}
+
 type MonthYear struct {
 	Month int `json:"month"`
 	Year  int `json:"year"`
@@ -63,23 +88,6 @@ type TransactionTotals struct {
 	Debit      float64 `json:"debit"`
 	Credit     float64 `json:"credit"`
 	Difference float64 `json:"difference"`
-}
-
-type TransactionsResponse struct {
-	Transactions []*TransactionDTO  `json:"transactions"`
-	Totals       *TransactionTotals `json:"totals"`
-}
-
-// New types for grouped transactions
-type TransactionGroup struct {
-	Month        int               `json:"month"`
-	Year         int               `json:"year"`
-	Transactions []*TransactionDTO `json:"transactions"`
-}
-
-type GroupedTransactionsResponse struct {
-	Groups []*TransactionGroup `json:"groups"`
-	Totals *TransactionTotals  `json:"totals"`
 }
 
 type CategoryStatistic struct {

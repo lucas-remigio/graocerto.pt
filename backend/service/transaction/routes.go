@@ -45,7 +45,7 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a new transaction
-	err := h.store.CreateTransaction(&types.Transaction{
+	response, err := h.store.CreateTransactionAndReturn(&types.Transaction{
 		AccountToken: payload.AccountToken,
 		Amount:       payload.Amount,
 		CategoryId:   payload.CategoryID,
@@ -58,7 +58,7 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	middleware.WriteSuccessResponse(w)
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) GetTransactionsByAccountToken(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +176,7 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.store.UpdateTransaction(&types.UpdateTransactionPayload{
+	response, err := h.store.UpdateTransactionAndReturn(&types.UpdateTransactionPayload{
 		ID:          transactionIdInt,
 		Amount:      payload.Amount,
 		CategoryID:  payload.CategoryID,
@@ -189,7 +189,7 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	middleware.WriteSuccessResponse(w)
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
@@ -205,13 +205,13 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.store.DeleteTransaction(transactionIdInt, userId)
+	response, err := h.store.DeleteTransactionAndReturn(transactionIdInt, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	middleware.WriteSuccessResponse(w)
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) GetTransactionStatistics(w http.ResponseWriter, r *http.Request) {

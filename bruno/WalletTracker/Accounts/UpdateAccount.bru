@@ -1,11 +1,11 @@
 meta {
-  name: EditTransaction
+  name: UpdateAccount
   type: http
-  seq: 11
+  seq: 2
 }
 
 put {
-  url: http://localhost:3001/api/v1/transactions/30
+  url: http://localhost:3001/api/v1/accounts/5
   body: json
   auth: inherit
 }
@@ -13,10 +13,11 @@ put {
 headers {
   Accept: application/json, text/plain, */*
   Accept-Language: en-US,en;q=0.9
-  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkX2F0IjoxNzUzNDY1Njk4LCJ1c2VyX2lkIjoiNCJ9.CFyJyxp3CRlWlNmL89bzL-kUNf0RW6x2uEsM5psUPYQ
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkX2F0IjoxNzUzNTM4MjkzLCJ1c2VyX2lkIjoiNCJ9.q6BIJ80XlVtPNBQ3pvpWPCmBAPH5Egq_rRaDE2neBLw
   Cache-Control: no-cache
   Connection: keep-alive
   Content-Type: application/json
+  Cookie: authToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkX2F0IjoxNzUzNTQyNDg1LCJ1c2VyX2lkIjoiNCJ9.jyPWHknY2DjiDEE55DTvR6ADHOCp5LLyItkMY1PR7iM
   Origin: http://localhost:5173
   Pragma: no-cache
   Referer: http://localhost:5173/
@@ -31,10 +32,7 @@ headers {
 
 body:json {
   {
-    "id": 30,
-    "category_id": 12,
-    "amount": 100,
-    "description": "123 ola!!!",
-    "date": "2025-07-18"
+    "balance": 100,
+    "account_name": "Principal"
   }
 }

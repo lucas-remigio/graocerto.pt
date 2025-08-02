@@ -66,9 +66,9 @@ func ValidateOwnership(currentUserID, resourceUserID int, resourceType string) e
 }
 
 // ExecWithValidation executes a query with validation
-func ExecWithValidation(db *sql.DB, query string, args ...interface{}) error {
-	_, err := db.Exec(query, args...)
-	return err
+func ExecWithValidation(db *sql.DB, query string, args ...interface{}) (sql.Result, error) {
+	res, err := db.Exec(query, args...)
+	return res, err
 }
 
 // CheckResourceExists checks if a resource exists and returns an error if used by other entities

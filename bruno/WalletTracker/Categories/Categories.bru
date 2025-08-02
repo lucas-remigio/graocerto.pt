@@ -1,0 +1,19 @@
+meta {
+  name: Categories
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:3001/api/v1/categories/dto
+  body: none
+  auth: bearer
+}
+
+headers {
+  Accept: application/json, text/plain, */*
+}
+
+auth:bearer {
+  token: {{token}}
+}

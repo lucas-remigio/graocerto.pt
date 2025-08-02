@@ -1,12 +1,12 @@
 meta {
-  name: Login
+  name: PRD Transactions
   type: http
   seq: 4
 }
 
-post {
-  url: http://localhost:3001/api/v1/login
-  body: json
+get {
+  url: https://graocerto.pt/api/v1/transactions/dto/6c25dda729c7bde63a7cfdb7f4f9cc19
+  body: none
   auth: inherit
 }
 
@@ -14,15 +14,4 @@ headers {
   Accept: application/json, text/plain, */*
   Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVkX2F0IjoxNzUxMjc0NDU0LCJ1c2VyX2lkIjoiMSJ9.OUovR2hE-lZTfyeNUZJ63we309J2es2swVcWDUYf-ms
   Referer: https://graocerto.pt/
-}
-
-body:json {
-  {
-    "email": "lucas@xavier.com",
-    "password": "123123123__Aa"
-  }
-}
-
-script:post-response {
-  bru.setVar("token", res.body.token);
 }

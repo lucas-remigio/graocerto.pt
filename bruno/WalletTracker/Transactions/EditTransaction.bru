@@ -1,0 +1,28 @@
+meta {
+  name: EditTransaction
+  type: http
+  seq: 2
+}
+
+put {
+  url: http://localhost:3001/api/v1/transactions/115
+  body: json
+  auth: bearer
+}
+
+headers {
+  Accept: application/json, text/plain, */*
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "category_id": 13,
+    "amount": 100,
+    "description": "123 ola!!!",
+    "date": "2025-07-18"
+  }
+}
