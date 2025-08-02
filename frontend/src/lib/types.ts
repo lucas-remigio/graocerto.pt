@@ -45,6 +45,16 @@ export interface Transaction {
 	category_id: number; // Foreign key to Category
 }
 
+export interface TransactionsResponse {
+	transactions: TransactionDto[];
+	totals: TransactionsTotals;
+}
+// this applies to both create, edit and delete transaction responses
+export interface TransactionChangeResponse {
+	transaction: TransactionDto;
+	months: MonthYear[];
+}
+
 export interface TransactionsTotals {
 	debit: number;
 	credit: number;

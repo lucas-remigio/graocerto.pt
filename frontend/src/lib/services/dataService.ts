@@ -4,20 +4,19 @@ import type {
 	Account,
 	AccountsResponse,
 	TransactionDto,
-	GroupedTransactionsResponse,
-	TransactionGroup,
 	CategoryDto,
 	CategoriesDtoResponse,
 	MonthYear,
 	TransactionsTotals,
 	TransactionStatistics,
 	TransactionType,
-	TransactionTypesResponse
+	TransactionTypesResponse,
+	TransactionsResponse
 } from '$lib/types';
 
 // Cache types
 type TransactionsCacheValue = {
-	transactionGroups: TransactionGroup[];
+	transactions: TransactionDto[];
 	totals: TransactionsTotals;
 };
 
@@ -100,9 +99,10 @@ class DataService {
 			throw new Error(`Failed to fetch transactions: ${res.status}`);
 		}
 
-		const data: GroupedTransactionsResponse = res.data;
+		const data: TransactionsResponse = res.data;
+		console.log('Fetched transactions:', data);
 		const result: TransactionsCacheValue = {
-			transactionGroups: data.groups,
+			transactions: data.transactions,
 			totals: data.totals
 		};
 

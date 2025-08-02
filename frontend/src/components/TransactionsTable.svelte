@@ -6,7 +6,8 @@
 		TransactionDto,
 		TransactionsTotals,
 		TransactionGroup,
-		Transaction
+		Transaction,
+		TransactionChangeResponse
 	} from '$lib/types';
 	import { Bot, CircleDollarSign, List, Pencil, Plus, Trash } from 'lucide-svelte';
 	import CreateTransaction from './CreateTransaction.svelte';
@@ -24,7 +25,7 @@
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 
 	// Export props for transactions array and the account name.
-	export let transactionsGroups: TransactionGroup[] = [];
+	export let transactions: TransactionDto[] = [];
 	export let transactionsTotals: TransactionsTotals;
 	export let account: Account;
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
@@ -33,6 +34,52 @@
 	// clean the draft transaction when the account changes
 	$: if (account) {
 		setDraftTransactionAccountToken(account.token);
+	}
+
+	// Group transactions by month/year when isAll is true, otherwise create a single group
+	$: transactionsGroups =
+		transactions && transactions.length > 0
+			? isAll
+				? groupTransactionsByMonth(transactions)
+				: [
+						{
+							month: new Date().getMonth() + 1,
+							year: new Date().getFullYear(),
+							transactions: transactions
+						}
+					]
+			: [];
+
+	// Log the groups after they are assigned
+	$: if (transactionsGroups && transactionsGroups.length > 0) {
+		console.log('Transactions groups:', transactionsGroups);
+	}
+
+	function groupTransactionsByMonth(transactions: TransactionDto[]): TransactionGroup[] {
+		const groups = new Map<string, TransactionGroup>();
+
+		transactions.forEach((tx) => {
+			const date = new Date(tx.date);
+			const month = date.getMonth() + 1; // 1-12
+			const year = date.getFullYear();
+			const key = `${year}-${month}`;
+
+			if (!groups.has(key)) {
+				groups.set(key, {
+					month,
+					year,
+					transactions: []
+				});
+			}
+
+			groups.get(key)!.transactions.push(tx);
+		});
+
+		// Sort groups by year/month (newest first)
+		return Array.from(groups.values()).sort((a, b) => {
+			if (a.year !== b.year) return b.year - a.year;
+			return b.month - a.month;
+		});
 	}
 
 	let showCreateTransactionModal = false;
@@ -152,11 +199,11 @@
 
 	function openAiFeedbackModal() {
 		// this should get the first transactions's month and year
-		if (transactionsGroups.length === 0 || transactionsGroups[0].transactions.length === 0) {
+		if (transactions.length === 0) {
 			error = $t('transactions.no-transactions-ai');
 			return;
 		}
-		const firstTransaction = transactionsGroups[0].transactions[0];
+		const firstTransaction = transactions[0];
 		month = new Date(firstTransaction.date).getMonth() + 1; // Get month (1-12)
 		year = new Date(firstTransaction.date).getFullYear();
 		error = '';
@@ -169,10 +216,13 @@
 	}
 
 	const dispatch = createEventDispatcher();
-	function handleNewTransaction() {
+	function handleNewTransaction(event: CustomEvent<TransactionChangeResponse>) {
 		setDraftTransaction(null);
 		closeCreateTransactionModal();
-		dispatch('newTransaction');
+		dispatch('newTransaction', {
+			transaction: event.detail.transaction,
+			months: event.detail.months
+		});
 	}
 
 	function handleUpdateTransaction() {
@@ -192,7 +242,7 @@
 	<div class="alert alert-error">
 		<p>{error}</p>
 	</div>
-{:else if transactionsGroups && transactionsGroups.length > 0}
+{:else if transactions && transactions.length > 0}
 	<div class="my-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 		<!-- Buttons: above stats on mobile, right on md+ -->
 		<div
@@ -228,7 +278,7 @@
 	</div>
 
 	<div class="overflow-x-auto">
-		{#if transactionsGroups.length === 0}
+		{#if transactions.length === 0}
 			<p class="text-center text-gray-500">{$t('transactions.no-transactions')}</p>
 		{:else}
 			<table class="table w-full">

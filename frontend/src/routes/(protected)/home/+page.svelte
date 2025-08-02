@@ -8,7 +8,8 @@
 		CategoryDto,
 		MonthYear,
 		TransactionsTotals,
-		TransactionStatistics
+		TransactionStatistics,
+		TransactionChangeResponse
 	} from '$lib/types';
 	import { dataService } from '$lib/services/dataService';
 	import Accounts from '$components/Accounts.svelte';
@@ -19,6 +20,7 @@
 	import { userEmail } from '$lib/stores/auth';
 	import { t, locale } from '$lib/i18n';
 	import { selectedView } from '$lib/stores/uiPreferences';
+	import { TransactionTypeId } from '$lib/transaction_types_types';
 
 	// Track WebSocket connection status
 	let hasJoinedRoom = false;
@@ -57,7 +59,7 @@
 	// Local component state
 	let accounts: Account[] = [];
 	let accountsLoading = false;
-	let transactionGroups: TransactionGroup[] = [];
+	let transactions: TransactionDto[] = [];
 	let transactionsLoading = false;
 	let transactionsTotals: TransactionsTotals = {
 		debit: 0,
@@ -190,7 +192,8 @@
 		transactionsLoading = showLoading;
 		try {
 			const result = await dataService.fetchTransactions(accountToken, month, year);
-			transactionGroups = result.transactionGroups;
+			transactions = result.transactions;
+			console.log('Fetched transactions:', transactions);
 			transactionsTotals = result.totals;
 		} catch (err) {
 			console.error('Error fetching transactions:', err);
@@ -262,6 +265,8 @@
 		selectedMonth = month;
 		selectedYear = year;
 
+		console.log('Selected month:', selectedMonth, 'year:', selectedYear);
+
 		// by changing the selected month, we ensure that the transactions are fetched
 		// by the reactive statement
 	}
@@ -270,8 +275,47 @@
 		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 	}
 
-	function handleNewTransaction() {
-		refreshAccountsAndNotify();
+	function handleNewTransaction(event: CustomEvent<TransactionChangeResponse>) {
+		// add the transaction to the correesponding group
+		const transaction = event.detail.transaction;
+
+		const account = accounts.find((a) => a.token === selectedAccount.token);
+		if (account) {
+			account.balance +=
+				transaction.category.transaction_type.id === TransactionTypeId.Credit
+					? transaction.amount
+					: -transaction.amount;
+			accounts = [...accounts]; // Trigger reactivity
+		}
+
+		const monthKey = Number(transaction.date.slice(5, 7));
+		const yearKey = Number(transaction.date.slice(0, 4));
+
+		if (monthKey !== selectedMonth || yearKey !== selectedYear) {
+			// if the transaction is not in the current month, we will fetch it later
+			return;
+		}
+
+		transactions.push(transaction);
+		transactions = [...transactions]; // Trigger reactivity
+		// sort from newest to oldest
+		transactions.sort((a, b) => {
+			const dateA = new Date(a.date).getTime();
+			const dateB = new Date(b.date).getTime();
+			if (dateA !== dateB) {
+				return dateB - dateA; // Newest date first
+			}
+			return b.id - a.id; // For same date, highest id first
+		});
+
+		// Update totals
+		if (transaction.category.transaction_type.id === TransactionTypeId.Credit) {
+			transactionsTotals.credit += transaction.amount;
+			transactionsTotals.difference += transaction.amount;
+		} else {
+			transactionsTotals.debit += transaction.amount;
+			transactionsTotals.difference -= transaction.amount;
+		}
 	}
 
 	function handleNewAccount() {
@@ -387,7 +431,7 @@
 					<div>
 						{#if $selectedView === 'transactions'}
 							<TransactionsTable
-								transactionsGroups={transactionGroups}
+								{transactions}
 								{transactionsTotals}
 								account={selectedAccount}
 								isAll={selectedMonth === null && selectedYear === null}

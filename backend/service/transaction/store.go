@@ -194,6 +194,25 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 	return db.QueryList(s.db, query, scanTransactionsDTOs, accountToken)
 }
 
+func (s *Store) GetTransactionsDTOsByAccountTokenWithTotals(accountToken string, month, year *int) (*types.TransactionsResponse, error) {
+	transactions, err := s.GetTransactionsDTOByAccountToken(accountToken, month, year)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions: %w", err)
+	}
+
+	totals, err := s.CalculateTransactionTotals(transactions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate transaction totals: %w", err)
+	}
+
+	response := &types.TransactionsResponse{
+		Transactions: transactions,
+		Totals:       totals,
+	}
+
+	return response, nil
+}
+
 func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 	query := `
 		SELECT 
@@ -400,6 +419,7 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 	if err != nil {
 		return nil, fmt.Errorf("failed to get available months: %w", err)
 	}
+
 	return &types.TransactionChangeResponse{Transaction: transactionDTO, Months: availableMonths}, nil
 }
 
@@ -648,61 +668,4 @@ func getMonthDateRange(month, year *int) (startDate, endDate string) {
 	start := time.Date(*year, time.Month(*month), 1, 0, 0, 0, 0, loc)
 	end := start.AddDate(0, 1, -1)
 	return start.Format("2006-01-02"), end.Format("2006-01-02")
-}
-
-func (s *Store) GetGroupedTransactionsDTOByAccountToken(accountToken string, month, year *int) (*types.GroupedTransactionsResponse, error) {
-	// Get transactions for the account with optional month/year filtering
-	transactions, err := s.GetTransactionsDTOByAccountToken(accountToken, month, year)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transactions: %w", err)
-	}
-
-	// Calculate totals
-	totals, err := s.CalculateTransactionTotals(transactions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate totals: %w", err)
-	}
-
-	// Group transactions by month
-	groups := make(map[int]*types.TransactionGroup)
-
-	for _, tx := range transactions {
-		// Create month key as integer (1-12)
-		monthKey := int(tx.Date.Month())
-
-		if _, exists := groups[monthKey]; !exists {
-			groups[monthKey] = &types.TransactionGroup{
-				Month:        monthKey,
-				Year:         tx.Date.Year(),
-				Transactions: []*types.TransactionDTO{},
-			}
-		}
-
-		groups[monthKey].Transactions = append(groups[monthKey].Transactions, tx)
-	}
-
-	// Convert map to sorted slice (most recent first)
-	var groupSlice []*types.TransactionGroup
-	for _, group := range groups {
-		// Sort transactions within each group by date (most recent first)
-		sort.Slice(group.Transactions, func(i, j int) bool {
-			return group.Transactions[i].Date.After(group.Transactions[j].Date)
-		})
-
-		groupSlice = append(groupSlice, group)
-	}
-
-	// Sort groups by month key (most recent first)
-	sort.Slice(groupSlice, func(i, j int) bool {
-		// Sort by year first, then by month (most recent first)
-		if groupSlice[i].Year != groupSlice[j].Year {
-			return groupSlice[i].Year > groupSlice[j].Year
-		}
-		return groupSlice[i].Month > groupSlice[j].Month
-	})
-
-	return &types.GroupedTransactionsResponse{
-		Groups: groupSlice,
-		Totals: totals,
-	}, nil
 }
