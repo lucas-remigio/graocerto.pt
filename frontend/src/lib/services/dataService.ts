@@ -100,7 +100,6 @@ class DataService {
 		}
 
 		const data: TransactionsResponse = res.data;
-		console.log('Fetched transactions:', data);
 		const result: TransactionsCacheValue = {
 			transactions: data.transactions,
 			totals: data.totals

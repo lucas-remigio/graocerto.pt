@@ -22,9 +22,9 @@
 	import { selectedView } from '$lib/stores/uiPreferences';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 
-	// Track WebSocket connection status
-	let hasJoinedRoom = false;
-	let wsConnected = false;
+	// WebSocket state
+	let hasJoinedRoom = $state(false);
+	let wsConnected = $state(false);
 
 	// Subscribe to connection status and room logic
 	const unsubConnected = connected.subscribe((value) => {
@@ -57,34 +57,33 @@
 	});
 
 	// Local component state
-	let accounts: Account[] = [];
-	let accountsLoading = false;
-	let transactions: TransactionDto[] = [];
-	let transactionsLoading = false;
-	let transactionsTotals: TransactionsTotals = {
+	let accounts: Account[] = $state([]);
+	let accountsLoading = $state(false);
+	let transactions: TransactionDto[] = $state([]);
+	let transactionsLoading = $state(false);
+	let transactionsTotals: TransactionsTotals = $state({
 		debit: 0,
 		credit: 0,
 		difference: 0
-	};
-	let statistics: TransactionStatistics | null = null;
-	let statisticsLoading = false;
-	let statisticsError: string = '';
-	let categories: CategoryDto[] = [];
-	let error: string = '';
+	});
+	let statistics: TransactionStatistics | null = $state(null);
+	let statisticsLoading = $state(false);
+	let statisticsError: string = $state('');
+	let categories: CategoryDto[] = $state([]);
+	let error: string = $state('');
 
-	let selectedAccount: Account;
+	let selectedAccount: Account | null = $state(null);
 
 	// Month selector state
-	let availableMonths: MonthYear[] = [];
-	const currentMonth = new Date().getMonth() + 1; // 1-12 (1 = January)
+	let availableMonths: MonthYear[] = $state([]);
+	const currentMonth = new Date().getMonth() + 1;
 	const currentYear = new Date().getFullYear();
-	let selectedMonth: number | null = currentMonth;
-	let selectedYear: number | null = currentYear;
+	let selectedMonth: number | null = $state(currentMonth);
+	let selectedYear: number | null = $state(currentYear);
 
 	// Track screen size for responsive layout
-	let isLargeScreen: boolean = false;
-	let initialDataLoaded = false;
-
+	let isLargeScreen: boolean = $state(false);
+	let initialDataLoaded = $state(false);
 	// Update screen size tracking
 	function updateScreenSize() {
 		isLargeScreen = window.innerWidth >= 1024; // lg breakpoint in Tailwind
@@ -145,7 +144,7 @@
 			if (accounts && accounts.length > 0) {
 				getSelectedAccount();
 				await fetchAccountTransactions(
-					selectedAccount.token,
+					selectedAccount!.token,
 					selectedMonth,
 					selectedYear,
 					showLoading
@@ -193,7 +192,6 @@
 		try {
 			const result = await dataService.fetchTransactions(accountToken, month, year);
 			transactions = result.transactions;
-			console.log('Fetched transactions:', transactions);
 			transactionsTotals = result.totals;
 		} catch (err) {
 			console.error('Error fetching transactions:', err);
@@ -265,39 +263,31 @@
 		selectedMonth = month;
 		selectedYear = year;
 
-		console.log('Selected month:', selectedMonth, 'year:', selectedYear);
-
 		// by changing the selected month, we ensure that the transactions are fetched
 		// by the reactive statement
 	}
 
-	$: if (selectedAccount && $selectedView && initialDataLoaded) {
-		fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
-	}
+	$effect(() => {
+		if (selectedAccount && $selectedView && initialDataLoaded) {
+			fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
+		}
+	});
 
 	function handleNewTransaction(event: CustomEvent<TransactionChangeResponse>) {
 		// add the transaction to the correesponding group
 		const transaction = event.detail.transaction;
 
-		const account = accounts.find((a) => a.token === selectedAccount.token);
+		const account = accounts.find((a) => a.token === selectedAccount!.token);
 		if (account) {
 			account.balance +=
 				transaction.category.transaction_type.id === TransactionTypeId.Credit
 					? transaction.amount
 					: -transaction.amount;
-			accounts = [...accounts]; // Trigger reactivity
 		}
 
-		const monthKey = Number(transaction.date.slice(5, 7));
-		const yearKey = Number(transaction.date.slice(0, 4));
-
-		if (monthKey !== selectedMonth || yearKey !== selectedYear) {
-			// if the transaction is not in the current month, we will fetch it later
-			return;
-		}
+		availableMonths = event.detail.months;
 
 		transactions.push(transaction);
-		transactions = [...transactions]; // Trigger reactivity
 		// sort from newest to oldest
 		transactions.sort((a, b) => {
 			const dateA = new Date(a.date).getTime();
@@ -406,7 +396,7 @@
 
 			<!-- Right Column: Transactions (full width on small/medium, remaining space on large) -->
 			{#if accounts.length > 0}
-				<div class="flex-1 lg:flex lg:flex-col lg:pl-6">
+				<div class="flex-1 lg:flex lg:max-h-screen lg:flex-col lg:overflow-hidden lg:pl-6">
 					<!-- Horizontal Divider - only visible on small/medium screens -->
 					<div class="divider lg:hidden"></div>
 
@@ -433,7 +423,7 @@
 							<TransactionsTable
 								{transactions}
 								{transactionsTotals}
-								account={selectedAccount}
+								account={selectedAccount!}
 								isAll={selectedMonth === null && selectedYear === null}
 								loading={transactionsLoading}
 								on:newTransaction={handleNewTransaction}

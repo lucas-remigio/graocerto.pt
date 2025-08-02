@@ -50,11 +50,6 @@
 					]
 			: [];
 
-	// Log the groups after they are assigned
-	$: if (transactionsGroups && transactionsGroups.length > 0) {
-		console.log('Transactions groups:', transactionsGroups);
-	}
-
 	function groupTransactionsByMonth(transactions: TransactionDto[]): TransactionGroup[] {
 		const groups = new Map<string, TransactionGroup>();
 
@@ -319,21 +314,23 @@
 								</td>
 								<td class="text-base-content">{formatCurrency(tx.amount)}€</td>
 								<td class="text-base-content">{tx.description || 'N/A'}</td>
-								<td class="text-base-content flex justify-center gap-x-2">
-									<button
-										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
-										aria-label="Edit Transaction"
-										on:click={() => handleEditTransaction(tx)}
-									>
-										<Pencil size={20} />
-									</button>
-									<button
-										class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
-										aria-label="Delete Transaction"
-										on:click={() => handleDeleteTransaction(tx)}
-									>
-										<Trash size={20} />
-									</button>
+								<td class="text-base-content">
+									<div class="flex items-center justify-center gap-x-2">
+										<button
+											class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
+											aria-label="Edit Transaction"
+											on:click={() => handleEditTransaction(tx)}
+										>
+											<Pencil size={20} />
+										</button>
+										<button
+											class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
+											aria-label="Delete Transaction"
+											on:click={() => handleDeleteTransaction(tx)}
+										>
+											<Trash size={20} />
+										</button>
+									</div>
 								</td>
 							</tr>
 						{/each}
