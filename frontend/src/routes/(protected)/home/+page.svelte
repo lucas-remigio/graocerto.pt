@@ -118,17 +118,6 @@
 			error = $t('errors.failed-create-account');
 		}
 	}
-
-	async function deleteTransaction(transaction: TransactionDto) {
-		try {
-			await dataService.deleteTransaction(transaction);
-			await fetchAccounts(false);
-		} catch (err) {
-			console.error('Error deleting transaction:', err);
-			error = $t('errors.failed-create-account');
-		}
-	}
-
 	// Function to fetch accounts and then fetch transactions for the first account
 	async function fetchAccounts(showLoading: boolean) {
 		accountsLoading = showLoading;
@@ -267,46 +256,57 @@
 		}
 	});
 
-	function handleNewTransaction(event: CustomEvent<TransactionChangeResponse>) {
-		// add the transaction to the correesponding group
-		const transaction = event.detail.transaction;
-		console.log('event', event.detail);
+	function updateAccountAndMonths(response: TransactionChangeResponse) {
+		selectedAccount!.balance = response.account_balance;
+		availableMonths = response.months;
+	}
 
-		selectedAccount!.balance = event.detail.account_balance;
-		availableMonths = event.detail.months;
-
-		transactions.push(transaction);
-		// sort from newest to oldest
+	function sortTransactions() {
 		transactions.sort((a, b) => {
 			const dateA = new Date(a.date).getTime();
 			const dateB = new Date(b.date).getTime();
-			if (dateA !== dateB) {
-				return dateB - dateA; // Newest date first
-			}
-			return b.id - a.id; // For same date, highest id first
+			if (dateA !== dateB) return dateB - dateA;
+			return b.id - a.id;
 		});
 	}
 
-	function handleUpdateTransaction(event: CustomEvent<TransactionChangeResponse>) {
-		console.log('Update transaction event:', event.detail);
-		const transaction = event.detail.transaction;
-		selectedAccount!.balance = event.detail.account_balance;
-		availableMonths = event.detail.months;
-
-		const index = transactions.findIndex((t) => t.id === transaction.id);
-		if (index !== -1) {
-			transactions[index] = transaction;
-			// Sort transactions after update to maintain order
-			transactions.sort((a, b) => {
-				const dateA = new Date(a.date).getTime();
-				const dateB = new Date(b.date).getTime();
-				if (dateA !== dateB) {
-					return dateB - dateA; // Newest date first
-				}
-				return b.id - a.id; // For same date, highest id first
-			});
+	function upsertTransaction(transaction: TransactionDto) {
+		const idx = transactions.findIndex((t) => t.id === transaction.id);
+		if (idx !== -1) {
+			transactions[idx] = transaction;
 		} else {
-			console.warn('Transaction not found for update:', transaction.id);
+			transactions.push(transaction);
+		}
+		sortTransactions();
+	}
+
+	function handleNewTransaction(event: CustomEvent<TransactionChangeResponse>) {
+		const { transaction } = event.detail;
+		updateAccountAndMonths(event.detail);
+		upsertTransaction(transaction);
+		refreshCachesAndNotify();
+	}
+
+	function handleUpdateTransaction(event: CustomEvent<TransactionChangeResponse>) {
+		const { transaction } = event.detail;
+		updateAccountAndMonths(event.detail);
+		upsertTransaction(transaction);
+		refreshCachesAndNotify();
+	}
+
+	async function handleDeleteTransaction(transaction: TransactionDto) {
+		await deleteTransaction(transaction);
+		wsUpdateScreen();
+	}
+
+	async function deleteTransaction(transaction: TransactionDto) {
+		try {
+			const response = await dataService.deleteTransaction(transaction);
+			transactions = transactions.filter((t) => t.id !== transaction.id);
+			updateAccountAndMonths(response);
+		} catch (err) {
+			console.error('Error deleting transaction:', err);
+			error = $t('errors.failed-create-account');
 		}
 	}
 
@@ -318,26 +318,17 @@
 	}
 
 	function handleNewAccount() {
-		refreshAccountsAndNotify();
+		refreshCachesAndNotify();
 	}
 
 	function handleUpdateAccount() {
-		refreshAccountsAndNotify();
+		refreshCachesAndNotify();
 	}
 
-	function refreshAccountsAndNotify() {
+	function refreshCachesAndNotify() {
 		dataService.clearCaches();
-		fetchAccounts(false);
 		wsUpdateScreen();
 	}
-
-	function handleDeleteTransaction(transaction: TransactionDto) {
-		// No need to clear all caches - the service will handle targeted cache clearing
-		deleteTransaction(transaction);
-
-		wsUpdateScreen();
-	}
-
 	function wsUpdateScreen() {
 		// this function is called on every deletion, edition or creation of both an account and a transaction
 		// Notify other users of the change

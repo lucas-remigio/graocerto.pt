@@ -10,7 +10,8 @@ import type {
 	TransactionStatistics,
 	TransactionType,
 	TransactionTypesResponse,
-	TransactionsResponse
+	TransactionsResponse,
+	TransactionChangeResponse
 } from '$lib/types';
 
 // Cache types
@@ -254,7 +255,7 @@ class DataService {
 	}
 
 	// Delete transaction
-	async deleteTransaction(transaction: TransactionDto): Promise<void> {
+	async deleteTransaction(transaction: TransactionDto): Promise<TransactionChangeResponse> {
 		const response = await api_axios.delete(`transactions/${transaction.id}`);
 
 		if (response.status !== 200) {
@@ -263,6 +264,7 @@ class DataService {
 
 		// Clear caches only for the account this transaction belongs to
 		this.clearAccountCaches(transaction.account_token);
+		return response.data;
 	}
 }
 
