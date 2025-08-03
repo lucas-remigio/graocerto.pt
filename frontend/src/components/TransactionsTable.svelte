@@ -2,11 +2,8 @@
 <script lang="ts">
 	import type {
 		Account,
-		CategoryDto,
 		TransactionDto,
-		TransactionsTotals,
 		TransactionGroup,
-		Transaction,
 		TransactionChangeResponse
 	} from '$lib/types';
 	import { Bot, CircleDollarSign, List, Pencil, Plus, Trash } from 'lucide-svelte';
@@ -26,7 +23,6 @@
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
-	export let transactionsTotals: TransactionsTotals;
 	export let account: Account;
 	export let isAll: boolean = false; // Flag to indicate if all transactions are shown
 	export let loading: boolean = false;
@@ -214,15 +210,12 @@
 	function handleNewTransaction(event: CustomEvent<TransactionChangeResponse>) {
 		setDraftTransaction(null);
 		closeCreateTransactionModal();
-		dispatch('newTransaction', {
-			transaction: event.detail.transaction,
-			months: event.detail.months
-		});
+		dispatch('newTransaction', event.detail);
 	}
 
-	function handleUpdateTransaction() {
+	function handleUpdateTransaction(event: CustomEvent<TransactionChangeResponse>) {
 		closeEditTransactionModal();
-		dispatch('updateTransaction');
+		dispatch('updateTransaction', event.detail);
 	}
 </script>
 
@@ -268,7 +261,7 @@
 
 		<!-- Totals Summary below buttons on mobile, left on md+ -->
 		<div class="order-2 flex justify-center md:order-1 md:justify-start">
-			<TransactionsStats totals={transactionsTotals} />
+			<TransactionsStats {transactions} />
 		</div>
 	</div>
 

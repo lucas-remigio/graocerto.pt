@@ -1,7 +1,13 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
 	import { dataService } from '$lib/services/dataService';
-	import type { Account, CategoryDto, Transaction, TransactionChangeResponse, TransactionType } from '$lib/types';
+	import type {
+		Account,
+		CategoryDto,
+		Transaction,
+		TransactionChangeResponse,
+		TransactionType
+	} from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -123,10 +129,7 @@
 	}
 
 	function handleNewTransaction(responseData: TransactionChangeResponse) {
-		dispatch('newTransaction', {
-			transaction: responseData.transaction,
-			months: responseData.months
-		});
+		dispatch('newTransaction', responseData);
 	}
 
 	async function fetchTransactionTypes() {

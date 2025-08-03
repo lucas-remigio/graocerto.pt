@@ -15,7 +15,6 @@ type TransactionStore interface {
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
-	GetTransactionsDTOsByAccountTokenWithTotals(accountToken string, month, year *int) (*TransactionsResponse, error)
 }
 
 type CreateTransactionPayload struct {
@@ -58,13 +57,13 @@ type TransactionDTO struct {
 }
 
 type TransactionChangeResponse struct {
-	Transaction *TransactionDTO `json:"transaction"`
-	Months      []*MonthYear    `json:"months"`
+	Transaction    *TransactionDTO `json:"transaction"`
+	AccountBalance *float64        `json:"account_balance,omitempty"`
+	Months         []*MonthYear    `json:"months"`
 }
 
 type TransactionsResponse struct {
-	Transactions []*TransactionDTO  `json:"transactions"`
-	Totals       *TransactionTotals `json:"totals"`
+	Transactions []*TransactionDTO `json:"transactions"`
 }
 
 type MonthYear struct {

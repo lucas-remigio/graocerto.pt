@@ -20,11 +20,6 @@ export interface TransactionGroup {
 	transactions: TransactionDto[];
 }
 
-export interface GroupedTransactionsResponse {
-	groups: TransactionGroup[];
-	totals: TransactionsTotals;
-}
-
 export interface TransactionDto {
 	id: number;
 	account_token: string;
@@ -47,11 +42,11 @@ export interface Transaction {
 
 export interface TransactionsResponse {
 	transactions: TransactionDto[];
-	totals: TransactionsTotals;
 }
 // this applies to both create, edit and delete transaction responses
 export interface TransactionChangeResponse {
 	transaction: TransactionDto;
+	account_balance: number;
 	months: MonthYear[];
 }
 

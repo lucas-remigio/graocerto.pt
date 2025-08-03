@@ -128,6 +128,7 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 	}
 
 	transaction.ID = int(insertedId)
+	transaction.Balance = newBalance
 
 	return transaction, nil
 }
@@ -149,7 +150,11 @@ func (s *Store) CreateTransactionAndReturn(transaction *types.Transaction, userI
 		return nil, fmt.Errorf("failed to get available months: %w", err)
 	}
 
-	return &types.TransactionChangeResponse{Transaction: createdDTO, Months: availableMonths}, nil
+	return &types.TransactionChangeResponse{
+		Transaction:    createdDTO,
+		AccountBalance: &createdDTO.Balance,
+		Months:         availableMonths,
+	}, nil
 }
 
 func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*types.Transaction, error) {
@@ -192,25 +197,6 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 	}
 
 	return db.QueryList(s.db, query, scanTransactionsDTOs, accountToken)
-}
-
-func (s *Store) GetTransactionsDTOsByAccountTokenWithTotals(accountToken string, month, year *int) (*types.TransactionsResponse, error) {
-	transactions, err := s.GetTransactionsDTOByAccountToken(accountToken, month, year)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transactions: %w", err)
-	}
-
-	totals, err := s.CalculateTransactionTotals(transactions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate transaction totals: %w", err)
-	}
-
-	response := &types.TransactionsResponse{
-		Transactions: transactions,
-		Totals:       totals,
-	}
-
-	return response, nil
 }
 
 func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
@@ -302,8 +288,9 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 		transaction.CategoryID,
 		transaction.Description,
 		transaction.Date,
+		newBalance,
 		transaction.ID,
-		newBalance)
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update transaction: %w", err)
 	}
@@ -335,10 +322,14 @@ func (s *Store) UpdateTransactionAndReturn(payload *types.UpdateTransactionPaylo
 		return nil, fmt.Errorf("failed to update transaction: %w", err)
 	}
 
+	println("Updated transaction:", updatedTx.ID, "with new balance:", updatedTx.Balance)
+
 	transactionDTO, err := s.GetTransactionDTOById(updatedTx.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get updated transaction DTO: %w", err)
 	}
+
+	println("Transaction DTO after update:", transactionDTO.ID, "with new balance:", transactionDTO.Balance)
 
 	// Get available months for the account token
 	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(transactionDTO.AccountToken)
@@ -346,7 +337,11 @@ func (s *Store) UpdateTransactionAndReturn(payload *types.UpdateTransactionPaylo
 		return nil, fmt.Errorf("failed to get available months: %w", err)
 	}
 
-	return &types.TransactionChangeResponse{Transaction: transactionDTO, Months: availableMonths}, nil
+	return &types.TransactionChangeResponse{
+		Transaction:    transactionDTO,
+		AccountBalance: &transactionDTO.Balance,
+		Months:         availableMonths,
+	}, nil
 }
 
 func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float64, err error) {
@@ -420,7 +415,11 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 		return nil, fmt.Errorf("failed to get available months: %w", err)
 	}
 
-	return &types.TransactionChangeResponse{Transaction: transactionDTO, Months: availableMonths}, nil
+	return &types.TransactionChangeResponse{
+		Transaction:    transactionDTO,
+		AccountBalance: &transactionDTO.Balance,
+		Months:         availableMonths,
+	}, nil
 }
 
 // Store implementation

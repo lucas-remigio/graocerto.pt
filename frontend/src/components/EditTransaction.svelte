@@ -1,7 +1,14 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
 	import { dataService } from '$lib/services/dataService';
-	import type { Account, Category, CategoryDto, TransactionDto, TransactionType } from '$lib/types';
+	import type {
+		Account,
+		Category,
+		CategoryDto,
+		TransactionChangeResponse,
+		TransactionDto,
+		TransactionType
+	} from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -79,7 +86,7 @@
 				error = `Error: ${response.status}`;
 				return;
 			}
-			handleUpdateTransaction();
+			handleUpdateTransaction(response.data);
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
 			error = $t('errors.failed-update-transaction');
@@ -111,8 +118,8 @@
 		dispatch('closeModal');
 	}
 
-	function handleUpdateTransaction() {
-		dispatch('updateTransaction');
+	function handleUpdateTransaction(response: TransactionChangeResponse) {
+		dispatch('updateTransaction', response);
 	}
 
 	async function fetchTransactionTypes() {

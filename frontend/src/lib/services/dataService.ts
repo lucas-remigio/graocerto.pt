@@ -7,7 +7,6 @@ import type {
 	CategoryDto,
 	CategoriesDtoResponse,
 	MonthYear,
-	TransactionsTotals,
 	TransactionStatistics,
 	TransactionType,
 	TransactionTypesResponse,
@@ -17,7 +16,6 @@ import type {
 // Cache types
 type TransactionsCacheValue = {
 	transactions: TransactionDto[];
-	totals: TransactionsTotals;
 };
 
 class DataService {
@@ -101,8 +99,7 @@ class DataService {
 
 		const data: TransactionsResponse = res.data;
 		const result: TransactionsCacheValue = {
-			transactions: data.transactions,
-			totals: data.totals
+			transactions: data.transactions
 		};
 
 		// Cache the result

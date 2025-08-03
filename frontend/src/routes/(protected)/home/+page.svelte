@@ -61,11 +61,6 @@
 	let accountsLoading = $state(false);
 	let transactions: TransactionDto[] = $state([]);
 	let transactionsLoading = $state(false);
-	let transactionsTotals: TransactionsTotals = $state({
-		debit: 0,
-		credit: 0,
-		difference: 0
-	});
 	let statistics: TransactionStatistics | null = $state(null);
 	let statisticsLoading = $state(false);
 	let statisticsError: string = $state('');
@@ -192,7 +187,6 @@
 		try {
 			const result = await dataService.fetchTransactions(accountToken, month, year);
 			transactions = result.transactions;
-			transactionsTotals = result.totals;
 		} catch (err) {
 			console.error('Error fetching transactions:', err);
 			error = $t('errors.failed-load-transactions');
@@ -276,15 +270,9 @@
 	function handleNewTransaction(event: CustomEvent<TransactionChangeResponse>) {
 		// add the transaction to the correesponding group
 		const transaction = event.detail.transaction;
+		console.log('event', event.detail);
 
-		const account = accounts.find((a) => a.token === selectedAccount!.token);
-		if (account) {
-			account.balance +=
-				transaction.category.transaction_type.id === TransactionTypeId.Credit
-					? transaction.amount
-					: -transaction.amount;
-		}
-
+		selectedAccount!.balance = event.detail.account_balance;
 		availableMonths = event.detail.months;
 
 		transactions.push(transaction);
@@ -297,22 +285,39 @@
 			}
 			return b.id - a.id; // For same date, highest id first
 		});
+	}
 
-		// Update totals
-		if (transaction.category.transaction_type.id === TransactionTypeId.Credit) {
-			transactionsTotals.credit += transaction.amount;
-			transactionsTotals.difference += transaction.amount;
+	function handleUpdateTransaction(event: CustomEvent<TransactionChangeResponse>) {
+		console.log('Update transaction event:', event.detail);
+		const transaction = event.detail.transaction;
+		selectedAccount!.balance = event.detail.account_balance;
+		availableMonths = event.detail.months;
+
+		const index = transactions.findIndex((t) => t.id === transaction.id);
+		if (index !== -1) {
+			transactions[index] = transaction;
+			// Sort transactions after update to maintain order
+			transactions.sort((a, b) => {
+				const dateA = new Date(a.date).getTime();
+				const dateB = new Date(b.date).getTime();
+				if (dateA !== dateB) {
+					return dateB - dateA; // Newest date first
+				}
+				return b.id - a.id; // For same date, highest id first
+			});
 		} else {
-			transactionsTotals.debit += transaction.amount;
-			transactionsTotals.difference -= transaction.amount;
+			console.warn('Transaction not found for update:', transaction.id);
 		}
 	}
 
-	function handleNewAccount() {
-		refreshAccountsAndNotify();
+	function handleDeleteAccount(account: Account) {
+		// No need to clear all caches - the service will handle targeted cache clearing
+		deleteAccount(account);
+
+		wsUpdateScreen();
 	}
 
-	function handleUpdateTransaction() {
+	function handleNewAccount() {
 		refreshAccountsAndNotify();
 	}
 
@@ -323,13 +328,6 @@
 	function refreshAccountsAndNotify() {
 		dataService.clearCaches();
 		fetchAccounts(false);
-		wsUpdateScreen();
-	}
-
-	function handleDeleteAccount(account: Account) {
-		// No need to clear all caches - the service will handle targeted cache clearing
-		deleteAccount(account);
-
 		wsUpdateScreen();
 	}
 
@@ -422,7 +420,6 @@
 						{#if $selectedView === 'transactions'}
 							<TransactionsTable
 								{transactions}
-								{transactionsTotals}
 								account={selectedAccount!}
 								isAll={selectedMonth === null && selectedYear === null}
 								loading={transactionsLoading}

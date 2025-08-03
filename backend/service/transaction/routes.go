@@ -121,10 +121,14 @@ func (h *Handler) GetTransactionsDTOByAccountToken(w http.ResponseWriter, r *htt
 	}
 
 	// Always return grouped transactions (with optional month/year filter)
-	response, err := h.store.GetTransactionsDTOsByAccountTokenWithTotals(accountToken, month, year)
+	transactions, err := h.store.GetTransactionsDTOByAccountToken(accountToken, month, year)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	response := map[string]interface{}{
+		"transactions": transactions,
 	}
 
 	middleware.WriteDataResponse(w, response)
