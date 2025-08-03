@@ -1,11 +1,14 @@
 package types
 
 type CategoryStore interface {
-	GetCategoriesByUserId(userId int) ([]*Category, error)
-	CreateCategory(category *Category) error
-	GetCategoryDtoByUserId(userId int) ([]*CategoryDTO, error)
+	CreateCategory(category *Category) (*Category, error)
+	CreateCategoryAndReturn(category *Category) (*CategoryDTO, error)
+	UpdateCategory(category *Category, userId int) (*Category, error)
+	UpdateCategoryAndReturn(category *Category, userId int) (*CategoryDTO, error)
 	GetCategoryById(id int, userId int) (*Category, error)
-	UpdateCategory(category *Category, userId int) error
+	GetCategoriesByUserId(userId int) ([]*Category, error)
+	GetCategoryDtoById(id int, userId int) (*CategoryDTO, error)
+	GetCategoriesDtoByUserId(userId int) ([]*CategoryDTO, error)
 	DeleteCategory(id int, userId int) error
 	SoftDeleteCategory(id int, userId int) error
 }

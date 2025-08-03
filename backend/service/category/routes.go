@@ -46,7 +46,7 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a new category
-	err := h.store.CreateCategory(&types.Category{
+	dto, err := h.store.CreateCategoryAndReturn(&types.Category{
 		UserID:            userId,
 		TransactionTypeID: payload.TransactionTypeId,
 		CategoryName:      payload.CategoryName,
@@ -58,7 +58,11 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	middleware.WriteSuccessResponse(w)
+	response := map[string]interface{}{
+		"category": dto,
+	}
+
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) GetCategoriesByUserId(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +94,7 @@ func (h *Handler) GetCategoriesDtoByUserId(w http.ResponseWriter, r *http.Reques
 	}
 
 	// get categories by user id
-	categories, err := h.store.GetCategoryDtoByUserId(userId)
+	categories, err := h.store.GetCategoriesDtoByUserId(userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -122,7 +126,7 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.store.UpdateCategory(&types.Category{
+	dto, err := h.store.UpdateCategoryAndReturn(&types.Category{
 		ID:           categoryIdInt,
 		UserID:       userId,
 		CategoryName: payload.CategoryName,
@@ -134,7 +138,11 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	middleware.WriteSuccessResponse(w)
+	response := map[string]interface{}{
+		"category": dto,
+	}
+
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) DeleteCategory(w http.ResponseWriter, r *http.Request) {

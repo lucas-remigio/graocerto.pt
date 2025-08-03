@@ -1,42 +1,38 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { dataService } from '$lib/services/dataService';
-	import type { Category, CategoryDto, TransactionType } from '$lib/types';
+	import type { Category, CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
 	import CategoriesTable from '$components/CategoriesTable.svelte';
 	import { Plus, Tag } from 'lucide-svelte';
-	import { TransactionTypes, TransactionTypeSlug } from '$lib/transaction_types_types';
+	import {
+		TransactionTypeId,
+		TransactionTypes,
+		TransactionTypeSlug
+	} from '$lib/transaction_types_types';
 	import CreateCategory from '$components/CreateCategory.svelte';
 	import { t } from '$lib/i18n';
 
-	let showCreateCategoryModal = false;
-	let selectedTransactionType: TransactionType | undefined;
+	let showCreateCategoryModal = $state(false);
+	let selectedTransactionType: TransactionType | undefined = $state(undefined);
 
-	let debitCategories: CategoryDto[] = [];
-	let creditCategories: CategoryDto[] = [];
-	let error: string = '';
-	let deleteError: string = '';
-	let loading: boolean = true;
+	let categories: CategoryDto[] = $state([]);
+	let error: string = $state('');
+	let deleteError: string = $state('');
+	let loading: boolean = $state(true);
+
+	// Derived lists for credit and debit categories
+	let creditCategories = $derived(() =>
+		categories.filter((c) => c.transaction_type.type_slug === TransactionTypeSlug.Credit)
+	);
+	let debitCategories = $derived(() =>
+		categories.filter((c) => c.transaction_type.type_slug === TransactionTypeSlug.Debit)
+	);
 
 	async function fetchCategories(showLoading: boolean) {
 		loading = showLoading;
 		try {
-			const categories = await dataService.fetchCategories();
-			creditCategories = [];
-			debitCategories = [];
-
-			// Use the grouped categories directly instead of filtering
-			categories.forEach((c) => {
-				switch (c.transaction_type.type_slug) {
-					case TransactionTypeSlug.Credit:
-						creditCategories.push(c);
-						break;
-					case TransactionTypeSlug.Debit:
-						debitCategories.push(c);
-						break;
-					default:
-						console.warn(`Unknown transaction type slug: ${c.transaction_type.type_slug}`);
-				}
-			});
+			const fetched = await dataService.fetchCategories();
+			categories = fetched;
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
 			error = $t('errors.failed-load-categories');
@@ -48,7 +44,7 @@
 	async function deleteCategory(categoryId: number) {
 		try {
 			await dataService.deleteCategory(categoryId);
-			fetchCategories(false);
+			categories = categories.filter((c) => c.id !== categoryId);
 		} catch (err: any) {
 			console.error('Error in deleteCategory:', err);
 			const error = err.message || 'Unknown error';
@@ -61,12 +57,19 @@
 		categoryData: { category_name: string; color: string }
 	) {
 		try {
-			await dataService.editCategory(categoryId, categoryData);
-			fetchCategories(false);
+			const response = await dataService.editCategory(categoryId, categoryData);
+			updateCategory(response.category);
 		} catch (err: any) {
 			console.error('Error in editCategory:', err);
 			const error = err.message || 'Unknown error';
 			showErrorMessage(error);
+		}
+	}
+
+	function updateCategory(category: CategoryDto): void {
+		const idx = categories.findIndex((c) => c.id === category.id);
+		if (idx !== -1) {
+			categories[idx] = category;
 		}
 	}
 
@@ -77,8 +80,8 @@
 		}, 5000);
 	}
 
-	function openCreateCategoryModal(transactionType: TransactionTypeSlug) {
-		const matchingType = TransactionTypes.find((t) => t.type_slug === transactionType);
+	function openCreateCategoryModal(transactionType: TransactionTypeId) {
+		const matchingType = TransactionTypes.find((t) => t.id === transactionType);
 		selectedTransactionType = matchingType;
 
 		if (!selectedTransactionType) {
@@ -93,11 +96,17 @@
 		showCreateCategoryModal = false;
 	}
 
-	function handleCreateCategorySuccess() {
+	function handleCreateCategorySuccess(event: CustomEvent<CategoryChangeResponse>) {
 		// Clear category caches and refetch
-		dataService.clearCategoryCaches();
-		fetchCategories(false);
 		closeCreateCategoryModal();
+		dataService.clearCategoryCaches();
+		categories.push(event.detail.category);
+		sortCategories();
+	}
+
+	function sortCategories() {
+		// newest to oldest
+		categories.sort((a, b) => b.id - a.id);
 	}
 
 	function handleEditCategorySuccess(
@@ -141,7 +150,7 @@
 					<h2 class="text-xl font-bold">{$t('categories.credit')}</h2>
 					<button
 						class="btn btn-primary flex items-center gap-2"
-						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Credit)}
+						onclick={() => openCreateCategoryModal(TransactionTypeId.Credit)}
 						aria-label={$t('categories.create-category')}
 					>
 						<Plus size={20} class="text-base-100" />
@@ -149,7 +158,7 @@
 					</button>
 				</div>
 				<CategoriesTable
-					categories={creditCategories}
+					categories={creditCategories()}
 					categoryType={TransactionTypeSlug.Credit}
 					on:editCategory={handleEditCategorySuccess}
 					on:deleteCategory={({ detail: { categoryId } }) => {
@@ -164,7 +173,7 @@
 					<h2 class="text-xl font-bold">{$t('categories.debit')}</h2>
 					<button
 						class="btn btn-primary flex items-center gap-2"
-						on:click={() => openCreateCategoryModal(TransactionTypeSlug.Debit)}
+						onclick={() => openCreateCategoryModal(TransactionTypeId.Debit)}
 						aria-label={$t('categories.create-category')}
 					>
 						<Plus size={20} class="text-base-100" />
@@ -172,7 +181,7 @@
 					</button>
 				</div>
 				<CategoriesTable
-					categories={debitCategories}
+					categories={debitCategories()}
 					categoryType={TransactionTypeSlug.Debit}
 					on:editCategory={handleEditCategorySuccess}
 					on:deleteCategory={({ detail: { categoryId } }) => {

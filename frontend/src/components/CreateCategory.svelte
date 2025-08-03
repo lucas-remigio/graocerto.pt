@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { dataService } from '$lib/services/dataService';
-	import type { Category, TransactionType } from '$lib/types';
+	import type { Category, CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -28,8 +28,8 @@
 		};
 
 		try {
-			await dataService.createCategory(categoryData);
-			handleNewCategory();
+			const response = await dataService.createCategory(categoryData);
+			handleNewCategory(response);
 		} catch (err: any) {
 			console.error('Error in handleSubmit:', err);
 			error = err.message || $t('errors.failed-create-category');
@@ -86,8 +86,8 @@
 		dispatch('closeModal');
 	}
 
-	function handleNewCategory() {
-		dispatch('newCategory');
+	function handleNewCategory(response: CategoryChangeResponse) {
+		dispatch('newCategory', response);
 	}
 </script>
 

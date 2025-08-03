@@ -32,14 +32,7 @@ func (s *Store) GetCategoryById(id int, userId int) (*types.Category, error) {
 	return db.QuerySingle(s.db, query, scanRowIntoCategory, id, userId)
 }
 
-func (s *Store) CreateCategory(category *types.Category) error {
-	_, err := db.ExecWithValidation(s.db,
-		"INSERT INTO categories (user_id, transaction_type_id, category_name, color) VALUES (?, ?, ?, ?)",
-		category.UserID, category.TransactionTypeID, category.CategoryName, category.Color)
-	return err
-}
-
-func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
+func (s *Store) GetCategoriesDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
 	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at,
 					 tt.id, tt.type_name, tt.type_slug
 			  FROM categories c
@@ -49,25 +42,91 @@ func (s *Store) GetCategoryDtoByUserId(userId int) ([]*types.CategoryDTO, error)
 	// Use db.QueryList to execute the query and scan the results into CategoryDTO
 	return db.QueryList(s.db,
 		query,
-		scanRowIntoCategoryDto, userId)
+		scanRowsIntoCategoryDto, userId)
 }
 
-func (s *Store) UpdateCategory(category *types.Category, userId int) error {
-	// get current category to check if incoming user is the same
-	currentCategory, err := s.GetCategoryById(category.ID, userId)
+func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, error) {
+	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at,
+					 tt.id, tt.type_name, tt.type_slug
+			  FROM categories c
+			  JOIN transaction_types tt ON c.transaction_type_id = tt.id
+			  WHERE c.id = ? AND c.user_id = ? AND c.deleted_at IS NULL`
+	return db.QuerySingle(s.db, query, scanRowIntoCategoryDto, id, userId)
+}
+
+func (s *Store) CreateCategory(category *types.Category) (*types.Category, error) {
+	result, err := db.ExecWithValidation(s.db,
+		"INSERT INTO categories (user_id, transaction_type_id, category_name, color) VALUES (?, ?, ?, ?)",
+		category.UserID, category.TransactionTypeID, category.CategoryName, category.Color)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	// Get the ID of the newly created category
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the created category with its ID
+	category.ID = int(id)
+
+	return category, nil
+}
+
+func (s *Store) CreateCategoryAndReturn(category *types.Category) (*types.CategoryDTO, error) {
+	updatedCategory, err := s.CreateCategory(category)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the full DTO for the created category
+	dto, err := s.GetCategoryDtoById(updatedCategory.ID, updatedCategory.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto, nil
+}
+
+func (s *Store) UpdateCategory(editCategory *types.Category, userId int) (*types.Category, error) {
+	// get current category to check if incoming user is the same
+	currentCategory, err := s.GetCategoryById(editCategory.ID, userId)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := db.ValidateOwnership(currentCategory.UserID, userId, "category"); err != nil {
-		return err
+		return nil, err
 	}
 
 	_, err = db.ExecWithValidation(s.db,
 		"UPDATE categories SET category_name = ?, color = ? WHERE id = ?",
-		category.CategoryName, category.Color, category.ID)
+		editCategory.CategoryName, editCategory.Color, editCategory.ID)
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	currentCategory.CategoryName = editCategory.CategoryName
+	currentCategory.Color = editCategory.Color
+
+	return currentCategory, nil
+}
+
+func (s *Store) UpdateCategoryAndReturn(editCategory *types.Category, userId int) (*types.CategoryDTO, error) {
+	updatedCategory, err := s.UpdateCategory(editCategory, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the full DTO for the updated category
+	dto, err := s.GetCategoryDtoById(updatedCategory.ID, updatedCategory.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto, nil
 }
 
 func (s *Store) DeleteCategory(id int, userId int) error {
@@ -122,13 +181,30 @@ func scanRowsIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	return c, nil
 }
 
-func scanRowIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
+func scanRowsIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
 	c := new(types.CategoryDTO)
 
 	// Initialize nested structs so they're not nil
 	c.TransactionType = &types.TransactionType{}
 
 	err := rows.Scan(
+		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt,
+		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
+	c := new(types.CategoryDTO)
+
+	// Initialize nested structs so they're not nil
+	c.TransactionType = &types.TransactionType{}
+
+	err := row.Scan(
 		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 

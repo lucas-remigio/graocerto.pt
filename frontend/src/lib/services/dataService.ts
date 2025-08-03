@@ -11,7 +11,8 @@ import type {
 	TransactionType,
 	TransactionTypesResponse,
 	TransactionsResponse,
-	TransactionChangeResponse
+	TransactionChangeResponse,
+	CategoryChangeResponse
 } from '$lib/types';
 
 // Cache types
@@ -210,30 +211,28 @@ class DataService {
 		transaction_type_id: number;
 		category_name: string;
 		color: string;
-	}): Promise<void> {
+	}): Promise<CategoryChangeResponse> {
 		const response = await api_axios.post('categories', categoryData);
 
 		if (response.status !== 200) {
 			throw new Error(`Failed to create category: ${response.status}`);
 		}
 
-		// Clear category and transaction type caches since category data changed
-		this.clearCategoryCaches();
+		return response.data;
 	}
 
 	// Edit category
 	async editCategory(
 		categoryId: number,
 		categoryData: { category_name: string; color: string }
-	): Promise<void> {
+	): Promise<CategoryChangeResponse> {
 		const response = await api_axios.put(`categories/${categoryId}`, categoryData);
 
 		if (response.status !== 200) {
 			throw new Error(`Failed to edit category: ${response.status}`);
 		}
 
-		// Clear category and transaction type caches since category data changed
-		this.clearCategoryCaches();
+		return response.data;
 	}
 
 	// Delete category

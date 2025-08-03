@@ -54,6 +54,10 @@ export interface AccountChangeResponse {
 	account: Account;
 }
 
+export interface CategoryChangeResponse {
+	category: CategoryDto;
+}
+
 export interface TransactionsTotals {
 	debit: number;
 	credit: number;
