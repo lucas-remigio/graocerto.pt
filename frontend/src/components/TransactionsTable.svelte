@@ -20,6 +20,8 @@
 		setDraftTransactionAccountToken
 	} from '$lib/services/draftTransactionService';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
+	import { fade, fly, scale } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -279,7 +281,7 @@
 						<th style="width: 10%">{$t('transactions.actions')}</th>
 					</tr>
 				</thead>
-				<tbody class="text-center">
+				<tbody class="text-center" >
 					{#each transactionsGroups as group}
 						<!-- Show month header only if isAll is true -->
 						{#if isAll}
@@ -289,8 +291,12 @@
 								</td>
 							</tr>
 						{/if}
-						{#each group.transactions as tx}
-							<tr class={getRowClass(tx)}>
+						{#each group.transactions as tx (tx.id)}
+							<tr
+								class={getRowClass(tx)}
+								in:fly={{ y: 20, duration: 200 }}
+								out:fade={{ duration: 150 }}
+							>
 								<td class="text-base-content">
 									{formatDate(tx.date)}
 								</td>

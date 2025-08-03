@@ -416,7 +416,7 @@
 					<div class="divider my-0"></div>
 
 					<!-- Content Container with scroll -->
-					<div>
+					<div class="min-h-0 flex-1 overflow-y-auto">
 						{#if $selectedView === 'transactions'}
 							<TransactionsTable
 								{transactions}

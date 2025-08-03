@@ -322,14 +322,10 @@ func (s *Store) UpdateTransactionAndReturn(payload *types.UpdateTransactionPaylo
 		return nil, fmt.Errorf("failed to update transaction: %w", err)
 	}
 
-	println("Updated transaction:", updatedTx.ID, "with new balance:", updatedTx.Balance)
-
 	transactionDTO, err := s.GetTransactionDTOById(updatedTx.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get updated transaction DTO: %w", err)
 	}
-
-	println("Transaction DTO after update:", transactionDTO.ID, "with new balance:", transactionDTO.Balance)
 
 	// Get available months for the account token
 	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(transactionDTO.AccountToken)
