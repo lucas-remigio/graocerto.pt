@@ -26,7 +26,6 @@
 	$: nonFavoriteAccounts = accounts.filter((acc) => !acc.is_favorite);
 
 	function toggleShowNonFavorites(value: boolean) {
-		console.log('Toggling showNonFavorites:', value);
 		showNonFavorites.update(() => value);
 	}
 

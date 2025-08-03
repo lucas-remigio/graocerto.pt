@@ -244,7 +244,12 @@
 
 	$effect(() => {
 		if (selectedAccount && $selectedView && initialDataLoaded) {
-			fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
+			// If current view is statistics, also fetch statistics
+			if ($selectedView === 'statistics') {
+				fetchStatistics(selectedAccount.token, selectedMonth, selectedYear, true);
+			} else {
+				fetchTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
+			}
 		}
 	});
 
