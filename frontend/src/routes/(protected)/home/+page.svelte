@@ -257,6 +257,14 @@
 		const transactionDate = new Date(transaction.date);
 		const transactionMonth = transactionDate.getMonth() + 1; // getMonth() is zero-based
 		const transactionYear = transactionDate.getFullYear();
+
+		if (selectedMonth === null || selectedYear === null) {
+			// If no month/year is selected, show all transactions
+			return selectedAccount?.token === transaction.account_token;
+		}
+
+		// this makes is so that when we are in august and add a transaction to september,
+		// we do not add it to the current months list
 		return (
 			transactionMonth === selectedMonth &&
 			transactionYear === selectedYear &&
