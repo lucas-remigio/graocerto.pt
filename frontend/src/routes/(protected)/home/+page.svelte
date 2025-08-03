@@ -253,6 +253,17 @@
 	 * ========================================================
 	 */
 
+	function isTransactionInCurrentMonthAndYear(transaction: TransactionDto): boolean {
+		const transactionDate = new Date(transaction.date);
+		const transactionMonth = transactionDate.getMonth() + 1; // getMonth() is zero-based
+		const transactionYear = transactionDate.getFullYear();
+		return (
+			transactionMonth === selectedMonth &&
+			transactionYear === selectedYear &&
+			selectedAccount?.token === transaction.account_token
+		);
+	}
+
 	function updateAccountAndMonths(response: TransactionChangeResponse) {
 		selectedAccount!.balance = response.account_balance;
 		availableMonths = response.months;
@@ -268,6 +279,11 @@
 	}
 
 	function upsertTransaction(transaction: TransactionDto) {
+		// first we need to check if the transaction is in the current month and year
+		if (!isTransactionInCurrentMonthAndYear(transaction)) {
+			return;
+		}
+
 		const idx = transactions.findIndex((t) => t.id === transaction.id);
 		if (idx !== -1) {
 			transactions[idx] = transaction;
@@ -323,14 +339,12 @@
 	}
 
 	function handleNewAccount(event: CustomEvent<AccountChangeResponse>) {
-		console.log('New account created:', event.detail);
 		const { account } = event.detail;
 		upsertAccount(account);
 		wsUpdateScreen();
 	}
 
 	function handleUpdateAccount(event: CustomEvent<AccountChangeResponse>) {
-		console.log('Account updated:', event.detail);
 		const { account } = event.detail;
 		upsertAccount(account);
 		wsUpdateScreen();
@@ -347,6 +361,7 @@
 		try {
 			await dataService.deleteAccount(account.token);
 			accounts = accounts.filter((acc) => acc.token !== account.token);
+			selectedAccount = null; // Clear selected account
 			getSelectedAccount(); // Update selected account if needed
 		} catch (err) {
 			console.error('Error deleting account:', err);
