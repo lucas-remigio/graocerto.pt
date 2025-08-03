@@ -4,6 +4,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { validateAccountForm } from '$lib/accountValidation';
+	import type { AccountChangeResponse } from '$lib/types';
 
 	let error: string = '';
 	// Form field variables
@@ -32,7 +33,7 @@
 				error = `Error: ${response.status}`;
 				return;
 			}
-			handleNewAccount();
+			handleNewAccount(response.data);
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
 			error = $t('errors.failed-create-account');
@@ -53,8 +54,8 @@
 		dispatch('closeModal');
 	}
 
-	function handleNewAccount() {
-		dispatch('newAccount');
+	function handleNewAccount(response: AccountChangeResponse) {
+		dispatch('newAccount', response);
 	}
 </script>
 

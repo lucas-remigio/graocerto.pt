@@ -1,6 +1,6 @@
 <!-- src/components/Accounts.svelte -->
 <script lang="ts">
-	import type { Account } from '$lib/types';
+	import type { Account, AccountChangeResponse } from '$lib/types';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { Pencil, Trash, Plus, Wallet, EyeOff, Eye } from 'lucide-svelte';
 	import EditAccount from './EditAccount.svelte';
@@ -59,16 +59,6 @@
 		openDeleteAccountModal = false;
 	}
 
-	function handleDeleteAccount() {
-		openDeleteAccountModal = false;
-		dispatch('deleteAccount', { account: selectedAccount! });
-	}
-
-	function handleUpdatedAccount() {
-		handleCloseEditAccountModal();
-		dispatch('updatedAccount');
-	}
-
 	function createAccount() {
 		showCreateAccountModal = true;
 	}
@@ -77,9 +67,19 @@
 		showCreateAccountModal = false;
 	}
 
-	function handleNewAccount() {
+	function handleDeleteAccount() {
+		openDeleteAccountModal = false;
+		dispatch('deleteAccount', { account: selectedAccount! });
+	}
+
+	function handleUpdatedAccount(event: CustomEvent<AccountChangeResponse>) {
+		handleCloseEditAccountModal();
+		dispatch('updatedAccount', event.detail);
+	}
+
+	function handleNewAccount(event: CustomEvent<AccountChangeResponse>) {
 		closeAccountModal();
-		dispatch('newAccount');
+		dispatch('newAccount', event.detail);
 	}
 
 	function handleMoveUp(event: CustomEvent<{ account: Account }>) {
@@ -228,6 +228,11 @@
 	<p class="text-gray-500">{$t('page.no-accounts')}</p>
 {/if}
 
+<!-- Create Account Modal -->
+{#if showCreateAccountModal}
+	<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
+{/if}
+
 {#if openEditAccountModal}
 	<EditAccount
 		account={selectedAccount!}
@@ -244,9 +249,4 @@
 		onConfirm={() => handleDeleteAccount()}
 		onCancel={() => handleCloseDeleteAccountModal()}
 	/>
-{/if}
-
-<!-- Create Account Modal -->
-{#if showCreateAccountModal}
-	<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
 {/if}

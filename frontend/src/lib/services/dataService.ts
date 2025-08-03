@@ -32,12 +32,18 @@ class DataService {
 	}
 
 	// Clear all caches
-	clearCaches(): void {
+	clearAllCaches(): void {
 		this.statisticsCache.clear();
 		this.transactionsCache.clear();
 		this.availableMonthsCache.clear();
 		this.categoriesCache = null;
 		this.transactionTypesCache = null;
+	}
+
+	clearTransactionCaches(): void {
+		this.statisticsCache.clear();
+		this.transactionsCache.clear();
+		this.availableMonthsCache.clear();
 	}
 
 	// Clear caches for a specific account

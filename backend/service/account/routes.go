@@ -56,7 +56,7 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a new account
-	err := h.store.CreateAccount(&types.Account{
+	account, err := h.store.CreateAccount(&types.Account{
 		UserID:      userId,
 		AccountName: payload.AccountName,
 		Balance:     *payload.Balance,
@@ -67,7 +67,11 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	middleware.WriteSuccessResponse(w)
+	response := map[string]interface{}{
+		"account": account,
+	}
+
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) GetAccountsByUserId(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +115,7 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// update the account
-	err := h.store.UpdateAccount(&types.Account{
+	account, err := h.store.UpdateAccount(&types.Account{
 		ID:          accountIdInt,
 		UserID:      userId,
 		AccountName: payload.AccountName,
@@ -123,7 +127,10 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	middleware.WriteSuccessResponse(w)
+	response := map[string]interface{}{
+		"account": account,
+	}
+	middleware.WriteDataResponse(w, response)
 }
 
 func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {

@@ -3,8 +3,8 @@ package types
 type AccountStore interface {
 	GetAccountsByUserId(userId int) ([]*Account, error)
 	GetAccountByToken(token string, userId int) (*Account, error)
-	CreateAccount(account *Account) error
-	UpdateAccount(account *Account, userId int) error
+	CreateAccount(account *Account) (*Account, error)
+	UpdateAccount(account *Account, userId int) (*Account, error)
 	DeleteAccount(token string, userId int) error
 	GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*MonthlyFeedback, error)
 	ReorderAccounts(userId int, accounts []ReorderAccount) error

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
-	import type { Account } from '$lib/types';
+	import type { Account, AccountChangeResponse } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -35,7 +35,7 @@
 				error = `Error: ${response.status}`;
 				return;
 			}
-			handleUpdatedAccount();
+			handleUpdatedAccount(response.data);
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
 			error = $t('errors.failed-update-account');
@@ -56,8 +56,8 @@
 		dispatch('closeModal');
 	}
 
-	function handleUpdatedAccount() {
-		dispatch('updatedAccount');
+	function handleUpdatedAccount(response: AccountChangeResponse) {
+		dispatch('updatedAccount', response);
 	}
 </script>
 

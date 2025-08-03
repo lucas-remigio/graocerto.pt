@@ -50,6 +50,10 @@ export interface TransactionChangeResponse {
 	months: MonthYear[];
 }
 
+export interface AccountChangeResponse {
+	account: Account;
+}
+
 export interface TransactionsTotals {
 	debit: number;
 	credit: number;

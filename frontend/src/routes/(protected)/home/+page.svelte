@@ -9,7 +9,8 @@
 		MonthYear,
 		TransactionsTotals,
 		TransactionStatistics,
-		TransactionChangeResponse
+		TransactionChangeResponse,
+		AccountChangeResponse
 	} from '$lib/types';
 	import { dataService } from '$lib/services/dataService';
 	import Accounts from '$components/Accounts.svelte';
@@ -109,15 +110,6 @@
 		selectedAccount = foundAccount;
 	}
 
-	async function deleteAccount(account: Account) {
-		try {
-			await dataService.deleteAccount(account.token);
-			await fetchAccounts(false);
-		} catch (err) {
-			console.error('Error deleting account:', err);
-			error = $t('errors.failed-create-account');
-		}
-	}
 	// Function to fetch accounts and then fetch transactions for the first account
 	async function fetchAccounts(showLoading: boolean) {
 		accountsLoading = showLoading;
@@ -256,6 +248,11 @@
 		}
 	});
 
+	/* =========================================================
+	 * Transaction Logic
+	 * ========================================================
+	 */
+
 	function updateAccountAndMonths(response: TransactionChangeResponse) {
 		selectedAccount!.balance = response.account_balance;
 		availableMonths = response.months;
@@ -310,6 +307,35 @@
 		}
 	}
 
+	/* ========================================================
+	 * Account Logic
+	 * ========================================================
+	 */
+
+	function upsertAccount(account: Account) {
+		const idx = accounts.findIndex((acc) => acc.token === account.token);
+		if (idx !== -1) {
+			accounts[idx] = account; // update existing account
+		} else {
+			accounts.push(account); // add new account
+		}
+		accounts.sort((a, b) => a.order_index - b.order_index);
+	}
+
+	function handleNewAccount(event: CustomEvent<AccountChangeResponse>) {
+		console.log('New account created:', event.detail);
+		const { account } = event.detail;
+		upsertAccount(account);
+		wsUpdateScreen();
+	}
+
+	function handleUpdateAccount(event: CustomEvent<AccountChangeResponse>) {
+		console.log('Account updated:', event.detail);
+		const { account } = event.detail;
+		upsertAccount(account);
+		wsUpdateScreen();
+	}
+
 	function handleDeleteAccount(account: Account) {
 		// No need to clear all caches - the service will handle targeted cache clearing
 		deleteAccount(account);
@@ -317,18 +343,27 @@
 		wsUpdateScreen();
 	}
 
-	function handleNewAccount() {
-		refreshCachesAndNotify();
+	async function deleteAccount(account: Account) {
+		try {
+			await dataService.deleteAccount(account.token);
+			accounts = accounts.filter((acc) => acc.token !== account.token);
+			getSelectedAccount(); // Update selected account if needed
+		} catch (err) {
+			console.error('Error deleting account:', err);
+			error = $t('errors.failed-create-account');
+		}
 	}
 
-	function handleUpdateAccount() {
-		refreshCachesAndNotify();
-	}
+	/* ========================================================
+	 * UI Logic
+	 * ========================================================
+	 */
 
 	function refreshCachesAndNotify() {
-		dataService.clearCaches();
+		dataService.clearTransactionCaches();
 		wsUpdateScreen();
 	}
+
 	function wsUpdateScreen() {
 		// this function is called on every deletion, edition or creation of both an account and a transaction
 		// Notify other users of the change
