@@ -23,12 +23,13 @@ services:
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - IS_PRODUCTION=false
       - PORT=${BACKEND_PORT}
-      # Single connection string for local database
-      - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@mysql-container:3306/wallet_tracker
+        # Single connection string for local database
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/wallet_tracker?sslmode=disable
       # This is to test the remote database in dev. Change IS_PRODUCTION to true to use the remote database
       - REMOTE_DB_URL=${REMOTE_DB_URL}
       - FRONTEND_URL=${FRONTEND_URL}
@@ -47,16 +48,21 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
 
   db:
-    # Dev environment database
-    image: mysql:8
-    container_name: mysql-container
+    image: postgres:16
+    container_name: postgres-container
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: wallet_tracker
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: wallet_tracker
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  mysql_data:
+  postgres_data:
