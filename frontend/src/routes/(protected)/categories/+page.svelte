@@ -101,7 +101,7 @@
 		closeCreateCategoryModal();
 		dataService.clearCategoryCaches();
 		categories.push(event.detail.category);
-		sortCategories();
+		sortCategories(); 
 	}
 
 	function sortCategories() {
