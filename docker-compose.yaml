@@ -31,7 +31,7 @@ services:
         # Single connection string for local database
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/wallet_tracker?sslmode=disable
       # This is to test the remote database in dev. Change IS_PRODUCTION to true to use the remote database
-      - REMOTE_DB_URL=${REMOTE_DB_URL}
+      - REMOTE_DB_URL=${SESSION_POOLER}
       - FRONTEND_URL=${FRONTEND_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
