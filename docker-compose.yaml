@@ -64,17 +64,6 @@ services:
       timeout: 5s
       retries: 20
 
-  mysql:
-    image: mysql:8.0
-    container_name: mysql-container
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: wallet_tracker
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./data/mysql:/var/lib/mysql
-
 volumes:
   postgres_data:
   mysql_data:

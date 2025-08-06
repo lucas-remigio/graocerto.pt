@@ -154,26 +154,32 @@ func (s *Store) CreateTransactionAndReturn(transaction *types.Transaction, userI
 }
 
 func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*types.Transaction, error) {
-	query := `
-		SELECT id, account_token, category_id, amount, description, date, balance, created_at 
-		FROM transactions 
-		WHERE account_token = $1`
+	var query string
+	var args []interface{}
+
+	baseQuery := `
+        SELECT id, account_token, category_id, amount, description, date, balance, created_at 
+        FROM transactions 
+        WHERE account_token = $1`
+
+	args = append(args, accountToken)
 
 	if month != nil && year != nil {
-		query += " AND EXTRACT(MONTH FROM date) = $2 AND EXTRACT(YEAR FROM date) = $3"
+		query = baseQuery + " AND EXTRACT(MONTH FROM date) = $2 AND EXTRACT(YEAR FROM date) = $3" +
+			" ORDER BY date DESC, id DESC"
+		args = append(args, *month, *year)
+	} else {
+		query = baseQuery + " ORDER BY date DESC, id DESC"
 	}
 
-	query += " ORDER BY date DESC, id DESC"
-
-	if month != nil && year != nil {
-		return db.QueryList(s.db, query, scanTransaction, accountToken, *month, *year)
-	}
-
-	return db.QueryList(s.db, query, scanTransaction, accountToken)
+	return db.QueryList(s.db, query, scanTransaction, args...)
 }
 
 func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, year *int) ([]*types.TransactionDTO, error) {
-	query := "SELECT " +
+	var query string
+	var args []interface{}
+
+	baseQuery := "SELECT " +
 		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at, " +
 		"c.id, c.category_name, c.color, c.created_at, c.updated_at, " +
 		"tt.id, tt.type_name, tt.type_slug " +
@@ -182,17 +188,17 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 		"JOIN transaction_types tt ON c.transaction_type_id = tt.id " +
 		"WHERE t.account_token = $1 "
 
-	if month != nil && year != nil {
-		query += "AND EXTRACT(MONTH FROM t.date) = $2 AND EXTRACT(YEAR FROM t.date) = $3 "
-	}
-
-	query += "ORDER BY t.date DESC, t.id DESC"
+	args = append(args, accountToken)
 
 	if month != nil && year != nil {
-		return db.QueryList(s.db, query, scanTransactionsDTOs, accountToken, *month, *year)
+		query = baseQuery + "AND EXTRACT(MONTH FROM t.date) = $2 AND EXTRACT(YEAR FROM t.date) = $3 " +
+			"ORDER BY t.date DESC, t.id DESC"
+		args = append(args, *month, *year)
+	} else {
+		query = baseQuery + "ORDER BY t.date DESC, t.id DESC"
 	}
 
-	return db.QueryList(s.db, query, scanTransactionsDTOs, accountToken)
+	return db.QueryList(s.db, query, scanTransactionsDTOs, args...)
 }
 
 func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
@@ -418,12 +424,18 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 func (s *Store) GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*types.MonthYear, error) {
 	query := `
         SELECT 
-            EXTRACT(YEAR FROM date) as year,
-            EXTRACT(MONTH FROM date) as month,
-            COUNT(*) as count
-        FROM transactions 
-        WHERE account_token = $1 
-        GROUP BY EXTRACT(YEAR FROM date), EXTRACT(MONTH FROM date)
+            year,
+            month,
+            count
+        FROM (
+            SELECT 
+                DATE_PART('year', date)::int as year,
+                DATE_PART('month', date)::int as month,
+                COUNT(*) as count
+            FROM transactions 
+            WHERE account_token = $1 
+            GROUP BY DATE_PART('year', date), DATE_PART('month', date)
+        ) subquery
         ORDER BY year DESC, month DESC
     `
 
