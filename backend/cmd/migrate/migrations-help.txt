@@ -1,5 +1,7 @@
 # comando para voltar atrás na migraçao, para a versão anterior
 migrate -path=cmd/migrate/migrations -database "mysql://<usr>:<pw>@tcp(localhost:3306)/wallet_tracker" force 20250209150903
 
+migrate -path=cmd/migrate/migrations -database "postgresql://<user>:<password>@localhost:5432/wallet_tracker?sslmode=disable" down 1
+
 # comando para gerar migraçao
 make migration <nome>

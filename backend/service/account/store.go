@@ -38,7 +38,7 @@ const accountColumns = `
 
 func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 	query := fmt.Sprintf(
-		`SELECT %s FROM accounts WHERE user_id = ? ORDER BY order_index`,
+		`SELECT %s FROM accounts WHERE user_id = $1 ORDER BY order_index`,
 		accountColumns,
 	)
 	return db.QueryList(
@@ -51,7 +51,7 @@ func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 
 func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, error) {
 	query := fmt.Sprintf(
-		`SELECT %s FROM accounts WHERE token = ? AND user_id = ?`,
+		`SELECT %s FROM accounts WHERE token = $1 AND user_id = $2`,
 		accountColumns,
 	)
 	return db.QuerySingle(
@@ -64,7 +64,7 @@ func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, err
 
 func (s *Store) GetAccountById(id int, userId int) (*types.Account, error) {
 	query := fmt.Sprintf(
-		`SELECT %s FROM accounts WHERE id = ? AND user_id = ?`,
+		`SELECT %s FROM accounts WHERE id = $1 AND user_id = $2`,
 		accountColumns,
 	)
 	return db.QuerySingle(
@@ -83,14 +83,14 @@ func (s *Store) CreateAccount(account *types.Account) (*types.Account, error) {
 	account.Token = token
 
 	var maxOrderIndex int
-	err = s.db.QueryRow("SELECT COALESCE(MAX(order_index), 0) FROM accounts WHERE user_id = ?", account.UserID).Scan(&maxOrderIndex)
+	err = s.db.QueryRow("SELECT COALESCE(MAX(order_index), 0) FROM accounts WHERE user_id = $1", account.UserID).Scan(&maxOrderIndex)
 	if err != nil {
 		return nil, err
 	}
 	account.OrderIndex = maxOrderIndex + 1
 
 	_, err = db.ExecWithValidation(s.db,
-		"INSERT INTO accounts (token, user_id, account_name, balance, order_index) VALUES (?, ?, ?, ?, ?)",
+		"INSERT INTO accounts (token, user_id, account_name, balance, order_index) VALUES ($1, $2, $3, $4, $5)",
 		account.Token, account.UserID, account.AccountName, account.Balance, account.OrderIndex,
 	)
 
@@ -119,7 +119,7 @@ func (s *Store) UpdateAccount(account *types.Account, userId int) (*types.Accoun
 	}
 
 	_, err = db.ExecWithValidation(s.db,
-		"UPDATE accounts SET account_name = ?, balance = ? WHERE id = ?",
+		"UPDATE accounts SET account_name = $1, balance = $2 WHERE id = $3",
 		account.AccountName, account.Balance, account.ID)
 
 	if err != nil {
@@ -147,13 +147,13 @@ func (s *Store) DeleteAccount(token string, userId int) error {
 	}
 
 	// delete all transactions associated with the account
-	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE account_token = ?", token)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE account_token = $1", token)
 	if err != nil {
 		return err
 	}
 
 	// delete the account
-	_, err = db.ExecWithValidation(s.db, "DELETE FROM accounts WHERE token = ? AND user_id = ?", token, userId)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM accounts WHERE token = $1 AND user_id = $2", token, userId)
 	if err != nil {
 		return err
 	}
@@ -164,12 +164,14 @@ func (s *Store) DeleteAccount(token string, userId int) error {
 func (s *Store) ReorderAccounts(userId int, accounts []types.ReorderAccount) error {
 	// Check: all tokens belong to the user
 	tokens := make([]any, len(accounts))
+	placeholders := make([]string, len(accounts))
 	for i, account := range accounts {
 		tokens[i] = account.Token
+		placeholders[i] = fmt.Sprintf("$%d", i+2) // Start from $2 since $1 is userId
 	}
 	query := fmt.Sprintf(
-		"SELECT COUNT(*) FROM accounts WHERE user_id = ? AND token IN (%s)",
-		strings.TrimRight(strings.Repeat("?,", len(tokens)), ","),
+		"SELECT COUNT(*) FROM accounts WHERE user_id = $1 AND token IN (%s)",
+		strings.Join(placeholders, ","),
 	)
 	args := append([]any{userId}, tokens...)
 	var count int
@@ -192,7 +194,7 @@ func (s *Store) ReorderAccounts(userId int, accounts []types.ReorderAccount) err
 
 	// Proceed with update
 	for _, account := range accounts {
-		_, err := db.ExecWithValidation(s.db, "UPDATE accounts SET order_index = ? WHERE token = ? AND user_id = ?", account.OrderIndex, account.Token, userId)
+		_, err := db.ExecWithValidation(s.db, "UPDATE accounts SET order_index = $1 WHERE token = $2 AND user_id = $3", account.OrderIndex, account.Token, userId)
 		if err != nil {
 			return err
 		}
@@ -213,7 +215,7 @@ func (s *Store) FavoriteAccount(token string, userId int, isFavorite bool) error
 	}
 
 	_, err = db.ExecWithValidation(s.db,
-		"UPDATE accounts SET is_favorite = ? WHERE token = ? AND user_id = ?",
+		"UPDATE accounts SET is_favorite = $1 WHERE token = $2 AND user_id = $3",
 		isFavorite, token, userId)
 
 	return err

@@ -2,38 +2,36 @@ package main
 
 import (
 	"log"
-	"net/url"
 	"os"
-	"strings"
 
-	mysqlConfig "github.com/go-sql-driver/mysql"
+	"database/sql"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 	"github.com/lucas-remigio/wallet-tracker/config"
-	"github.com/lucas-remigio/wallet-tracker/db"
 )
 
 func main() {
 	log.Println("Starting migration")
-	var dbConfig *mysqlConfig.Config
-
-	// Check if we should use remote database
+	// Choose the correct database URL
+	dbURL := config.Envs.DatabaseUrl
 	if config.Envs.IsProduction {
-		dbConfig = parseDatabaseUrl(config.Envs.RemoteDBUrl, true)
+		dbURL = config.Envs.RemoteDBUrl
 		log.Println("Using remote database connection")
 	} else {
-		dbConfig = parseDatabaseUrl(config.Envs.DatabaseUrl, false)
 		log.Println("Using local database connection")
 	}
 
-	db, err := db.NewMySqlStorage(dbConfig)
-
+	// Open the database connection
+	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
-	driver, err := mysql.WithInstance(db, &mysql.Config{})
+	// Create the migration driver
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,42 +64,4 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-}
-
-// Parse  database URL into MySQL config
-func parseDatabaseUrl(dbUrl string, isRemote bool) *mysqlConfig.Config {
-	// Parse the URL
-	u, err := url.Parse(dbUrl)
-	if err != nil {
-		log.Fatalf("Failed to parse database URL: %v", err)
-	}
-
-	// Extract username and password
-	userInfo := u.User
-	username := userInfo.Username()
-	password, _ := userInfo.Password()
-
-	// Extract host and port
-	hostPort := u.Host
-
-	// Extract database name
-	dbName := strings.TrimPrefix(u.Path, "/")
-
-	// Create MySQL config
-	config := &mysqlConfig.Config{
-		User:                 username,
-		Passwd:               password,
-		Addr:                 hostPort,
-		DBName:               dbName,
-		Net:                  "tcp",
-		AllowNativePasswords: true,
-		ParseTime:            true,
-	}
-
-	if isRemote {
-		// Set the TLS config for remote connections
-		config.TLSConfig = "skip-verify"
-	}
-
-	return config
 }

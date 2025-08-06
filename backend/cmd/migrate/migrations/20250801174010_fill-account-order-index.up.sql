@@ -1,9 +1,10 @@
-
-UPDATE accounts a
-JOIN (
+WITH ranked AS (
     SELECT
         id,
         ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at, id) AS rn
     FROM accounts
-) ranked ON a.id = ranked.id
-SET a.order_index = ranked.rn;
+)
+UPDATE accounts
+SET order_index = ranked.rn
+FROM ranked
+WHERE accounts.id = ranked.id;

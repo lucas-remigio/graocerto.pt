@@ -30,10 +30,6 @@ RUN apk add --no-cache ca-certificates bash
 
 WORKDIR /app
 
-# Copy wait script and make executable
-COPY wait-for-it.sh ./
-RUN chmod +x wait-for-it.sh
-
 # Copy the compiled binaries from builder stage
 COPY --from=builder /app/wallet-tracker ./
 COPY --from=builder /app/migrate-tool ./
@@ -44,12 +40,9 @@ COPY --from=builder /app/cmd/migrate/migrations ./migrations/
 # Copy prompts folder
 COPY --from=builder /app/prompts ./prompts/
 
-# Copy database certificate
-COPY --from=builder /app/db/DigiCertGlobalRootCA.crt.pem ./db/
-
 # Set environment variable for migrations path
 ENV MIGRATIONS_PATH=file://migrations
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "./wait-for-it.sh mysql-container:3306 -- ./migrate-tool up && ./wallet-tracker"]
+CMD ["sh", "-c", "./migrate-tool up && ./wallet-tracker"]
