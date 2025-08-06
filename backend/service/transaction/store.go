@@ -103,31 +103,27 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 	}
 	newBalance := account.Balance + amount
 
-	res, err := db.ExecWithValidation(s.db,
-		"INSERT INTO transactions (account_token, category_id, amount, description, date, balance) VALUES (?, ?, ?, ?, ?, ?)",
+	var insertedId int
+	err = s.db.QueryRow(
+		"INSERT INTO transactions (account_token, category_id, amount, description, date, balance) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
 		transaction.AccountToken,
 		transaction.CategoryId,
 		transaction.Amount,
 		transaction.Description,
 		transaction.Date,
 		newBalance,
-	)
+	).Scan(&insertedId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
 	// update user account balance
-	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, transaction.AccountToken)
+	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = $1 WHERE token = $2", newBalance, transaction.AccountToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account balance: %w", err)
 	}
 
-	insertedId, err := res.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get last insert id: %w", err)
-	}
-
-	transaction.ID = int(insertedId)
+	transaction.ID = insertedId
 	transaction.Balance = newBalance
 
 	return transaction, nil
@@ -161,10 +157,10 @@ func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *
 	query := `
 		SELECT id, account_token, category_id, amount, description, date, balance, created_at 
 		FROM transactions 
-		WHERE account_token = ?`
+		WHERE account_token = $1`
 
 	if month != nil && year != nil {
-		query += " AND MONTH(date) = ? AND YEAR(date) = ?"
+		query += " AND EXTRACT(MONTH FROM date) = $2 AND EXTRACT(YEAR FROM date) = $3"
 	}
 
 	query += " ORDER BY date DESC, id DESC"
@@ -184,10 +180,10 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 		"FROM transactions t " +
 		"JOIN categories c ON t.category_id = c.id " +
 		"JOIN transaction_types tt ON c.transaction_type_id = tt.id " +
-		"WHERE t.account_token = ? "
+		"WHERE t.account_token = $1 "
 
 	if month != nil && year != nil {
-		query += "AND MONTH(t.date) = ? AND YEAR(t.date) = ? "
+		query += "AND EXTRACT(MONTH FROM t.date) = $2 AND EXTRACT(YEAR FROM t.date) = $3 "
 	}
 
 	query += "ORDER BY t.date DESC, t.id DESC"
@@ -208,13 +204,13 @@ func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 		FROM transactions t
 		JOIN categories c ON t.category_id = c.id
 		JOIN transaction_types tt ON c.transaction_type_id = tt.id
-		WHERE t.id = ?`
+		WHERE t.id = $1`
 
 	return db.QuerySingle(s.db, query, scanTransactionDTO, id)
 }
 
 func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
-	query := "SELECT id, account_token, category_id, amount, description, date, balance, created_at FROM transactions WHERE id = ?"
+	query := "SELECT id, account_token, category_id, amount, description, date, balance, created_at FROM transactions WHERE id = $1"
 	return db.QuerySingle(s.db, query, scanTransactionRow, id)
 }
 
@@ -283,7 +279,7 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	amountDifference := newAmount - currentAmount
 	newBalance := currentBalance + amountDifference
 
-	_, err = db.ExecWithValidation(s.db, "UPDATE transactions SET amount = ?, category_id = ?, description = ?, date = ?, balance = ? WHERE id = ?",
+	_, err = db.ExecWithValidation(s.db, "UPDATE transactions SET amount = $1, category_id = $2, description = $3, date = $4, balance = $5 WHERE id = $6",
 		transaction.Amount,
 		transaction.CategoryID,
 		transaction.Description,
@@ -296,7 +292,7 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	}
 
 	// update the account balance
-	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
+	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = $1 WHERE token = $2", newBalance, tx.AccountToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account balance: %w", err)
 	}
@@ -378,13 +374,13 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 	// get the new balance
 	newBalance := currentBalance + amount
 
-	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = ?", transactionId)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = $1", transactionId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete transaction: %w", err)
 	}
 
 	// update the account balance
-	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = ? WHERE token = ?", newBalance, tx.AccountToken)
+	_, err = db.ExecWithValidation(s.db, "UPDATE accounts SET balance = $1 WHERE token = $2", newBalance, tx.AccountToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account balance: %w", err)
 	}
@@ -422,12 +418,12 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 func (s *Store) GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*types.MonthYear, error) {
 	query := `
         SELECT 
-            YEAR(date) as year,
-            MONTH(date) as month,
+            EXTRACT(YEAR FROM date) as year,
+            EXTRACT(MONTH FROM date) as month,
             COUNT(*) as count
         FROM transactions 
-        WHERE account_token = ? 
-        GROUP BY YEAR(date), MONTH(date)
+        WHERE account_token = $1 
+        GROUP BY EXTRACT(YEAR FROM date), EXTRACT(MONTH FROM date)
         ORDER BY year DESC, month DESC
     `
 
