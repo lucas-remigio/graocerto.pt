@@ -1,5 +1,9 @@
 package types
 
+import (
+	"time"
+)
+
 type UserStore interface {
 	GetUserByEmail(email string) (*User, error)
 	GetUserById(id int) (*User, error)
@@ -27,4 +31,16 @@ type User struct {
 	Email     string `json:"email"`
 	Password  string `json:"-"`
 	CreatedAt string `json:"created_at"`
+}
+
+/* ==============================
+* GDPR Export Data Structures
+* ============================== */
+
+type ExportData struct {
+	User         *User             `json:"user"`
+	Accounts     []*Account        `json:"accounts"`
+	Categories   []*CategoryDTO    `json:"categories"`
+	Transactions []*TransactionDTO `json:"transactions"`
+	ExportedAt   time.Time         `json:"exported_at"`
 }

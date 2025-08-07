@@ -41,24 +41,15 @@
 
 	async function handleExportData() {
 		try {
-			const token = localStorage.getItem('token');
-			const response = await fetch('/api/v1/auth/export-data', {
-				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
-			});
+			const response = await api_axios.get('auth/export-data');
 
-			if (response.ok) {
-				const blob = await response.blob();
-				const url = window.URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `grao-certo-data-${new Date().toISOString().split('T')[0]}.json`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				window.URL.revokeObjectURL(url);
+			if (response.status === 200) {
+				// Convert the response data to a formatted JSON string
+				const jsonString = JSON.stringify(response.data, null, 2);
+
+				// Create blob from the JSON string (not the object)
+				const blob = new Blob([jsonString], { type: 'application/json' });
+				downloadFile(blob);
 			} else {
 				alert('Failed to export data. Please try again.');
 			}
@@ -66,6 +57,17 @@
 			console.error('Export data error:', error);
 			alert('Failed to export data. Please try again.');
 		}
+	}
+
+	function downloadFile(blob: Blob) {
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `grao-certo-data-${new Date().toISOString().split('T')[0]}.json`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		window.URL.revokeObjectURL(url);
 	}
 
 	function closeModal() {

@@ -35,25 +35,27 @@ func (s *APIServer) Run() error {
 
 	apiV1Router := http.NewServeMux()
 
+	// Initialize all stores first
 	userStore := user.NewStore(s.db)
-	userHandler := user.NewHandler(userStore)
+	transactionTypesStore := transaction_types.NewStore(s.db)
+	categoryStore := category.NewStore(s.db)
+	openAiStore := openai.NewClient()
+	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
+	transactionStore := transaction.NewStore(s.db, accountStore)
+
+	// Now initialize handlers with the stores they need
+	userHandler := user.NewHandler(userStore, accountStore, categoryStore, transactionStore) // Updated this line
 	userHandler.RegisterRoutes(apiV1Router)
 
-	transactionTypesStore := transaction_types.NewStore(s.db)
 	transactionTypesHandler := transaction_types.NewHandler(transactionTypesStore)
 	transactionTypesHandler.RegisterRoutes(apiV1Router)
 
-	categoryStore := category.NewStore(s.db)
 	categoryHandler := category.NewHandler(categoryStore)
 	categoryHandler.RegisterRoutes(apiV1Router)
 
-	openAiStore := openai.NewClient()
-
-	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
 	accountHandler := account.NewHandler(accountStore)
 	accountHandler.RegisterRoutes(apiV1Router)
 
-	transactionStore := transaction.NewStore(s.db, accountStore)
 	transactionHandler := transaction.NewHandler(transactionStore)
 	transactionHandler.RegisterRoutes(apiV1Router)
 

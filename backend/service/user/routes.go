@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/middleware"
@@ -11,12 +12,30 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/utils"
 )
 
-type Handler struct {
-	store types.UserStore
+// testing v
+func NewHandlerForTesting(userStore types.UserStore) *Handler {
+	return &Handler{
+		store:            userStore,
+		accountStore:     nil, // Not needed for basic user tests
+		categoryStore:    nil,
+		transactionStore: nil,
+	}
 }
 
-func NewHandler(store types.UserStore) *Handler {
-	return &Handler{store: store}
+type Handler struct {
+	store            types.UserStore
+	accountStore     types.AccountStore
+	categoryStore    types.CategoryStore
+	transactionStore types.TransactionStore
+}
+
+func NewHandler(store types.UserStore, accountStore types.AccountStore, categoryStore types.CategoryStore, transactionStore types.TransactionStore) *Handler {
+	return &Handler{
+		store:            store,
+		accountStore:     accountStore,
+		categoryStore:    categoryStore,
+		transactionStore: transactionStore,
+	}
 }
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
@@ -24,6 +43,7 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/register", h.handleRegister)
 	router.HandleFunc("/verify-token", middleware.AuthMiddleware(h.verifyToken))
 	router.HandleFunc("/auth/delete-account", middleware.AuthMiddleware(h.handleDeleteAccount))
+	router.HandleFunc("/auth/export-data", middleware.AuthMiddleware(h.handleExportData))
 }
 
 func (h *Handler) verifyToken(w http.ResponseWriter, r *http.Request) {
@@ -160,4 +180,69 @@ func (h *Handler) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 	})
 
 	utils.WriteJson(w, http.StatusOK, map[string]string{"message": "Account deleted successfully"})
+}
+
+func (h *Handler) handleExportData(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the user ID from the middleware
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// Get all user data using the handler method (not store method)
+	userData, err := h.getUserDataExport(userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to export data: %v", err))
+		return
+	}
+
+	// Set headers for file download
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=grao-certo-data-%s.json", time.Now().Format("2006-01-02")))
+
+	// Write JSON response
+	utils.WriteJson(w, http.StatusOK, userData)
+}
+
+func (h *Handler) getUserDataExport(userID int) (*types.ExportData, error) {
+	result := &types.ExportData{ExportedAt: time.Now()}
+
+	// Get user using user store
+	user, err := h.store.GetUserById(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+	result.User = user
+
+	// Get accounts using account store
+	accounts, err := h.accountStore.GetAccountsByUserId(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get accounts: %v", err)
+	}
+	result.Accounts = accounts
+
+	// Get categories using category store
+	categories, err := h.categoryStore.GetCategoriesDtoByUserId(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get categories: %v", err)
+	}
+	result.Categories = categories
+
+	// Get transactions using transaction store
+	var allTransactions []*types.TransactionDTO
+	for _, account := range accounts {
+		transactions, err := h.transactionStore.GetTransactionsDTOByAccountToken(account.Token, nil, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get transactions for account %s: %v", account.Token, err)
+		}
+		allTransactions = append(allTransactions, transactions...)
+	}
+	result.Transactions = allTransactions
+
+	return result, nil
 }

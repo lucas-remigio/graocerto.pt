@@ -111,7 +111,7 @@ func TestRegisterHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			handler := NewHandler(tc.store)
+			handler := NewHandlerForTesting(tc.store) // Changed this line
 			rr := performRequest(handler.handleRegister, http.MethodPost, "/register", tc.payload)
 			if rr.Code != tc.wantStatus {
 				t.Errorf("expected status %d, got %d", tc.wantStatus, rr.Code)
@@ -151,7 +151,7 @@ func TestLoginHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			handler := NewHandler(tc.store)
+			handler := NewHandlerForTesting(tc.store)
 			rr := performRequest(handler.handleLogin, http.MethodPost, "/login", tc.payload)
 			if rr.Code != tc.wantStatus {
 				t.Errorf("expected status %d, got %d", tc.wantStatus, rr.Code)
