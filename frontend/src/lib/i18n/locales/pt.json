@@ -318,36 +318,93 @@
 	},
 
 	"privacy": {
+		"page": {
+			"title": "Política de Privacidade",
+			"description": "Política de Privacidade do Grão Certo - Como recolhemos, utilizamos e protegemos os seus dados pessoais."
+		},
 		"title": "Política de Privacidade",
-		"subtitle": "Como recolhemos, usamos e protegemos os teus dados pessoais",
+		"subtitle": "Como recolhemos, utilizamos e protegemos os seus dados pessoais",
 		"last-updated": "Última atualização",
-		"controller": {
-			"title": "1. Responsável pelo Tratamento de Dados",
-			"description": "O Grão Certo é operado por:",
-			"contact": "Para qualquer questão relacionada com privacidade, contacta-nos através do email acima."
+		"who-we-are": {
+			"title": "Quem Somos",
+			"operated-by": "é operado por",
+			"contact": "Contacto"
 		},
 		"data-collected": {
-			"title": "2. Dados que Recolhemos"
+			"title": "Que Dados Recolhemos",
+			"account": {
+				"title": "Info da Conta",
+				"email": "Endereço de email",
+				"password": "Palavra-passe encriptada"
+			},
+			"financial": {
+				"title": "Dados Financeiros",
+				"accounts": "Nomes e saldos de contas",
+				"transactions": "Detalhes de transações"
+			},
+			"usage": {
+				"title": "Dados de Utilização",
+				"analytics": "Análises (com consentimento)",
+				"cookies": "Apenas cookies essenciais"
+			}
 		},
 		"usage": {
-			"title": "3. Como Utilizamos os Teus Dados"
+			"title": "Porque Utilizamos os Seus Dados",
+			"purpose": "Propósito Simples: Para fornecer o serviço de gestão de carteira para o qual se registou",
+			"we-do": {
+				"store": "Armazenar os seus dados financeiros de forma segura",
+				"authenticate": "Autenticar a sua conta"
+			},
+			"we-dont": {
+				"sell": "Não vendemos os seus dados",
+				"share": "Não partilhamos com terceiros"
+			}
 		},
-		"security": {
-			"title": "4. Armazenamento e Segurança dos Dados"
+		"storage": {
+			"title": "Onde os Seus Dados São Armazenados",
+			"location": {
+				"title": "Servidores Seguros na UE",
+				"description": "Hospedado pela Supabase na União Europeia"
+			},
+			"security": {
+				"encrypted": "Encriptado em repouso e em trânsito",
+				"gdpr": "Infraestrutura conforme RGPD"
+			}
 		},
 		"rights": {
-			"title": "5. Os Teus Direitos ao Abrigo do RGPD"
+			"title": "Os Seus Direitos",
+			"description": "Tem controlo total sobre os seus dados:",
+			"delete": {
+				"title": "Eliminar Conta",
+				"description": "Remover todos os seus dados permanentemente"
+			},
+			"export": {
+				"title": "Exportar Dados",
+				"description": "Obter uma cópia de toda a sua informação"
+			},
+			"contact": {
+				"title": "Contactar-nos",
+				"description": "Para qualquer pedido relacionado com dados"
+			},
+			"help": {
+				"question": "Precisa de ajuda com os seus dados?",
+				"contact": "Contactar"
+			}
 		},
 		"cookies": {
-			"title": "6. Cookies e Rastreio"
+			"title": "Cookies",
+			"usage": {
+				"title": "Uso Mínimo de Cookies",
+				"description": "Apenas utilizamos cookies essenciais para funcionalidade de login"
+			},
+			"management": "Pode gerir as suas preferências de cookies através do nosso banner que aparece na sua primeira visita."
 		},
-		"third-parties": {
-			"title": "7. Serviços de Terceiros"
-		},
-		"contact": {
-			"title": "8. Contacta-nos"
-		},
-		"back-home": "Voltar ao Início"
+		"footer": {
+			"questions": "Questões sobre esta política?",
+			"response-time": "Estamos aqui para ajudar e responderemos em 48 horas.",
+			"email-us": "Enviar Email",
+			"back-home": "Voltar ao Início"
+		}
 	},
 
 	"footer": {
