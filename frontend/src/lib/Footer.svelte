@@ -19,7 +19,7 @@
 			{$t('footer.tagline', { default: 'Simple and secure wallet tracking for everyone.' })}
 		</p>
 		<p class="text-base-content/60 mt-2 text-xs">
-			© {new Date().getFullYear()} Lucas Remígio
+			{$t('footer.made-by', { default: 'Made by Lucas Remígio' })}
 		</p>
 	</aside>
 

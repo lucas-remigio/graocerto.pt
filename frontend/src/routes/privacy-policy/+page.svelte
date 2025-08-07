@@ -14,7 +14,8 @@
 		Lock,
 		Server,
 		Cookie,
-		CookieIcon
+		CookieIcon,
+		ArrowLeft
 	} from 'lucide-svelte';
 
 	let lastUpdated = '07-08-2025';
@@ -267,7 +268,7 @@
 			</div>
 
 			<a href="/" class="btn btn-primary btn-lg">
-				<Shield class="mr-2 h-4 w-4" />
+				<ArrowLeft class="mr-2 h-4 w-4" />
 				{$t('privacy.footer.back-home')}
 			</a>
 		</div>
