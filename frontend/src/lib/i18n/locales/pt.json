@@ -293,5 +293,60 @@
 			"amount": "Valor",
 			"placeholder": "O gráfico aparecerá aqui após o cálculo"
 		}
+	},
+
+	"cookies": {
+		"banner": {
+			"title": "Valorizamos a tua privacidade",
+			"description": "Utilizamos cookies para melhorar a tua experiência, analisar a utilização do site e aperfeiçoar os nossos serviços. Escolhe as tuas preferências abaixo ou aceita todas para continuar.",
+			"learn-more": "Saber mais",
+			"accept": "Aceitar Todas",
+			"reject": "Rejeitar Todas",
+			"customize": "Personalizar"
+		},
+		"preferences": {
+			"title": "Preferências de Cookies",
+			"necessary": "Necessários",
+			"necessary-desc": "Essenciais para o funcionamento correto do site. Não podem ser desativados.",
+			"analytics": "Analíticos",
+			"analytics-desc": "Ajudam-nos a perceber como os visitantes interagem com o nosso site.",
+			"marketing": "Marketing",
+			"marketing-desc": "Utilizados para rastrear visitantes em vários sites para fins de marketing.",
+			"cancel": "Cancelar",
+			"save": "Guardar Preferências"
+		}
+	},
+
+	"privacy": {
+		"title": "Política de Privacidade",
+		"subtitle": "Como recolhemos, usamos e protegemos os teus dados pessoais",
+		"last-updated": "Última atualização",
+		"controller": {
+			"title": "1. Responsável pelo Tratamento de Dados",
+			"description": "O Grão Certo é operado por:",
+			"contact": "Para qualquer questão relacionada com privacidade, contacta-nos através do email acima."
+		},
+		"data-collected": {
+			"title": "2. Dados que Recolhemos"
+		},
+		"usage": {
+			"title": "3. Como Utilizamos os Teus Dados"
+		},
+		"security": {
+			"title": "4. Armazenamento e Segurança dos Dados"
+		},
+		"rights": {
+			"title": "5. Os Teus Direitos ao Abrigo do RGPD"
+		},
+		"cookies": {
+			"title": "6. Cookies e Rastreio"
+		},
+		"third-parties": {
+			"title": "7. Serviços de Terceiros"
+		},
+		"contact": {
+			"title": "8. Contacta-nos"
+		},
+		"back-home": "Voltar ao Início"
 	}
 }

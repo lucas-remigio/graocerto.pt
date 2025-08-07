@@ -286,5 +286,60 @@
 			"amount": "Amount",
 			"placeholder": "Chart will appear here after calculation"
 		}
+	},
+
+	"cookies": {
+		"banner": {
+			"title": "We value your privacy",
+			"description": "We use cookies to enhance your experience, analyze site usage, and improve our services. Choose your preferences below or accept all to continue.",
+			"learn-more": "Learn more",
+			"accept": "Accept All",
+			"reject": "Reject All",
+			"customize": "Customize"
+		},
+		"preferences": {
+			"title": "Cookie Preferences",
+			"necessary": "Necessary",
+			"necessary-desc": "Required for the website to function properly. Cannot be disabled.",
+			"analytics": "Analytics",
+			"analytics-desc": "Help us understand how visitors interact with our website.",
+			"marketing": "Marketing",
+			"marketing-desc": "Used to track visitors across websites for marketing purposes.",
+			"cancel": "Cancel",
+			"save": "Save Preferences"
+		}
+	},
+
+	"privacy": {
+		"title": "Privacy Policy",
+		"subtitle": "How we collect, use, and protect your personal data",
+		"last-updated": "Last updated",
+		"controller": {
+			"title": "1. Data Controller",
+			"description": "Wallet Tracker is operated by:",
+			"contact": "For any privacy-related questions, please contact us at the email above."
+		},
+		"data-collected": {
+			"title": "2. Data We Collect"
+		},
+		"usage": {
+			"title": "3. How We Use Your Data"
+		},
+		"security": {
+			"title": "4. Data Storage and Security"
+		},
+		"rights": {
+			"title": "5. Your Rights Under GDPR"
+		},
+		"cookies": {
+			"title": "6. Cookies and Tracking"
+		},
+		"third-parties": {
+			"title": "7. Third-Party Services"
+		},
+		"contact": {
+			"title": "8. Contact Us"
+		},
+		"back-home": "Back to Home"
 	}
 }

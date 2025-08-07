@@ -9,6 +9,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { isLoading, setupI18n, t, i18nReady } from '$lib/i18n';
 	import Footer from '$lib/Footer.svelte';
+	import { cookieConsent } from '$lib/stores/cookieConsent';
+	import CookieBanner from '$components/CookieBanner.svelte';
 
 	let { children } = $props();
 
@@ -109,6 +111,9 @@
 				unsubscribe?.();
 			}
 		});
+
+		// Initialize cookie consent store globally
+		cookieConsent.init();
 	});
 </script>
 
@@ -124,4 +129,6 @@
 		{@render children()}
 	</main>
 	<Footer />
+
+	<CookieBanner />
 {/if}
