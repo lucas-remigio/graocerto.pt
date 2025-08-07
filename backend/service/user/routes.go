@@ -23,6 +23,7 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/login", h.handleLogin)
 	router.HandleFunc("/register", h.handleRegister)
 	router.HandleFunc("/verify-token", middleware.AuthMiddleware(h.verifyToken))
+	router.HandleFunc("/auth/delete-account", middleware.AuthMiddleware(h.handleDeleteAccount))
 }
 
 func (h *Handler) verifyToken(w http.ResponseWriter, r *http.Request) {
@@ -126,4 +127,37 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.WriteCreatedResponse(w)
+}
+
+func (h *Handler) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the user ID from the middleware (set by AuthMiddleware)
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// Delete all user data (this should cascade delete related data)
+	err := h.store.DeleteUser(userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to delete account: %v", err))
+		return
+	}
+
+	// Clear the auth cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "authToken",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   -1, // Delete the cookie
+	})
+
+	utils.WriteJson(w, http.StatusOK, map[string]string{"message": "Account deleted successfully"})
 }

@@ -354,6 +354,8 @@
 	function handleNewAccount(event: CustomEvent<AccountChangeResponse>) {
 		const { account } = event.detail;
 		upsertAccount(account);
+		selectedAccount = null; // Clear selected account
+		getSelectedAccount(); // Update selected account if needed
 		wsUpdateScreen();
 	}
 

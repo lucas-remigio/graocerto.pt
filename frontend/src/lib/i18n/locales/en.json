@@ -207,6 +207,7 @@
 	"auth": {
 		"login": "Login",
 		"register": "Register",
+		"logout": "Logout",
 		"email": "Email",
 		"password": "Password",
 		"confirm-password": "Confirm Password",
@@ -285,6 +286,20 @@
 		"chart": {
 			"amount": "Amount",
 			"placeholder": "Chart will appear here after calculation"
+		}
+	},
+
+	"profile": {
+		"title": "Profile",
+		"view-profile": "View Profile",
+		"email": "Email",
+		"member-since": "Member Since",
+		"export-data": "Export My Data",
+		"delete-account": "Delete Account",
+		"delete-warning": {
+			"title": "Delete Account",
+			"description": "This will permanently delete your account and all your data. This action cannot be undone.",
+			"type-delete": "Type \"DELETE\" to confirm:"
 		}
 	},
 

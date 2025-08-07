@@ -5,6 +5,7 @@ type UserStore interface {
 	GetUserById(id int) (*User, error)
 	CreateUser(user *User) error
 	ValidatePassword(password string) error
+	DeleteUser(userId int) error
 }
 
 type RegisterUserPayload struct {

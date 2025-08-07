@@ -215,6 +215,7 @@
 		"login": "Entrar",
 		"register": "Registar",
 		"email": "Email",
+		"logout": "Terminar Sessão",
 		"password": "Palavra-passe",
 		"confirm-password": "Confirmar Palavra-passe",
 		"enter-email": "Insere o teu email",
@@ -292,6 +293,20 @@
 		"chart": {
 			"amount": "Valor",
 			"placeholder": "O gráfico aparecerá aqui após o cálculo"
+		}
+	},
+
+	"profile": {
+		"title": "Perfil",
+		"view-profile": "Ver Perfil",
+		"email": "Email",
+		"member-since": "Membro desde",
+		"export-data": "Exportar Os Meus Dados",
+		"delete-account": "Eliminar Conta",
+		"delete-warning": {
+			"title": "Eliminar Conta",
+			"description": "Isto eliminará permanentemente a sua conta e todos os seus dados. Esta ação não pode ser desfeita.",
+			"type-delete": "Digite \"DELETE\" para confirmar:"
 		}
 	},
 

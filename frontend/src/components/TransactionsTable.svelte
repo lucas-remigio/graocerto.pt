@@ -281,7 +281,7 @@
 						<th style="width: 10%">{$t('transactions.actions')}</th>
 					</tr>
 				</thead>
-				<tbody class="text-center" >
+				<tbody class="text-center">
 					{#each transactionsGroups as group}
 						<!-- Show month header only if isAll is true -->
 						{#if isAll}
@@ -341,7 +341,8 @@
 {:else}
 	<div class="flex h-96 flex-col items-center justify-center">
 		<p class="text-gray-500">
-			{$t('transactions.no-transactions-for')} <strong>{account.account_name}</strong>.
+			{$t('transactions.no-transactions-for')}
+			<strong>{account?.account_name || 'Unknown Account'}</strong>.
 		</p>
 
 		<!-- Button to add a new transaction -->

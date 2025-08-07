@@ -64,6 +64,29 @@ func (s *Store) GetUserById(id int) (*types.User, error) {
 	return user, nil
 }
 
+func (s *Store) DeleteUser(userId int) error {
+	// Optional: Check if user exists first
+	var count int
+	err := s.db.QueryRow("SELECT COUNT(*) FROM users WHERE id = $1", userId).Scan(&count)
+	if err != nil {
+		return fmt.Errorf("failed to check user existence: %v", err)
+	}
+	if count == 0 {
+		return fmt.Errorf("user not found")
+	}
+
+	// Delete the user (will cascade to all related data)
+	_, err = db.ExecWithValidation(s.db,
+		"DELETE FROM users WHERE id = $1",
+		userId)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %v", err)
+	}
+
+	return nil
+}
+
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	user := new(types.User)
 

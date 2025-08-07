@@ -167,7 +167,6 @@ func TestLoginHandler(t *testing.T) {
 	}
 }
 
-
 type mockUserStore struct{}
 
 func (m *mockUserStore) GetUserByEmail(email string) (*types.User, error) {
@@ -183,6 +182,10 @@ func (m *mockUserStore) CreateUser(user *types.User) error {
 }
 
 func (m *mockUserStore) ValidatePassword(password string) error {
+	return nil
+}
+
+func (m *mockUserStore) DeleteUser(userId int) error {
 	return nil
 }
 
@@ -202,6 +205,10 @@ func (m *mockUserStoreDuplicate) GetUserById(id int) (*types.User, error) {
 
 func (m *mockUserStoreDuplicate) ValidatePassword(password string) error { return nil }
 
+func (m *mockUserStoreDuplicate) DeleteUser(userId int) error {
+	return nil
+}
+
 type mockUserStoreError struct{}
 
 func (m *mockUserStoreError) GetUserByEmail(email string) (*types.User, error) {
@@ -218,6 +225,10 @@ func (m *mockUserStoreError) GetUserById(id int) (*types.User, error) {
 
 func (m *mockUserStoreError) ValidatePassword(password string) error { return nil }
 
+func (m *mockUserStoreError) DeleteUser(userId int) error {
+	return fmt.Errorf("internal server error")
+}
+
 type mockUserStoreLogin struct{}
 
 func (m *mockUserStoreLogin) GetUserByEmail(email string) (*types.User, error) {
@@ -232,6 +243,10 @@ func (m *mockUserStoreLogin) GetUserByEmail(email string) (*types.User, error) {
 func (m *mockUserStoreLogin) CreateUser(*types.User) error            { return nil }
 func (m *mockUserStoreLogin) GetUserById(id int) (*types.User, error) { return &types.User{}, nil }
 func (m *mockUserStoreLogin) ValidatePassword(password string) error  { return nil }
+
+func (m *mockUserStoreLogin) DeleteUser(userId int) error {
+	return nil
+}
 
 type mockUserStoreSuccess struct{}
 
@@ -252,3 +267,7 @@ func (m *mockUserStoreSuccess) GetUserById(id int) (*types.User, error) {
 }
 
 func (m *mockUserStoreSuccess) ValidatePassword(password string) error { return nil }
+
+func (m *mockUserStoreSuccess) DeleteUser(userId int) error {
+	return nil
+}
