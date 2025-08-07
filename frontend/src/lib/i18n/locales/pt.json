@@ -348,5 +348,20 @@
 			"title": "8. Contacta-nos"
 		},
 		"back-home": "Voltar ao Início"
+	},
+
+	"footer": {
+		"tagline": "Gestão de carteira simples e segura para todos.",
+		"app": "App",
+		"get-started": "Começar",
+		"login": "Entrar",
+		"features": "Funcionalidades",
+		"faq": "FAQ",
+		"legal": "Legal",
+		"privacy-policy": "Política de Privacidade",
+		"cookie-settings": "Definições de Cookies",
+		"gdpr-compliant": "Conforme RGPD",
+		"contact": "Contacto",
+		"response-time": "Resposta em 48h"
 	}
 }

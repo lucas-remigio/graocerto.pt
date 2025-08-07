@@ -341,5 +341,20 @@
 			"title": "8. Contact Us"
 		},
 		"back-home": "Back to Home"
+	},
+
+	"footer": {
+		"tagline": "Simple and secure wallet tracking for everyone.",
+		"app": "App",
+		"get-started": "Get Started",
+		"login": "Login",
+		"features": "Features",
+		"faq": "FAQ",
+		"legal": "Legal",
+		"privacy-policy": "Privacy Policy",
+		"cookie-settings": "Cookie Settings",
+		"gdpr-compliant": "GDPR Compliant",
+		"contact": "Contact",
+		"response-time": "Response within 48h"
 	}
 }
