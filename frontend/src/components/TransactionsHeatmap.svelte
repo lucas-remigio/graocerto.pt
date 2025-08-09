@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { heatmapDisplayMode, type HeatmapDisplayMode } from '$lib/stores/uiPreferences';
+	import { heatmapDisplayMode, updateHeatmapDisplayMode, type HeatmapDisplayMode } from '$lib/stores/uiPreferences';
 
 	// Import types and Svelte utilities
 	import type { DailyTotals } from '$lib/types';
@@ -265,7 +265,7 @@
 					class="flex items-center gap-2 {$heatmapDisplayMode === 'difference'
 						? 'bg-primary text-base-100'
 						: ''}"
-					on:click={() => (heatmapDisplayMode.set('difference'))}
+					on:click={() => (updateHeatmapDisplayMode('difference'))}
 				>
 					<BarChart3 size={16} />
 					<span>{$t('statistics.heatmap.difference', { default: 'Net' })}</span>
@@ -276,7 +276,7 @@
 					class="flex items-center gap-2 {$heatmapDisplayMode === 'credit'
 						? 'bg-primary text-base-100'
 						: ''}"
-					on:click={() => (heatmapDisplayMode.set('credit'))}
+					on:click={() => (updateHeatmapDisplayMode('credit'))}
 				>
 					<TrendingUp size={16} />
 					<span>{$t('statistics.heatmap.credits', { default: 'Income' })}</span>
@@ -287,7 +287,7 @@
 					class="flex items-center gap-2 {$heatmapDisplayMode === 'debit'
 						? 'bg-primary text-base-100'
 						: ''}"
-					on:click={() => (heatmapDisplayMode.set('debit'))}
+					on:click={() => (updateHeatmapDisplayMode('debit'))}
 				>
 					<TrendingDown size={16} />
 					<span>{$t('statistics.heatmap.debits', { default: 'Expenses' })}</span>

@@ -5,7 +5,7 @@
 	import { isAuthenticated, logout } from '$stores/auth';
 	import UserMenu from './UserMenu.svelte';
 	import NavActions from './NavActions.svelte';
-	import { theme, type ThemeOption } from '$stores/uiPreferences';
+	import { theme, updateTheme, type ThemeOption } from '$stores/uiPreferences';
 	import { isLargeScreen } from '$stores/screen';
 
 	let isDropdownOpen = false;
@@ -28,10 +28,9 @@
 	const themeCycle: ThemeOption[] = ['system', 'dark', 'light'];
 
 	function toggleTheme() {
-		theme.update((current) => {
-			const idx = themeCycle.indexOf(current);
-			return themeCycle[(idx + 1) % themeCycle.length];
-		});
+		const currentIdx = themeCycle.indexOf($theme);
+		const nextTheme = themeCycle[(currentIdx + 1) % themeCycle.length];
+		updateTheme(nextTheme);
 	}
 
 	function handleNavigation(url: string) {

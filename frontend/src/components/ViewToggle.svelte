@@ -3,25 +3,17 @@
 	import { createEventDispatcher } from 'svelte';
 	import { BarChart3, List } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
-
-	export let currentView: 'transactions' | 'statistics' = 'transactions';
-
-	const dispatch = createEventDispatcher<{
-		viewChange: { view: 'transactions' | 'statistics' };
-	}>();
+	import { selectedView, updateSelectedView } from '$lib/stores/uiPreferences';
 
 	function handleViewChange(view: 'transactions' | 'statistics') {
-		if (view !== currentView) {
-			currentView = view;
-			dispatch('viewChange', { view });
-		}
+		updateSelectedView(view);
 	}
 </script>
 
 <div class="mb-2 flex justify-center">
 	<div class="btn-group">
 		<button
-			class="btn btn-sm {currentView === 'transactions'
+			class="btn btn-sm {$selectedView === 'transactions'
 				? 'btn-primary text-base-100'
 				: 'btn-ghost'}"
 			aria-label="View Transactions"
@@ -31,7 +23,7 @@
 			<span>{$t('views.transactions')}</span>
 		</button>
 		<button
-			class="btn btn-sm {currentView === 'statistics'
+			class="btn btn-sm {$selectedView === 'statistics'
 				? 'btn-primary text-base-100'
 				: 'btn-ghost'}"
 			aria-label="View Statistics"

@@ -10,7 +10,7 @@
 	import { t } from '$lib/i18n';
 	import api_axios from '$lib/axios';
 	import { flip } from 'svelte/animate';
-	import { showNonFavorites } from '$lib/stores/uiPreferences';
+	import { showNonFavorites, updateShowNonFavorites } from '$lib/stores/uiPreferences';
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
@@ -26,7 +26,7 @@
 	$: nonFavoriteAccounts = accounts.filter((acc) => !acc.is_favorite);
 
 	function toggleShowNonFavorites(value: boolean) {
-		showNonFavorites.update(() => value);
+		updateShowNonFavorites(value);
 	}
 
 	const dispatch = createEventDispatcher<any>();

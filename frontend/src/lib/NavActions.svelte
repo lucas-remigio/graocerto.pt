@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Eye, EyeOff, MonitorSmartphone, Moon, Phone, Sun } from 'lucide-svelte';
-	import { hideBalances, type ThemeOption } from '$stores/uiPreferences';
+	import { hideBalances, updateHideBalances, type ThemeOption } from '$stores/uiPreferences';
 	export let theme: ThemeOption = 'system';
 	export let toggleTheme: () => void;
 	export let locale: string;
@@ -47,7 +47,7 @@
 	$: actions = [
 		{
 			key: 'balance',
-			onClick: () => hideBalances.update((v) => !v),
+			onClick: () => updateHideBalances(!$hideBalances),
 			icon: () => ($hideBalances ? EyeOff : Eye),
 			text: () => t($hideBalances ? 'navbar.show-balance' : 'navbar.hide-balance'),
 			show: isAuthenticated

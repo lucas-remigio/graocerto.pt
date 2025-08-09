@@ -466,7 +466,7 @@
 
 					<!-- View Toggle Component -->
 					<div class="lg:flex-shrink-0">
-						<ViewToggle bind:currentView={$selectedView} />
+						<ViewToggle />
 					</div>
 
 					<div class="divider my-0"></div>

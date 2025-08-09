@@ -4,63 +4,92 @@ import { themeService } from '$lib/services/themeService';
 export type ThemeOption = 'light' | 'dark' | 'system';
 export type HeatmapDisplayMode = 'difference' | 'credit' | 'debit';
 
-const LOCAL_STORAGE_HIDE_BALANCES = 'ui.hideBalances';
-const LOCAL_STORAGE_SELECTED_VIEW = 'ui.selectedView';
-const LOCAL_STORAGE_THEME = 'ui.theme';
-const LOCAL_STORAGE_SHOW_NON_FAVORITES = 'ui.showNonFavorites';
-const LOCAL_STORAGE_HEATMAP_MODE = 'ui.heatmapDisplayMode';
-
-function getInitialHideBalances() {
-	if (typeof localStorage !== 'undefined') {
-		return localStorage.getItem(LOCAL_STORAGE_HIDE_BALANCES) === 'true';
-	}
-	return false;
+interface UIPreferences {
+	hideBalances: boolean;
+	selectedView: 'transactions' | 'statistics';
+	theme: ThemeOption;
+	showNonFavorites: boolean;
+	heatmapDisplayMode: HeatmapDisplayMode;
 }
 
-function getInitialSelectedView() {
-	if (typeof localStorage !== 'undefined') {
-		const stored = localStorage.getItem(LOCAL_STORAGE_SELECTED_VIEW);
-		if (stored === 'statistics' || stored === 'transactions') {
-			return stored;
+const LOCAL_STORAGE_KEY = 'ui.preferences';
+
+// Default preferences
+const defaultPreferences: UIPreferences = {
+	hideBalances: false,
+	selectedView: 'transactions',
+	theme: 'system',
+	showNonFavorites: false,
+	heatmapDisplayMode: 'difference'
+};
+
+// Load preferences from localStorage
+function loadPreferences(): UIPreferences {
+	if (typeof localStorage === 'undefined') {
+		return { ...defaultPreferences };
+	}
+
+	try {
+		const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+		if (stored) {
+			const parsed = JSON.parse(stored);
+			// Merge with defaults to handle new preferences
+			return { ...defaultPreferences, ...parsed };
 		}
+	} catch (error) {
+		console.warn('Failed to load UI preferences:', error);
 	}
-	return 'transactions';
+
+	return { ...defaultPreferences };
 }
 
-function getInitialTheme(): ThemeOption {
-	if (typeof localStorage !== 'undefined') {
-		const stored = localStorage.getItem(LOCAL_STORAGE_THEME);
-		if (stored === 'light' || stored === 'dark' || stored === 'system') {
-			return stored;
-		}
+// Save preferences to localStorage
+function savePreferences(preferences: UIPreferences) {
+	if (typeof localStorage === 'undefined') return;
+
+	try {
+		localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(preferences));
+	} catch (error) {
+		console.warn('Failed to save UI preferences:', error);
 	}
-	return 'system';
 }
 
-function getInitialShowNonFavorites() {
-	if (typeof localStorage !== 'undefined') {
-		return localStorage.getItem(LOCAL_STORAGE_SHOW_NON_FAVORITES) === 'true';
-	}
-	return false;
-}
+// Create the main preferences store
+export const uiPreferences = writable<UIPreferences>(loadPreferences());
 
-function getInitialHeatmapMode(): HeatmapDisplayMode {
-	if (typeof localStorage !== 'undefined') {
-		const stored = localStorage.getItem(LOCAL_STORAGE_HEATMAP_MODE);
-		if (stored === 'difference' || stored === 'credit' || stored === 'debit') {
-			return stored;
-		}
-	}
-	return 'difference'; // Default to 'difference'
-}
+// Individual stores derived from the main store
+export const hideBalances = derived(uiPreferences, ($prefs) => $prefs.hideBalances);
 
-export const hideBalances = writable(getInitialHideBalances());
-export const selectedView = writable<'transactions' | 'statistics'>(getInitialSelectedView());
-export const theme = writable<ThemeOption>(getInitialTheme());
-export const showNonFavorites = writable(getInitialShowNonFavorites());
-export const heatmapDisplayMode = writable<HeatmapDisplayMode>(getInitialHeatmapMode());
+export const selectedView = derived(uiPreferences, ($prefs) => $prefs.selectedView);
 
-// This derived store always returns 'light' or 'dark'
+export const theme = derived(uiPreferences, ($prefs) => $prefs.theme);
+
+export const showNonFavorites = derived(uiPreferences, ($prefs) => $prefs.showNonFavorites);
+
+export const heatmapDisplayMode = derived(uiPreferences, ($prefs) => $prefs.heatmapDisplayMode);
+
+// Helper functions to update individual preferences
+export const updateHideBalances = (value: boolean) => {
+	uiPreferences.update((prefs) => ({ ...prefs, hideBalances: value }));
+};
+
+export const updateSelectedView = (value: 'transactions' | 'statistics') => {
+	uiPreferences.update((prefs) => ({ ...prefs, selectedView: value }));
+};
+
+export const updateTheme = (value: ThemeOption) => {
+	uiPreferences.update((prefs) => ({ ...prefs, theme: value }));
+};
+
+export const updateShowNonFavorites = (value: boolean) => {
+	uiPreferences.update((prefs) => ({ ...prefs, showNonFavorites: value }));
+};
+
+export const updateHeatmapDisplayMode = (value: HeatmapDisplayMode) => {
+	uiPreferences.update((prefs) => ({ ...prefs, heatmapDisplayMode: value }));
+};
+
+// Applied theme store (derived from theme)
 export const appliedTheme = derived(theme, ($theme, set) => {
 	function resolveTheme(themeValue: ThemeOption): 'light' | 'dark' {
 		if (themeValue === 'system') {
@@ -99,28 +128,24 @@ function applyTheme(themeValue: ThemeOption) {
 	themeService.updateThemeColor(applied);
 }
 
-// Persist and apply theme changes
+// Subscribe to changes and persist
 if (typeof window !== 'undefined') {
-	hideBalances.subscribe((value) => {
-		localStorage.setItem(LOCAL_STORAGE_HIDE_BALANCES, value.toString());
+	// Save preferences whenever they change
+	uiPreferences.subscribe((prefs) => {
+		savePreferences(prefs);
 	});
-	selectedView.subscribe((value) => {
-		localStorage.setItem(LOCAL_STORAGE_SELECTED_VIEW, value);
-	});
+
+	// Apply theme changes
 	theme.subscribe((value) => {
-		localStorage.setItem(LOCAL_STORAGE_THEME, value);
 		applyTheme(value);
 	});
-	// Listen for system theme changes if "system" is selected
+
+	// Listen for system theme changes
 	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-		if (localStorage.getItem(LOCAL_STORAGE_THEME) === 'system') {
-			applyTheme('system');
-		}
-	});
-	showNonFavorites.subscribe((value) => {
-		localStorage.setItem(LOCAL_STORAGE_SHOW_NON_FAVORITES, value.toString());
-	});
-	heatmapDisplayMode.subscribe((value) => {
-		localStorage.setItem(LOCAL_STORAGE_HEATMAP_MODE, value);
+		uiPreferences.subscribe((prefs) => {
+			if (prefs.theme === 'system') {
+				applyTheme('system');
+			}
+		})();
 	});
 }
