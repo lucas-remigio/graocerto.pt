@@ -35,9 +35,7 @@
 		cookieConsent.setPreferences(tempPreferences);
 		showBanner = false;
 		showPreferences = false;
-
 	}
-
 </script>
 
 <!-- Cookie Banner -->
@@ -73,7 +71,7 @@
 					<button class="btn btn-outline btn-sm" on:click={rejectAll}>
 						{$t('cookies.banner.reject', { default: 'Reject All' })}
 					</button>
-					<button class="btn btn-primary btn-sm" on:click={acceptAll}>
+					<button class="btn btn-primary text-base-100 btn-sm" on:click={acceptAll}>
 						{$t('cookies.banner.accept', { default: 'Accept All' })}
 					</button>
 				</div>

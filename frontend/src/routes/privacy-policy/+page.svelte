@@ -220,7 +220,7 @@
 
 					<div class="bg-base-100 rounded-lg p-4 text-center">
 						<p class="font-medium">{$t('privacy.rights.help.question')}</p>
-						<a href="mailto:{email}" class="btn btn-primary btn-sm mt-2">
+						<a href="mailto:{email}" class="btn btn-primary text-base-100 btn-sm mt-2">
 							<Mail class="mr-1 h-4 w-4" />
 							{$t('privacy.rights.help.contact')}
 							{email}
@@ -267,7 +267,7 @@
 				</a>
 			</div>
 
-			<a href="/" class="btn btn-primary btn-lg">
+			<a href="/" class="btn btn-primary text-base-100 btn-lg">
 				<ArrowLeft class="mr-2 h-4 w-4" />
 				{$t('privacy.footer.back-home')}
 			</a>
