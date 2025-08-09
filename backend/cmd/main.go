@@ -20,8 +20,6 @@ func main() {
 		log.Println("Using local database connection")
 	}
 
-	log.Println("Database URL:", dbURL)
-
 	// Open the Postgres database connection
 	pgdb, err := sql.Open("postgres", dbURL)
 	if err != nil {
