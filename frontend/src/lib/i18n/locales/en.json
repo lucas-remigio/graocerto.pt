@@ -67,7 +67,8 @@
 		"invalid": "Invalid",
 		"required": "Required",
 		"too-short": "Too Short",
-		"too-long": "Too Long"
+		"too-long": "Too Long",
+		"no-data": "No data"
 	},
 
 	"views": {

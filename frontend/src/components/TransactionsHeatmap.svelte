@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Import types and Svelte utilities
 	import type { DailyTotals } from '$lib/types';
-	import { BarChart3, TrendingUp, TrendingDown } from 'lucide-svelte';
+	import { BarChart3, TrendingUp, TrendingDown, ChevronDown } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { locale, t } from 'svelte-i18n';
 
@@ -188,8 +188,6 @@
 		const maxValue = getMaxValue();
 		if (maxValue === 0) return 'heatmap-neutral';
 
-		const intensity = Math.min(1, Math.abs(value) / maxValue);
-
 		switch (displayMode) {
 			case 'credit':
 				return value > 0 ? 'heatmap-green' : 'heatmap-neutral';
@@ -217,48 +215,86 @@
 	// Format tooltip based on mode
 	function getTooltipText(day: string): string {
 		const data = transactionMap[day];
-		if (!data) return `📅 ${formatDay(day)} - No data`;
+		if (!data) return `${formatDay(day)} - ${$t('common.no-data', { default: 'No data' })}`;
 
 		switch (displayMode) {
 			case 'credit':
-				return `📅 ${formatDay(day)} 💰 +${data.credit.toFixed(2)} €`;
+				return `${formatDay(day)} 💰 +${data.credit.toFixed(2)} €`;
 			case 'debit':
-				return `📅 ${formatDay(day)} 💸 -${data.debit.toFixed(2)} €`;
+				return `${formatDay(day)} 💸 -${data.debit.toFixed(2)} €`;
 			case 'difference':
-				return `📅 ${formatDay(day)} 📊 ${data.difference >= 0 ? '+' : ''}${data.difference.toFixed(2)} €`;
+				const emoji = data.difference >= 0 ? '️💰' : '️💸';
+				return `${formatDay(day)} ${emoji} ${data.difference >= 0 ? '+' : ''}${data.difference.toFixed(2)} €`;
 			default:
-				return `📅 ${formatDay(day)}`;
+				return `${formatDay(day)}`;
 		}
 	}
+
+	function getDisplayModeInfo(mode: DisplayMode) {
+		switch (mode) {
+			case 'difference':
+				return { icon: BarChart3, label: $t('statistics.heatmap.difference', { default: 'Net' }) };
+			case 'credit':
+				return { icon: TrendingUp, label: $t('statistics.heatmap.credits', { default: 'Income' }) };
+			case 'debit':
+				return {
+					icon: TrendingDown,
+					label: $t('statistics.heatmap.debits', { default: 'Expenses' })
+				};
+			default:
+				return { icon: BarChart3, label: 'Net' };
+		}
+	}
+
+	$: currentModeInfo = getDisplayModeInfo(displayMode);
 </script>
 
-<!-- Mode Selection Buttons -->
+<!-- Mode Selection Dropdown with highlight -->
 <div class="mb-4 flex justify-center">
-	<div class="btn-group">
-		<button
-			class="btn btn-sm {displayMode === 'difference' ? 'btn-primary text-base-100' : 'btn-ghost'}"
-			aria-label="View Net Difference"
-			on:click={() => (displayMode = 'difference')}
+	<div class="dropdown">
+		<div tabindex="0" role="button" class="btn btn-sm btn-primary text-base-100 shadow-lg">
+			<svelte:component this={currentModeInfo.icon} size={16} class="text-base-100 mr-1" />
+			<span class="text-base-100">{currentModeInfo.label}</span>
+			<ChevronDown size={16} class="text-base-100 ml-1" />
+		</div>
+		<ul
+			tabindex="-1"
+			class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-[1] w-48 border p-2 shadow-xl"
 		>
-			<BarChart3 size={16} class="mr-1" />
-			<span>{$t('statistics.heatmap.difference', { default: 'Net' })}</span>
-		</button>
-		<button
-			class="btn btn-sm {displayMode === 'credit' ? 'btn-primary text-base-100' : 'btn-ghost'}"
-			aria-label="View Credits"
-			on:click={() => (displayMode = 'credit')}
-		>
-			<TrendingUp size={16} class="mr-1" />
-			<span>{$t('statistics.heatmap.credits', { default: 'Income' })}</span>
-		</button>
-		<button
-			class="btn btn-sm {displayMode === 'debit' ? 'btn-primary text-base-100' : 'btn-ghost'}"
-			aria-label="View Debits"
-			on:click={() => (displayMode = 'debit')}
-		>
-			<TrendingDown size={16} class="mr-1" />
-			<span>{$t('statistics.heatmap.debits', { default: 'Expenses' })}</span>
-		</button>
+			<li>
+				<button
+					class="flex items-center gap-2 {displayMode === 'difference'
+						? 'bg-primary text-base-100'
+						: ''}"
+					on:click={() => (displayMode = 'difference')}
+				>
+					<BarChart3 size={16} />
+					<span>{$t('statistics.heatmap.difference', { default: 'Net' })}</span>
+				</button>
+			</li>
+			<li>
+				<button
+					class="flex items-center gap-2 {displayMode === 'credit'
+						? 'bg-primary text-primary-content'
+						: ''}"
+					on:click={() => (displayMode = 'credit')}
+				>
+					<TrendingUp size={16} />
+					<span>{$t('statistics.heatmap.credits', { default: 'Income' })}</span>
+				</button>
+			</li>
+			<li>
+				<button
+					class="flex items-center gap-2 {displayMode === 'debit'
+						? 'bg-primary text-primary-content'
+						: ''}"
+					on:click={() => (displayMode = 'debit')}
+				>
+					<TrendingDown size={16} />
+					<span>{$t('statistics.heatmap.debits', { default: 'Expenses' })}</span>
+				</button>
+			</li>
+		</ul>
 	</div>
 </div>
 
