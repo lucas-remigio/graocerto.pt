@@ -2,11 +2,13 @@ import { derived, writable } from 'svelte/store';
 import { themeService } from '$lib/services/themeService';
 
 export type ThemeOption = 'light' | 'dark' | 'system';
+export type HeatmapDisplayMode = 'difference' | 'credit' | 'debit';
 
 const LOCAL_STORAGE_HIDE_BALANCES = 'ui.hideBalances';
 const LOCAL_STORAGE_SELECTED_VIEW = 'ui.selectedView';
 const LOCAL_STORAGE_THEME = 'ui.theme';
 const LOCAL_STORAGE_SHOW_NON_FAVORITES = 'ui.showNonFavorites';
+const LOCAL_STORAGE_HEATMAP_MODE = 'ui.heatmapDisplayMode';
 
 function getInitialHideBalances() {
 	if (typeof localStorage !== 'undefined') {
@@ -42,10 +44,21 @@ function getInitialShowNonFavorites() {
 	return false;
 }
 
+function getInitialHeatmapMode(): HeatmapDisplayMode {
+	if (typeof localStorage !== 'undefined') {
+		const stored = localStorage.getItem(LOCAL_STORAGE_HEATMAP_MODE);
+		if (stored === 'difference' || stored === 'credit' || stored === 'debit') {
+			return stored;
+		}
+	}
+	return 'difference'; // Default to 'difference'
+}
+
 export const hideBalances = writable(getInitialHideBalances());
 export const selectedView = writable<'transactions' | 'statistics'>(getInitialSelectedView());
 export const theme = writable<ThemeOption>(getInitialTheme());
 export const showNonFavorites = writable(getInitialShowNonFavorites());
+export const heatmapDisplayMode = writable<HeatmapDisplayMode>(getInitialHeatmapMode());
 
 // This derived store always returns 'light' or 'dark'
 export const appliedTheme = derived(theme, ($theme, set) => {
@@ -106,5 +119,8 @@ if (typeof window !== 'undefined') {
 	});
 	showNonFavorites.subscribe((value) => {
 		localStorage.setItem(LOCAL_STORAGE_SHOW_NON_FAVORITES, value.toString());
+	});
+	heatmapDisplayMode.subscribe((value) => {
+		localStorage.setItem(LOCAL_STORAGE_HEATMAP_MODE, value);
 	});
 }

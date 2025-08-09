@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { heatmapDisplayMode, type HeatmapDisplayMode } from '$lib/stores/uiPreferences';
+
 	// Import types and Svelte utilities
 	import type { DailyTotals } from '$lib/types';
 	import { BarChart3, TrendingUp, TrendingDown, ChevronDown } from 'lucide-svelte';
@@ -11,9 +13,6 @@
 	export let endDate: string;
 	export let largestDebit: number = 0;
 	export let largestCredit: number = 0;
-
-	type DisplayMode = 'difference' | 'credit' | 'debit';
-	let displayMode: DisplayMode = 'difference';
 
 	// Today's date in YYYY-MM-DD format
 	let today: string = new Date().toISOString().split('T')[0];
@@ -70,7 +69,7 @@
 		const data = transactionMap[day];
 		if (!data) return 0;
 
-		switch (displayMode) {
+		switch ($heatmapDisplayMode) {
 			case 'credit':
 				return data.credit;
 			case 'debit':
@@ -84,7 +83,7 @@
 
 	// Get maximum value for scaling based on mode
 	function getMaxValue(): number {
-		switch (displayMode) {
+		switch ($heatmapDisplayMode) {
 			case 'credit':
 				return largestCredit;
 			case 'debit':
@@ -188,7 +187,7 @@
 		const maxValue = getMaxValue();
 		if (maxValue === 0) return 'heatmap-neutral';
 
-		switch (displayMode) {
+		switch ($heatmapDisplayMode) {
 			case 'credit':
 				return value > 0 ? 'heatmap-green' : 'heatmap-neutral';
 			case 'debit':
@@ -217,7 +216,7 @@
 		const data = transactionMap[day];
 		if (!data) return `${formatDay(day)} - ${$t('common.no-data', { default: 'No data' })}`;
 
-		switch (displayMode) {
+		switch ($heatmapDisplayMode) {
 			case 'credit':
 				return `${formatDay(day)} 💰 +${data.credit.toFixed(2)} €`;
 			case 'debit':
@@ -230,7 +229,7 @@
 		}
 	}
 
-	function getDisplayModeInfo(mode: DisplayMode) {
+	function getDisplayModeInfo(mode: HeatmapDisplayMode) {
 		switch (mode) {
 			case 'difference':
 				return { icon: BarChart3, label: $t('statistics.heatmap.difference', { default: 'Net' }) };
@@ -246,7 +245,7 @@
 		}
 	}
 
-	$: currentModeInfo = getDisplayModeInfo(displayMode);
+	$: currentModeInfo = getDisplayModeInfo($heatmapDisplayMode);
 </script>
 
 <!-- Mode Selection Dropdown with highlight -->
@@ -263,10 +262,10 @@
 		>
 			<li>
 				<button
-					class="flex items-center gap-2 {displayMode === 'difference'
+					class="flex items-center gap-2 {$heatmapDisplayMode === 'difference'
 						? 'bg-primary text-base-100'
 						: ''}"
-					on:click={() => (displayMode = 'difference')}
+					on:click={() => (heatmapDisplayMode.set('difference'))}
 				>
 					<BarChart3 size={16} />
 					<span>{$t('statistics.heatmap.difference', { default: 'Net' })}</span>
@@ -274,10 +273,10 @@
 			</li>
 			<li>
 				<button
-					class="flex items-center gap-2 {displayMode === 'credit'
-						? 'bg-primary text-primary-content'
+					class="flex items-center gap-2 {$heatmapDisplayMode === 'credit'
+						? 'bg-primary text-base-100'
 						: ''}"
-					on:click={() => (displayMode = 'credit')}
+					on:click={() => (heatmapDisplayMode.set('credit'))}
 				>
 					<TrendingUp size={16} />
 					<span>{$t('statistics.heatmap.credits', { default: 'Income' })}</span>
@@ -285,10 +284,10 @@
 			</li>
 			<li>
 				<button
-					class="flex items-center gap-2 {displayMode === 'debit'
-						? 'bg-primary text-primary-content'
+					class="flex items-center gap-2 {$heatmapDisplayMode === 'debit'
+						? 'bg-primary text-base-100'
 						: ''}"
-					on:click={() => (displayMode = 'debit')}
+					on:click={() => (heatmapDisplayMode.set('debit'))}
 				>
 					<TrendingDown size={16} />
 					<span>{$t('statistics.heatmap.debits', { default: 'Expenses' })}</span>
