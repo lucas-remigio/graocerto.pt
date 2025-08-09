@@ -183,40 +183,37 @@
 		const value = getValue(day);
 		const data = transactionMap[day];
 
-		if (!data) return 'bg-gray-200';
+		if (!data) return 'heatmap-neutral';
 
 		const maxValue = getMaxValue();
-		if (maxValue === 0) return 'bg-gray-200';
+		if (maxValue === 0) return 'heatmap-neutral';
+
+		const intensity = Math.min(1, Math.abs(value) / maxValue);
 
 		switch (displayMode) {
 			case 'credit':
-				if (value > 0) {
-					const intensity = Math.min(9, Math.max(1, Math.ceil((value / maxValue) * 9)));
-					return `bg-green-${intensity}00`;
-				}
-				return 'bg-gray-200';
-
+				return value > 0 ? 'heatmap-green' : 'heatmap-neutral';
 			case 'debit':
-				if (value > 0) {
-					const intensity = Math.min(9, Math.max(1, Math.ceil((value / maxValue) * 9)));
-					return `bg-red-${intensity}00`;
-				}
-				return 'bg-gray-200';
-
+				return value > 0 ? 'heatmap-red' : 'heatmap-neutral';
 			case 'difference':
-				if (value > 0) {
-					const intensity = Math.min(9, Math.max(1, Math.ceil((value / maxValue) * 9)));
-					return `bg-green-${intensity}00`;
-				} else if (value < 0) {
-					const intensity = Math.min(9, Math.max(1, Math.ceil((Math.abs(value) / maxValue) * 9)));
-					return `bg-red-${intensity}00`;
-				}
-				return 'bg-gray-200';
-
+				if (value > 0) return 'heatmap-green';
+				if (value < 0) return 'heatmap-red';
+				return 'heatmap-neutral';
 			default:
-				return 'bg-gray-200';
+				return 'heatmap-neutral';
 		}
 	}
+
+	function getIntensity(day: string): number {
+		const value = getValue(day);
+		const maxValue = getMaxValue();
+		if (maxValue === 0) return 0;
+
+		const intensity = Math.min(1, Math.abs(value) / maxValue);
+		// Ensure minimum visibility (0.1) and scale to 0.1-1.0 range
+		return 0.1 + intensity * 0.9;
+	}
+
 	// Format tooltip based on mode
 	function getTooltipText(day: string): string {
 		const data = transactionMap[day];
@@ -285,6 +282,7 @@
 										class="tooltip heatmap-square mx-auto my-auto flex aspect-square h-6 w-6 items-center justify-center rounded {getColor(
 											day
 										)} {isToday(day) ? 'border-primary border-2' : ''}"
+										style="--intensity: {getIntensity(day)}"
 										data-tip={getTooltipText(day)}
 									></div>
 								</td>
@@ -301,6 +299,15 @@
 {/each}
 
 <style>
+	.heatmap-green {
+		background-color: rgba(34, 197, 94, var(--intensity));
+	}
+	.heatmap-red {
+		background-color: rgba(239, 68, 68, var(--intensity));
+	}
+	.heatmap-neutral {
+		background-color: #e5e7eb; /* gray-200 */
+	}
 	/* Ensures squares are always square and sized */
 	.aspect-square {
 		width: 1.5rem;
