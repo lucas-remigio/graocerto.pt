@@ -13,12 +13,14 @@ func main() {
 	var dbURL string
 
 	if config.Envs.IsProduction {
-		dbURL = config.Envs.RemoteDBUrl
+		dbURL = config.Envs.RemoteDBUrl + "?sslmode=verify-ca&sslrootcert=db/prod-ca-2021.crt"
 		log.Println("Using remote database connection")
 	} else {
-		dbURL = config.Envs.DatabaseUrl
+		dbURL = config.Envs.DatabaseUrl + "?sslmode=disable"
 		log.Println("Using local database connection")
 	}
+
+	log.Println("Database URL:", dbURL)
 
 	// Open the Postgres database connection
 	pgdb, err := sql.Open("postgres", dbURL)
@@ -48,5 +50,15 @@ func initStorage(db *sql.DB) {
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
+
+	// Check if SSL is being used
+	var sslStatus string
+	err := db.QueryRow("SHOW ssl").Scan(&sslStatus)
+	if err != nil {
+		log.Printf("Could not check SSL status: %v", err)
+	} else {
+		log.Printf("SSL Status: %s", sslStatus)
+	}
+
 	log.Println("DB: Successfully connected")
 }

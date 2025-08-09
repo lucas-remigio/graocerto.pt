@@ -29,7 +29,7 @@ services:
       - IS_PRODUCTION=false
       - PORT=${BACKEND_PORT}
         # Single connection string for local database
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/wallet_tracker?sslmode=disable
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/wallet_tracker
       # This is to test the remote database in dev. Change IS_PRODUCTION to true to use the remote database
       - REMOTE_DB_URL=${SESSION_POOLER}
       - FRONTEND_URL=${FRONTEND_URL}

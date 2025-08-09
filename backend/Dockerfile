@@ -40,6 +40,9 @@ COPY --from=builder /app/cmd/migrate/migrations ./migrations/
 # Copy prompts folder
 COPY --from=builder /app/prompts ./prompts/
 
+# Copy the SSL certificate
+COPY --from=builder /app/db/prod-ca-2021.crt ./db/prod-ca-2021.crt
+
 # Set environment variable for migrations path
 ENV MIGRATIONS_PATH=file://migrations
 
