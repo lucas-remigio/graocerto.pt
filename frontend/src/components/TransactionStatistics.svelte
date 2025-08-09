@@ -60,6 +60,18 @@
 	<!-- Compact Statistics Summary -->
 	<div class="bg-base-100">
 		<div class="p-6 pt-2">
+			<!-- AI Feedback Button -->
+			{#if !isAll}
+				<div class="mb-4 flex justify-center">
+					<button
+						class="btn btn-primary shadow-lg"
+						on:click={openAiFeedbackModal}
+						aria-label="Get AI Feedback"
+					>
+						<Bot size={20} class="text-base-100" />
+					</button>
+				</div>
+			{/if}
 			<!-- Main Statistics Row -->
 			<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
 				<!-- Total Transactions -->
@@ -142,18 +154,6 @@
 					<TrendingDown size={20} class="text-error" />
 				</div>
 			</div>
-			<!-- AI Feedback Button -->
-			{#if !isAll}
-				<div class="mt-4 flex justify-center">
-					<button
-						class="btn btn-primary shadow-lg"
-						on:click={openAiFeedbackModal}
-						aria-label="Get AI Feedback"
-					>
-						<Bot size={20} class="text-base-100" />
-					</button>
-				</div>
-			{/if}
 		</div>
 	</div>
 

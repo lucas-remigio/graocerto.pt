@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Import types and Svelte utilities
 	import type { DailyTotals } from '$lib/types';
+	import { BarChart3, TrendingUp, TrendingDown } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { locale, t } from 'svelte-i18n';
 
@@ -177,30 +178,6 @@
 		});
 	}
 
-	// Tailwind CSS classes for green and red backgrounds (for credits/debits)
-	const greenClasses = [
-		'bg-green-100',
-		'bg-green-200',
-		'bg-green-300',
-		'bg-green-400',
-		'bg-green-500',
-		'bg-green-600',
-		'bg-green-700',
-		'bg-green-800',
-		'bg-green-900'
-	];
-	const redClasses = [
-		'bg-red-100',
-		'bg-red-200',
-		'bg-red-300',
-		'bg-red-400',
-		'bg-red-500',
-		'bg-red-600',
-		'bg-red-700',
-		'bg-red-800',
-		'bg-red-900'
-	];
-
 	// Updated color function based on mode
 	function getColor(day: string): string {
 		const value = getValue(day);
@@ -208,28 +185,31 @@
 
 		if (!data) return 'bg-gray-200';
 
+		const maxValue = getMaxValue();
+		if (maxValue === 0) return 'bg-gray-200';
+
 		switch (displayMode) {
 			case 'credit':
 				if (value > 0) {
-					const intensity = Math.ceil((value / getMaxValue()) * (greenClasses.length - 1));
-					return greenClasses[Math.min(greenClasses.length - 1, Math.max(0, intensity))];
+					const intensity = Math.min(9, Math.max(1, Math.ceil((value / maxValue) * 9)));
+					return `bg-green-${intensity}00`;
 				}
 				return 'bg-gray-200';
 
 			case 'debit':
 				if (value > 0) {
-					const intensity = Math.ceil((value / getMaxValue()) * (redClasses.length - 1));
-					return redClasses[Math.min(redClasses.length - 1, Math.max(0, intensity))];
+					const intensity = Math.min(9, Math.max(1, Math.ceil((value / maxValue) * 9)));
+					return `bg-red-${intensity}00`;
 				}
 				return 'bg-gray-200';
 
 			case 'difference':
 				if (value > 0) {
-					const intensity = Math.ceil((value / getMaxValue()) * (greenClasses.length - 1));
-					return greenClasses[Math.min(greenClasses.length - 1, Math.max(0, intensity))];
+					const intensity = Math.min(9, Math.max(1, Math.ceil((value / maxValue) * 9)));
+					return `bg-green-${intensity}00`;
 				} else if (value < 0) {
-					const intensity = Math.ceil((Math.abs(value) / getMaxValue()) * (redClasses.length - 1));
-					return redClasses[Math.min(redClasses.length - 1, Math.max(0, intensity))];
+					const intensity = Math.min(9, Math.max(1, Math.ceil((Math.abs(value) / maxValue) * 9)));
+					return `bg-red-${intensity}00`;
 				}
 				return 'bg-gray-200';
 
@@ -237,7 +217,6 @@
 				return 'bg-gray-200';
 		}
 	}
-
 	// Format tooltip based on mode
 	function getTooltipText(day: string): string {
 		const data = transactionMap[day];
@@ -257,25 +236,33 @@
 </script>
 
 <!-- Mode Selection Buttons -->
-<div class="mb-4 flex justify-center gap-2">
-	<button
-		class="btn btn-sm {displayMode === 'difference' ? 'btn-primary' : 'btn-outline'}"
-		on:click={() => (displayMode = 'difference')}
-	>
-		📊 {$t('heatmap.difference', { default: 'Net' })}
-	</button>
-	<button
-		class="btn btn-sm {displayMode === 'credit' ? 'btn-success' : 'btn-outline'}"
-		on:click={() => (displayMode = 'credit')}
-	>
-		💰 {$t('heatmap.credits', { default: 'Income' })}
-	</button>
-	<button
-		class="btn btn-sm {displayMode === 'debit' ? 'btn-error' : 'btn-outline'}"
-		on:click={() => (displayMode = 'debit')}
-	>
-		💸 {$t('heatmap.debits', { default: 'Expenses' })}
-	</button>
+<div class="mb-4 flex justify-center">
+	<div class="btn-group">
+		<button
+			class="btn btn-sm {displayMode === 'difference' ? 'btn-primary text-base-100' : 'btn-ghost'}"
+			aria-label="View Net Difference"
+			on:click={() => (displayMode = 'difference')}
+		>
+			<BarChart3 size={16} class="mr-1" />
+			<span>{$t('statistics.heatmap.difference', { default: 'Net' })}</span>
+		</button>
+		<button
+			class="btn btn-sm {displayMode === 'credit' ? 'btn-primary text-base-100' : 'btn-ghost'}"
+			aria-label="View Credits"
+			on:click={() => (displayMode = 'credit')}
+		>
+			<TrendingUp size={16} class="mr-1" />
+			<span>{$t('statistics.heatmap.credits', { default: 'Income' })}</span>
+		</button>
+		<button
+			class="btn btn-sm {displayMode === 'debit' ? 'btn-primary text-base-100' : 'btn-ghost'}"
+			aria-label="View Debits"
+			on:click={() => (displayMode = 'debit')}
+		>
+			<TrendingDown size={16} class="mr-1" />
+			<span>{$t('statistics.heatmap.debits', { default: 'Expenses' })}</span>
+		</button>
+	</div>
 </div>
 
 <!-- Render each month that has at least one transaction -->
