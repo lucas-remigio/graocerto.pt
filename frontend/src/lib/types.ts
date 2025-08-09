@@ -142,7 +142,9 @@ export interface CategoryStatistic {
 
 export interface DailyTotals {
 	date: string; // Format: YYYY-MM-DD
-	total: number;
+	credit: number;
+	debit: number;
+	difference: number;
 }
 
 export interface TransactionStatistics {

@@ -11,9 +11,11 @@
 	export let largestDebit: number = 0;
 	export let largestCredit: number = 0;
 
+	type DisplayMode = 'difference' | 'credit' | 'debit';
+	let displayMode: DisplayMode = 'difference';
+
 	// Today's date in YYYY-MM-DD format
 	let today: string = new Date().toISOString().split('T')[0];
-
 	// Array of all days to display in the heatmap
 	let days: string[] = [];
 
@@ -49,11 +51,49 @@
 	}
 
 	// Map of date string to transaction total for quick lookup
-	let transactionMap: { [key: string]: number } = {};
-	$: transactionMap = dailyTransactions.reduce((map: { [key: string]: number }, tx) => {
-		map[tx.date] = tx.total;
-		return map;
-	}, {});
+	let transactionMap: { [key: string]: { credit: number; debit: number; difference: number } } = {};
+	$: transactionMap = dailyTransactions.reduce(
+		(map: { [key: string]: { credit: number; debit: number; difference: number } }, tx) => {
+			map[tx.date] = {
+				credit: tx.credit || 0,
+				debit: tx.debit || 0,
+				difference: tx.difference || 0
+			};
+			return map;
+		},
+		{} as { [key: string]: { credit: number; debit: number; difference: number } }
+	);
+
+	// Get the value based on selected mode
+	function getValue(day: string): number {
+		const data = transactionMap[day];
+		if (!data) return 0;
+
+		switch (displayMode) {
+			case 'credit':
+				return data.credit;
+			case 'debit':
+				return data.debit;
+			case 'difference':
+				return data.difference;
+			default:
+				return 0;
+		}
+	}
+
+	// Get maximum value for scaling based on mode
+	function getMaxValue(): number {
+		switch (displayMode) {
+			case 'credit':
+				return largestCredit;
+			case 'debit':
+				return largestDebit;
+			case 'difference':
+				return Math.max(largestCredit, largestDebit);
+			default:
+				return 1;
+		}
+	}
 
 	// Generate the days array when the component mounts
 	onMount(() => {
@@ -161,20 +201,82 @@
 		'bg-red-900'
 	];
 
-	// Get the color class for a transaction total, proportional to largest values
-	function getColor(total: number | undefined): string {
-		if (total === undefined) return 'bg-gray-200';
-		if (total > 0) {
-			const intensity = Math.ceil((total / largestCredit) * (greenClasses.length - 1));
-			return greenClasses[Math.min(greenClasses.length - 1, Math.max(0, intensity))];
+	// Updated color function based on mode
+	function getColor(day: string): string {
+		const value = getValue(day);
+		const data = transactionMap[day];
+
+		if (!data) return 'bg-gray-200';
+
+		switch (displayMode) {
+			case 'credit':
+				if (value > 0) {
+					const intensity = Math.ceil((value / getMaxValue()) * (greenClasses.length - 1));
+					return greenClasses[Math.min(greenClasses.length - 1, Math.max(0, intensity))];
+				}
+				return 'bg-gray-200';
+
+			case 'debit':
+				if (value > 0) {
+					const intensity = Math.ceil((value / getMaxValue()) * (redClasses.length - 1));
+					return redClasses[Math.min(redClasses.length - 1, Math.max(0, intensity))];
+				}
+				return 'bg-gray-200';
+
+			case 'difference':
+				if (value > 0) {
+					const intensity = Math.ceil((value / getMaxValue()) * (greenClasses.length - 1));
+					return greenClasses[Math.min(greenClasses.length - 1, Math.max(0, intensity))];
+				} else if (value < 0) {
+					const intensity = Math.ceil((Math.abs(value) / getMaxValue()) * (redClasses.length - 1));
+					return redClasses[Math.min(redClasses.length - 1, Math.max(0, intensity))];
+				}
+				return 'bg-gray-200';
+
+			default:
+				return 'bg-gray-200';
 		}
-		if (total < 0) {
-			const intensity = Math.ceil((Math.abs(total) / largestDebit) * (redClasses.length - 1));
-			return redClasses[Math.min(redClasses.length - 1, Math.max(0, intensity))];
+	}
+
+	// Format tooltip based on mode
+	function getTooltipText(day: string): string {
+		const data = transactionMap[day];
+		if (!data) return `📅 ${formatDay(day)} - No data`;
+
+		switch (displayMode) {
+			case 'credit':
+				return `📅 ${formatDay(day)} 💰 +${data.credit.toFixed(2)} €`;
+			case 'debit':
+				return `📅 ${formatDay(day)} 💸 -${data.debit.toFixed(2)} €`;
+			case 'difference':
+				return `📅 ${formatDay(day)} 📊 ${data.difference >= 0 ? '+' : ''}${data.difference.toFixed(2)} €`;
+			default:
+				return `📅 ${formatDay(day)}`;
 		}
-		return 'bg-gray-200';
 	}
 </script>
+
+<!-- Mode Selection Buttons -->
+<div class="mb-4 flex justify-center gap-2">
+	<button
+		class="btn btn-sm {displayMode === 'difference' ? 'btn-primary' : 'btn-outline'}"
+		on:click={() => (displayMode = 'difference')}
+	>
+		📊 {$t('heatmap.difference', { default: 'Net' })}
+	</button>
+	<button
+		class="btn btn-sm {displayMode === 'credit' ? 'btn-success' : 'btn-outline'}"
+		on:click={() => (displayMode = 'credit')}
+	>
+		💰 {$t('heatmap.credits', { default: 'Income' })}
+	</button>
+	<button
+		class="btn btn-sm {displayMode === 'debit' ? 'btn-error' : 'btn-outline'}"
+		on:click={() => (displayMode = 'debit')}
+	>
+		💸 {$t('heatmap.debits', { default: 'Expenses' })}
+	</button>
+</div>
 
 <!-- Render each month that has at least one transaction -->
 {#each Object.entries(months) as [monthKey, monthDays]}
@@ -193,10 +295,10 @@
 								<!-- Cell with colored square and tooltip -->
 								<td class="text-center align-middle">
 									<div
-										class="tooltip mx-auto my-auto flex aspect-square h-6 w-6 items-center justify-center rounded {getColor(
-											transactionMap[day]
+										class="tooltip heatmap-square mx-auto my-auto flex aspect-square h-6 w-6 items-center justify-center rounded {getColor(
+											day
 										)} {isToday(day) ? 'border-primary border-2' : ''}"
-										data-tip={`📅 ${formatDay(day)} 💸 ${transactionMap[day] ?? 0} €`}
+										data-tip={getTooltipText(day)}
 									></div>
 								</td>
 							{:else}

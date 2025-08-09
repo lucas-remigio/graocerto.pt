@@ -12,7 +12,6 @@
 	import EditTransaction from './EditTransaction.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import TransactionsStats from './TransactionsStats.svelte';
-	import AiFeedback from './AiFeedback.svelte';
 	import { t } from '$lib/i18n';
 	import { format, locale } from 'svelte-i18n';
 	import {
@@ -78,11 +77,7 @@
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
 	let showDeleteTransactionModal = false;
-	let showAiFeedbackModal = false;
 	let error: string = '';
-
-	let month: number = new Date().getMonth() + 1; // Current month (1-12)
-	let year: number = new Date().getFullYear(); // Current year
 
 	let selectedTransaction: TransactionDto | null = null;
 
@@ -186,23 +181,6 @@
 		closeDeleteTransactionModal();
 	}
 
-	function closeAiFeedbackModal() {
-		showAiFeedbackModal = false;
-	}
-
-	function openAiFeedbackModal() {
-		// this should get the first transactions's month and year
-		if (transactions.length === 0) {
-			error = $t('transactions.no-transactions-ai');
-			return;
-		}
-		const firstTransaction = transactions[0];
-		month = new Date(firstTransaction.date).getMonth() + 1; // Get month (1-12)
-		year = new Date(firstTransaction.date).getFullYear();
-		error = '';
-		showAiFeedbackModal = true;
-	}
-
 	function handleDeleteTransactionConfirm() {
 		closeDeleteTransactionModal();
 		dispatch('deleteTransaction', { transaction: selectedTransaction! });
@@ -238,18 +216,6 @@
 		<div
 			class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
 		>
-			<!-- Button to get feedback -->
-			{#if !isAll}
-				<button
-					class="btn btn-primary shadow-lg"
-					on:click={openAiFeedbackModal}
-					aria-label="Get AI Feedback"
-				>
-					<div class="flex items-center gap-1">
-						<Bot size={20} class="text-base-100" />
-					</div>
-				</button>
-			{/if}
 			<!-- Button to add a new transaction-->
 			<button
 				class="btn btn-primary shadow-lg"
@@ -382,8 +348,4 @@
 		onConfirm={handleDeleteTransactionConfirm}
 		onCancel={handleDeleteTransactionCancel}
 	></ConfirmAction>
-{/if}
-
-{#if showAiFeedbackModal}
-	<AiFeedback {account} {month} {year} closeModal={closeAiFeedbackModal}></AiFeedback>
 {/if}

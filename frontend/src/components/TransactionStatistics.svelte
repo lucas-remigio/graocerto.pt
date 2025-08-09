@@ -1,21 +1,41 @@
 <!-- src/components/TransactionStatistics.svelte -->
 <script lang="ts">
 	import type { Account, TransactionStatistics } from '$lib/types';
-	import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-svelte';
+	import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart, Bot } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import PieChartComponent from './CategoriesPieChart.svelte';
 	import TransactionsHeatmap from './TransactionsHeatmap.svelte';
+	import AiFeedback from './AiFeedback.svelte';
 
 	export let selectedMonth: number | null;
 	export let selectedYear: number | null;
 	export let statistics: TransactionStatistics | null = null;
+	export let account: Account;
 	export let loading: boolean = false;
 	export let error: string = '';
 
 	$: isAll = selectedMonth === null && selectedYear === null;
 
+	let showAiFeedbackModal = false;
+
+	$: month = selectedMonth !== null ? selectedMonth : new Date().getMonth() + 1;
+	$: year = selectedYear !== null ? selectedYear : new Date().getFullYear();
+
 	function formatCurrency(amount: number): string {
 		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+	}
+
+	function openAiFeedbackModal() {
+		if (!statistics || statistics.total_transactions === 0) {
+			error = $t('transactions.no-transactions-ai');
+			return;
+		}
+		error = '';
+		showAiFeedbackModal = true;
+	}
+
+	function closeAiFeedbackModal() {
+		showAiFeedbackModal = false;
 	}
 </script>
 
@@ -91,7 +111,6 @@
 					</div>
 				</div>
 			</div>
-
 			<!-- Gap between sections -->
 			<div class="mt-2"></div>
 
@@ -123,6 +142,18 @@
 					<TrendingDown size={20} class="text-error" />
 				</div>
 			</div>
+			<!-- AI Feedback Button -->
+			{#if !isAll}
+				<div class="mt-4 flex justify-center">
+					<button
+						class="btn btn-primary shadow-lg"
+						on:click={openAiFeedbackModal}
+						aria-label="Get AI Feedback"
+					>
+						<Bot size={20} class="text-base-100" />
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -149,7 +180,7 @@
 		</div>
 	</div>
 
-	<div class="my-6 mx-4">
+	<div class="mx-4 my-6">
 		<TransactionsHeatmap
 			dailyTransactions={statistics.daily_totals}
 			startDate={statistics.start_date}
@@ -158,4 +189,8 @@
 			largestCredit={statistics.largest_credit}
 		/>
 	</div>
+{/if}
+
+{#if showAiFeedbackModal}
+	<AiFeedback {account} {month} {year} closeModal={closeAiFeedbackModal} />
 {/if}

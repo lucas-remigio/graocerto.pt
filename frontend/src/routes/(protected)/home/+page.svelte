@@ -489,6 +489,7 @@
 								{selectedMonth}
 								{selectedYear}
 								{statistics}
+								account={selectedAccount!}
 								loading={statisticsLoading}
 								error={statisticsError}
 							/>

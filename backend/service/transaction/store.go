@@ -496,11 +496,11 @@ func abs(x float64) float64 {
 	return x
 }
 
-// Process transactions and calculate largest amounts
+// Process transactions and calculate largest amounts and daily breakdowns
 func (s *Store) calculateLargestAmountsAndDailyTotals(
 	transactions []*types.TransactionDTO,
-) (largestCredit, largestDebit float64, dailyTotals map[string]float64) {
-	dailyTotals = make(map[string]float64)
+) (largestCredit, largestDebit float64, dailyTotals map[string]*types.DailyTotal) {
+	dailyTotals = make(map[string]*types.DailyTotal)
 
 	for _, tx := range transactions {
 		if tx.Category == nil {
@@ -509,19 +509,39 @@ func (s *Store) calculateLargestAmountsAndDailyTotals(
 
 		date := tx.Date.Format("2006-01-02")
 
+		// Initialize daily total if it doesn't exist
+		if dailyTotals[date] == nil {
+			dailyTotals[date] = &types.DailyTotal{
+				Date:       date,
+				Credit:     0,
+				Debit:      0,
+				Difference: 0,
+			}
+		}
+
 		switch tx.Category.TransactionType.ID {
 		case int(types.DebitTransactionType):
-			dailyTotals[date] -= tx.Amount
+			dailyTotals[date].Debit += tx.Amount
+			dailyTotals[date].Difference -= tx.Amount // Debit reduces the difference
 			if absAmount := abs(tx.Amount); absAmount > largestDebit {
 				largestDebit = absAmount
 			}
 		case int(types.CreditTransactionType):
-			dailyTotals[date] += tx.Amount
+			dailyTotals[date].Credit += tx.Amount
+			dailyTotals[date].Difference += tx.Amount // Credit increases the difference
 			if tx.Amount > largestCredit {
 				largestCredit = tx.Amount
 			}
 		}
 	}
+
+	// Calculate differences and round all values
+	for _, daily := range dailyTotals {
+		daily.Credit = utils.Round(daily.Credit, 2)
+		daily.Debit = utils.Round(daily.Debit, 2)
+		daily.Difference = utils.Round(daily.Credit-daily.Debit, 2)
+	}
+
 	largestCredit = utils.Round(largestCredit, 2)
 	largestDebit = utils.Round(largestDebit, 2)
 	return largestCredit, largestDebit, dailyTotals
@@ -626,16 +646,13 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 		return stats, nil
 	}
 
-	// Calculate largest amounts
-	var dailyTotals map[string]float64
-	stats.LargestCredit, stats.LargestDebit, dailyTotals = s.calculateLargestAmountsAndDailyTotals(transactions)
+	// Calculate largest amounts and daily totals
+	var dailyTotalsMap map[string]*types.DailyTotal
+	stats.LargestCredit, stats.LargestDebit, dailyTotalsMap = s.calculateLargestAmountsAndDailyTotals(transactions)
 
-	// Convert daily totals map to a slice
-	for date, total := range dailyTotals {
-		stats.DailyTotals = append(stats.DailyTotals, &types.DailyTotal{
-			Date:  date,
-			Total: utils.Round(total, 2),
-		})
+	// Convert daily totals map to a slice and sort by date
+	for _, dailyTotal := range dailyTotalsMap {
+		stats.DailyTotals = append(stats.DailyTotals, dailyTotal)
 	}
 
 	// Build category breakdowns

@@ -87,8 +87,10 @@ type CategoryStatistic struct {
 }
 
 type DailyTotal struct {
-	Date  string  `json:"date"`
-	Total float64 `json:"total"`
+	Date       string  `json:"date"`
+	Credit     float64 `json:"credit"`
+	Debit      float64 `json:"debit"`
+	Difference float64 `json:"difference"`
 }
 
 type TransactionStatistics struct {
