@@ -177,7 +177,10 @@
 				<!-- Hero mockup -->
 				<div class="hidden md:block">
 					<div class="mockup-window border-base-300 bg-base-200 border shadow-xl">
-						<div class="bg-base-100 flex items-center justify-center p-4">
+						<div
+							class="bg-base-100 flex items-center justify-center p-4"
+							on:click={() => openImg('graphs_dark.png')}
+						>
 							<img
 								src="graphs_dark.png"
 								alt={$t('landing.images.hero-alt', { default: 'Wallet Tracker preview' })}
@@ -274,9 +277,16 @@
 </div>
 
 {#if zoomedImg}
-	<!-- Image Modal -->
-	<div class="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" on:click={closeImg}>
-		<div class="max-h-[90vh] max-w-5xl">
+	<div class="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
+		<!-- Backdrop as a real button for a11y -->
+		<button
+			type="button"
+			class="absolute inset-0 h-full w-full cursor-zoom-out"
+			aria-label={$t('landing.actions.close-modal', { default: 'Close image modal' })}
+			on:click={closeImg}
+		></button>
+		<!-- Dialog content -->
+		<div role="dialog" aria-modal="true" class="relative z-10 max-h-[90vh] max-w-5xl outline-none">
 			<img
 				src={zoomedImg}
 				alt={$t('landing.gallery.zoom-alt', { default: 'Screenshot' })}
@@ -285,6 +295,13 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Close on Escape globally -->
+<svelte:window
+	on:keydown={(e) => {
+		if (e.key === 'Escape' && zoomedImg) closeImg();
+	}}
+/>
 
 <style>
 	:global(.mockup-window) {

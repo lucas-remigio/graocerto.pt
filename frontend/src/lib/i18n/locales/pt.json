@@ -12,8 +12,8 @@
 		},
 		"finlit": {
 			"callout": {
-				"title": "Comece com um orçamento. Perceba os seus gastos.",
-				"desc": "Assente na literacia financeira portuguesa: inicie cada mês com um plano e acompanhe onde e como gasta o seu dinheiro."
+				"title": "Começa com um orçamento. Percebe os teus gastos.",
+				"desc": "Assenta na literacia financeira portuguesa: inicia cada mês com um plano e acompanha onde e como gastas o teu dinheiro."
 			}
 		},
 		"highlights": {
@@ -26,11 +26,11 @@
 			"hero-caption": "Pré-visualização do painel e estatísticas"
 		},
 		"features": {
-			"title": "Porque vai gostar",
+			"title": "Porque vais gostar",
 			"subtitle": "Pensado para clareza, rapidez e insights reais sobre rendimentos e despesas.",
 			"track": {
 				"title": "Registo de transações",
-				"desc": "Registe créditos e débitos com categorização simples."
+				"desc": "Regista créditos e débitos com categorização simples."
 			},
 			"insights": {
 				"title": "Insights claros",
