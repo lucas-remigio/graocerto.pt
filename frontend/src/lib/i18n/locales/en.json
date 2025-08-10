@@ -53,6 +53,30 @@
 				"desc": "Optimized for laptops and phones — use it anywhere."
 			}
 		},
+		"testimonials": {
+			"title": "What people say",
+			"subtitle": "Real stories from users improving their finances.",
+			"1": {
+				"quote": "Understanding my spending has given me space to make better choices. What to save, what to spend, what to invest. A simple, complete tool that brings lightness to everyday life.",
+				"author": "Lara G."
+			}
+		},
+
+		"faq": {
+			"title": "Frequently asked questions",
+			"1": {
+				"q": "Is my data private?",
+				"a": "Yes. We use HTTPS and database SSL verification. No ads, no data selling."
+			},
+			"2": {
+				"q": "Is it free and open source?",
+				"a": "Yes. The project is open source on GitHub and free to use."
+			},
+			"3": {
+				"q": "How do I start?",
+				"a": "Create an account, set a monthly budget, and import or add your first transactions."
+			}
+		},
 		"gallery": {
 			"title": "A look inside",
 			"subtitle": "Clean tables, intuitive statistics, and a daily activity heatmap.",

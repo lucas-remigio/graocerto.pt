@@ -55,6 +55,29 @@
 			"subtitle": "Tabelas limpas, estatísticas intuitivas e um heatmap diário.",
 			"zoom-alt": "Captura de ecrã"
 		},
+		"testimonials": {
+			"title": "O que dizem",
+			"subtitle": "Histórias reais de quem melhorou as finanças.",
+			"1": {
+				"quote": "Entender os meus gastos deu-me espaço para fazer melhores escolhas. O que poupar, o que gastar, o que investir. Uma ferramenta simples, completa e que traz leveza ao dia a dia.",
+				"author": "Lara G."
+			}
+		},
+		"faq": {
+			"title": "Perguntas frequentes",
+			"1": {
+				"q": "Os meus dados são privados?",
+				"a": "Sim. Usamos HTTPS e verificação SSL na base de dados. Sem anúncios, sem venda de dados."
+			},
+			"2": {
+				"q": "É gratuito e open source?",
+				"a": "Sim. O projeto é open source no GitHub e gratuito."
+			},
+			"3": {
+				"q": "Como começo?",
+				"a": "Crie conta, defina o orçamento mensal e importe ou adicione as primeiras transações."
+			}
+		},
 		"screenshots": {
 			"dashboard": "Resumo do painel",
 			"transactions": "Lista de transações"
