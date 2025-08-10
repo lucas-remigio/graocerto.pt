@@ -1,208 +1,293 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
 	import {
-		CreditCard,
+		Wallet,
 		BarChart3,
 		Lock,
+		Shield,
 		Sparkles,
-		Star,
-		Mail,
-		Linkedin,
+		Calendar,
+		PieChart,
+		Cloud,
+		Zap,
 		Github,
-		CornerUpLeft,
-		ArrowUpCircle,
-		Heart
+		MonitorSmartphone,
+		BookOpen
 	} from 'lucide-svelte';
-	import { onMount } from 'svelte';
-	import { themeService } from '$lib/services/themeService';
+	import { t } from '$lib/i18n';
 
 	let zoomedImg: string | null = null;
-	function openZoom(src: string) {
+
+	// Use translation keys + defaults; render text via $t in the markup
+	const features = [
+		{
+			icon: Wallet,
+			titleKey: 'landing.features.track.title',
+			defaultTitle: 'Track Transactions',
+			descKey: 'landing.features.track.desc',
+			defaultDesc: 'Log credits and debits effortlessly with clean categorization.'
+		},
+		{
+			icon: BarChart3,
+			titleKey: 'landing.features.insights.title',
+			defaultTitle: 'Clear Insights',
+			descKey: 'landing.features.insights.desc',
+			defaultDesc: 'Understand your finances with statistics, charts, and heatmaps.'
+		},
+		{
+			icon: Calendar,
+			titleKey: 'landing.features.monthly.title',
+			defaultTitle: 'Monthly View',
+			descKey: 'landing.features.monthly.desc',
+			defaultDesc: 'Navigate history by month and year with quick filters.'
+		},
+		{
+			icon: PieChart,
+			titleKey: 'landing.features.categories.title',
+			defaultTitle: 'Category Breakdown',
+			descKey: 'landing.features.categories.desc',
+			defaultDesc: 'Spot trends by category to optimize your spending.'
+		},
+		{
+			icon: MonitorSmartphone,
+			titleKey: 'landing.features.responsive.title',
+			defaultTitle: 'Responsive Design',
+			descKey: 'landing.features.responsive.desc',
+			defaultDesc: 'Optimized for laptops and phones — use it anywhere.'
+		},
+		{
+			icon: Shield,
+			titleKey: 'landing.features.security.title',
+			defaultTitle: 'Secure by Design',
+			descKey: 'landing.features.security.desc',
+			defaultDesc: 'HTTPS, DB SSL verification, and best-practice security.'
+		}
+	];
+
+	const highlights = [
+		{ labelKey: 'landing.highlights.fast', defaultLabel: 'Fast', icon: Zap },
+		{ labelKey: 'landing.highlights.privacy', defaultLabel: 'Privacy-first', icon: Lock },
+		{ labelKey: 'landing.highlights.opensource', defaultLabel: 'Open source', icon: Github }
+	];
+
+	const screenshots = [
+		{
+			src: '/graphs_light.png',
+			altKey: 'landing.screenshots.dashboard',
+			defaultAlt: 'Dashboard overview'
+		},
+		{
+			src: '/transactions_light.png',
+			altKey: 'landing.screenshots.transactions',
+			defaultAlt: 'Transactions list'
+		}
+	];
+
+	function openImg(src: string) {
 		zoomedImg = src;
 	}
-	function closeZoom() {
+	function closeImg() {
 		zoomedImg = null;
 	}
-
-	let isDarkMode = false;
-
-	function updateTheme() {
-		isDarkMode = themeService.isDarkMode();
+	function scrollToId(id: string) {
+		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
-
-	onMount(() => {
-		updateTheme();
-		const unsubscribe = themeService.subscribe(updateTheme);
-		return unsubscribe;
-	});
 </script>
 
-<div class="bg-base-100 flex min-h-screen flex-col items-center px-4 py-8">
-	<!-- HERO SECTION -->
-	<div class="hero bg-base-100 mx-auto mb-12 w-full max-w-6xl rounded-xl px-4 shadow md:px-8">
-		<div class="hero-content w-full flex-col gap-12 lg:flex-row-reverse">
-			<div class="relative flex flex-1 justify-end">
-				<button
-					type="button"
-					class="transition-transform duration-200 hover:scale-105"
-					on:click={() => openZoom(isDarkMode ? '/graphs_dark.png' : '/graphs_light.png')}
-					aria-label="Open app screenshot"
-				>
-					<img
-						src={isDarkMode ? '/graphs_dark.png' : '/graphs_light.png'}
-						alt="App screenshot"
-						class="w-full max-w-xs cursor-pointer rounded-xl shadow-xl sm:max-w-sm md:max-w-md"
-						draggable="false"
-					/>
-					<!-- Click Me indicator with arrow -->
-					<div
-						class="pointer-events-none absolute -bottom-8 right-4 z-10 flex animate-bounce flex-col items-center"
-					>
-						<CornerUpLeft class="text-primary h-6 w-6 animate-bounce" aria-hidden="true" />
-						<span
-							class="bg-primary text-base-100 mb-1 rounded-full px-3 py-1 text-sm font-semibold shadow-lg"
-							>{$t('landing.click-me')}</span
-						>
+<div class="bg-base-100 flex min-h-screen flex-col">
+	<!-- Hero -->
+	<section class="relative">
+		<div
+			class="from-primary/5 pointer-events-none absolute inset-0 bg-gradient-to-b via-transparent to-transparent"
+		></div>
+		<div class="container mx-auto max-w-6xl px-4 pb-12 pt-16 md:pt-24">
+			<div class="grid items-center gap-10 md:grid-cols-2">
+				<div>
+					<div class="badge badge-primary text-base-100 mb-4">Grão Certo</div>
+					<h1 class="text-3xl font-extrabold tracking-tight md:text-5xl">
+						{$t('landing.hero.title', { default: 'Take control of your finances with clarity' })}
+					</h1>
+					<p class="text-base-content/70 mt-4 max-w-prose text-base md:text-lg">
+						{$t('landing.hero.subtitle', {
+							default:
+								'Simple transaction tracking, insightful statistics, and a clean heatmap to visualize your daily activity.'
+						})}
+					</p>
+
+					<!-- Highlighted financial literacy callout -->
+					<div class="border-primary/20 bg-primary/5 mt-5 rounded-xl border p-4 md:p-5">
+						<div class="flex items-start gap-3">
+							<BookOpen size={20} class="text-primary mt-0.5 flex-shrink-0" />
+							<div>
+								<h3 class="font-semibold">
+									{$t('landing.finlit.callout.title', {
+										default: 'Start with a budget. Understand your spending.'
+									})}
+								</h3>
+								<p class="text-base-content/70 text-sm">
+									{$t('landing.finlit.callout.desc', {
+										default:
+											'Rooted in Portuguese financial literacy: begin each month with a plan and track where and how your money is spent.'
+									})}
+								</p>
+							</div>
+						</div>
 					</div>
-				</button>
+
+					<div class="mt-6 flex flex-wrap items-center gap-3">
+						<a
+							href="/login"
+							class="btn btn-primary shadow-lg"
+							aria-label={$t('landing.cta.get-started', { default: 'Get Started' })}
+						>
+							<Sparkles size={18} class="text-base-100" />
+							<span class="text-base-100"
+								>{$t('landing.cta.get-started', { default: 'Get Started' })}</span
+							>
+						</a>
+						<button
+							class="btn btn-ghost shadow-lg"
+							on:click={() => scrollToId('features')}
+							aria-label={$t('landing.cta.see-features', { default: 'See Features' })}
+						>
+							<BarChart3 size={18} />
+							<span>{$t('landing.cta.see-features', { default: 'See Features' })}</span>
+						</button>
+						<a
+							class="btn btn-outline shadow-lg"
+							href="https://github.com/lucas-remigio/graocerto.pt"
+							target="_blank"
+							rel="noreferrer"
+							aria-label={$t('landing.cta.view-github', { default: 'View on GitHub' })}
+						>
+							<Github size={18} />
+							<span>{$t('landing.cta.view-github', { default: 'View on GitHub' })}</span>
+						</a>
+					</div>
+
+					<div class="mt-6 flex flex-wrap gap-2">
+						{#each highlights as h}
+							<span class="badge badge-ghost gap-1">
+								<svelte:component this={h.icon} size={14} />
+								{$t(h.labelKey, { default: h.defaultLabel })}
+							</span>
+						{/each}
+					</div>
+				</div>
+
+				<!-- Hero mockup -->
+				<div class="hidden md:block">
+					<div class="mockup-window border-base-300 bg-base-200 border shadow-xl">
+						<div class="bg-base-100 flex items-center justify-center p-4">
+							<img
+								src="graphs_dark.png"
+								alt={$t('landing.images.hero-alt', { default: 'Wallet Tracker preview' })}
+								class="rounded-lg shadow-2xl"
+								loading="eager"
+								decoding="async"
+							/>
+						</div>
+					</div>
+					<p class="text-base-content/50 mt-3 text-center text-xs">
+						{$t('landing.images.hero-caption', { default: 'Preview of dashboard and statistics' })}
+					</p>
+				</div>
 			</div>
-			<div class="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left">
-				<img src="/favicon.svg" alt="Grão Certo" class="mb-6 h-14 w-auto" />
-				<h1 class="hero-title text-primary mb-4 text-5xl font-extrabold">
-					{$t('landing.hero-title')}
-				</h1>
-				<p class="text-base-content/80 mb-6 max-w-xl text-lg">
-					{$t('landing.hero-desc')}
-				</p>
+		</div>
+	</section>
+
+	<!-- Features -->
+	<section id="features" class="bg-base-100">
+		<div class="container mx-auto max-w-6xl px-4 py-12 md:py-16">
+			<h2 class="text-center text-2xl font-bold md:text-3xl">
+				{$t('landing.features.title', { default: 'Why you’ll love it' })}
+			</h2>
+			<p class="text-base-content/70 mx-auto mt-2 max-w-2xl text-center">
+				{$t('landing.features.subtitle', {
+					default: 'Designed for clarity, speed, and real insight into your spending and income.'
+				})}
+			</p>
+
+			<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+				{#each features as f}
+					<div
+						class="card bg-base-100 border-base-200 border shadow-sm transition-shadow hover:shadow-md"
+					>
+						<div class="card-body">
+							<div class="flex items-center gap-3">
+								<div class="text-primary">
+									<svelte:component this={f.icon} size={22} />
+								</div>
+								<h3 class="card-title text-lg">{$t(f.titleKey, { default: f.defaultTitle })}</h3>
+							</div>
+							<p class="text-base-content/70">{$t(f.descKey, { default: f.defaultDesc })}</p>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</section>
+
+	<!-- Screenshots -->
+	<section class="bg-base-200/40">
+		<div class="container mx-auto max-w-6xl px-4 py-12 md:py-16">
+			<h2 class="text-center text-2xl font-bold md:text-3xl">
+				{$t('landing.gallery.title', { default: 'A look inside' })}
+			</h2>
+			<p class="text-base-content/70 mx-auto mt-2 max-w-2xl text-center">
+				{$t('landing.gallery.subtitle', {
+					default: 'Clean tables, intuitive statistics, and a daily activity heatmap.'
+				})}
+			</p>
+
+			<div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+				{#each screenshots as s}
+					<button
+						class="border-base-300 bg-base-100 group rounded-xl border p-2 shadow transition hover:shadow-lg"
+						on:click={() => openImg(s.src)}
+						aria-label={`${$t('landing.actions.open-screenshot', { default: 'Open screenshot' })}: ${$t(s.altKey, { default: s.defaultAlt })}`}
+					>
+						<img
+							src={s.src}
+							alt={$t(s.altKey, { default: s.defaultAlt })}
+							class="aspect-video w-full rounded-lg object-cover transition group-hover:brightness-105"
+							loading="lazy"
+							decoding="async"
+						/>
+					</button>
+				{/each}
+			</div>
+
+			<div class="mt-8 flex justify-center">
 				<a
-					href="/register"
-					class="btn btn-primary btn-lg px-8 py-3 text-lg font-bold shadow-lg transition hover:scale-105"
+					href="/login"
+					class="btn btn-primary shadow-lg"
+					aria-label={$t('landing.cta.start-tracking', { default: 'Start Tracking' })}
 				>
-					<span class="text-base-100">{$t('landing.cta-button')}</span>
+					<Wallet size={18} class="text-base-100" />
+					<span class="text-base-100"
+						>{$t('landing.cta.start-tracking', { default: 'Start Tracking' })}</span
+					>
 				</a>
-				<p class="text-base-content/60 mt-2 text-xs">{$t('landing.no-credit-card')}</p>
 			</div>
 		</div>
-	</div>
-
-	<!-- FEATURES SECTION -->
-	<div class="mb-16 grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-		<div class="card bg-base-200 flex flex-col items-center p-6 shadow">
-			<CreditCard class="text-secondary mb-2 h-8 w-8" />
-			<h2 class="card-title text-primary mb-1 text-center text-xl font-bold">
-				{$t('landing.accounts-title')}
-			</h2>
-			<p class="text-base-content/70 text-center">{$t('landing.accounts-desc')}</p>
-		</div>
-		<div class="card bg-base-200 flex flex-col items-center p-6 shadow">
-			<BarChart3 class="text-secondary mb-2 h-8 w-8" />
-			<h2 class="card-title text-primary mb-1 text-center text-xl font-bold">
-				{$t('landing.analytics-title')}
-			</h2>
-			<p class="text-base-content/70 text-center">{$t('landing.analytics-desc')}</p>
-		</div>
-		<div class="card bg-base-200 flex flex-col items-center p-6 shadow">
-			<Lock class="text-secondary mb-2 h-8 w-8" />
-			<h2 class="card-title text-primary mb-1 text-center text-xl font-bold">
-				{$t('landing.privacy-title')}
-			</h2>
-			<p class="text-base-content/70 text-center">{$t('landing.privacy-desc')}</p>
-		</div>
-		<div class="card bg-base-200 flex flex-col items-center p-6 shadow">
-			<Sparkles class="text-secondary mb-2 h-8 w-8" />
-			<h2 class="card-title text-primary mb-1 text-center text-xl font-bold">
-				{$t('landing.intuitive-title')}
-			</h2>
-			<p class="text-base-content/70 text-center">{$t('landing.intuitive-desc')}</p>
-		</div>
-	</div>
-
-	<!-- TESTIMONIALS SECTION -->
-	<div class="mb-16 w-full max-w-3xl">
-		<h3 class="text-primary mb-6 text-center text-lg font-semibold">
-			{$t('landing.testimonials-title')}
-		</h3>
-		<div class="card bg-base-200 flex flex-col items-center p-4 shadow">
-			<div class="mb-2 flex flex-row gap-1">
-				<Star fill="currentColor" class="text-warning h-5 w-5" />
-				<Star fill="currentColor" class="text-warning h-5 w-5" />
-				<Star fill="currentColor" class="text-warning h-5 w-5" />
-				<Star fill="currentColor" class="text-warning h-5 w-5" />
-				<Star fill="currentColor" class="text-warning h-5 w-5" />
-			</div>
-			<p class="text-base-content/80 mb-2 text-center">{$t('landing.testimonial-1')}</p>
-			<span class="text-base-content/60 text-xs">— {$t('landing.testimonial-1-author')}</span>
-		</div>
-	</div>
-
-	<!-- SECONDARY CTA -->
-	<div class="card bg-base-200 mb-12 flex w-full max-w-2xl flex-col items-center p-8 shadow">
-		<h4 class="text-primary mb-2 text-2xl font-bold">{$t('landing.cta-title')}</h4>
-		<p class="text-base-content/80 mb-4 text-center">{$t('landing.cta-desc')}</p>
-		<a
-			href="/register"
-			class="btn btn-primary btn-lg w-full max-w-xs text-lg font-bold transition hover:scale-105"
-		>
-			<span class="text-base-100">{$t('landing.cta-button')}</span>
-		</a>
-		<p class="text-base-content/60 mt-2 text-xs">{$t('landing.no-credit-card')}</p>
-	</div>
-
-	<!-- ABOUT ME SECTION -->
-	<div
-		class="card bg-base-200 mb-12 flex w-full max-w-3xl flex-col items-center p-8 text-center opacity-80 shadow"
-	>
-		<button
-			type="button"
-			class="avatar mb-3 h-32 w-32 rounded-full transition-transform duration-200 hover:scale-105"
-			aria-label="Zoom image of Lucas Remigio"
-			on:click={() => openZoom('/the_dev.jpeg')}
-		>
-			<img
-				src="/the_dev.jpeg"
-				alt="Lucas Remigio"
-				class="h-full w-full rounded-full object-cover"
-				draggable="false"
-			/>
-		</button>
-		<h5 class="text-primary mb-1 text-lg font-semibold">{$t('landing.dev-about')}</h5>
-		<p class="text-base-content/70 mb-2">
-			{$t('landing.dev-presentation')}
-		</p>
-	</div>
+	</section>
 </div>
 
 {#if zoomedImg}
-	<button
-		type="button"
-		class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-		aria-label="Close zoomed image"
-		on:click={closeZoom}
-		on:keydown={(e) => {
-			if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') closeZoom();
-		}}
-	>
-		<img
-			src={zoomedImg}
-			alt="Zoomed"
-			class="animate-zoom-in max-h-[80vh] max-w-[90vw] rounded-xl shadow-lg"
-			draggable="false"
-		/>
-	</button>
+	<!-- Image Modal -->
+	<div class="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" on:click={closeImg}>
+		<div class="max-h-[90vh] max-w-5xl">
+			<img
+				src={zoomedImg}
+				alt={$t('landing.gallery.zoom-alt', { default: 'Screenshot' })}
+				class="max-h-[90vh] w-full rounded-xl shadow-2xl"
+			/>
+		</div>
+	</div>
 {/if}
 
 <style>
-	@keyframes zoom-in {
-		from {
-			transform: scale(0.7);
-			opacity: 0;
-		}
-		to {
-			transform: scale(1);
-			opacity: 1;
-		}
-	}
-	.animate-zoom-in {
-		animation: zoom-in 0.25s cubic-bezier(0.4, 2, 0.3, 1) both;
+	:global(.mockup-window) {
+		overflow: hidden;
 	}
 </style>

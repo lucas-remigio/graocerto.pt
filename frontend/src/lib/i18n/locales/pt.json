@@ -1,28 +1,67 @@
 {
 	"landing": {
-		"intro": "é o primeiro passo para o controlo financeiro: o tracking dos teus gastos. Ao acompanhar para onde vai o teu dinheiro, percebes o teu orçamento, identificas despesas desnecessárias e descobres oportunidades para poupar ou investir para outros objetivos.",
-		"accounts-title": "Todas as Tuas Contas em Um Só Lugar",
-		"accounts-desc": "Conecta e organiza todas as tuas contas bancárias, cartões e investimentos num único painel. Chega de excels ou apps espalhadas.",
-		"analytics-title": "Análises e Insights Poderosos",
-		"analytics-desc": "Visualiza os teus gastos e descobre tendências com gráficos bonitos e estatísticas inteligentes. Toma decisões informadas para o teu futuro financeiro.",
-		"privacy-title": "Privacidade e Segurança em Primeiro Lugar",
-		"privacy-desc": "Os teus dados são teus. O Grão Certo nunca vende as tuas informações e utiliza as melhores práticas de segurança para proteger as tuas finanças. O que é teu, é teu.",
-		"intuitive-title": "Intuitivo e Rápido",
-		"intuitive-desc": "Desfruta de uma experiência fluida em qualquer dispositivo. Adiciona transações, categoriza despesas e recebe feedback instantâneo — sem curva de aprendizagem.",
-		"cta-title": "Pronto para controlar a tua vida financeira?",
-		"cta-desc": "Junta-te ao Grão Certo hoje e começa a tua jornada rumo à clareza e crescimento financeiro.",
-		"cta-button": "Começa Grátis",
-		"hero-title": "Assume o Controlo das Tuas Finanças",
-		"hero-desc": "Acompanha os teus gastos, define objetivos e aumenta as tuas poupanças com o Grão Certo. Simples, seguro e gratuito.",
-		"no-credit-card": "Não é necessário cartão de crédito",
-		"testimonials-title": "O que dizem os nossos utilizadores",
-		"testimonial-1": "Entender os meus gastos deu-me espaço para fazer melhores escolhas. O que poupar, o que gastar, o que investir. Uma ferramenta simples, completa e que traz leveza ao dia a dia.",
-		"testimonial-1-author": "Lara G.",
-		"dev-contact-me": "Contacta-me!",
-		"dev-about": "Sobre o Desenvolvedor",
-		"dev-presentation": "Olá, sou o Lucas, o criador do Grão Certo. Criei esta ferramenta para que eu e a minha namorada pudéssemos ter mais clareza e tranquilidade nas nossas finanças. Depois de anos a experimentar várias ferramentas, desde Exceis a apps móveis, percebemos que precisávamos de algo simples e intuitivo para visualizar os nossos gastos e sentir paz de espírito. Espero que o Grão Certo te ajude a encontrar essa leveza também!",
-		"made-with": "Feito com",
-		"click-me": "Clica-me!"
+		"hero": {
+			"title": "Assume o controlo das tuas finanças com clareza",
+			"subtitle": "Registo simples de transações, estatísticas úteis e até mesmo um heatmap para visualizares a tua atividade diária."
+		},
+		"cta": {
+			"get-started": "Começar",
+			"see-features": "Ver funcionalidades",
+			"view-github": "Ver no GitHub",
+			"start-tracking": "Começar a registar"
+		},
+		"finlit": {
+			"callout": {
+				"title": "Comece com um orçamento. Perceba os seus gastos.",
+				"desc": "Assente na literacia financeira portuguesa: inicie cada mês com um plano e acompanhe onde e como gasta o seu dinheiro."
+			}
+		},
+		"highlights": {
+			"fast": "Rápido",
+			"privacy": "Privacidade primeiro",
+			"opensource": "Código aberto"
+		},
+		"images": {
+			"hero-alt": "Pré-visualização do Wallet Tracker",
+			"hero-caption": "Pré-visualização do painel e estatísticas"
+		},
+		"features": {
+			"title": "Porque vai gostar",
+			"subtitle": "Pensado para clareza, rapidez e insights reais sobre rendimentos e despesas.",
+			"track": {
+				"title": "Registo de transações",
+				"desc": "Registe créditos e débitos com categorização simples."
+			},
+			"insights": {
+				"title": "Insights claros",
+				"desc": "Percebe as tuas finanças com estatísticas, gráficos e heatmaps."
+			},
+			"monthly": { "title": "Vista mensal", "desc": "Navega por mês e ano com filtros rápidos." },
+			"categories": {
+				"title": "Categorias",
+				"desc": "Deteta tendências por categoria para otimizar as despesas."
+			},
+			"security": {
+				"title": "Seguro por design",
+				"desc": "HTTPS, verificação SSL da BD e boas práticas de segurança."
+			},
+			"responsive": {
+				"title": "Design Responsivo",
+				"desc": "Otimizado para portátil e telemóvel - usa em qualquer lugar."
+			}
+		},
+		"gallery": {
+			"title": "Por dentro da app",
+			"subtitle": "Tabelas limpas, estatísticas intuitivas e um heatmap diário.",
+			"zoom-alt": "Captura de ecrã"
+		},
+		"screenshots": {
+			"dashboard": "Resumo do painel",
+			"transactions": "Lista de transações"
+		},
+		"actions": {
+			"open-screenshot": "Abrir captura"
+		}
 	},
 
 	"navbar": {
