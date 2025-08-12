@@ -185,8 +185,6 @@
 			dailyTransactions={statistics.daily_totals}
 			startDate={statistics.start_date}
 			endDate={statistics.end_date}
-			largestDebit={statistics.largest_debit}
-			largestCredit={statistics.largest_credit}
 		/>
 	</div>
 {/if}
