@@ -20,12 +20,30 @@ type TransactionsCacheValue = {
 	transactions: TransactionDto[];
 };
 
+// Generic timed cache wrapper
+interface TimedValue<T> {
+	data: T;
+	expiresAt: number;
+}
+
 class DataService {
-	private statisticsCache = new Map<string, TransactionStatistics>();
-	private transactionsCache = new Map<string, TransactionsCacheValue>();
-	private availableMonthsCache = new Map<string, MonthYear[]>();
-	private categoriesCache: CategoryDto[] | null = null;
-	private transactionTypesCache: TransactionType[] | null = null;
+	private readonly TTL_MS = 0.5 * 60 * 1000; // 5 minutes
+
+	private statisticsCache = new Map<string, TimedValue<TransactionStatistics>>();
+	private transactionsCache = new Map<string, TimedValue<TransactionsCacheValue>>();
+	private availableMonthsCache = new Map<string, TimedValue<MonthYear[]>>();
+	private categoriesCache: TimedValue<CategoryDto[]> | null = null;
+	private transactionTypesCache: TimedValue<TransactionType[]> | null = null;
+
+	private now() {
+		return Date.now();
+	}
+	private isValid<T>(entry: TimedValue<T> | undefined | null): entry is TimedValue<T> {
+		return !!entry && entry.expiresAt > this.now();
+	}
+	private wrap<T>(data: T): TimedValue<T> {
+		return { data, expiresAt: this.now() + this.TTL_MS };
+	}
 
 	// Generate cache key for account/month/year combination
 	private getCacheKey(accountToken: string, month: number | null, year: number | null): string {
@@ -88,11 +106,9 @@ class DataService {
 		year: number | null
 	): Promise<TransactionsCacheValue> {
 		const cacheKey = this.getCacheKey(accountToken, month, year);
-
-		// Check cache first
-		if (this.transactionsCache.has(cacheKey)) {
-			return this.transactionsCache.get(cacheKey)!;
-		}
+		const cached = this.transactionsCache.get(cacheKey);
+		if (this.isValid(cached)) return cached.data;
+		if (cached) this.transactionsCache.delete(cacheKey);
 
 		const res = await api_axios('transactions/dto/' + accountToken, {
 			params: {
@@ -111,7 +127,7 @@ class DataService {
 		};
 
 		// Cache the result
-		this.transactionsCache.set(cacheKey, result);
+		this.transactionsCache.set(cacheKey, this.wrap(result));
 		return result;
 	}
 
@@ -122,11 +138,9 @@ class DataService {
 		year: number | null
 	): Promise<TransactionStatistics | null> {
 		const cacheKey = this.getCacheKey(accountToken, month, year);
-
-		// Check cache first
-		if (this.statisticsCache.has(cacheKey)) {
-			return this.statisticsCache.get(cacheKey)!;
-		}
+		const cached = this.statisticsCache.get(cacheKey);
+		if (this.isValid(cached)) return cached.data;
+		if (cached) this.statisticsCache.delete(cacheKey);
 
 		const params: { month?: number; year?: number } = {};
 		if (month !== null) params.month = month;
@@ -141,9 +155,7 @@ class DataService {
 		const statistics: TransactionStatistics = response.data;
 
 		// Cache the result
-		if (statistics) {
-			this.statisticsCache.set(cacheKey, statistics);
-		}
+		if (statistics) this.statisticsCache.set(cacheKey, this.wrap(statistics));
 
 		return statistics;
 	}
@@ -151,9 +163,9 @@ class DataService {
 	// Fetch available months with caching
 	async fetchAvailableMonths(accountToken: string): Promise<MonthYear[]> {
 		// Check cache first
-		if (this.availableMonthsCache.has(accountToken)) {
-			return this.availableMonthsCache.get(accountToken)!;
-		}
+		const cached = this.availableMonthsCache.get(accountToken);
+		if (this.isValid(cached)) return cached.data;
+		if (cached) this.availableMonthsCache.delete(accountToken);
 
 		const res = await api_axios('transactions/months/' + accountToken);
 
@@ -164,16 +176,14 @@ class DataService {
 		const months = res.data.months as MonthYear[];
 
 		// Cache the result
-		this.availableMonthsCache.set(accountToken, months);
+		this.availableMonthsCache.set(accountToken, this.wrap(months));
 		return months;
 	}
 
 	// Fetch categories with caching (returns flat array for backward compatibility)
 	async fetchCategories(): Promise<CategoryDto[]> {
-		// Check cache first
-		if (this.categoriesCache !== null) {
-			return this.categoriesCache;
-		}
+		if (this.isValid(this.categoriesCache)) return this.categoriesCache!.data;
+		this.categoriesCache = null;
 
 		const res = await api_axios('categories/dto');
 
@@ -183,16 +193,15 @@ class DataService {
 
 		const data: CategoriesDtoResponse = res.data;
 		// Cache the result
-		this.categoriesCache = data.categories;
-		return this.categoriesCache;
+		this.categoriesCache = this.wrap(data.categories);
+		return this.categoriesCache.data;
 	}
 
 	// Fetch transaction types with caching
 	async fetchTransactionTypes(): Promise<TransactionType[]> {
 		// Check cache first
-		if (this.transactionTypesCache !== null) {
-			return this.transactionTypesCache;
-		}
+		if (this.isValid(this.transactionTypesCache)) return this.transactionTypesCache!.data;
+		this.transactionTypesCache = null;
 
 		const res = await api_axios('transaction-types');
 
@@ -202,8 +211,8 @@ class DataService {
 
 		const data: TransactionTypesResponse = res.data;
 		// Cache the result
-		this.transactionTypesCache = data.transaction_types;
-		return this.transactionTypesCache;
+		this.transactionTypesCache = this.wrap(data.transaction_types);
+		return this.transactionTypesCache.data;
 	}
 
 	// Create category
