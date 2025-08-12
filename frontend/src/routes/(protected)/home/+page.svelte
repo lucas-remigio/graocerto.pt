@@ -20,7 +20,7 @@
 	import ViewToggle from '$components/ViewToggle.svelte';
 	import { userEmail } from '$lib/stores/auth';
 	import { t, locale } from '$lib/i18n';
-	import { selectedView } from '$lib/stores/uiPreferences';
+	import { selectedView, updateSelectedView } from '$lib/stores/uiPreferences';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 
 	// WebSocket state
@@ -231,7 +231,7 @@
 		selectedYear = currentYear;
 		// by triggering the selected view, we ensure that the transactions are fetched
 		// so no need to manually call the fetch account transaction
-		$selectedView = 'transactions'; // Reset to transactions view when switching accounts
+		updateSelectedView('transactions'); // Reset to transactions view when switching accounts
 	}
 
 	function handleMonthSelect(month: number | null, year: number | null) {
@@ -244,12 +244,7 @@
 
 	$effect(() => {
 		if (selectedAccount && $selectedView && initialDataLoaded) {
-			// If current view is statistics, also fetch statistics
-			if ($selectedView === 'statistics') {
-				fetchStatistics(selectedAccount.token, selectedMonth, selectedYear, true);
-			} else {
-				fetchTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
-			}
+			fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 		}
 	});
 
