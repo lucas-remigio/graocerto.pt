@@ -50,7 +50,9 @@
 
 	// Form field variables
 	let account_token = account.token;
-	let category_id: number | string = draftTransaction?.category_id || '';
+	let category_id: string =
+		draftTransaction?.category_id != null ? String(draftTransaction.category_id) : '';
+
 	let amount: number = draftTransaction?.amount || 0;
 	let description = draftTransaction?.description || '';
 	let date = draftTransaction?.date || new Date().toISOString().split('T')[0]; // expects format "YYYY-MM-DD" from the date input
@@ -173,10 +175,11 @@
 	// Open modal when user chooses the special option
 	function handleCategorySelect(e: Event) {
 		const value = (e.target as HTMLSelectElement).value;
-		category_id = value;
 		if (value === '__create__') {
 			showCreateCategoryModal = true;
+			return;
 		}
+		category_id = value;
 	}
 
 	// After a new category is created
@@ -190,10 +193,9 @@
 		}
 		categories = [...categories, newCat];
 		categoriesMappedById.set(newCat.id, newCat);
-		dataService.clearCategoryCaches();
 		// If it matches current transaction type, select it
 		if (newCat.transaction_type?.id === transaction_type_id) {
-			category_id = newCat.id;
+			category_id = String(newCat.id);
 		} else {
 			category_id = '';
 		}
@@ -249,9 +251,7 @@
 								bind:value={transaction_type_id}
 								required
 							>
-								<option value="" disabled selected
-									>{$t('transactions.select-transaction-type')}</option
-								>
+								<option value="" disabled>{$t('transactions.select-transaction-type')}</option>
 								{#each transactionTypes as type}
 									<option value={type.id}>{$t('transaction-types.' + type.type_slug)}</option>
 								{/each}
@@ -271,11 +271,11 @@
 								required
 								style="border-color: {borderColor} !important;"
 							>
-								<option value="" disabled selected>
+								<option value="" disabled>
 									{$t('transactions.select-category')}
 								</option>
 								{#each filteredCategories as cat}
-									<option value={cat.id}>{cat.category_name}</option>
+									<option value={String(cat.id)}>{cat.category_name}</option>
 								{/each}
 								<option value="__create__">
 									+ {$t('categories.create-new', { default: 'Create new category' })}

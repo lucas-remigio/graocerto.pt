@@ -27,7 +27,7 @@ interface TimedValue<T> {
 }
 
 class DataService {
-	private readonly TTL_MS = 0.5 * 60 * 1000; // 5 minutes
+	private readonly TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 	private statisticsCache = new Map<string, TimedValue<TransactionStatistics>>();
 	private transactionsCache = new Map<string, TimedValue<TransactionsCacheValue>>();
@@ -48,6 +48,14 @@ class DataService {
 	// Generate cache key for account/month/year combination
 	private getCacheKey(accountToken: string, month: number | null, year: number | null): string {
 		return `${accountToken}-${month ?? 'null'}-${year ?? 'null'}`;
+	}
+
+	private mutateCategoriesCache(mutator: (list: CategoryDto[]) => CategoryDto[]): void {
+		// If cache valid, mutate & refresh TTL. If invalid, do nothing (will repopulate on next fetch).
+		if (this.isValid(this.categoriesCache)) {
+			const next = mutator([...this.categoriesCache!.data]);
+			this.categoriesCache = this.wrap(next);
+		}
 	}
 
 	// Clear all caches
@@ -222,12 +230,21 @@ class DataService {
 		color: string;
 	}): Promise<CategoryChangeResponse> {
 		const response = await api_axios.post('categories', categoryData);
-
 		if (response.status !== 200) {
 			throw new Error(`Failed to create category: ${response.status}`);
 		}
 
-		return response.data;
+		const change: CategoryChangeResponse = response.data;
+		const newCat: CategoryDto | undefined = change.category;
+
+		if (newCat?.id) {
+			this.mutateCategoriesCache((list) => {
+				// Avoid duplicates
+				if (!list.find((c) => c.id === newCat.id)) list.push(newCat);
+				return list;
+			});
+		}
+		return change;
 	}
 
 	// Edit category
@@ -241,7 +258,22 @@ class DataService {
 			throw new Error(`Failed to edit category: ${response.status}`);
 		}
 
-		return response.data;
+		const change: CategoryChangeResponse = response.data;
+		const updatedCat: CategoryDto | undefined = change.category;
+
+		this.mutateCategoriesCache((list) =>
+			list.map((c) =>
+				c.id === categoryId
+					? {
+							...c,
+							category_name: updatedCat?.category_name ?? categoryData.category_name,
+							color: updatedCat?.color ?? categoryData.color
+						}
+					: c
+			)
+		);
+
+		return change;
 	}
 
 	// Delete category
@@ -254,6 +286,7 @@ class DataService {
 
 		// Clear category and transaction type caches since category data changed
 		this.clearCategoryCaches();
+		this.mutateCategoriesCache((list) => list.filter((c) => c.id !== categoryId));
 	}
 
 	// Delete account
