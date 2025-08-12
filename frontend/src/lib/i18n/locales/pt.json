@@ -268,7 +268,8 @@
 		"color-required": "Cor é obrigatória",
 		"color-invalid": "Cor deve ser um hex válido",
 		"new-category-for": "Nova Categoria",
-		"edit-category-title": "Editar Categoria"
+		"edit-category-title": "Editar Categoria",
+		"create-new": "Criar Nova"
 	},
 
 	"modals": {

@@ -265,7 +265,8 @@
 		"color-required": "Color is required",
 		"color-invalid": "Color must be a valid hex color",
 		"new-category-for": "New Category",
-		"edit-category-title": "Edit Category"
+		"edit-category-title": "Edit Category",
+		"create-new": "Create New"
 	},
 
 	"modals": {

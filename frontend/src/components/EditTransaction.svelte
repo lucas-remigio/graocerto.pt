@@ -13,6 +13,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { validateTransactionForm } from '$lib/transactionValidation';
+	import CreateCategory from './CreateCategory.svelte';
 
 	// Input account
 	export let account: Account;
@@ -157,6 +158,44 @@
 		}
 	}
 
+	let showCreateCategoryModal = false;
+
+	// Open modal when user chooses the special option
+	function handleCategorySelect(e: Event) {
+		const value = (e.target as HTMLSelectElement).value;
+		category_id = value;
+		if (value === '__create__') {
+			showCreateCategoryModal = true;
+		}
+	}
+
+	// After a new category is created
+	function handleCreatedCategory(e: CustomEvent<any>) {
+		const payload = e.detail;
+		// Try common shapes: payload.category or payload (if already the category)
+		const newCat = payload?.category ?? payload;
+		if (!newCat?.id) {
+			showCreateCategoryModal = false;
+			return;
+		}
+		categories = [...categories, newCat];
+		categoriesMappedById.set(newCat.id, newCat);
+		dataService.clearCategoryCaches();
+		// If it matches current transaction type, select it
+		if (newCat.transaction_type?.id === transaction_type_id) {
+			category_id = newCat.id;
+		} else {
+			category_id = '';
+		}
+		showCreateCategoryModal = false;
+	}
+
+	function handleCloseCreateCategory() {
+		// If user cancels and select was on the special value, reset
+		if (category_id === '__create__') category_id = '';
+		showCreateCategoryModal = false;
+	}
+
 	onMount(() => {
 		fetchData();
 	});
@@ -218,13 +257,19 @@
 								id="category"
 								class="select select-bordered w-full border-2"
 								bind:value={category_id}
+								on:change={handleCategorySelect}
 								required
 								style="border-color: {borderColor} !important;"
 							>
-								<option value="" disabled selected>{$t('transactions.select-category')}</option>
+								<option value="" disabled selected>
+									{$t('transactions.select-category')}
+								</option>
 								{#each filteredCategories as cat}
 									<option value={cat.id}>{cat.category_name}</option>
 								{/each}
+								<option value="__create__">
+									+ {$t('categories.create-new', { default: 'Create new category' })}
+								</option>
 							</select>
 						</div>
 					</div>
@@ -311,3 +356,20 @@
 		{/if}
 	</div>
 </div>
+
+{#if showCreateCategoryModal && selectedTransactionType}
+	<CreateCategory
+		transactionType={selectedTransactionType}
+		on:closeModal={handleCloseCreateCategory}
+		on:newCategory={handleCreatedCategory}
+	/>
+{/if}
+
+<style>
+	:global(.dark) input[type='date']::-webkit-calendar-picker-indicator {
+		filter: invert(1);
+	}
+	:global(.dark) input[type='date']::-moz-calendar-picker-indicator {
+		filter: invert(1);
+	}
+</style>
