@@ -6,27 +6,77 @@
 		CategoryDto,
 		Transaction,
 		TransactionChangeResponse,
+		TransactionDto,
 		TransactionType
 	} from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { getDraftTransaction } from '$lib/services/draftTransactionService';
-	import { TransactionTypeId, TransactionTypes } from '$lib/transaction_types_types';
+	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { validateTransactionForm } from '$lib/transactionValidation';
-	import CreateCategory from './CreateCategory.svelte';
+	import CategoryModal from './CategoryModal.svelte';
 
-	// Input account
+	// Inputs
 	export let account: Account;
+	export let transaction: TransactionDto | null = null; // if provided => edit mode
 
+	// Mode
+	let isEditMode: boolean = !!transaction;
+	$: isEditMode = !!transaction;
+
+	// State
 	let error: string = '';
 	let transactionTypes: TransactionType[] = [];
-	let transaction_type_id: number = TransactionTypeId.Debit;
 	let categories: CategoryDto[] = [];
 	let categoriesMappedById: Map<number, CategoryDto> = new Map();
 	let isLoading: boolean = true;
 
+	// Last draft (create mode only)
+	const draftTransaction: Transaction | null = isEditMode ? null : getDraftTransaction();
+
+	// Form fields
+	let account_token = account.token;
+	let transaction_type_id: number = isEditMode
+		? transaction!.category.transaction_type.id
+		: draftTransaction?.transaction_type_id || TransactionTypeId.Debit;
+
+	let category_id: string = isEditMode
+		? String(transaction!.category.id)
+		: draftTransaction?.category_id != null
+			? String(draftTransaction.category_id)
+			: '';
+
+	let amount: number = isEditMode ? transaction!.amount : draftTransaction?.amount || 0;
+	let description: string = isEditMode
+		? transaction!.description
+		: draftTransaction?.description || '';
+	let date: string = isEditMode
+		? transaction!.date
+			? transaction!.date.split('T')[0]
+			: new Date().toISOString().split('T')[0]
+		: draftTransaction?.date || new Date().toISOString().split('T')[0];
+
+	// Derived
 	$: selectedTransactionType = transactionTypes.find((t) => t.id === transaction_type_id);
+	$: filteredCategories = categories.filter(
+		(cat) => cat.transaction_type.id === transaction_type_id
+	);
+	$: selectedCategory = categoriesMappedById.get(Number(category_id));
+	$: borderColor = selectedCategory ? selectedCategory.color : '#ccc';
+
+	// Reactive guard: if current category is invalid for this type or is sentinel, reset to placeholder
+	$: if (
+		category_id &&
+		(category_id === '__create__' || !filteredCategories.some((c) => String(c.id) === category_id))
+	) {
+		category_id = '';
+	}
+
+	// Fallback for transaction type id when types load
+	$: if (transactionTypes.length > 0 && !transaction_type_id) {
+		transaction_type_id = transactionTypes[0].id;
+	}
 
 	const borderClasses: Record<string, string> = {
 		credit: 'border-green-500 dark:border-green-400',
@@ -37,61 +87,23 @@
 		? borderClasses[selectedTransactionType.type_slug]
 		: 'bg-gray-50';
 
-	// Filter categories based on the selected transaction type id.
-	$: filteredCategories = categories.filter(
-		(cat) => cat.transaction_type.id === transaction_type_id
-	);
-
-	$: selectedCategory = categoriesMappedById.get(Number(category_id));
-	$: borderColor = selectedCategory ? selectedCategory.color : '#ccc';
-
-	// Last draft transaction
-	let draftTransaction: Transaction | null = getDraftTransaction();
-
-	// Form field variables
-	let account_token = account.token;
-	let category_id: string =
-		draftTransaction?.category_id != null ? String(draftTransaction.category_id) : '';
-
-	let amount: number = draftTransaction?.amount || 0;
-	let description = draftTransaction?.description || '';
-	let date = draftTransaction?.date || new Date().toISOString().split('T')[0]; // expects format "YYYY-MM-DD" from the date input
-
-	transaction_type_id = draftTransaction?.transaction_type_id || TransactionTypeId.Debit;
-
-	// Create event dispatcher (to emit events to the parent)
+	// Events
 	const dispatch = createEventDispatcher();
 
-	async function handleSubmit() {
-		error = '';
-		if (!isFormValid()) {
-			return;
-		}
-
-		// Build the transaction object in the format your API expects
-		const transaction = {
-			account_token,
-			category_id: Number(category_id),
-			amount,
-			description,
-			date // already in YYYY-MM-DD format
-		};
-
-		try {
-			const response = await api_axios('transactions', {
-				method: 'POST',
-				data: transaction
-			});
-
-			if (response.status !== 200) {
-				console.error('Non-200 response status:', response.status);
-				error = `Error: ${response.status}`;
-				return;
-			}
-			handleNewTransaction(response.data);
-		} catch (err) {
-			console.error('Error in handleSubmit:', err);
-			error = $t('errors.failed-create-transaction');
+	function handleCloseModal() {
+		if (!isEditMode) {
+			// Preserve create modal behavior: return draft on close
+			const tx: Transaction = {
+				account_token,
+				category_id: Number(category_id),
+				amount,
+				description,
+				transaction_type_id,
+				date: date || new Date().toISOString().split('T')[0]
+			};
+			dispatch('closeModal', { transaction: tx });
+		} else {
+			dispatch('closeModal');
 		}
 	}
 
@@ -112,33 +124,59 @@
 
 		amount = result.amount;
 		date = result.date;
-
 		return true;
 	}
 
-	function handleCloseModal() {
-		const transaction: Transaction = {
-			account_token,
-			category_id: Number(category_id),
-			amount,
-			description,
-			transaction_type_id,
-			date: date || new Date().toISOString().split('T')[0] // Default to today if no date
-		};
+	async function handleSubmit() {
+		error = '';
+		if (!isFormValid()) return;
 
-		dispatch('closeModal', {
-			transaction
-		});
-	}
-
-	function handleNewTransaction(responseData: TransactionChangeResponse) {
-		dispatch('newTransaction', responseData);
+		try {
+			if (isEditMode) {
+				const updatedTransaction = {
+					id: transaction!.id,
+					category_id: Number(category_id),
+					amount,
+					description,
+					date
+				};
+				const response = await api_axios(`transactions/${transaction!.id}`, {
+					method: 'PUT',
+					data: updatedTransaction
+				});
+				if (response.status !== 200) {
+					console.error('Non-200 response status:', response.status);
+					error = `Error: ${response.status}`;
+					return;
+				}
+				dispatch('updateTransaction', response.data as TransactionChangeResponse);
+			} else {
+				const newTx = {
+					account_token,
+					category_id: Number(category_id),
+					amount,
+					description,
+					date
+				};
+				const response = await api_axios('transactions', { method: 'POST', data: newTx });
+				if (response.status !== 200) {
+					console.error('Non-200 response status:', response.status);
+					error = `Error: ${response.status}`;
+					return;
+				}
+				dispatch('newTransaction', response.data as TransactionChangeResponse);
+			}
+		} catch (err) {
+			console.error('Error in handleSubmit:', err);
+			error = isEditMode
+				? $t('errors.failed-update-transaction')
+				: $t('errors.failed-create-transaction');
+		}
 	}
 
 	async function fetchTransactionTypes() {
 		try {
 			transactionTypes = await dataService.fetchTransactionTypes();
-			// Filter out transfer types
 			transactionTypes = transactionTypes.filter((type) => type.type_slug !== 'transfer');
 		} catch (err) {
 			console.error('Error in fetchTransactionTypes:', err);
@@ -149,7 +187,6 @@
 	async function fetchCategories() {
 		try {
 			categories = await dataService.fetchCategories();
-
 			categoriesMappedById = new Map(categories.map((cat) => [cat.id, cat]));
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
@@ -172,7 +209,6 @@
 
 	let showCreateCategoryModal = false;
 
-	// Open modal when user chooses the special option
 	function handleCategorySelect(e: Event) {
 		const value = (e.target as HTMLSelectElement).value;
 		if (value === '__create__') {
@@ -182,10 +218,8 @@
 		category_id = value;
 	}
 
-	// After a new category is created
 	function handleCreatedCategory(e: CustomEvent<any>) {
 		const payload = e.detail;
-		// Try common shapes: payload.category or payload (if already the category)
 		const newCat = payload?.category ?? payload;
 		if (!newCat?.id) {
 			showCreateCategoryModal = false;
@@ -193,7 +227,6 @@
 		}
 		categories = [...categories, newCat];
 		categoriesMappedById.set(newCat.id, newCat);
-		// If it matches current transaction type, select it
 		if (newCat.transaction_type?.id === transaction_type_id) {
 			category_id = String(newCat.id);
 		} else {
@@ -203,7 +236,6 @@
 	}
 
 	function handleCloseCreateCategory() {
-		// If user cancels and select was on the special value, reset
 		if (category_id === '__create__') category_id = '';
 		showCreateCategoryModal = false;
 	}
@@ -220,9 +252,13 @@
 			><X /></button
 		>
 		<h3 class="mb-4 text-lg font-bold">
-			{$t('transactions.new-transaction-for')} <strong>{account.account_name}</strong>
+			{#if isEditMode}
+				{$t('transactions.edit-transaction-for')} <strong>{account.account_name}</strong>
+			{:else}
+				{$t('transactions.new-transaction-for')} <strong>{account.account_name}</strong>
+			{/if}
 		</h3>
-		<!--Error message-->
+
 		{#if error}
 			<div class="alert alert-error">
 				<p class="text-gray-100">{error}</p>
@@ -230,7 +266,6 @@
 		{/if}
 
 		{#if isLoading}
-			<!-- Loading State -->
 			<div class="py-12 text-center">
 				<div class="loading loading-spinner loading-lg mx-auto mb-4"></div>
 				<p class="text-base-content/70">{$t('common.loading')}</p>
@@ -238,8 +273,7 @@
 		{:else}
 			<form on:submit|preventDefault={handleSubmit}>
 				{#if filteredCategories.length > 0}
-					<!-- Display both Transaction Type and Category side by side -->
-					<div class="mt-4 flex flex-row gap-4">
+					<div class="mt-4 flex flex-col gap-4 md:flex-row">
 						<!-- Transaction Type Field -->
 						<div class="form-control flex-1">
 							<label class="label" for="transaction-type">
@@ -253,7 +287,11 @@
 							>
 								<option value="" disabled>{$t('transactions.select-transaction-type')}</option>
 								{#each transactionTypes as type}
-									<option value={type.id}>{$t('transaction-types.' + type.type_slug)}</option>
+									<option value={type.id}
+										>{$t('transaction-types.' + type.type_slug, {
+											default: type.type_name
+										})}</option
+									>
 								{/each}
 							</select>
 						</div>
@@ -284,7 +322,6 @@
 						</div>
 					</div>
 				{:else}
-					<!-- If no categories, show the Transaction Type field and a message -->
 					<div class="form-control mt-4">
 						<label class="label" for="transaction-type">
 							<span class="label-text">{$t('transactions.transaction-type')}</span>
@@ -295,11 +332,11 @@
 							bind:value={transaction_type_id}
 							required
 						>
-							<option value="" disabled selected
-								>{$t('transactions.select-transaction-type')}</option
-							>
+							<option value="" disabled>{$t('transactions.select-transaction-type')}</option>
 							{#each transactionTypes as type}
-								<option value={type.id}>{type.type_name}</option>
+								<option value={type.id}
+									>{$t('transaction-types.' + type.type_slug, { default: type.type_name })}</option
+								>
 							{/each}
 						</select>
 					</div>
@@ -331,12 +368,7 @@
 						<label class="label" for="date">
 							<span class="label-text">{$t('transactions.date')}</span>
 						</label>
-						<input
-							id="date"
-							type="date"
-							class="input input-bordered date-input w-full"
-							bind:value={date}
-						/>
+						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
 					</div>
 
 					<!-- Amount Field -->
@@ -358,14 +390,20 @@
 						/>
 					</div>
 				</div>
-				<!-- Form Actions -->
+
 				<div class="modal-action mt-6">
 					<button type="button" class="btn" on:click={handleCloseModal}>
 						{$t('common.cancel')}
 					</button>
-					<button type="submit" class="btn btn-primary text-base-100">
-						{$t('transactions.create-transaction')}
-					</button>
+					{#if isEditMode}
+						<button type="submit" class="btn btn-primary text-base-100">
+							{$t('transactions.update-transaction')}
+						</button>
+					{:else}
+						<button type="submit" class="btn btn-primary text-base-100">
+							{$t('transactions.create-transaction')}
+						</button>
+					{/if}
 				</div>
 			</form>
 		{/if}
@@ -373,7 +411,8 @@
 </div>
 
 {#if showCreateCategoryModal && selectedTransactionType}
-	<CreateCategory
+	<CategoryModal
+		category={null}
 		transactionType={selectedTransactionType}
 		on:closeModal={handleCloseCreateCategory}
 		on:newCategory={handleCreatedCategory}

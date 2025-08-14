@@ -7,9 +7,9 @@
 		TransactionChangeResponse
 	} from '$lib/types';
 	import { Bot, CircleDollarSign, List, Pencil, Plus, Trash } from 'lucide-svelte';
-	import CreateTransaction from './CreateTransaction.svelte';
+	import TransactionModal from './TransactionModal.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import EditTransaction from './EditTransaction.svelte';
+
 	import ConfirmAction from './ConfirmAction.svelte';
 	import TransactionsStats from './TransactionsStats.svelte';
 	import { t } from '$lib/i18n';
@@ -324,20 +324,21 @@
 {/if}
 
 {#if showCreateTransactionModal}
-	<CreateTransaction
+	<TransactionModal
 		{account}
+		transaction={null}
 		on:closeModal={closeCreateTransactionModal}
 		on:newTransaction={handleNewTransaction}
-	></CreateTransaction>
+	/>
 {/if}
 
 {#if showEditTransactionModal}
-	<EditTransaction
+	<TransactionModal
 		{account}
 		transaction={selectedTransaction!}
 		on:closeModal={closeEditTransactionModal}
 		on:updateTransaction={handleUpdateTransaction}
-	></EditTransaction>
+	/>
 {/if}
 
 {#if showDeleteTransactionModal}

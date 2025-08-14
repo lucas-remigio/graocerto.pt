@@ -3,9 +3,9 @@
 	import type { Account, AccountChangeResponse } from '$lib/types';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { Pencil, Trash, Plus, Wallet, EyeOff, Eye } from 'lucide-svelte';
-	import EditAccount from './EditAccount.svelte';
+	import AccountModal from './AccountModal.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
-	import CreateAccount from './CreateAccount.svelte';
+
 	import AccountCard from './AccountCard.svelte';
 	import { t } from '$lib/i18n';
 	import api_axios from '$lib/axios';
@@ -229,12 +229,12 @@
 
 <!-- Create Account Modal -->
 {#if showCreateAccountModal}
-	<CreateAccount on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
+	<AccountModal account={null} on:closeModal={closeAccountModal} on:newAccount={handleNewAccount} />
 {/if}
 
 {#if openEditAccountModal}
-	<EditAccount
-		account={selectedAccount!}
+	<AccountModal
+		account={selectedAccount}
 		on:closeModal={handleCloseEditAccountModal}
 		on:updatedAccount={handleUpdatedAccount}
 	/>

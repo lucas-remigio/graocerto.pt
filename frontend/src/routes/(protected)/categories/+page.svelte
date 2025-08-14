@@ -9,7 +9,7 @@
 		TransactionTypes,
 		TransactionTypeSlug
 	} from '$lib/transaction_types_types';
-	import CreateCategory from '$components/CreateCategory.svelte';
+	import CategoryModal from '$components/CategoryModal.svelte';
 	import { t } from '$lib/i18n';
 
 	let showCreateCategoryModal = $state(false);
@@ -101,7 +101,7 @@
 		closeCreateCategoryModal();
 		dataService.clearCategoryCaches();
 		categories.push(event.detail.category);
-		sortCategories(); 
+		sortCategories();
 	}
 
 	function sortCategories() {
@@ -194,7 +194,8 @@
 {/if}
 
 {#if showCreateCategoryModal && selectedTransactionType}
-	<CreateCategory
+	<CategoryModal
+		category={null}
 		transactionType={selectedTransactionType}
 		on:closeModal={closeCreateCategoryModal}
 		on:newCategory={handleCreateCategorySuccess}
