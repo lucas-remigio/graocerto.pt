@@ -43,7 +43,7 @@
 
 	let category_id: string = isEditMode
 		? String(transaction!.category.id)
-		: draftTransaction?.category_id != null
+		: draftTransaction?.category_id != null && draftTransaction?.category_id != 0
 			? String(draftTransaction.category_id)
 			: '';
 
@@ -64,14 +64,6 @@
 	);
 	$: selectedCategory = categoriesMappedById.get(Number(category_id));
 	$: borderColor = selectedCategory ? selectedCategory.color : '#ccc';
-
-	// Reactive guard: if current category is invalid for this type or is sentinel, reset to placeholder
-	$: if (
-		category_id &&
-		(category_id === '__create__' || !filteredCategories.some((c) => String(c.id) === category_id))
-	) {
-		category_id = '';
-	}
 
 	// Fallback for transaction type id when types load
 	$: if (transactionTypes.length > 0 && !transaction_type_id) {
