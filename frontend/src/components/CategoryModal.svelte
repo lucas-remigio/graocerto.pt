@@ -1,39 +1,27 @@
 <script lang="ts">
 	import { dataService } from '$lib/services/dataService';
-	import type { Category, CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
+	import type { CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { t } from '$lib/i18n';
 
-	export let transactionType: TransactionType;
+	// Unified inputs: provide either `category` (edit) or `transactionType` (create)
+	export let category: CategoryDto | null = null; // edit mode if provided
+	export let transactionType: TransactionType | null = null; // create mode if provided
 
+	// Mode
+	$: isEditMode = !!category;
+
+	// Local state
 	let error: string = '';
-	// Form field variables
-	let category_name: string = '';
-	let color: string = '#ffffff';
+	let category_name: string = category ? category.category_name : '';
+	let color: string = category ? category.color : '#ffffff';
 
-	// Create event dispatcher (to emit events to the parent)
+	// Events
 	const dispatch = createEventDispatcher();
 
-	async function handleSubmit() {
-		error = '';
-		if (!validateForm()) {
-			return;
-		}
-
-		const categoryData = {
-			transaction_type_id: transactionType.id,
-			category_name: category_name,
-			color: color
-		};
-
-		try {
-			const response = await dataService.createCategory(categoryData);
-			handleNewCategory(response);
-		} catch (err: any) {
-			console.error('Error in handleSubmit:', err);
-			error = err.message || $t('errors.failed-create-category');
-		}
+	function handleCloseModal() {
+		dispatch('closeModal');
 	}
 
 	function validateForm(): boolean {
@@ -80,14 +68,42 @@
 		transfer: 'border-blue-500 dark:border-blue-400'
 	};
 
-	let modalBorderClass = borderClasses[transactionType.type_slug] || 'bg-gray-50';
+	$: typeSlug = isEditMode ? category!.transaction_type.type_slug : transactionType?.type_slug;
+	$: modalBorderClass = typeSlug ? borderClasses[typeSlug] : 'bg-gray-50';
 
-	function handleCloseModal() {
-		dispatch('closeModal');
-	}
+	async function handleSubmit() {
+		error = '';
+		if (!validateForm()) return;
 
-	function handleNewCategory(response: CategoryChangeResponse) {
-		dispatch('newCategory', response);
+		if (isEditMode) {
+			// Delegate API call to parent (keeps existing contract)
+			const editCategoryData = {
+				category_name,
+				color
+			};
+			dispatch('editCategory', { categoryId: category!.id, categoryData: editCategoryData });
+			return;
+		}
+
+		// Create mode: call API here (keeps existing contract)
+		if (!transactionType) {
+			error = $t('errors.failed-create-category');
+			return;
+		}
+
+		const categoryData = {
+			transaction_type_id: transactionType.id,
+			category_name,
+			color
+		};
+
+		try {
+			const response: CategoryChangeResponse = await dataService.createCategory(categoryData);
+			dispatch('newCategory', response);
+		} catch (err: any) {
+			console.error('Error in handleSubmit:', err);
+			error = err?.message || $t('errors.failed-create-category');
+		}
 	}
 </script>
 
@@ -97,16 +113,24 @@
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}>
 			<X />
 		</button>
+
 		<h3 class="mb-4 text-lg font-bold">
-			{$t('categories.new-category-for')} -
-			{$t('transaction-types.' + transactionType.type_slug)}
+			{#if isEditMode}
+				{$t('categories.edit-category-title')} -
+				{$t('transaction-types.' + category!.transaction_type.type_slug)} - {category!
+					.category_name}
+			{:else}
+				{$t('categories.new-category-for')} -
+				{$t('transaction-types.' + (transactionType ? transactionType.type_slug : ''))}
+			{/if}
 		</h3>
-		<!-- Error message -->
+
 		{#if error}
 			<div class="alert alert-error">
 				<p class="text-gray-100">{error}</p>
 			</div>
 		{/if}
+
 		<form on:submit|preventDefault={handleSubmit}>
 			<!-- Category Name Field -->
 			<div class="form-control mt-4">
@@ -157,9 +181,15 @@
 			<!-- Form Actions -->
 			<div class="modal-action mt-6">
 				<button type="button" class="btn" on:click={handleCloseModal}>{$t('common.cancel')}</button>
-				<button type="submit" class="btn btn-primary text-base-100"
-					>{$t('categories.create-category')}</button
-				>
+				{#if isEditMode}
+					<button type="submit" class="btn btn-primary text-base-100">
+						{$t('categories.edit-category')}
+					</button>
+				{:else}
+					<button type="submit" class="btn btn-primary text-base-100">
+						{$t('categories.create-category')}
+					</button>
+				{/if}
 			</div>
 		</form>
 	</div>

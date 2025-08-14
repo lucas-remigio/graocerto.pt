@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CategoryDto } from '$lib/types';
 	import { Pencil, Trash } from 'lucide-svelte';
-	import EditCategory from './EditCategory.svelte';
+	import CategoryModal from './CategoryModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import { t } from '$lib/i18n';
@@ -104,8 +104,9 @@
 {/if}
 
 {#if editCategoryModalOpen}
-	<EditCategory
+	<CategoryModal
 		category={selectedCategory!}
+		transactionType={null}
 		on:closeModal={closeEditCategoryModal}
 		on:editCategory={handleEditCategory}
 	/>
