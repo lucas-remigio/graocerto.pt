@@ -54,7 +54,7 @@
 
 	async function editCategory(
 		categoryId: number,
-		categoryData: { category_name: string; color: string }
+		categoryData: { category_name: string; color: string; budget: number | null }
 	) {
 		try {
 			const response = await dataService.editCategory(categoryId, categoryData);
@@ -112,7 +112,7 @@
 	function handleEditCategorySuccess(
 		event: CustomEvent<{
 			categoryId: number;
-			categoryData: { category_name: string; color: string };
+			categoryData: { category_name: string; color: string; budget: number | null };
 		}>
 	) {
 		const { categoryId, categoryData } = event.detail;

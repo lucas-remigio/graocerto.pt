@@ -18,7 +18,7 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
-	query := `SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at, deleted_at
+	query := `SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at, deleted_at, budget
 		  FROM categories
 		  WHERE user_id = $1 AND deleted_at IS NULL
 		  ORDER BY created_at DESC`
@@ -26,14 +26,14 @@ func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
 }
 
 func (s *Store) GetCategoryById(id int, userId int) (*types.Category, error) {
-	query := `SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at, deleted_at
+	query := `SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at, deleted_at, budget
 		  FROM categories
 		  WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`
 	return db.QuerySingle(s.db, query, scanRowIntoCategory, id, userId)
 }
 
 func (s *Store) GetCategoriesDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
-	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at,
+	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
 				 tt.id, tt.type_name, tt.type_slug
 		  FROM categories c
 		  JOIN transaction_types tt ON c.transaction_type_id = tt.id
@@ -45,7 +45,7 @@ func (s *Store) GetCategoriesDtoByUserId(userId int) ([]*types.CategoryDTO, erro
 }
 
 func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, error) {
-	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at,
+	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
 				 tt.id, tt.type_name, tt.type_slug
 		  FROM categories c
 		  JOIN transaction_types tt ON c.transaction_type_id = tt.id
@@ -56,8 +56,8 @@ func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, erro
 func (s *Store) CreateCategory(category *types.Category) (*types.Category, error) {
 	var id int
 	err := s.db.QueryRow(
-		"INSERT INTO categories (user_id, transaction_type_id, category_name, color) VALUES ($1, $2, $3, $4) RETURNING id",
-		category.UserID, category.TransactionTypeID, category.CategoryName, category.Color).Scan(&id)
+		"INSERT INTO categories (user_id, transaction_type_id, category_name, color, budget) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		category.UserID, category.TransactionTypeID, category.CategoryName, category.Color, category.Budget).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +95,8 @@ func (s *Store) UpdateCategory(editCategory *types.Category, userId int) (*types
 	}
 
 	_, err = db.ExecWithValidation(s.db,
-		"UPDATE categories SET category_name = $1, color = $2 WHERE id = $3",
-		editCategory.CategoryName, editCategory.Color, editCategory.ID)
+		"UPDATE categories SET category_name = $1, color = $2, budget = $3 WHERE id = $4",
+		editCategory.CategoryName, editCategory.Color, editCategory.Budget, editCategory.ID)
 
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (s *Store) SoftDeleteCategory(id int, userId int) error {
 func scanRowsIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
 
-	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
+	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
 
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func scanRowsIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
 	c.TransactionType = &types.TransactionType{}
 
 	err := rows.Scan(
-		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt,
+		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
@@ -199,7 +199,7 @@ func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
 	c.TransactionType = &types.TransactionType{}
 
 	err := row.Scan(
-		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt,
+		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
@@ -212,7 +212,8 @@ func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
 func scanRowIntoCategory(row *sql.Row) (*types.Category, error) {
 	c := new(types.Category)
 
-	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
+	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color,
+		&c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
 
 	if err != nil {
 		return nil, err

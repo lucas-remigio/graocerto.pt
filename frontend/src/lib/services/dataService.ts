@@ -228,6 +228,7 @@ class DataService {
 		transaction_type_id: number;
 		category_name: string;
 		color: string;
+		budget: number | null;
 	}): Promise<CategoryChangeResponse> {
 		const response = await api_axios.post('categories', categoryData);
 		if (response.status !== 200) {
@@ -250,7 +251,7 @@ class DataService {
 	// Edit category
 	async editCategory(
 		categoryId: number,
-		categoryData: { category_name: string; color: string }
+		categoryData: { category_name: string; color: string; budget: number | null }
 	): Promise<CategoryChangeResponse> {
 		const response = await api_axios.put(`categories/${categoryId}`, categoryData);
 
