@@ -158,6 +158,10 @@
 		"category-breakdown": "Category Breakdown",
 		"transactions": "Transaction Statistics",
 		"categories": "Category Statistics",
+		"no-budget": "No budget defined",
+		"over-budget": "Over budget",
+		"over-target": "Over target",
+		"within-budget": "Within budget",
 		"heatmap": {
 			"title": "Daily Activity Heatmap",
 			"description": "Visual overview of your financial activity by day",

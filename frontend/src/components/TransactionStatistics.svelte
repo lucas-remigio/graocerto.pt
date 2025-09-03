@@ -230,7 +230,7 @@
 
 			<!-- Debit Column: cards (scrollable) above the chart -->
 			<div
-				class="bg-base-100 border-base-300 mt-4 border-t pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6"
+				class="bg-base-100 border-base-300 border-t mt-4 pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
 			>
 				<div class="px-6 py-4">
 					<div class="mb-12">

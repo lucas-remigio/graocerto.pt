@@ -1,7 +1,7 @@
 <!-- src/components/PieChart.svelte -->
 <script lang="ts">
 	import type { CategoryStatistic } from '$lib/types';
-	import { locale } from 'svelte-i18n';
+	import { locale, t } from 'svelte-i18n';
 
 	// Accept a single category stat
 	export let category: CategoryStatistic;
@@ -24,81 +24,72 @@
 	// fill width clamp to 100 for bar
 	$: fillPct = Math.min(Math.max(Math.round(rawPct), 0), 100);
 
-	// colors
-	// when over budget use bright red, otherwise use category color or green
 	$: overBudget = budget != null && spent > budget;
-	$: fillColor = (() => {
-		if (!overBudget) return category?.color ?? (isCredit ? '#16a34a' : '#22c55e');
-		// over budget: color depends on credit/debit semantics
-		return isCredit ? '#059669' /* bright green */ : '#ff1744' /* bright red */;
-	})();
+
+	// Tailwind classes for bar when over / under
+	$: fillClass = overBudget ? (isCredit ? 'bg-emerald-600' : 'bg-rose-500') : ''; // when not over, we use inline category color via barStyle
+
+	// inline style when not overBudget and category has hex color
+	$: barStyle = !overBudget && category?.color ? `background:${category.color};` : '';
+
+	// decide if percentage text should be inside the filled area (enough fill)
+	$: pctInside = fillPct >= 18;
 </script>
 
 <article class="card bg-base-100 border p-4 shadow-sm">
-	<header class="mb-2 flex items-start justify-between gap-4">
-		<div>
-			<h4 class="text-sm font-semibold leading-tight">{category?.name ?? 'Unnamed'}</h4>
-			<p class="text-base-content/60 mt-1 text-xs">
-				{#if budget != null}
-					Budget: <strong>{fmt(budget)}</strong>
-				{:else}
-					<span class="text-base-content/50">No budget set</span>
-				{/if}
-			</p>
-		</div>
-		<div class="text-right">
-			<p class="text-sm font-medium">
-				{fmt(spent)}
-			</p>
-			<p class="text-base-content/60 text-xs">
-				{#if budget != null}
-					{pct}%
-				{:else}
-					—
-				{/if}
-			</p>
+	<header class="flex items-center justify-between gap-4">
+		<h4 class="truncate text-sm font-semibold leading-tight">{category?.name ?? 'Unnamed'}</h4>
+		<div class="text-right text-sm">
+			{#if budget != null}
+				<strong class="whitespace-nowrap">{fmt(budget)}</strong>
+			{:else}
+				<span class="text-base-content/50">{$t('statistics.no-budget')}</span>
+			{/if}
 		</div>
 	</header>
 
 	<!-- Progress bar -->
 	<div aria-hidden="false" aria-label="Budget progress" class="mt-3">
-		<div class="bg-base-200 border-base-300 h-4 w-full overflow-hidden rounded-lg border">
-			<div class="h-full transition-all" style="width: {fillPct}%; background: {fillColor};"></div>
+		<div class="bg-base-200 border-base-300 relative h-4 w-full overflow-hidden rounded-lg border">
+			<!-- filled portion -->
+			<div class="h-full transition-all {fillClass}" style="width: {fillPct}%; {barStyle}"></div>
+
+			<!-- percentage badge positioned at the right end of the bar -->
+			<div
+				class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-0.5 text-xs font-semibold"
+				style="pointer-events: none;"
+			>
+				<span class={pctInside ? 'text-white' : 'text-base-content/80'}>
+					{pct}%
+				</span>
+			</div>
 		</div>
 
-		<!-- Over / Above indicator -->
-		{#if overBudget}
-			<div
-				class="mt-2 flex items-center gap-2 text-sm"
-				class:is-credit={isCredit}
-				class:is-debit={!isCredit}
-			>
-				{#if isCredit}
-					<!-- positive: above target -->
-					<span class="inline-block h-2 w-2 rounded-full" style="background:#059669"></span>
-					<strong class="text-green-600">Above target</strong>
-					<span class="text-base-content/60">({fmt(spent)} / {fmt(budget)} — {pct}%)</span>
-				{:else}
-					<!-- negative: over budget -->
-					<span class="inline-block h-2 w-2 rounded-full" style="background:#ff1744"></span>
-					<strong class="text-red-600">Over budget</strong>
-					<span class="text-base-content/60">({fmt(spent)} / {fmt(budget)} — {pct}%)</span>
-				{/if}
+		<!-- simple status row: left = label/dot, right = spent (aligned) -->
+		<div class="mt-2 flex items-center text-sm">
+			{#if overBudget}
+				<div class="flex items-center gap-2">
+					<span
+						class={'inline-block h-2 w-2 rounded-full ' +
+							(isCredit ? 'bg-emerald-600' : 'bg-rose-500')}
+					></span>
+					<strong class={isCredit ? 'text-emerald-600' : 'text-rose-600'}>
+						{isCredit ? $t('statistics.over-target') : $t('statistics.over-budget')}
+					</strong>
+				</div>
+			{:else}
+				<!-- within budget-->
+				<div class="flex items-center gap-2">
+					<span class="text-base-content/80">
+						{$t('statistics.within-budget')}
+					</span>
+				</div>
+			{/if}
+
+			<!-- spent aligned to the right -->
+			<div class="text-base-content/60 ml-auto whitespace-nowrap text-sm font-medium">
+				{fmt(spent)}
 			</div>
-		{:else if budget != null}
-			<div class="text-base-content/60 mt-2 text-sm">
-				{fmt(spent)} / {fmt(budget)} ({pct}%)
-			</div>
-		{/if}
+		</div>
 	</div>
 </article>
-
-<style>
-	/* optional small helpers */
-	.is-credit strong {
-		color: #059669;
-	}
-	.is-debit strong {
-		color: #ff1744;
-	}
-</style>

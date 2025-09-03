@@ -161,6 +161,10 @@
 		"no-debit-categories": "Nenhuma transação de débito encontrada",
 		"transactions": "Estatísticas de Transações",
 		"categories": "Estatísticas de Categorias",
+		"no-budget": "Sem orçamento definido",
+		"over-budget": "Acima do orçamento",
+		"over-target": "Acima da meta",
+		"within-budget": "Dentro do orçamento",
 		"heatmap": {
 			"title": "Mapa de Calor de Atividades Diárias",
 			"description": "Visão geral visual da sua atividade financeira por dia",
