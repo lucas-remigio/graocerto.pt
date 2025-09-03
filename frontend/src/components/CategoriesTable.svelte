@@ -4,7 +4,7 @@
 	import CategoryModal from './CategoryModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
-	import { t } from '$lib/i18n';
+	import { locale, t } from '$lib/i18n';
 
 	export let categories: CategoryDto[] = [];
 	export let categoryType: 'debit' | 'credit' = 'debit';
@@ -13,6 +13,14 @@
 	let selectedCategory: CategoryDto | null = null;
 
 	let promptDeleteCategoryModalOpen = false;
+
+	$: currentLocale = $locale || 'pt';
+
+	function formatCurrency(v: number | null) {
+		if (v == null) return '';
+		// use non-breaking space so the euro sign doesn't wrap to next line
+		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(v) + '€';
+	}
 
 	const borderClasses: Record<string, string> = {
 		credit: 'border-green-500 dark:border-green-400',
@@ -66,6 +74,7 @@
 				<tr>
 					<th>{$t('categories.category-name')}</th>
 					<th>{$t('categories.color')}</th>
+					<th>{$t('categories.budget')}</th>
 					<th>{$t('categories.actions')}</th>
 				</tr>
 			</thead>
@@ -82,6 +91,7 @@
 								<span>{category.color}</span>
 							</div>
 						</td>
+						<td>{category.budget ? formatCurrency(category.budget) : '—'}</td>
 						<td>
 							<button
 								class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"

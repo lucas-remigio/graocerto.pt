@@ -3,7 +3,7 @@
 	import type { CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { locale, t } from '$lib/i18n';
 
 	// Unified inputs: provide either `category` (edit) or `transactionType` (create)
 	export let category: CategoryDto | null = null; // edit mode if provided
@@ -16,6 +16,37 @@
 	let error: string = '';
 	let category_name: string = category ? category.category_name : '';
 	let color: string = category ? category.color : '#ffffff';
+	// keep numeric budget for validation/submission
+	let budget: number | null = category ? (category.budget ?? null) : null;
+	// string-backed input so the control starts empty and typing is pleasant
+	let budgetInput: string = category && category.budget != null ? String(category.budget) : '';
+
+	$: currentLocale = $locale || 'pt';
+
+	// Format preview (uses user's locale)
+	function formatCurrency(v: number | null) {
+		if (v == null) return '';
+		// use non-breaking space so the euro sign doesn't wrap to next line
+		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(v) + '\u00A0€';
+	}
+
+	function onBudgetInput(e: Event) {
+		const raw = (e.target as HTMLInputElement).value;
+		// allow digits only while typing
+		const digits = raw.replace(/[^\d]/g, '');
+		budgetInput = digits;
+		if (digits === '') {
+			budget = null;
+		} else {
+			const n = parseInt(digits, 10);
+			if (Number.isNaN(n)) {
+				budget = null;
+			} else {
+				// clamp to valid range but don't mutate the typed digits (only clamp numeric state)
+				budget = Math.min(99999, Math.max(1, n));
+			}
+		}
+	}
 
 	// Events
 	const dispatch = createEventDispatcher();
@@ -59,6 +90,16 @@
 			return false;
 		}
 
+		if (budget == null) {
+			error = $t('categories.budget-required');
+			return false;
+		}
+
+		if (budget < 0 || isNaN(budget) || budget > 99999) {
+			error = $t('categories.budget-invalid');
+			return false;
+		}
+
 		return true;
 	}
 
@@ -79,7 +120,8 @@
 			// Delegate API call to parent (keeps existing contract)
 			const editCategoryData = {
 				category_name,
-				color
+				color,
+				budget
 			};
 			dispatch('editCategory', { categoryId: category!.id, categoryData: editCategoryData });
 			return;
@@ -94,7 +136,8 @@
 		const categoryData = {
 			transaction_type_id: transactionType.id,
 			category_name,
-			color
+			color,
+			budget
 		};
 
 		try {
@@ -176,6 +219,37 @@
 						aria-label={$t('categories.color')}
 					/>
 				</div>
+			</div>
+
+			<!-- Budget Field (user friendly) -->
+			<div class="form-control mt-4">
+				<label class="label" for="budget">
+					<span class="label-text">{$t('categories.budget', { default: 'Budget' })}</span>
+				</label>
+				<div class="flex items-center gap-3">
+					<input
+						id="budget"
+						type="text"
+						inputmode="numeric"
+						pattern="\d*"
+						placeholder={$t('categories.budget-placeholder', { default: 'e.g. 250' })}
+						class="input input-bordered w-full"
+						value={budgetInput}
+						on:input={onBudgetInput}
+						aria-describedby="budget-help"
+					/>
+					<!-- Preview badge -->
+					<div class="text-base-content/60 rounded border px-3 py-2 text-sm">
+						{#if budget != null}
+							{formatCurrency(budget)}
+						{:else}
+							<span class="text-base-content/40">—</span>
+						{/if}
+					</div>
+				</div>
+				<p id="budget-help" class="text-base-content/70 mt-2 text-xs">
+					{$t('categories.budget-help', { default: 'Enter monthly budget in € (1-99,999).' })}
+				</p>
 			</div>
 
 			<!-- Form Actions -->

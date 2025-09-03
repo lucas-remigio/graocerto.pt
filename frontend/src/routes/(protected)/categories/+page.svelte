@@ -54,7 +54,7 @@
 
 	async function editCategory(
 		categoryId: number,
-		categoryData: { category_name: string; color: string }
+		categoryData: { category_name: string; color: string; budget: number | null }
 	) {
 		try {
 			const response = await dataService.editCategory(categoryId, categoryData);
@@ -112,7 +112,7 @@
 	function handleEditCategorySuccess(
 		event: CustomEvent<{
 			categoryId: number;
-			categoryData: { category_name: string; color: string };
+			categoryData: { category_name: string; color: string; budget: number | null };
 		}>
 	) {
 		const { categoryId, categoryData } = event.detail;
@@ -143,9 +143,9 @@
 			<p class="text-red-500">{deleteError}</p>
 		{/if}
 		<h1 class="mb-6 text-3xl font-bold">{$t('navbar.categories')}</h1>
-		<div class="flex flex-col md:flex-row md:space-x-4">
+		<div class="flex flex-col lg:flex-row lg:space-x-4">
 			<!-- Credit Categories Table (Left) -->
-			<div class="flex-1">
+			<div class="min-w-0 flex-1">
 				<div class="mb-2 flex items-center justify-between">
 					<h2 class="text-xl font-bold">{$t('categories.credit')}</h2>
 					<button
@@ -168,7 +168,7 @@
 			</div>
 
 			<!-- Debit Categories Table (Right) -->
-			<div class="mt-4 flex-1 md:mt-0">
+			<div class="mt-4 min-w-0 flex-1 lg:mt-0">
 				<div class="mb-2 flex items-center justify-between">
 					<h2 class="text-xl font-bold">{$t('categories.debit')}</h2>
 					<button

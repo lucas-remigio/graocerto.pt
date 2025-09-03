@@ -156,13 +156,18 @@
 		"largest-credit": "Largest Credit",
 		"largest-debit": "Largest Debit",
 		"category-breakdown": "Category Breakdown",
-		"transactions": "transactions",
+		"transactions": "Transaction Statistics",
+		"categories": "Category Statistics",
+		"no-budget": "No budget defined",
+		"over-budget": "Over budget",
+		"over-target": "Over target",
+		"within-budget": "Within budget",
 		"heatmap": {
-			"title": "Mapa de Calor de Atividades Diárias",
-			"description": "Visão geral visual da sua atividade financeira por dia",
-			"difference": "Líquido",
-			"credits": "Créditos",
-			"debits": "Débitos"
+			"title": "Daily Activity Heatmap",
+			"description": "Visual overview of your financial activity by day",
+			"difference": "Net",
+			"credits": "Credits",
+			"debits": "Debits"
 		}
 	},
 
@@ -266,7 +271,11 @@
 		"color-invalid": "Color must be a valid hex color",
 		"new-category-for": "New Category",
 		"edit-category-title": "Edit Category",
-		"create-new": "Create New"
+		"create-new": "Create New",
+		"budget": "Budget",
+		"budget-required": "Budget is required",
+		"budget-invalid": "Budget must be a valid number between 0 and 99999",
+		"budget-help": "Enter monthly budget in €."
 	},
 
 	"modals": {

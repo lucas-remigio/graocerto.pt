@@ -51,6 +51,7 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 		TransactionTypeID: payload.TransactionTypeId,
 		CategoryName:      payload.CategoryName,
 		Color:             payload.Color,
+		Budget:            payload.Budget,
 	})
 
 	if err != nil {
@@ -131,6 +132,7 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		UserID:       userId,
 		CategoryName: payload.CategoryName,
 		Color:        payload.Color,
+		Budget:       payload.Budget,
 	}, userId)
 
 	if err != nil {

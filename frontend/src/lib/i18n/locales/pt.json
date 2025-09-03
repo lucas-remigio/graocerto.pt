@@ -159,7 +159,12 @@
 		"debit-categories": "Categorias de Débito",
 		"no-credit-categories": "Nenhuma transação de crédito encontrada",
 		"no-debit-categories": "Nenhuma transação de débito encontrada",
-		"transactions": "transações",
+		"transactions": "Estatísticas de Transações",
+		"categories": "Estatísticas de Categorias",
+		"no-budget": "Sem orçamento definido",
+		"over-budget": "Acima do orçamento",
+		"over-target": "Acima da meta",
+		"within-budget": "Dentro do orçamento",
 		"heatmap": {
 			"title": "Mapa de Calor de Atividades Diárias",
 			"description": "Visão geral visual da sua atividade financeira por dia",
@@ -269,7 +274,11 @@
 		"color-invalid": "Cor deve ser um hex válido",
 		"new-category-for": "Nova Categoria",
 		"edit-category-title": "Editar Categoria",
-		"create-new": "Criar Nova"
+		"create-new": "Criar Nova",
+		"budget": "Orçamento",
+		"budget-required": "Orçamento é obrigatório",
+		"budget-invalid": "Orçamento deve ser um número válido entre 0 e 99999",
+		"budget-help": "Insira o orçamento mensal em €."
 	},
 
 	"modals": {
