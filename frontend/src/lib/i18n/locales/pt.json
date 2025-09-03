@@ -159,7 +159,8 @@
 		"debit-categories": "Categorias de Débito",
 		"no-credit-categories": "Nenhuma transação de crédito encontrada",
 		"no-debit-categories": "Nenhuma transação de débito encontrada",
-		"transactions": "transações",
+		"transactions": "Estatísticas de Transações",
+		"categories": "Estatísticas de Categorias",
 		"heatmap": {
 			"title": "Mapa de Calor de Atividades Diárias",
 			"description": "Visão geral visual da sua atividade financeira por dia",

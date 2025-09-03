@@ -54,7 +54,7 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 
 	err := s.Scan(
 		&t.ID, &t.AccountToken, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt,
-		&t.Category.ID, &t.Category.CategoryName, &t.Category.Color, &t.Category.CreatedAt, &t.Category.UpdatedAt,
+		&t.Category.ID, &t.Category.CategoryName, &t.Category.Color, &t.Category.CreatedAt, &t.Category.UpdatedAt, &t.Category.Budget,
 		&t.Category.TransactionType.ID, &t.Category.TransactionType.TypeName, &t.Category.TransactionType.TypeSlug,
 	)
 	if err != nil {
@@ -181,7 +181,7 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 
 	baseQuery := "SELECT " +
 		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at, " +
-		"c.id, c.category_name, c.color, c.created_at, c.updated_at, " +
+		"c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
 		"tt.id, tt.type_name, tt.type_slug " +
 		"FROM transactions t " +
 		"JOIN categories c ON t.category_id = c.id " +
@@ -205,7 +205,7 @@ func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 	query := `
 		SELECT 
 			t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at,
-			c.id, c.category_name, c.color, c.created_at, c.updated_at,
+			c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
 			tt.id, tt.type_name, tt.type_slug
 		FROM transactions t
 		JOIN categories c ON t.category_id = c.id
@@ -557,10 +557,12 @@ func (s *Store) buildCategoryBreakdowns(transactions []*types.TransactionDTO) (
 	for _, tx := range transactions {
 		categoryName := "Unknown"
 		categoryColor := "#6b7280" // Default gray color
+		var categoryBudget *int = nil
 
 		if tx.Category != nil {
 			categoryName = tx.Category.CategoryName
 			categoryColor = tx.Category.Color
+			categoryBudget = tx.Category.Budget
 		}
 
 		absAmount := abs(tx.Amount)
@@ -569,9 +571,9 @@ func (s *Store) buildCategoryBreakdowns(transactions []*types.TransactionDTO) (
 		if tx.Category != nil {
 			switch tx.Category.TransactionType.ID {
 			case int(types.CreditTransactionType):
-				s.updateCategoryMap(creditCategoryMap, categoryName, categoryColor, absAmount)
+				s.updateCategoryMap(creditCategoryMap, categoryName, categoryColor, categoryBudget, absAmount)
 			case int(types.DebitTransactionType):
-				s.updateCategoryMap(debitCategoryMap, categoryName, categoryColor, absAmount)
+				s.updateCategoryMap(debitCategoryMap, categoryName, categoryColor, categoryBudget, absAmount)
 			}
 		}
 	}
@@ -581,7 +583,7 @@ func (s *Store) buildCategoryBreakdowns(transactions []*types.TransactionDTO) (
 
 // Helper to update category map (reduces code duplication)
 func (s *Store) updateCategoryMap(categoryMap map[string]*types.CategoryStatistic,
-	categoryName, categoryColor string, amount float64) {
+	categoryName, categoryColor string, budget *int, amount float64) {
 
 	if _, exists := categoryMap[categoryName]; !exists {
 		categoryMap[categoryName] = &types.CategoryStatistic{
@@ -590,6 +592,7 @@ func (s *Store) updateCategoryMap(categoryMap map[string]*types.CategoryStatisti
 			Total:      0,
 			Percentage: 0,
 			Color:      categoryColor,
+			Budget:     budget,
 		}
 	}
 	categoryMap[categoryName].Count++

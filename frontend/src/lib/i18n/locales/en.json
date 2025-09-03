@@ -156,13 +156,14 @@
 		"largest-credit": "Largest Credit",
 		"largest-debit": "Largest Debit",
 		"category-breakdown": "Category Breakdown",
-		"transactions": "transactions",
+		"transactions": "Transaction Statistics",
+		"categories": "Category Statistics",
 		"heatmap": {
-			"title": "Mapa de Calor de Atividades Diárias",
-			"description": "Visão geral visual da sua atividade financeira por dia",
-			"difference": "Líquido",
-			"credits": "Créditos",
-			"debits": "Débitos"
+			"title": "Daily Activity Heatmap",
+			"description": "Visual overview of your financial activity by day",
+			"difference": "Net",
+			"credits": "Credits",
+			"debits": "Debits"
 		}
 	},
 

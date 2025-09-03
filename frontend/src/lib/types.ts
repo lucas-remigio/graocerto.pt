@@ -69,7 +69,7 @@ export interface CategoryDto {
 	transaction_type: TransactionType;
 	category_name: string;
 	color: string;
-	budget: number;
+	budget: number | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -79,7 +79,7 @@ export interface Category {
 	transaction_type_id: number;
 	category_name: string;
 	color: string;
-	budget: number;
+	budget: number | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -140,6 +140,7 @@ export interface CategoryStatistic {
 	total: number;
 	percentage: number;
 	color: string;
+	budget: number | null;
 }
 
 export interface DailyTotals {

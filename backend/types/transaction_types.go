@@ -84,6 +84,7 @@ type CategoryStatistic struct {
 	Total      float64 `json:"total"`
 	Percentage float64 `json:"percentage"`
 	Color      string  `json:"color"`
+	Budget     *int    `json:"budget"`
 }
 
 type DailyTotal struct {
