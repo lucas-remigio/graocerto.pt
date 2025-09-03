@@ -27,7 +27,11 @@
 	// colors
 	// when over budget use bright red, otherwise use category color or green
 	$: overBudget = budget != null && spent > budget;
-	$: fillColor = overBudget ? '#ff1744' : (category?.color ?? '#22c55e');
+	$: fillColor = (() => {
+		if (!overBudget) return category?.color ?? (isCredit ? '#16a34a' : '#22c55e');
+		// over budget: color depends on credit/debit semantics
+		return isCredit ? '#059669' /* bright green */ : '#ff1744' /* bright red */;
+	})();
 </script>
 
 <article class="card bg-base-100 border p-4 shadow-sm">
@@ -62,13 +66,24 @@
 			<div class="h-full transition-all" style="width: {fillPct}%; background: {fillColor};"></div>
 		</div>
 
-		<!-- Over budget indicator -->
+		<!-- Over / Above indicator -->
 		{#if overBudget}
-			<div class="mt-2 flex items-center gap-2 text-sm text-red-600">
-				<!-- small red pill -->
-				<span class="inline-block h-2 w-2 rounded-full bg-[#ff1744]"></span>
-				<strong>Over budget</strong>
-				<span class="text-base-content/60">({fmt(spent)} / {fmt(budget)} — {pct}%)</span>
+			<div
+				class="mt-2 flex items-center gap-2 text-sm"
+				class:is-credit={isCredit}
+				class:is-debit={!isCredit}
+			>
+				{#if isCredit}
+					<!-- positive: above target -->
+					<span class="inline-block h-2 w-2 rounded-full" style="background:#059669"></span>
+					<strong class="text-green-600">Above target</strong>
+					<span class="text-base-content/60">({fmt(spent)} / {fmt(budget)} — {pct}%)</span>
+				{:else}
+					<!-- negative: over budget -->
+					<span class="inline-block h-2 w-2 rounded-full" style="background:#ff1744"></span>
+					<strong class="text-red-600">Over budget</strong>
+					<span class="text-base-content/60">({fmt(spent)} / {fmt(budget)} — {pct}%)</span>
+				{/if}
 			</div>
 		{:else if budget != null}
 			<div class="text-base-content/60 mt-2 text-sm">
@@ -79,4 +94,11 @@
 </article>
 
 <style>
+	/* optional small helpers */
+	.is-credit strong {
+		color: #059669;
+	}
+	.is-debit strong {
+		color: #ff1744;
+	}
 </style>
