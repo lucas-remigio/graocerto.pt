@@ -79,12 +79,13 @@ type TransactionTotals struct {
 }
 
 type CategoryStatistic struct {
-	Name       string  `json:"name"`
-	Count      int     `json:"count"`
-	Total      float64 `json:"total"`
-	Percentage float64 `json:"percentage"`
-	Color      string  `json:"color"`
-	Budget     *int    `json:"budget"`
+	Name             string   `json:"name"`
+	Count            int      `json:"count"`
+	Total            float64  `json:"total"`
+	Percentage       float64  `json:"percentage"`
+	Color            string   `json:"color"`
+	Budget           *int     `json:"budget"`
+	BudgetPercentage float64 `json:"budget_percentage"`
 }
 
 type DailyTotal struct {

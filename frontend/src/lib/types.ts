@@ -141,6 +141,7 @@ export interface CategoryStatistic {
 	percentage: number;
 	color: string;
 	budget: number | null;
+	budget_percentage: number;
 }
 
 export interface DailyTotals {

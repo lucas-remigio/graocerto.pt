@@ -12,17 +12,16 @@
 	// Safe helpers
 	const fmt = (v: number | null) => {
 		if (v === null) return '—';
-		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(v) + '\u00A0€';
+		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 2 }).format(v) + '\u00A0€';
 	};
 
 	$: spent = Math.abs(category?.total ?? 0);
 	$: budget = category?.budget ?? null;
 
-	// percentage relative to budget (can be > 100)
-	$: rawPct = budget && budget > 0 ? (spent / budget) * 100 : 0;
-	$: pct = Math.round(rawPct);
+	// Use backend-calculated percentage
+	$: pct = Math.round(category?.budget_percentage ?? 0);
 	// fill width clamp to 100 for bar
-	$: fillPct = Math.min(Math.max(Math.round(rawPct), 0), 100);
+	$: fillPct = Math.min(Math.max(pct, 0), 100);
 
 	$: overBudget = budget != null && spent > budget;
 

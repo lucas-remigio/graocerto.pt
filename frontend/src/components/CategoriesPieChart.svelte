@@ -14,6 +14,8 @@
 	let chart: Chart | null = null;
 	let unsubscribeTheme: (() => void) | null = null;
 
+	$: sortedData = [...data].sort((a, b) => b.percentage - a.percentage);
+
 	// Register Chart.js components
 	Chart.register(...registerables);
 
@@ -130,7 +132,7 @@
 
 		<!-- Statistics below chart -->
 		<div class="mt-4 space-y-2">
-			{#each data as category, index}
+			{#each sortedData as category, index}
 				<div class="flex items-center justify-between text-sm">
 					<div class="flex items-center gap-2">
 						<div
