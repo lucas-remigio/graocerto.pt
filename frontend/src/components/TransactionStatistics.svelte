@@ -23,7 +23,7 @@
 	export let loading: boolean = false;
 	export let error: string = '';
 
-	let statsView: 'transactions' | 'categories' = 'transactions';
+	let statsView: 'transactions' | 'categories' | 'overview' = 'transactions';
 
 	$: isAll = selectedMonth === null && selectedYear === null;
 
@@ -79,8 +79,19 @@
 					: 'btn-ghost'}"
 				on:click={() => (statsView = 'transactions')}
 			>
-				<BarChart size={16} class="mr-1" />
-				<span>{$t('statistics.transactions', { default: 'Transactions' })}</span>
+				<BarChart size={16} class="md:mr-1" />
+				<span class="hidden md:inline"
+					>{$t('statistics.transactions', { default: 'Transactions' })}</span
+				>
+			</button>
+			<button
+				role="tab"
+				aria-selected={statsView === 'overview'}
+				class="btn btn-sm {statsView === 'overview' ? 'btn-primary text-base-100' : 'btn-ghost'}"
+				on:click={() => (statsView = 'overview')}
+			>
+				<PieChart size={16} class="md:mr-1" />
+				<span class="hidden md:inline">{$t('statistics.overview', { default: 'Overview' })}</span>
 			</button>
 			<button
 				role="tab"
@@ -88,8 +99,10 @@
 				class="btn btn-sm {statsView === 'categories' ? 'btn-primary text-base-100' : 'btn-ghost'}"
 				on:click={() => (statsView = 'categories')}
 			>
-				<PieChart size={16} class="mr-1" />
-				<span>{$t('statistics.categories', { default: 'Categories' })}</span>
+				<BarChart3 size={16} class="md:mr-1" />
+				<span class="hidden md:inline"
+					>{$t('statistics.categories', { default: 'Categories' })}</span
+				>
 			</button>
 		</div>
 	</div>
@@ -203,51 +216,60 @@
 		</div>
 	{/if}
 
+	{#if statsView === 'overview'}
+		<!-- Overview: Just Pie Charts -->
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<!-- Credit Pie Chart -->
+			<div class="bg-base-100 rounded-lg p-6">
+				<h3 class="text-success mb-4 text-center text-lg font-semibold">
+					{$t('statistics.credit-categories')}
+				</h3>
+				<PieChartComponent data={statistics.credit_category_breakdown} isCredit={true} />
+			</div>
+
+			<!-- Debit Pie Chart -->
+			<div
+				class="bg-base-100 border-base-300 mt-4 rounded-lg border-t p-6 pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-6"
+			>
+				<h3 class="text-error mb-4 text-center text-lg font-semibold">
+					{$t('statistics.debit-categories')}
+				</h3>
+				<PieChartComponent data={statistics.debit_category_breakdown} isCredit={false} />
+			</div>
+		</div>
+	{/if}
+
 	{#if statsView === 'categories'}
 		<!-- Category Breakdowns with Pie Charts -->
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 			<!-- Credit Column: cards (scrollable) above the chart -->
 			<div class="bg-base-100">
 				<div class="px-6 py-4">
-					<div class="mb-12">
-						<h3 class="text-success mb-3 text-lg font-semibold">
-							{$t('statistics.credit-categories')}
-						</h3>
-						<!-- Cards list -->
-						<div class="space-y-3">
-							{#each statistics.credit_category_breakdown as cat}
-								<CategoryBudgetCard category={cat} isCredit={true} />
-							{/each}
-						</div>
-					</div>
-
-					<!-- Chart -->
-					<div class="mt-4">
-						<PieChartComponent data={statistics.credit_category_breakdown} isCredit={true} />
+					<h3 class="text-success mb-3 text-lg font-semibold">
+						{$t('statistics.credit-categories')}
+					</h3>
+					<!-- Cards list -->
+					<div class="space-y-3">
+						{#each statistics.credit_category_breakdown as cat}
+							<CategoryBudgetCard category={cat} isCredit={true} />
+						{/each}
 					</div>
 				</div>
 			</div>
 
 			<!-- Debit Column: cards (scrollable) above the chart -->
 			<div
-				class="bg-base-100 border-base-300 border-t mt-4 pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
+				class="bg-base-100 border-base-300 mt-4 border-t pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
 			>
 				<div class="px-6 py-4">
-					<div class="mb-12">
-						<h3 class="text-error mb-3 text-lg font-semibold">
-							{$t('statistics.debit-categories')}
-						</h3>
-						<!-- Cards list -->
-						<div class="space-y-3">
-							{#each statistics.debit_category_breakdown as cat}
-								<CategoryBudgetCard category={cat} isCredit={false} />
-							{/each}
-						</div>
-					</div>
-
-					<!-- Chart -->
-					<div class="mt-4">
-						<PieChartComponent data={statistics.debit_category_breakdown} isCredit={false} />
+					<h3 class="text-error mb-3 text-lg font-semibold">
+						{$t('statistics.debit-categories')}
+					</h3>
+					<!-- Cards list -->
+					<div class="space-y-3">
+						{#each statistics.debit_category_breakdown as cat}
+							<CategoryBudgetCard category={cat} isCredit={false} />
+						{/each}
 					</div>
 				</div>
 			</div>

@@ -614,9 +614,23 @@ func (s *Store) processCategoryBreakdown(categoryMap map[string]*types.CategoryS
 		breakdown = append(breakdown, categoryStat)
 	}
 
-	// Sort by total amount (descending) - O(n log n)
+	// Sort by percentage of budget spent (descending)
+	// Categories without budget will appear at the end (0% spent)
 	sort.Slice(breakdown, func(i, j int) bool {
-		return breakdown[i].Total > breakdown[j].Total
+		// Calculate percentage spent for category i
+		pctI := 0.0
+		if breakdown[i].Budget != nil && *breakdown[i].Budget > 0 {
+			pctI = (breakdown[i].Total / float64(*breakdown[i].Budget)) * 100
+		}
+
+		// Calculate percentage spent for category j
+		pctJ := 0.0
+		if breakdown[j].Budget != nil && *breakdown[j].Budget > 0 {
+			pctJ = (breakdown[j].Total / float64(*breakdown[j].Budget)) * 100
+		}
+
+		// Sort descending (highest percentage first)
+		return pctI > pctJ
 	})
 
 	return breakdown
