@@ -17,13 +17,13 @@ type CreateCategoryPayload struct {
 	TransactionTypeId int    `json:"transaction_type_id" validate:"required,numeric,min=1,max=3"`
 	CategoryName      string `json:"category_name" validate:"required,max=255,min=3"`
 	Color             string `json:"color" validate:"required,hexcolor"`
-	Budget            *int   `json:"budget" validate:"required,numeric,min=0,max=99999"`
+	Budget            *int   `json:"budget" validate:"omitempty,numeric,min=1,max=99999"`
 }
 
 type UpdateCategoryPayload struct {
 	CategoryName string `json:"category_name" validate:"required,max=255,min=3"`
 	Color        string `json:"color" validate:"required,hexcolor"`
-	Budget       *int   `json:"budget" validate:"required,numeric,min=0,max=99999"`
+	Budget       *int   `json:"budget" validate:"omitempty,numeric,min=1,max=99999"`
 }
 
 type Category struct {

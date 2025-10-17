@@ -90,12 +90,8 @@
 			return false;
 		}
 
-		if (budget == null) {
-			error = $t('categories.budget-required');
-			return false;
-		}
-
-		if (budget < 0 || isNaN(budget) || budget > 99999) {
+		// Budget is optional, but if provided must be valid
+		if (budget != null && (budget < 1 || isNaN(budget) || budget > 99999)) {
 			error = $t('categories.budget-invalid');
 			return false;
 		}
@@ -221,10 +217,14 @@
 				</div>
 			</div>
 
-			<!-- Budget Field (user friendly) -->
+			<!-- Budget Field (optional) -->
 			<div class="form-control mt-4">
 				<label class="label" for="budget">
-					<span class="label-text">{$t('categories.budget', { default: 'Budget' })}</span>
+					<span class="label-text"
+						>{$t('categories.budget', { default: 'Budget' })} ({$t('common.optional', {
+							default: 'optional'
+						})})</span
+					>
 				</label>
 				<div class="flex items-center gap-3">
 					<input
@@ -248,7 +248,9 @@
 					</div>
 				</div>
 				<p id="budget-help" class="text-base-content/70 mt-2 text-xs">
-					{$t('categories.budget-help', { default: 'Enter monthly budget in € (1-99,999).' })}
+					{$t('categories.budget-help', {
+						default: 'Optional: Enter monthly budget in € (1-99,999).'
+					})}
 				</p>
 			</div>
 

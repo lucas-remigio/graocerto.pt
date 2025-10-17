@@ -133,7 +133,8 @@
 		"required": "Obrigatório",
 		"too-short": "Muito curto",
 		"too-long": "Muito longo",
-		"no-data": "Sem dados"
+		"no-data": "Sem dados",
+		"optional": "Opcional"
 	},
 
 	"views": {

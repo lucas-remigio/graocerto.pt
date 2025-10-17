@@ -68,7 +68,7 @@
 {#if categories.length === 0}
 	<p class="text-base-content/70 py-8 text-center">{$t('categories.no-categories')}</p>
 {:else}
-	<div class="overflow-hidden rounded-xl border-2 {modalBorderClass}">
+	<div class="overflow-x-auto rounded-xl border-2 {modalBorderClass}">
 		<table class="table-zebra table w-full">
 			<thead class="text-center">
 				<tr>

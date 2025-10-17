@@ -134,7 +134,8 @@
 		"required": "Required",
 		"too-short": "Too Short",
 		"too-long": "Too Long",
-		"no-data": "No data"
+		"no-data": "No data",
+		"optional": "Optional"
 	},
 
 	"views": {
