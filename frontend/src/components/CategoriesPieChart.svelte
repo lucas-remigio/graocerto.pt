@@ -28,7 +28,7 @@
 		}
 
 		// Use category colors from data, with fallback to generated colors
-		const colors = data.map((item) => item.color || '#6b7280');
+		const colors = sortedData.map((item) => item.color || '#6b7280');
 
 		// Get theme colors from theme service
 		const themeColors = themeService.getThemeColors();
@@ -38,10 +38,10 @@
 		chart = new Chart(canvas, {
 			type: 'pie',
 			data: {
-				labels: data.map((item) => item.name),
+				labels: sortedData.map((item) => item.name),
 				datasets: [
 					{
-						data: data.map((item) => item.percentage),
+						data: sortedData.map((item) => item.percentage),
 						backgroundColor: colors,
 						borderColor: '#ffffff',
 						borderWidth: 2,
@@ -74,7 +74,7 @@
 						borderWidth: 1,
 						callbacks: {
 							label: function (context) {
-								const category = data[context.dataIndex];
+								const category = sortedData[context.dataIndex];
 								return [
 									`${category.name}: ${category.percentage.toFixed(1)}%`,
 									`${category.count} ${$t('statistics.transactions')}`,
@@ -99,7 +99,7 @@
 	}
 
 	// Reactive updates when data changes
-	$: if (canvas && data) {
+	$: if (canvas && sortedData) {
 		createChart();
 	}
 
@@ -125,7 +125,7 @@
 </script>
 
 <div class="relative">
-	{#if data.length > 0}
+	{#if sortedData.length > 0}
 		<div class="h-80 w-full">
 			<canvas bind:this={canvas} class="max-h-full max-w-full"></canvas>
 		</div>
