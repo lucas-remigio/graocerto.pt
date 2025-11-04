@@ -48,7 +48,8 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	// create a new category
 	dto, err := h.store.CreateCategoryAndReturn(&types.Category{
 		UserID:            userId,
-		TransactionTypeID: payload.TransactionTypeId,
+		TransactionTypeId: payload.TransactionTypeId,
+		ParentCategoryId:  payload.ParentCategoryId,
 		CategoryName:      payload.CategoryName,
 		Color:             payload.Color,
 		Budget:            payload.Budget,
@@ -128,11 +129,12 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dto, err := h.store.UpdateCategoryAndReturn(&types.Category{
-		ID:           categoryIdInt,
-		UserID:       userId,
-		CategoryName: payload.CategoryName,
-		Color:        payload.Color,
-		Budget:       payload.Budget,
+		ID:               categoryIdInt,
+		UserID:           userId,
+		CategoryName:     payload.CategoryName,
+		ParentCategoryId: payload.ParentCategoryId,
+		Color:            payload.Color,
+		Budget:           payload.Budget,
 	}, userId)
 
 	if err != nil {

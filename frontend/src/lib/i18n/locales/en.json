@@ -229,7 +229,8 @@
 		"total-debit": "Total Debits",
 		"total-credit": "Total Credits",
 		"total-transfer": "Total Transfers",
-		"net-balance": "Net Balance"
+		"net-balance": "Net Balance",
+		"transfer": "Transfer"
 	},
 
 	"transfers": {
@@ -298,9 +299,15 @@
 		"edit-category-title": "Edit Category",
 		"create-new": "Create New",
 		"budget": "Budget",
+		"budget-placeholder": "Enter monthly budget (in €)",
 		"budget-required": "Budget is required",
 		"budget-invalid": "Budget must be a valid number between 0 and 99999",
-		"budget-help": "Enter monthly budget in €."
+		"budget-help": "Enter monthly budget in €.",
+		"add-subcategory": "Add Subcategory",
+		"new-subcategory-for": "New Subcategory for",
+		"parent-category": "Parent Category",
+		"no-parent": "No Parent (Root Category)",
+		"parent-help": "Optional: Make this a subcategory of another category"
 	},
 
 	"modals": {

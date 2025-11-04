@@ -297,7 +297,7 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language str
 			categoryName = category.CategoryName
 
 			// Determine transaction type based on category's transaction type ID
-			switch category.TransactionTypeID {
+			switch category.TransactionTypeId {
 			case int(types.CreditTransactionType):
 				txType = "CREDIT"
 			case int(types.DebitTransactionType):

@@ -121,7 +121,7 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 	}
 
 	// Set transaction type from category
-	transaction.TransactionTypeId = category.TransactionTypeID
+	transaction.TransactionTypeId = category.TransactionTypeId
 
 	// do not allow transfers here, they demand a different logic
 	if transaction.TransactionTypeId == int(types.TransferTransactionType) {
@@ -141,7 +141,7 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 	// category transaction type id == 1 means credit
 	// if category.TransactionTypeID == 2 means debit
 	amount := transaction.Amount
-	if category.TransactionTypeID == (int)(types.DebitTransactionType) {
+	if category.TransactionTypeId == (int)(types.DebitTransactionType) {
 		amount = amount * -1
 	}
 	newBalance := account.Balance + amount
@@ -208,7 +208,7 @@ func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int)
 	if err != nil {
 		return nil, fmt.Errorf("invalid debit category: %w", err)
 	}
-	if debitCategory.TransactionTypeID != int(types.DebitTransactionType) {
+	if debitCategory.TransactionTypeId != int(types.DebitTransactionType) {
 		return nil, fmt.Errorf("debit category must be a debit type")
 	}
 
@@ -217,7 +217,7 @@ func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int)
 	if err != nil {
 		return nil, fmt.Errorf("invalid credit category: %w", err)
 	}
-	if creditCategory.TransactionTypeID != int(types.CreditTransactionType) {
+	if creditCategory.TransactionTypeId != int(types.CreditTransactionType) {
 		return nil, fmt.Errorf("credit category must be a credit type")
 	}
 
@@ -455,7 +455,7 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	}
 
 	// Update transaction type based on new category
-	newTransactionTypeId := newCategory.TransactionTypeID
+	newTransactionTypeId := newCategory.TransactionTypeId
 
 	// get the current balance
 	currentBalance := account.Balance
@@ -469,13 +469,13 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	// Having in mind, in the database, the amount is always positive
 	// Get the current transaction amount (positive for both credit and debit)
 	currentAmount := tx.Amount
-	if currentCategory.TransactionTypeID == (int)(types.DebitTransactionType) {
+	if currentCategory.TransactionTypeId == (int)(types.DebitTransactionType) {
 		currentAmount = currentAmount * -1 // Negate for debit
 	}
 
 	// Get the new transaction amount (positive for both credit and debit)
 	newAmount := transaction.Amount
-	if newCategory.TransactionTypeID == (int)(types.DebitTransactionType) {
+	if newCategory.TransactionTypeId == (int)(types.DebitTransactionType) {
 		newAmount = newAmount * -1 // Negate for debit
 	}
 
@@ -586,7 +586,7 @@ func (s *Store) deleteSingleTransaction(tx *types.Transaction, account *types.Ac
 
 	// if the transaction was a credit, we must remove that amount
 	amount := tx.Amount
-	if category.TransactionTypeID == int(types.CreditTransactionType) {
+	if category.TransactionTypeId == int(types.CreditTransactionType) {
 		amount = amount * -1
 	}
 
