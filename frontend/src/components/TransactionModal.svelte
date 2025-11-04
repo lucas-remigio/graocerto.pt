@@ -79,6 +79,37 @@
 		? borderClasses[selectedTransactionType.type_slug]
 		: 'bg-gray-50';
 
+	//  helper to build category hierarchy for display
+	interface CategoryGroup {
+		parent: CategoryDto | null;
+		children: CategoryDto[];
+	}
+
+	$: groupedCategories = buildCategoryGroups(filteredCategories);
+
+	function buildCategoryGroups(cats: CategoryDto[]): CategoryGroup[] {
+		const parents = cats.filter((c) => !c.parent_category_id);
+		const children = cats.filter((c) => c.parent_category_id);
+
+		const groups: CategoryGroup[] = [];
+
+		// Parents with their children
+		parents.forEach((parent) => {
+			const parentChildren = children.filter((child) => child.parent_category_id === parent.id);
+			groups.push({ parent, children: parentChildren });
+		});
+
+		// Orphaned children (shouldn't happen, but just in case)
+		const orphans = children.filter(
+			(child) => !parents.some((p) => p.id === child.parent_category_id)
+		);
+		if (orphans.length > 0) {
+			groups.push({ parent: null, children: orphans });
+		}
+
+		return groups;
+	}
+
 	// Events
 	const dispatch = createEventDispatcher();
 
@@ -279,16 +310,14 @@
 							>
 								<option value="" disabled>{$t('transactions.select-transaction-type')}</option>
 								{#each transactionTypes as type}
-									<option value={type.id}
-										>{$t('transaction-types.' + type.type_slug, {
-											default: type.type_name
-										})}</option
-									>
+									<option value={type.id}>
+										{$t('transaction-types.' + type.type_slug, { default: type.type_name })}
+									</option>
 								{/each}
 							</select>
 						</div>
 
-						<!-- Category Field -->
+						<!-- Category Field with Hierarchy -->
 						<div class="form-control flex-1">
 							<label class="label" for="category">
 								<span class="label-text">{$t('transactions.category')}</span>
@@ -304,10 +333,38 @@
 								<option value="" disabled>
 									{$t('transactions.select-category')}
 								</option>
-								{#each filteredCategories as cat}
-									<option value={String(cat.id)}>{cat.category_name}</option>
+
+								{#each groupedCategories as group}
+									{#if group.parent}
+										{#if group.children.length > 0}
+											<!-- Parent with children -->
+											<option value={String(group.parent.id)} class="font-semibold">
+												{group.parent.category_name}
+											</option>
+											{#each group.children as child}
+												<option value={String(child.id)}>
+													&nbsp;&nbsp;&nbsp;&nbsp;{child.category_name}
+												</option>
+											{/each}
+											<!-- Separator (visual only, disabled) -->
+											<option disabled>────────────</option>
+										{:else}
+											<!-- Parent without children -->
+											<option value={String(group.parent.id)}>
+												{group.parent.category_name}
+											</option>
+										{/if}
+									{:else}
+										<!-- Orphaned children -->
+										{#each group.children as child}
+											<option value={String(child.id)}>
+												{child.category_name}
+											</option>
+										{/each}
+									{/if}
 								{/each}
-								<option value="__create__">
+
+								<option value="__create__" class="font-semibold">
 									+ {$t('categories.create-new', { default: 'Create new category' })}
 								</option>
 							</select>

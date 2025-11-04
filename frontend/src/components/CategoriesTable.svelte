@@ -204,7 +204,7 @@
 							<tr class="bg-base-200/50">
 								<td></td>
 								<td class="text-left">
-									<span class="ml-8 text-sm opacity-90">↳ {subcategory.category_name}</span>
+									<span class="ml-8 text-sm opacity-90">{subcategory.category_name}</span>
 								</td>
 								<td>
 									<div class="flex items-center justify-center space-x-2">
