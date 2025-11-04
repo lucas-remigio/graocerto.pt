@@ -562,6 +562,21 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 		return nil, err
 	}
 
+	// Check if this is a transfer transaction
+	if tx.TransferGroupId != nil && *tx.TransferGroupId != "" {
+		// This is a transfer - need to delete both transactions
+		result, err := s.deleteTransferPair(*tx.TransferGroupId, userId)
+		if err != nil {
+			return nil, err
+		}
+		return &result.primaryBalance, nil
+	}
+
+	// Not a transfer - delete single transaction normally
+	return s.deleteSingleTransaction(tx, account, userId)
+}
+
+func (s *Store) deleteSingleTransaction(tx *types.Transaction, account *types.Account, userId int) (*float64, error) {
 	// get the transaction category
 	catStore := category.NewStore(s.db)
 	category, err := catStore.GetCategoryById(tx.CategoryId, userId)
@@ -569,7 +584,6 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
 
-	// check if the category is a transfer
 	// if the transaction was a credit, we must remove that amount
 	amount := tx.Amount
 	if category.TransactionTypeID == int(types.CreditTransactionType) {
@@ -582,7 +596,7 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 	// get the new balance
 	newBalance := currentBalance + amount
 
-	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = $1", transactionId)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = $1", tx.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete transaction: %w", err)
 	}
@@ -596,20 +610,160 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 	return &newBalance, nil
 }
 
+type deleteTransferResult struct {
+	primaryAccountToken   string
+	primaryBalance        float64
+	secondaryAccountToken string
+	secondaryBalance      float64
+}
+
+func (s *Store) deleteTransferPair(transferGroupID string, userId int) (*deleteTransferResult, error) {
+	// Get both transactions in the transfer
+	query := `
+        SELECT t.id, t.account_token, t.transaction_type_id, t.category_id, t.amount, t.description, 
+               t.date, t.balance, t.transfer_group_id, t.created_at
+        FROM transactions t
+        INNER JOIN accounts a ON t.account_token = a.token
+        WHERE t.transfer_group_id = $1 AND a.user_id = $2
+    `
+
+	rows, err := s.db.Query(query, transferGroupID, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query transfer transactions: %w", err)
+	}
+	defer rows.Close()
+
+	var transactions []*types.Transaction
+	for rows.Next() {
+		tx, err := scanTransaction(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		transactions = append(transactions, tx)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating transactions: %w", err)
+	}
+
+	if len(transactions) != 2 {
+		return nil, fmt.Errorf("invalid transfer: expected 2 transactions, found %d", len(transactions))
+	}
+
+	// Start database transaction for atomic deletion
+	dbTx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer dbTx.Rollback()
+
+	result := &deleteTransferResult{}
+
+	// Delete both transactions and update both account balances
+	for i, tx := range transactions {
+		// Get the account
+		account, err := s.accountStore.GetAccountByToken(tx.AccountToken, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get account: %w", err)
+		}
+
+		// Calculate balance adjustment
+		amount := tx.Amount
+		if tx.TransactionTypeId == int(types.CreditTransactionType) {
+			amount = amount * -1
+		}
+
+		newBalance := account.Balance + amount
+
+		// Delete transaction
+		_, err = dbTx.Exec("DELETE FROM transactions WHERE id = $1", tx.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete transaction %d: %w", tx.ID, err)
+		}
+
+		// Update account balance
+		_, err = dbTx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", newBalance, tx.AccountToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update account balance: %w", err)
+		}
+
+		// Store both account info
+		if i == 0 {
+			result.primaryAccountToken = tx.AccountToken
+			result.primaryBalance = newBalance
+		} else {
+			result.secondaryAccountToken = tx.AccountToken
+			result.secondaryBalance = newBalance
+		}
+	}
+
+	if err := dbTx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return result, nil
+}
+
 func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*types.TransactionChangeResponse, error) {
 	transactionDTO, err := s.GetTransactionDTOById(transactionId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction DTO: %w", err)
 	}
 
+	// Check if this is a transfer
+	isTransfer := transactionDTO.TransferGroupId != nil && *transactionDTO.TransferGroupId != ""
+
+	if isTransfer {
+		// Handle transfer deletion - returns both accounts' info
+		result, err := s.deleteTransferPair(*transactionDTO.TransferGroupId, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete transfer: %w", err)
+		}
+
+		// Get available months for primary account
+		primaryMonths, err := s.GetAvailableTransactionMonthsByAccountToken(result.primaryAccountToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get primary account months: %w", err)
+		}
+
+		// Get available months for secondary account
+		secondaryMonths, err := s.GetAvailableTransactionMonthsByAccountToken(result.secondaryAccountToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get secondary account months: %w", err)
+		}
+
+		// Determine which is the paired account (not the one being deleted)
+		var pairedToken string
+		var pairedBalance float64
+		var pairedMonths []*types.MonthYear
+
+		if transactionDTO.AccountToken == result.primaryAccountToken {
+			pairedToken = result.secondaryAccountToken
+			pairedBalance = result.secondaryBalance
+			pairedMonths = secondaryMonths
+		} else {
+			pairedToken = result.primaryAccountToken
+			pairedBalance = result.primaryBalance
+			pairedMonths = primaryMonths
+		}
+
+		return &types.TransactionChangeResponse{
+			Transaction:          transactionDTO,
+			AccountBalance:       &result.primaryBalance,
+			Months:               primaryMonths,
+			IsTransfer:           true,
+			PairedAccountToken:   &pairedToken,
+			PairedAccountBalance: &pairedBalance,
+			PairedAccountMonths:  pairedMonths,
+		}, nil
+	}
+
+	// Not a transfer - handle normally
 	balance, err := s.DeleteTransaction(transactionId, userId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete transaction: %w", err)
 	}
 
-	transactionDTO.Balance = *balance
-
-	// Get available months for the account token
 	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(transactionDTO.AccountToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get available months: %w", err)
@@ -617,8 +771,9 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 
 	return &types.TransactionChangeResponse{
 		Transaction:    transactionDTO,
-		AccountBalance: &transactionDTO.Balance,
+		AccountBalance: balance,
 		Months:         availableMonths,
+		IsTransfer:     false,
 	}, nil
 }
 

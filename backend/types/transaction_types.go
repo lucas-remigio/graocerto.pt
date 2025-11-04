@@ -71,11 +71,14 @@ type TransactionDTO struct {
 }
 
 type TransactionChangeResponse struct {
-	Transaction    *TransactionDTO `json:"transaction"`
-	AccountBalance *float64        `json:"account_balance,omitempty"`
-	Months         []*MonthYear    `json:"months"`
+	Transaction          *TransactionDTO `json:"transaction"`
+	AccountBalance       *float64        `json:"account_balance,omitempty"`
+	Months               []*MonthYear    `json:"months"`
+	PairedAccountToken   *string         `json:"paired_account_token,omitempty"`
+	PairedAccountBalance *float64        `json:"paired_account_balance,omitempty"`
+	PairedAccountMonths  []*MonthYear    `json:"paired_account_months,omitempty"`
+	IsTransfer           bool            `json:"is_transfer"`
 }
-
 type TransferResponse struct {
 	TransferGroupID           string          `json:"transfer_group_id"`
 	DebitTransaction          *TransactionDTO `json:"debit_transaction"`

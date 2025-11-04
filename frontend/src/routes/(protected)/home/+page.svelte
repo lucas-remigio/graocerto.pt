@@ -324,14 +324,66 @@
 	async function deleteTransaction(transaction: TransactionDto) {
 		try {
 			const response = await dataService.deleteTransaction(transaction);
+
+			// Always remove the deleted transaction from current view
 			transactions = transactions.filter((t) => t.id !== transaction.id);
+
+			// Update current account
 			updateAccountAndMonths(response);
+
+			// Handle transfer deletion
+			if (response.is_transfer) {
+				handleTransferDeletion(transaction, response);
+			}
 		} catch (err) {
 			console.error('Error deleting transaction:', err);
-			error = $t('errors.failed-create-account');
+			error = $t('errors.failed-delete-transaction');
 		}
 	}
 
+	function handleTransferDeletion(
+		deletedTransaction: TransactionDto,
+		response: TransactionChangeResponse
+	) {
+		if (!response.paired_account_token) return;
+
+		// Find and update the paired account
+		const pairedAccount = accounts.find((acc) => acc.token === response.paired_account_token);
+		if (pairedAccount && response.paired_account_balance !== undefined) {
+			pairedAccount.balance = response.paired_account_balance;
+		}
+
+		// If we're currently viewing the paired account, update its view
+		if (isViewingPairedAccount(response.paired_account_token)) {
+			updatePairedAccountView(deletedTransaction, response);
+		}
+	}
+
+	function isViewingPairedAccount(pairedAccountToken: string): boolean {
+		return selectedAccount?.token === pairedAccountToken;
+	}
+
+	function updatePairedAccountView(
+		deletedTransaction: TransactionDto,
+		response: TransactionChangeResponse
+	) {
+		// Update balance
+		if (response.paired_account_balance !== undefined) {
+			selectedAccount!.balance = response.paired_account_balance;
+		}
+
+		// Update available months
+		if (response.paired_account_months) {
+			availableMonths = response.paired_account_months;
+		}
+
+		// Remove the paired transaction using transfer_group_id
+		if (deletedTransaction.transfer_group_id) {
+			transactions = transactions.filter(
+				(t) => t.transfer_group_id !== deletedTransaction.transfer_group_id
+			);
+		}
+	}
 	/* ========================================================
 	 * Transfer Logic
 	 * ========================================================
