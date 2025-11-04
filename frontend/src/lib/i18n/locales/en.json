@@ -229,7 +229,8 @@
 		"total-debit": "Total Debits",
 		"total-credit": "Total Credits",
 		"total-transfer": "Total Transfers",
-		"net-balance": "Net Balance"
+		"net-balance": "Net Balance",
+		"transfer": "Transfer"
 	},
 
 	"transfers": {

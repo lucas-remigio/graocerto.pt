@@ -300,8 +300,17 @@
 										{tx.category.category_name}
 									</span>
 								</td>
-								<td class="text-base-content">{formatCurrency(tx.amount)}€</td>
-								<td class="text-base-content">{tx.description || 'N/A'}</td>
+								<td class="text-base-content">
+									<div class="flex items-center justify-center gap-2">
+										{#if tx.transfer_group_id}
+											<span class="tooltip" data-tip={$t('transactions.transfer')}>
+												<ArrowRightLeft size={14} class="text-info" />
+											</span>
+										{/if}
+										<span>{formatCurrency(tx.amount)}€</span>
+									</div>
+								</td>
+								<td class="text-base-content"> {tx.description || 'N/A'} </td>
 								<td class="text-base-content">
 									<div class="flex items-center justify-center gap-x-2">
 										<button
