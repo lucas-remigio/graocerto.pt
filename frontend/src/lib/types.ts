@@ -53,8 +53,8 @@ export interface TransactionChangeResponse {
 export interface CreateTransferPayload {
 	source_account_token: string;
 	destination_account_token: string;
-	debit_category_id: number; 
-	credit_category_id: number; 
+	debit_category_id: number;
+	credit_category_id: number;
 	amount: number;
 	description: string;
 	date: string;
@@ -64,6 +64,10 @@ export interface TransferResponse {
 	transfer_group_id: string;
 	debit_transaction: TransactionDto;
 	credit_transaction: TransactionDto;
+	source_account_balance: number;
+	destination_account_balance: number;
+	source_account_months: MonthYear[];
+	destination_account_months: MonthYear[];
 }
 
 export interface AccountChangeResponse {

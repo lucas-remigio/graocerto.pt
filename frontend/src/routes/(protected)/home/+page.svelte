@@ -10,7 +10,8 @@
 		TransactionsTotals,
 		TransactionStatistics,
 		TransactionChangeResponse,
-		AccountChangeResponse
+		AccountChangeResponse,
+		TransferResponse
 	} from '$lib/types';
 	import { dataService } from '$lib/services/dataService';
 	import Accounts from '$components/Accounts.svelte';
@@ -332,6 +333,39 @@
 	}
 
 	/* ========================================================
+	 * Transfer Logic
+	 * ========================================================
+	 */
+
+	function handleNewTransfer(event: CustomEvent<TransferResponse>) {
+		const response = event.detail;
+
+		// Update source account balance if it's the selected account
+		if (selectedAccount?.token === response.debit_transaction.account_token) {
+			selectedAccount.balance = response.source_account_balance;
+			availableMonths = response.source_account_months;
+			upsertTransaction(response.debit_transaction);
+		}
+
+		// Update destination account balance
+		const destAccount = accounts.find(
+			(acc) => acc.token === response.credit_transaction.account_token
+		);
+		if (destAccount) {
+			destAccount.balance = response.destination_account_balance;
+		}
+
+		// If destination is selected account, update months and add credit transaction
+		if (selectedAccount?.token === response.credit_transaction.account_token) {
+			selectedAccount.balance = response.destination_account_balance;
+			availableMonths = response.destination_account_months;
+			upsertTransaction(response.credit_transaction);
+		}
+
+		refreshCachesAndNotify();
+	}
+
+	/* ========================================================
 	 * Account Logic
 	 * ========================================================
 	 */
@@ -478,6 +512,7 @@
 								on:updateTransaction={handleUpdateTransaction}
 								on:deleteTransaction={({ detail: { transaction } }) =>
 									handleDeleteTransaction(transaction)}
+								on:newTransfer={handleNewTransfer}
 							/>
 						{:else}
 							<TransactionStatisticsComponent

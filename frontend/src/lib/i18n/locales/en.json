@@ -187,7 +187,9 @@
 		"balance-negative": "Balance must be greater than or equal to 0",
 		"balance-too-large": "Balance must be less than 999999999",
 		"account-name-too-short": "Account name must be at least 3 characters",
-		"server-error": "Server error"
+		"server-error": "Server error",
+		"failed-create-transfer": "Failed to create transfer. Please try again.",
+		"failed-load-data": "Failed to load data. Please try again."
 	},
 
 	"months": {
@@ -228,6 +230,27 @@
 		"total-credit": "Total Credits",
 		"total-transfer": "Total Transfers",
 		"net-balance": "Net Balance"
+	},
+
+	"transfers": {
+		"create-transfer": "Create Transfer",
+		"from-account": "From Account",
+		"to-account": "To Account",
+		"select-destination": "Select destination account",
+		"select-destination-account": "Please select a destination account",
+		"same-account-error": "Source and destination accounts must be different",
+		"debit-category": "Debit Category",
+		"credit-category": "Credit Category",
+		"money-leaving": "Money leaving",
+		"money-entering": "Money entering",
+		"select-debit-category": "Please select a debit category",
+		"select-credit-category": "Please select a credit category",
+		"no-debit-categories": "No debit categories available",
+		"no-credit-categories": "No credit categories available",
+		"create-category-first": "Create a category first",
+		"transfer-description": "e.g., Transfer to savings",
+		"transfer-amount": "0.00",
+		"amount-must-be-positive": "Amount must be greater than zero"
 	},
 
 	"accounts": {

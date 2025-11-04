@@ -28,8 +28,8 @@ type CreateTransactionPayload struct {
 type CreateTransferPayload struct {
 	SourceAccountToken      string  `json:"source_account_token" validate:"required,min=1,max=255"`
 	DestinationAccountToken string  `json:"destination_account_token" validate:"required,min=1,max=255"`
-	DebitCategoryID         int     `json:"debit_category_id" validate:"required,numeric,min=1"`  
-	CreditCategoryID        int     `json:"credit_category_id" validate:"required,numeric,min=1"` 
+	DebitCategoryID         int     `json:"debit_category_id" validate:"required,numeric,min=1"`
+	CreditCategoryID        int     `json:"credit_category_id" validate:"required,numeric,min=1"`
 	Amount                  float64 `json:"amount" validate:"required,numeric,gt=0,lte=999999999"`
 	Description             string  `json:"description" validate:"max=255"`
 	Date                    string  `json:"date" validate:"required"`
@@ -77,9 +77,13 @@ type TransactionChangeResponse struct {
 }
 
 type TransferResponse struct {
-	TransferGroupID   string          `json:"transfer_group_id"`
-	DebitTransaction  *TransactionDTO `json:"debit_transaction"`
-	CreditTransaction *TransactionDTO `json:"credit_transaction"`
+	TransferGroupID           string          `json:"transfer_group_id"`
+	DebitTransaction          *TransactionDTO `json:"debit_transaction"`
+	CreditTransaction         *TransactionDTO `json:"credit_transaction"`
+	SourceAccountBalance      float64         `json:"source_account_balance"`
+	DestinationAccountBalance float64         `json:"destination_account_balance"`
+	SourceAccountMonths       []*MonthYear    `json:"source_account_months"`
+	DestinationAccountMonths  []*MonthYear    `json:"destination_account_months"`
 }
 
 type TransactionsResponse struct {

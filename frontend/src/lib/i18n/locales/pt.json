@@ -190,7 +190,9 @@
 		"balance-negative": "O saldo deve ser maior ou igual a 0",
 		"balance-too-large": "O saldo deve ser menor que 999999999",
 		"account-name-too-short": "O nome da conta deve ter pelo menos 3 caracteres",
-		"server-error": "Erro do servidor"
+		"server-error": "Erro do servidor",
+		"failed-create-transfer": "Falha ao criar transferência. Tenta novamente.",
+		"failed-load-data": "Falha ao carregar dados. Tenta novamente."
 	},
 
 	"months": {
@@ -231,6 +233,27 @@
 		"total-credit": "Total Créditos",
 		"total-transfer": "Total Transferências",
 		"net-balance": "Saldo Líquido"
+	},
+
+	"transfers": {
+		"create-transfer": "Criar Transferência",
+		"from-account": "Da Conta",
+		"to-account": "Para a Conta",
+		"select-destination": "Seleciona a conta de destino",
+		"select-destination-account": "Por favor, seleciona uma conta de destino",
+		"same-account-error": "As contas de origem e destino devem ser diferentes",
+		"debit-category": "Categoria de Débito",
+		"credit-category": "Categoria de Crédito",
+		"money-leaving": "Dinheiro a sair",
+		"money-entering": "Dinheiro a entrar",
+		"select-debit-category": "Por favor, seleciona uma categoria de débito",
+		"select-credit-category": "Por favor, seleciona uma categoria de crédito",
+		"no-debit-categories": "Sem categorias de débito disponíveis",
+		"no-credit-categories": "Sem categorias de crédito disponíveis",
+		"create-category-first": "Cria uma categoria primeiro",
+		"transfer-description": "ex: Transferência para poupança",
+		"transfer-amount": "0,00",
+		"amount-must-be-positive": "O montante deve ser maior que zero"
 	},
 
 	"accounts": {

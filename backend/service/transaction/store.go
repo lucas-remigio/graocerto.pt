@@ -321,10 +321,26 @@ func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int)
 		return nil, fmt.Errorf("failed to get credit transaction: %w", err)
 	}
 
+	// Get available months for source account
+	sourceMonths, err := s.GetAvailableTransactionMonthsByAccountToken(payload.SourceAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get source account months: %w", err)
+	}
+
+	// Get available months for destination account
+	destMonths, err := s.GetAvailableTransactionMonthsByAccountToken(payload.DestinationAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get destination account months: %w", err)
+	}
+
 	return &types.TransferResponse{
-		TransferGroupID:   transferGroupID,
-		DebitTransaction:  debitTxDTO,
-		CreditTransaction: creditTxDTO,
+		TransferGroupID:           transferGroupID,
+		DebitTransaction:          debitTxDTO,
+		CreditTransaction:         creditTxDTO,
+		SourceAccountBalance:      debitBalance,
+		DestinationAccountBalance: creditBalance,
+		SourceAccountMonths:       sourceMonths,
+		DestinationAccountMonths:  destMonths,
 	}, nil
 }
 
