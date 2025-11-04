@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { dataService } from '$lib/services/dataService';
-	import type { Category, CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
+	import type { CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
 	import CategoriesTable from '$components/CategoriesTable.svelte';
 	import { Plus, Tag } from 'lucide-svelte';
 	import {
@@ -54,7 +54,12 @@
 
 	async function editCategory(
 		categoryId: number,
-		categoryData: { category_name: string; color: string; budget: number | null }
+		categoryData: {
+			parent_category_id?: number | null;
+			category_name: string;
+			color: string;
+			budget: number | null;
+		}
 	) {
 		try {
 			const response = await dataService.editCategory(categoryId, categoryData);
@@ -97,7 +102,6 @@
 	}
 
 	function handleCreateCategorySuccess(event: CustomEvent<CategoryChangeResponse>) {
-		// Clear category caches and refetch
 		closeCreateCategoryModal();
 		dataService.clearCategoryCaches();
 		categories.push(event.detail.category);
@@ -105,14 +109,33 @@
 	}
 
 	function sortCategories() {
-		// newest to oldest
-		categories.sort((a, b) => b.id - a.id);
+		// Sort: parents first (by id desc), then children (by parent_id and id desc)
+		categories.sort((a, b) => {
+			// Both are parents or both are children
+			if (!!a.parent_category_id === !!b.parent_category_id) {
+				// If both are children, group by parent
+				if (a.parent_category_id && b.parent_category_id) {
+					if (a.parent_category_id !== b.parent_category_id) {
+						return b.parent_category_id - a.parent_category_id;
+					}
+				}
+				// Within same group, newest first
+				return b.id - a.id;
+			}
+			// Parents come before children
+			return a.parent_category_id ? 1 : -1;
+		});
 	}
 
 	function handleEditCategorySuccess(
 		event: CustomEvent<{
 			categoryId: number;
-			categoryData: { category_name: string; color: string; budget: number | null };
+			categoryData: {
+				parent_category_id?: number | null;
+				category_name: string;
+				color: string;
+				budget: number | null;
+			};
 		}>
 	) {
 		const { categoryId, categoryData } = event.detail;
@@ -161,6 +184,7 @@
 					categories={creditCategories()}
 					categoryType={TransactionTypeSlug.Credit}
 					on:editCategory={handleEditCategorySuccess}
+					on:newCategory={handleCreateCategorySuccess}
 					on:deleteCategory={({ detail: { categoryId } }) => {
 						handleDeleteCategory(categoryId);
 					}}
@@ -184,6 +208,7 @@
 					categories={debitCategories()}
 					categoryType={TransactionTypeSlug.Debit}
 					on:editCategory={handleEditCategorySuccess}
+					on:newCategory={handleCreateCategorySuccess}
 					on:deleteCategory={({ detail: { categoryId } }) => {
 						handleDeleteCategory(categoryId);
 					}}
@@ -197,6 +222,7 @@
 	<CategoryModal
 		category={null}
 		transactionType={selectedTransactionType}
+		parentCategory={null}
 		on:closeModal={closeCreateCategoryModal}
 		on:newCategory={handleCreateCategorySuccess}
 	/>

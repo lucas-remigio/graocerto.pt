@@ -5,34 +5,31 @@
 	import { createEventDispatcher } from 'svelte';
 	import { locale, t } from '$lib/i18n';
 
-	// Unified inputs: provide either `category` (edit) or `transactionType` (create)
+	// Unified inputs
 	export let category: CategoryDto | null = null; // edit mode if provided
 	export let transactionType: TransactionType | null = null; // create mode if provided
+	export let parentCategory: CategoryDto | null = null; // NEW: for creating subcategories
 
 	// Mode
 	$: isEditMode = !!category;
+	$: isSubcategoryMode = !!parentCategory; // NEW
 
 	// Local state
 	let error: string = '';
 	let category_name: string = category ? category.category_name : '';
-	let color: string = category ? category.color : '#ffffff';
-	// keep numeric budget for validation/submission
+	let color: string = category ? category.color : parentCategory?.color || '#ffffff'; // Pre-fill parent's color
 	let budget: number | null = category ? (category.budget ?? null) : null;
-	// string-backed input so the control starts empty and typing is pleasant
 	let budgetInput: string = category && category.budget != null ? String(category.budget) : '';
 
 	$: currentLocale = $locale || 'pt';
 
-	// Format preview (uses user's locale)
 	function formatCurrency(v: number | null) {
 		if (v == null) return '';
-		// use non-breaking space so the euro sign doesn't wrap to next line
 		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(v) + '\u00A0€';
 	}
 
 	function onBudgetInput(e: Event) {
 		const raw = (e.target as HTMLInputElement).value;
-		// allow digits only while typing
 		const digits = raw.replace(/[^\d]/g, '');
 		budgetInput = digits;
 		if (digits === '') {
@@ -42,13 +39,11 @@
 			if (Number.isNaN(n)) {
 				budget = null;
 			} else {
-				// clamp to valid range but don't mutate the typed digits (only clamp numeric state)
 				budget = Math.min(99999, Math.max(1, n));
 			}
 		}
 	}
 
-	// Events
 	const dispatch = createEventDispatcher();
 
 	function handleCloseModal() {
@@ -90,7 +85,6 @@
 			return false;
 		}
 
-		// Budget is optional, but if provided must be valid
 		if (budget != null && (budget < 1 || isNaN(budget) || budget > 99999)) {
 			error = $t('categories.budget-invalid');
 			return false;
@@ -105,7 +99,11 @@
 		transfer: 'border-blue-500 dark:border-blue-400'
 	};
 
-	$: typeSlug = isEditMode ? category!.transaction_type.type_slug : transactionType?.type_slug;
+	$: typeSlug = isEditMode
+		? category!.transaction_type.type_slug
+		: isSubcategoryMode
+			? parentCategory!.transaction_type.type_slug
+			: transactionType?.type_slug;
 	$: modalBorderClass = typeSlug ? borderClasses[typeSlug] : 'bg-gray-50';
 
 	async function handleSubmit() {
@@ -113,8 +111,8 @@
 		if (!validateForm()) return;
 
 		if (isEditMode) {
-			// Delegate API call to parent (keeps existing contract)
 			const editCategoryData = {
+				parent_category_id: category!.parent_category_id,
 				category_name,
 				color,
 				budget
@@ -123,18 +121,30 @@
 			return;
 		}
 
-		// Create mode: call API here (keeps existing contract)
-		if (!transactionType) {
+		// Create mode - determine transaction type and parent
+		let transaction_type_id: number;
+		let parent_category_id: number | null = null;
+
+		if (isSubcategoryMode) {
+			// Creating a subcategory
+			transaction_type_id = parentCategory!.transaction_type.id;
+			parent_category_id = parentCategory!.id;
+		} else if (transactionType) {
+			// Creating a root category
+			transaction_type_id = transactionType.id;
+		} else {
 			error = $t('errors.failed-create-category');
 			return;
 		}
 
 		const categoryData = {
-			transaction_type_id: transactionType.id,
+			transaction_type_id,
+			parent_category_id,
 			category_name,
 			color,
 			budget
 		};
+		console.log('Creating category with data:', categoryData);
 
 		try {
 			const response: CategoryChangeResponse = await dataService.createCategory(categoryData);
@@ -148,7 +158,6 @@
 
 <div class="modal modal-open">
 	<div class="modal-box relative border-4 {modalBorderClass}">
-		<!-- Close button -->
 		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}>
 			<X />
 		</button>
@@ -158,6 +167,8 @@
 				{$t('categories.edit-category-title')} -
 				{$t('transaction-types.' + category!.transaction_type.type_slug)} - {category!
 					.category_name}
+			{:else if isSubcategoryMode}
+				{$t('categories.new-subcategory-for')} - {parentCategory!.category_name}
 			{:else}
 				{$t('categories.new-category-for')} -
 				{$t('transaction-types.' + (transactionType ? transactionType.type_slug : ''))}
@@ -165,7 +176,7 @@
 		</h3>
 
 		{#if error}
-			<div class="alert alert-error">
+			<div class="alert alert-error mb-4">
 				<p class="text-gray-100">{error}</p>
 			</div>
 		{/if}
@@ -192,12 +203,10 @@
 					<span class="label-text">{$t('categories.color')}</span>
 				</label>
 				<div class="relative flex h-14 w-full items-center gap-4">
-					<!-- Color preview -->
 					<div
 						class="border-base-300 h-14 w-14 rounded-full border-2 shadow"
 						style="background-color: {color};"
 					></div>
-					<!-- Hex value -->
 					<input
 						type="text"
 						class="input input-bordered input-sm w-24 text-center"
@@ -205,7 +214,6 @@
 						readonly
 						tabindex="-1"
 					/>
-					<!-- Full-size invisible color input -->
 					<input
 						id="color"
 						type="color"
@@ -217,14 +225,10 @@
 				</div>
 			</div>
 
-			<!-- Budget Field (optional) -->
+			<!-- Budget Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="budget">
-					<span class="label-text"
-						>{$t('categories.budget', { default: 'Budget' })} ({$t('common.optional', {
-							default: 'optional'
-						})})</span
-					>
+					<span class="label-text">{$t('categories.budget')} ({$t('common.optional')})</span>
 				</label>
 				<div class="flex items-center gap-3">
 					<input
@@ -232,13 +236,12 @@
 						type="text"
 						inputmode="numeric"
 						pattern="\d*"
-						placeholder={$t('categories.budget-placeholder', { default: 'e.g. 250' })}
+						placeholder={$t('categories.budget-placeholder')}
 						class="input input-bordered w-full"
 						value={budgetInput}
 						on:input={onBudgetInput}
 						aria-describedby="budget-help"
 					/>
-					<!-- Preview badge -->
 					<div class="text-base-content/60 rounded border px-3 py-2 text-sm">
 						{#if budget != null}
 							{formatCurrency(budget)}
@@ -248,9 +251,7 @@
 					</div>
 				</div>
 				<p id="budget-help" class="text-base-content/70 mt-2 text-xs">
-					{$t('categories.budget-help', {
-						default: 'Optional: Enter monthly budget in € (1-99,999).'
-					})}
+					{$t('categories.budget-help')}
 				</p>
 			</div>
 

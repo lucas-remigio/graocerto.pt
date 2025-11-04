@@ -301,9 +301,15 @@
 		"edit-category-title": "Editar Categoria",
 		"create-new": "Criar Nova",
 		"budget": "Orçamento",
+		"budget-placeholder": "Insira o orçamento mensal (em €)",
 		"budget-required": "Orçamento é obrigatório",
 		"budget-invalid": "Orçamento deve ser um número válido entre 0 e 99999",
-		"budget-help": "Insira o orçamento mensal em €."
+		"budget-help": "Insira o orçamento mensal em €.",
+		"add-subcategory": "Adicionar Subcategoria",
+		"new-subcategory-for": "Nova Subcategoria para",
+		"parent-category": "Categoria Pai",
+		"no-parent": "Sem Pai (Categoria Raiz)",
+		"parent-help": "Opcional: Faça desta uma subcategoria de outra categoria"
 	},
 
 	"modals": {

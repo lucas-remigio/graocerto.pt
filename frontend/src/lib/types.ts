@@ -97,11 +97,30 @@ export interface TransactionsTotals {
 export interface CategoryDto {
 	id: number;
 	transaction_type: TransactionType;
+	parent_category_id?: number | null;
+	parent_category?: CategoryDto;
+	subcategories?: CategoryDto[];
 	category_name: string;
 	color: string;
-	budget: number | null;
+	budget?: number | null;
 	created_at: string;
 	updated_at: string;
+	deleted_at?: string | null;
+}
+
+export interface CreateCategoryPayload {
+	transaction_type_id: number;
+	parent_category_id?: number | null;
+	category_name: string;
+	color: string;
+	budget?: number | null;
+}
+
+export interface UpdateCategoryPayload {
+	parent_category_id?: number | null;
+	category_name: string;
+	color: string;
+	budget?: number | null;
 }
 
 export interface Category {

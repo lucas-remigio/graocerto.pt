@@ -41,13 +41,7 @@ func (s *Store) GetCategoriesDtoByUserId(userId int) ([]*types.CategoryDTO, erro
           WHERE c.user_id = $1 AND c.deleted_at IS NULL
           ORDER BY c.created_at DESC`
 
-	categories, err := db.QueryList(s.db, query, scanRowsIntoCategoryDto, userId)
-	if err != nil {
-		return nil, err
-	}
-
-	// Build hierarchy (we'll populate subcategories and parent references)
-	return buildCategoryHierarchy(categories), nil
+	return db.QueryList(s.db, query, scanRowsIntoCategoryDto, userId)
 }
 
 func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, error) {
@@ -57,34 +51,6 @@ func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, erro
           JOIN transaction_types tt ON c.transaction_type_id = tt.id
           WHERE c.id = $1 AND c.user_id = $2 AND c.deleted_at IS NULL`
 	return db.QuerySingle(s.db, query, scanRowIntoCategoryDto, id, userId)
-}
-
-// Helper function to build hierarchy
-func buildCategoryHierarchy(categories []*types.CategoryDTO) []*types.CategoryDTO {
-	// Create a map for quick lookup
-	categoryMap := make(map[int]*types.CategoryDTO)
-	for _, cat := range categories {
-		categoryMap[cat.ID] = cat
-		cat.Subcategories = []*types.CategoryDTO{} // Initialize empty slice
-	}
-
-	// Build parent-child relationships
-	var rootCategories []*types.CategoryDTO
-	for _, cat := range categories {
-		if cat.ParentCategoryId != nil {
-			// This is a subcategory
-			parent, exists := categoryMap[*cat.ParentCategoryId]
-			if exists {
-				parent.Subcategories = append(parent.Subcategories, cat)
-				cat.ParentCategory = parent // Optional: set parent reference
-			}
-		} else {
-			// This is a root category
-			rootCategories = append(rootCategories, cat)
-		}
-	}
-
-	return rootCategories
 }
 
 func (s *Store) CreateCategory(category *types.Category) (*types.Category, error) {
