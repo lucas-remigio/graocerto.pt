@@ -8,6 +8,7 @@ type TransactionStore interface {
 	GetTransactionDTOById(id int) (*TransactionDTO, error)
 	CreateTransaction(transaction *Transaction, userId int) (*Transaction, error)
 	CreateTransactionAndReturn(transaction *Transaction, userId int) (*TransactionChangeResponse, error)
+	CreateTransfer(payload *CreateTransferPayload, userId int) (*TransferResponse, error)
 	UpdateTransaction(transaction *UpdateTransactionPayload, userId int) (*Transaction, error)
 	UpdateTransactionAndReturn(payload *UpdateTransactionPayload, userId int) (*TransactionChangeResponse, error)
 	DeleteTransaction(transactionId int, userId int) (balance *float64, err error)
@@ -23,6 +24,15 @@ type CreateTransactionPayload struct {
 	Amount       float64 `json:"amount" validate:"required,numeric,gte=0,lte=999999999"`
 	Description  string  `json:"description" validate:"max=255"`
 	Date         string  `json:"date" validate:"required"`
+}
+type CreateTransferPayload struct {
+	SourceAccountToken      string  `json:"source_account_token" validate:"required,min=1,max=255"`
+	DestinationAccountToken string  `json:"destination_account_token" validate:"required,min=1,max=255"`
+	DebitCategoryID         int     `json:"debit_category_id" validate:"required,numeric,min=1"`  
+	CreditCategoryID        int     `json:"credit_category_id" validate:"required,numeric,min=1"` 
+	Amount                  float64 `json:"amount" validate:"required,numeric,gt=0,lte=999999999"`
+	Description             string  `json:"description" validate:"max=255"`
+	Date                    string  `json:"date" validate:"required"`
 }
 
 type UpdateTransactionPayload struct {
@@ -56,7 +66,7 @@ type TransactionDTO struct {
 	Balance         float64          `json:"balance"`
 	CreatedAt       time.Time        `json:"created_at"`
 	Category        *CategoryDTO     `json:"category,omitempty"`
-	TransferGroupid *string          `json:"transfer_group_id,omitempty"`
+	TransferGroupId *string          `json:"transfer_group_id,omitempty"`
 	TransactionType *TransactionType `json:"transaction_type,omitempty"`
 }
 
@@ -64,6 +74,12 @@ type TransactionChangeResponse struct {
 	Transaction    *TransactionDTO `json:"transaction"`
 	AccountBalance *float64        `json:"account_balance,omitempty"`
 	Months         []*MonthYear    `json:"months"`
+}
+
+type TransferResponse struct {
+	TransferGroupID   string          `json:"transfer_group_id"`
+	DebitTransaction  *TransactionDTO `json:"debit_transaction"`
+	CreditTransaction *TransactionDTO `json:"credit_transaction"`
 }
 
 type TransactionsResponse struct {

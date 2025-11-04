@@ -82,7 +82,7 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 		&t.Description,
 		&t.Date,
 		&t.Balance,
-		&t.TransferGroupid,
+		&t.TransferGroupId,
 		&t.CreatedAt,
 		&t.Category.ID,
 		&t.Category.CategoryName,
@@ -197,6 +197,134 @@ func (s *Store) CreateTransactionAndReturn(transaction *types.Transaction, userI
 		Transaction:    createdDTO,
 		AccountBalance: &createdDTO.Balance,
 		Months:         availableMonths,
+	}, nil
+}
+
+func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int) (*types.TransferResponse, error) {
+	catStore := category.NewStore(s.db)
+
+	// Verify debit category exists and is a debit type
+	debitCategory, err := catStore.GetCategoryById(payload.DebitCategoryID, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid debit category: %w", err)
+	}
+	if debitCategory.TransactionTypeID != int(types.DebitTransactionType) {
+		return nil, fmt.Errorf("debit category must be a debit type")
+	}
+
+	// Verify credit category exists and is a credit type
+	creditCategory, err := catStore.GetCategoryById(payload.CreditCategoryID, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid credit category: %w", err)
+	}
+	if creditCategory.TransactionTypeID != int(types.CreditTransactionType) {
+		return nil, fmt.Errorf("credit category must be a credit type")
+	}
+
+	// Verify both accounts exist and belong to user
+	sourceAccount, err := s.accountStore.GetAccountByToken(payload.SourceAccountToken, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid source account: %w", err)
+	}
+
+	destAccount, err := s.accountStore.GetAccountByToken(payload.DestinationAccountToken, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid destination account: %w", err)
+	}
+
+	// Verify ownership
+	if err := db.ValidateOwnership(sourceAccount.UserID, userId, "source account"); err != nil {
+		return nil, err
+	}
+	if err := db.ValidateOwnership(destAccount.UserID, userId, "destination account"); err != nil {
+		return nil, err
+	}
+
+	// Generate unique transfer group ID
+	transferGroupID, err := utils.GenerateUUID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate transfer group ID: %w", err)
+	}
+
+	// Start database transaction
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Create DEBIT transaction on source account (money going out)
+	debitBalance := sourceAccount.Balance - payload.Amount
+	var debitTxId int
+	err = tx.QueryRow(
+		`INSERT INTO transactions 
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+		payload.SourceAccountToken,
+		int(types.DebitTransactionType),
+		payload.DebitCategoryID, // Use debit category
+		payload.Amount,
+		payload.Description,
+		payload.Date,
+		debitBalance,
+		transferGroupID,
+	).Scan(&debitTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create debit transaction: %w", err)
+	}
+
+	// Update source account balance
+	_, err = tx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", debitBalance, payload.SourceAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update source account balance: %w", err)
+	}
+
+	// Create CREDIT transaction on destination account (money coming in)
+	creditBalance := destAccount.Balance + payload.Amount
+	var creditTxId int
+	err = tx.QueryRow(
+		`INSERT INTO transactions 
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+		payload.DestinationAccountToken,
+		int(types.CreditTransactionType),
+		payload.CreditCategoryID, // Use credit category
+		payload.Amount,
+		payload.Description,
+		payload.Date,
+		creditBalance,
+		transferGroupID,
+	).Scan(&creditTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create credit transaction: %w", err)
+	}
+
+	// Update destination account balance
+	_, err = tx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", creditBalance, payload.DestinationAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update destination account balance: %w", err)
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transfer: %w", err)
+	}
+
+	// Get the created transaction DTOs
+	debitTxDTO, err := s.GetTransactionDTOById(debitTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get debit transaction: %w", err)
+	}
+
+	creditTxDTO, err := s.GetTransactionDTOById(creditTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get credit transaction: %w", err)
+	}
+
+	return &types.TransferResponse{
+		TransferGroupID:   transferGroupID,
+		DebitTransaction:  debitTxDTO,
+		CreditTransaction: creditTxDTO,
 	}, nil
 }
 

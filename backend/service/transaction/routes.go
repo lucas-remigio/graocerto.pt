@@ -20,6 +20,7 @@ func NewHandler(store types.TransactionStore) *Handler {
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/transactions", middleware.AuthMiddleware(h.CreateTransaction))
+	router.HandleFunc("/transactions/transfer", middleware.AuthMiddleware(h.CreateTransfer))
 	router.HandleFunc("/transactions/dto/", middleware.AuthMiddleware(h.GetTransactionsDTOByAccountToken))
 	router.HandleFunc("/transactions/statistics/", middleware.AuthMiddleware(h.GetTransactionStatistics))
 	router.HandleFunc("/transactions/", middleware.AuthMiddleware(h.GetTransactionsByAccountToken))
@@ -53,6 +54,35 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		Date:         payload.Date,
 	}, userId)
 
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteDataResponse(w, response)
+}
+
+func (h *Handler) CreateTransfer(w http.ResponseWriter, r *http.Request) {
+	// parse and validate JSON payload
+	var payload types.CreateTransferPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// validate source and destination are different
+	if payload.SourceAccountToken == payload.DestinationAccountToken {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("source and destination accounts must be different"))
+		return
+	}
+
+	// create transfer
+	response, err := h.store.CreateTransfer(&payload, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

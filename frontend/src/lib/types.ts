@@ -50,6 +50,22 @@ export interface TransactionChangeResponse {
 	months: MonthYear[];
 }
 
+export interface CreateTransferPayload {
+	source_account_token: string;
+	destination_account_token: string;
+	debit_category_id: number; 
+	credit_category_id: number; 
+	amount: number;
+	description: string;
+	date: string;
+}
+
+export interface TransferResponse {
+	transfer_group_id: string;
+	debit_transaction: TransactionDto;
+	credit_transaction: TransactionDto;
+}
+
 export interface AccountChangeResponse {
 	account: Account;
 }

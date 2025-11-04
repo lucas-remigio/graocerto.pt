@@ -6,7 +6,7 @@
 		TransactionGroup,
 		TransactionChangeResponse
 	} from '$lib/types';
-	import { Bot, CircleDollarSign, List, Pencil, Plus, Trash } from 'lucide-svelte';
+	import { ArrowRightLeft, Bot, CircleDollarSign, List, Pencil, Plus, Trash } from 'lucide-svelte';
 	import TransactionModal from './TransactionModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 
@@ -20,7 +20,7 @@
 	} from '$lib/services/draftTransactionService';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { fade, fly, scale } from 'svelte/transition';
-	import { flip } from 'svelte/animate';
+	import TransferModal from './TransferModal.svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -77,6 +77,7 @@
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
 	let showDeleteTransactionModal = false;
+	let showTransferModal = false;
 	let error: string = '';
 
 	let selectedTransaction: TransactionDto | null = null;
@@ -197,6 +198,19 @@
 		closeEditTransactionModal();
 		dispatch('updateTransaction', event.detail);
 	}
+
+	function openTransferModal() {
+		showTransferModal = true;
+	}
+
+	function closeTransferModal() {
+		showTransferModal = false;
+	}
+
+	function handleNewTransfer(event: CustomEvent) {
+		closeTransferModal();
+		dispatch('newTransfer', event.detail);
+	}
 </script>
 
 {#if loading}
@@ -216,7 +230,16 @@
 		<div
 			class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
 		>
-			<!-- Button to add a new transaction-->
+			<!-- Transfer Button -->
+			<button
+				class="btn btn-secondary shadow-lg"
+				aria-label="Create Transfer"
+				on:click={openTransferModal}
+			>
+				<ArrowRightLeft size={20} class="text-base-100" />
+			</button>
+
+			<!-- Transaction Button -->
 			<button
 				class="btn btn-primary shadow-lg"
 				aria-label="Create New Transaction"
@@ -349,4 +372,12 @@
 		onConfirm={handleDeleteTransactionConfirm}
 		onCancel={handleDeleteTransactionCancel}
 	></ConfirmAction>
+{/if}
+
+{#if showTransferModal}
+    <TransferModal
+        {account}
+        on:closeModal={closeTransferModal}
+        on:newTransfer={handleNewTransfer}
+    />
 {/if}
