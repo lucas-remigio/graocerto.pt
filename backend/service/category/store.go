@@ -18,39 +18,72 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
-	query := `SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at, deleted_at, budget
-		  FROM categories
-		  WHERE user_id = $1 AND deleted_at IS NULL
-		  ORDER BY created_at DESC`
+	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget
+          FROM categories
+          WHERE user_id = $1 AND deleted_at IS NULL
+          ORDER BY created_at DESC`
 	return db.QueryList(s.db, query, scanRowsIntoCategory, userId)
 }
 
 func (s *Store) GetCategoryById(id int, userId int) (*types.Category, error) {
-	query := `SELECT id, user_id, transaction_type_id, category_name, color, created_at, updated_at, deleted_at, budget
-		  FROM categories
-		  WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`
+	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget
+          FROM categories
+          WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`
 	return db.QuerySingle(s.db, query, scanRowIntoCategory, id, userId)
 }
 
 func (s *Store) GetCategoriesDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
-	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
-				 tt.id, tt.type_name, tt.type_slug
-		  FROM categories c
-		  JOIN transaction_types tt ON c.transaction_type_id = tt.id
-		  WHERE c.user_id = $1 AND c.deleted_at IS NULL
-		  ORDER BY c.created_at DESC`
-	return db.QueryList(s.db,
-		query,
-		scanRowsIntoCategoryDto, userId)
+	query := `SELECT c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
+                 tt.id, tt.type_name, tt.type_slug
+          FROM categories c
+          JOIN transaction_types tt ON c.transaction_type_id = tt.id
+          WHERE c.user_id = $1 AND c.deleted_at IS NULL
+          ORDER BY c.created_at DESC`
+
+	categories, err := db.QueryList(s.db, query, scanRowsIntoCategoryDto, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build hierarchy (we'll populate subcategories and parent references)
+	return buildCategoryHierarchy(categories), nil
 }
 
 func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, error) {
-	query := `SELECT c.id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
-				 tt.id, tt.type_name, tt.type_slug
-		  FROM categories c
-		  JOIN transaction_types tt ON c.transaction_type_id = tt.id
-		  WHERE c.id = $1 AND c.user_id = $2 AND c.deleted_at IS NULL`
+	query := `SELECT c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
+                 tt.id, tt.type_name, tt.type_slug
+          FROM categories c
+          JOIN transaction_types tt ON c.transaction_type_id = tt.id
+          WHERE c.id = $1 AND c.user_id = $2 AND c.deleted_at IS NULL`
 	return db.QuerySingle(s.db, query, scanRowIntoCategoryDto, id, userId)
+}
+
+// Helper function to build hierarchy
+func buildCategoryHierarchy(categories []*types.CategoryDTO) []*types.CategoryDTO {
+	// Create a map for quick lookup
+	categoryMap := make(map[int]*types.CategoryDTO)
+	for _, cat := range categories {
+		categoryMap[cat.ID] = cat
+		cat.Subcategories = []*types.CategoryDTO{} // Initialize empty slice
+	}
+
+	// Build parent-child relationships
+	var rootCategories []*types.CategoryDTO
+	for _, cat := range categories {
+		if cat.ParentCategoryID != nil {
+			// This is a subcategory
+			parent, exists := categoryMap[*cat.ParentCategoryID]
+			if exists {
+				parent.Subcategories = append(parent.Subcategories, cat)
+				cat.ParentCategory = parent // Optional: set parent reference
+			}
+		} else {
+			// This is a root category
+			rootCategories = append(rootCategories, cat)
+		}
+	}
+
+	return rootCategories
 }
 
 func (s *Store) CreateCategory(category *types.Category) (*types.Category, error) {
@@ -163,61 +196,51 @@ func (s *Store) SoftDeleteCategory(id int, userId int) error {
 	return err
 }
 
+// Update scanner functions
 func scanRowsIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
-
-	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
-
+	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.ParentCategoryID,
+		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
 	if err != nil {
 		return nil, err
 	}
-
 	return c, nil
 }
 
 func scanRowsIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
 	c := new(types.CategoryDTO)
-
-	// Initialize nested structs so they're not nil
 	c.TransactionType = &types.TransactionType{}
 
 	err := rows.Scan(
-		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
+		&c.ID, &c.ParentCategoryID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
 		return nil, err
 	}
-
 	return c, nil
 }
 
 func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
 	c := new(types.CategoryDTO)
-
-	// Initialize nested structs so they're not nil
 	c.TransactionType = &types.TransactionType{}
 
 	err := row.Scan(
-		&c.ID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
+		&c.ID, &c.ParentCategoryID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
 		return nil, err
 	}
-
 	return c, nil
 }
 
 func scanRowIntoCategory(row *sql.Row) (*types.Category, error) {
 	c := new(types.Category)
-
-	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.CategoryName, &c.Color,
-		&c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
-
+	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.ParentCategoryID,
+		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
 	if err != nil {
 		return nil, err
 	}
-
 	return c, nil
 }

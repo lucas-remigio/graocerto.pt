@@ -30,6 +30,7 @@ type Category struct {
 	ID                int     `json:"id"`
 	UserID            int     `json:"user_id"`
 	TransactionTypeID int     `json:"transaction_type_id"`
+	ParentCategoryID  *int    `json:"parent_category_id,omitempty"`
 	CategoryName      string  `json:"category_name"`
 	Color             string  `json:"color"`
 	Budget            *int    `json:"budget"`
@@ -39,12 +40,15 @@ type Category struct {
 }
 
 type CategoryDTO struct {
-	ID              int              `json:"id"`
-	TransactionType *TransactionType `json:"transaction_type"`
-	CategoryName    string           `json:"category_name"`
-	Color           string           `json:"color"`
-	Budget          *int             `json:"budget"`
-	CreatedAt       string           `json:"created_at"`
-	UpdatedAt       string           `json:"updated_at"`
-	DeletedAt       *string          `json:"deleted_at,omitempty"` // Nullable field for soft delete
+	ID               int              `json:"id"`
+	TransactionType  *TransactionType `json:"transaction_type"`
+	ParentCategoryID *int             `json:"parent_category_id,omitempty"` // NEW - nullable
+	ParentCategory   *CategoryDTO     `json:"parent_category,omitempty"`    // NEW - for display
+	Subcategories    []*CategoryDTO   `json:"subcategories,omitempty"`      // NEW - for hierarchy
+	CategoryName     string           `json:"category_name"`
+	Color            string           `json:"color"`
+	Budget           *int             `json:"budget"`
+	CreatedAt        string           `json:"created_at"`
+	UpdatedAt        string           `json:"updated_at"`
+	DeletedAt        *string          `json:"deleted_at,omitempty"` // Nullable field for soft delete
 }
