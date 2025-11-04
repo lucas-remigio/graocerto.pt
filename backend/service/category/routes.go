@@ -48,7 +48,7 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	// create a new category
 	dto, err := h.store.CreateCategoryAndReturn(&types.Category{
 		UserID:            userId,
-		TransactionTypeID: payload.TransactionTypeId,
+		TransactionTypeId: payload.TransactionTypeId,
 		CategoryName:      payload.CategoryName,
 		Color:             payload.Color,
 		Budget:            payload.Budget,

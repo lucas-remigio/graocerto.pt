@@ -2,6 +2,7 @@ package category
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
@@ -70,9 +71,9 @@ func buildCategoryHierarchy(categories []*types.CategoryDTO) []*types.CategoryDT
 	// Build parent-child relationships
 	var rootCategories []*types.CategoryDTO
 	for _, cat := range categories {
-		if cat.ParentCategoryID != nil {
+		if cat.ParentCategoryId != nil {
 			// This is a subcategory
-			parent, exists := categoryMap[*cat.ParentCategoryID]
+			parent, exists := categoryMap[*cat.ParentCategoryId]
 			if exists {
 				parent.Subcategories = append(parent.Subcategories, cat)
 				cat.ParentCategory = parent // Optional: set parent reference
@@ -87,10 +88,17 @@ func buildCategoryHierarchy(categories []*types.CategoryDTO) []*types.CategoryDT
 }
 
 func (s *Store) CreateCategory(category *types.Category) (*types.Category, error) {
+	// Validate parent category if provided
+	if category.ParentCategoryId != nil {
+		if err := s.validateParentCategory(*category.ParentCategoryId, category.UserID, category.TransactionTypeId); err != nil {
+			return nil, err
+		}
+	}
+
 	var id int
 	err := s.db.QueryRow(
-		"INSERT INTO categories (user_id, transaction_type_id, category_name, color, budget) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-		category.UserID, category.TransactionTypeID, category.CategoryName, category.Color, category.Budget).Scan(&id)
+		"INSERT INTO categories (user_id, transaction_type_id, parent_category_id, category_name, color, budget) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		category.UserID, category.TransactionTypeId, category.ParentCategoryId, category.CategoryName, category.Color, category.Budget).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -127,18 +135,82 @@ func (s *Store) UpdateCategory(editCategory *types.Category, userId int) (*types
 		return nil, err
 	}
 
+	// Validate parent category if provided
+	if editCategory.ParentCategoryId != nil {
+		if err := s.validateParentCategory(*editCategory.ParentCategoryId, userId, currentCategory.TransactionTypeId); err != nil {
+			return nil, err
+		}
+
+		// Prevent creating circular references
+		if *editCategory.ParentCategoryId == editCategory.ID {
+			return nil, fmt.Errorf("category cannot be its own parent")
+		}
+
+		// Prevent setting a subcategory as parent
+		if err := s.preventCircularReference(editCategory.ID, *editCategory.ParentCategoryId); err != nil {
+			return nil, err
+		}
+	}
+
 	_, err = db.ExecWithValidation(s.db,
-		"UPDATE categories SET category_name = $1, color = $2, budget = $3 WHERE id = $4",
-		editCategory.CategoryName, editCategory.Color, editCategory.Budget, editCategory.ID)
+		"UPDATE categories SET parent_category_id = $1, category_name = $2, color = $3, budget = $4 WHERE id = $5",
+		editCategory.ParentCategoryId, editCategory.CategoryName, editCategory.Color, editCategory.Budget, editCategory.ID)
 
 	if err != nil {
 		return nil, err
 	}
 
+	currentCategory.ParentCategoryId = editCategory.ParentCategoryId
 	currentCategory.CategoryName = editCategory.CategoryName
 	currentCategory.Color = editCategory.Color
+	currentCategory.Budget = editCategory.Budget
 
 	return currentCategory, nil
+}
+
+// Helper function to validate parent category
+func (s *Store) validateParentCategory(parentId int, userId int, transactionTypeId int) error {
+	parent, err := s.GetCategoryById(parentId, userId)
+	if err != nil {
+		return fmt.Errorf("parent category not found")
+	}
+
+	// Parent must belong to the same user
+	if err := db.ValidateOwnership(parent.UserID, userId, "parent category"); err != nil {
+		return err
+	}
+
+	// Parent must have the same transaction type
+	if parent.TransactionTypeId != transactionTypeId {
+		return fmt.Errorf("parent category must have the same transaction type")
+	}
+
+	// Parent cannot itself be a subcategory (only 1 level deep)
+	if parent.ParentCategoryId != nil {
+		return fmt.Errorf("cannot create subcategory of a subcategory (max 1 level)")
+	}
+
+	return nil
+}
+
+// Helper function to prevent circular references
+func (s *Store) preventCircularReference(categoryId int, parentId int) error {
+	// Check if the parent is actually a child of this category
+	var count int
+	err := s.db.QueryRow(
+		`SELECT COUNT(*) FROM categories WHERE id = $1 AND parent_category_id = $2`,
+		parentId, categoryId,
+	).Scan(&count)
+
+	if err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return fmt.Errorf("circular reference detected: parent is a subcategory of this category")
+	}
+
+	return nil
 }
 
 func (s *Store) UpdateCategoryAndReturn(editCategory *types.Category, userId int) (*types.CategoryDTO, error) {
@@ -167,6 +239,17 @@ func (s *Store) DeleteCategory(id int, userId int) error {
 		return err
 	}
 
+	// Check if category has subcategories
+	var hasSubcategories bool
+	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM categories WHERE parent_category_id = $1 AND deleted_at IS NULL)", id).Scan(&hasSubcategories)
+	if err != nil {
+		return err
+	}
+
+	if hasSubcategories {
+		return fmt.Errorf("cannot delete category with subcategories")
+	}
+
 	// check if the category is used in any transactions
 	var exists bool
 	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM transactions WHERE category_id = $1)", id).Scan(&exists)
@@ -188,6 +271,7 @@ func (s *Store) DeleteCategory(id int, userId int) error {
 
 	return err
 }
+
 func (s *Store) SoftDeleteCategory(id int, userId int) error {
 	_, err := s.db.Exec(
 		`UPDATE categories SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`,
@@ -199,7 +283,7 @@ func (s *Store) SoftDeleteCategory(id int, userId int) error {
 // Update scanner functions
 func scanRowsIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
-	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.ParentCategoryID,
+	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeId, &c.ParentCategoryId,
 		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
 	if err != nil {
 		return nil, err
@@ -212,7 +296,7 @@ func scanRowsIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
 	c.TransactionType = &types.TransactionType{}
 
 	err := rows.Scan(
-		&c.ID, &c.ParentCategoryID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
+		&c.ID, &c.ParentCategoryId, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
@@ -226,7 +310,7 @@ func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
 	c.TransactionType = &types.TransactionType{}
 
 	err := row.Scan(
-		&c.ID, &c.ParentCategoryID, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
+		&c.ID, &c.ParentCategoryId, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
@@ -237,7 +321,7 @@ func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
 
 func scanRowIntoCategory(row *sql.Row) (*types.Category, error) {
 	c := new(types.Category)
-	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeID, &c.ParentCategoryID,
+	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeId, &c.ParentCategoryId,
 		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
 	if err != nil {
 		return nil, err
