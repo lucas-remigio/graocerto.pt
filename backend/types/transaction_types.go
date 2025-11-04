@@ -35,25 +35,29 @@ type UpdateTransactionPayload struct {
 }
 
 type Transaction struct {
-	ID           int     `json:"id"`
-	AccountToken string  `json:"account_token"`
-	CategoryId   int     `json:"category_id"`
-	Amount       float64 `json:"amount"`
-	Description  string  `json:"description"`
-	Date         string  `json:"date"`
-	Balance      float64 `json:"balance"`
-	CreatedAt    string  `json:"created_at"`
+	ID                int     `json:"id"`
+	AccountToken      string  `json:"account_token"`
+	TransactionTypeId int     `json:"transaction_type_id"`
+	CategoryId        int     `json:"category_id"`
+	Amount            float64 `json:"amount"`
+	Description       string  `json:"description"`
+	Date              string  `json:"date"`
+	Balance           float64 `json:"balance"`
+	TransferGroupId   *string `json:"transfer_group_id,omitempty"`
+	CreatedAt         string  `json:"created_at"`
 }
 
 type TransactionDTO struct {
-	ID           int          `json:"id"`
-	AccountToken string       `json:"account_token"`
-	Amount       float64      `json:"amount"`
-	Description  string       `json:"description"`
-	Date         time.Time    `json:"date"`
-	Balance      float64      `json:"balance"`
-	CreatedAt    time.Time    `json:"created_at"`
-	Category     *CategoryDTO `json:"category,omitempty"`
+	ID              int              `json:"id"`
+	AccountToken    string           `json:"account_token"`
+	Amount          float64          `json:"amount"`
+	Description     string           `json:"description"`
+	Date            time.Time        `json:"date"`
+	Balance         float64          `json:"balance"`
+	CreatedAt       time.Time        `json:"created_at"`
+	Category        *CategoryDTO     `json:"category,omitempty"`
+	TransferGroupid *string          `json:"transfer_group_id,omitempty"`
+	TransactionType *TransactionType `json:"transaction_type,omitempty"`
 }
 
 type TransactionChangeResponse struct {
@@ -79,12 +83,12 @@ type TransactionTotals struct {
 }
 
 type CategoryStatistic struct {
-	Name             string   `json:"name"`
-	Count            int      `json:"count"`
-	Total            float64  `json:"total"`
-	Percentage       float64  `json:"percentage"`
-	Color            string   `json:"color"`
-	Budget           *int     `json:"budget"`
+	Name             string  `json:"name"`
+	Count            int     `json:"count"`
+	Total            float64 `json:"total"`
+	Percentage       float64 `json:"percentage"`
+	Color            string  `json:"color"`
+	Budget           *int    `json:"budget"`
 	BudgetPercentage float64 `json:"budget_percentage"`
 }
 

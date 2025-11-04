@@ -27,7 +27,18 @@ func NewStore(db *sql.DB, accountStore types.AccountStore) *Store {
 // Scanner functions for use with db utilities
 func scanTransaction(rows *sql.Rows) (*types.Transaction, error) {
 	t := new(types.Transaction)
-	err := rows.Scan(&t.ID, &t.AccountToken, &t.CategoryId, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt)
+	err := rows.Scan(
+		&t.ID,
+		&t.AccountToken,
+		&t.TransactionTypeId,
+		&t.CategoryId,
+		&t.Amount,
+		&t.Description,
+		&t.Date,
+		&t.Balance,
+		&t.TransferGroupId,
+		&t.CreatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +47,18 @@ func scanTransaction(rows *sql.Rows) (*types.Transaction, error) {
 
 func scanTransactionRow(row *sql.Row) (*types.Transaction, error) {
 	t := new(types.Transaction)
-	err := row.Scan(&t.ID, &t.AccountToken, &t.CategoryId, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt)
+	err := row.Scan(
+		&t.ID,
+		&t.AccountToken,
+		&t.TransactionTypeId,
+		&t.CategoryId,
+		&t.Amount,
+		&t.Description,
+		&t.Date,
+		&t.Balance,
+		&t.TransferGroupId,
+		&t.CreatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +73,29 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 	t := new(types.TransactionDTO)
 	t.Category = &types.CategoryDTO{}
 	t.Category.TransactionType = &types.TransactionType{}
+	t.TransactionType = &types.TransactionType{}
 
 	err := s.Scan(
-		&t.ID, &t.AccountToken, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt,
-		&t.Category.ID, &t.Category.CategoryName, &t.Category.Color, &t.Category.CreatedAt, &t.Category.UpdatedAt, &t.Category.Budget,
-		&t.Category.TransactionType.ID, &t.Category.TransactionType.TypeName, &t.Category.TransactionType.TypeSlug,
+		&t.ID,
+		&t.AccountToken,
+		&t.Amount,
+		&t.Description,
+		&t.Date,
+		&t.Balance,
+		&t.TransferGroupid,
+		&t.CreatedAt,
+		&t.Category.ID,
+		&t.Category.CategoryName,
+		&t.Category.Color,
+		&t.Category.CreatedAt,
+		&t.Category.UpdatedAt,
+		&t.Category.Budget,
+		&t.Category.TransactionType.ID,
+		&t.Category.TransactionType.TypeName,
+		&t.Category.TransactionType.TypeSlug,
+		&t.TransactionType.ID,
+		&t.TransactionType.TypeName,
+		&t.TransactionType.TypeSlug,
 	)
 	if err != nil {
 		return nil, err
@@ -80,9 +120,12 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
 
+	// Set transaction type from category
+	transaction.TransactionTypeId = category.TransactionTypeID
+
 	// do not allow transfers here, they demand a different logic
-	if category.TransactionTypeID == 3 {
-		return nil, fmt.Errorf("transfers are not allowed here")
+	if transaction.TransactionTypeId == int(types.TransferTransactionType) {
+		return nil, fmt.Errorf("transfers are not allowed here, use /transactions/transfer endpoint")
 	}
 
 	account, err := s.accountStore.GetAccountByToken(transaction.AccountToken, userId)
@@ -105,13 +148,17 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 
 	var insertedId int
 	err = s.db.QueryRow(
-		"INSERT INTO transactions (account_token, category_id, amount, description, date, balance) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		`INSERT INTO transactions 
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
 		transaction.AccountToken,
+		transaction.TransactionTypeId,
 		transaction.CategoryId,
 		transaction.Amount,
 		transaction.Description,
 		transaction.Date,
 		newBalance,
+		transaction.TransferGroupId,
 	).Scan(&insertedId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
@@ -158,7 +205,7 @@ func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *
 	var args []interface{}
 
 	baseQuery := `
-        SELECT id, account_token, category_id, amount, description, date, balance, created_at 
+        SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, created_at 
         FROM transactions 
         WHERE account_token = $1`
 
@@ -180,12 +227,14 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 	var args []interface{}
 
 	baseQuery := "SELECT " +
-		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at, " +
+		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at, " +
 		"c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
+		"c_tt.id, c_tt.type_name, c_tt.type_slug, " +
 		"tt.id, tt.type_name, tt.type_slug " +
 		"FROM transactions t " +
+		"JOIN transaction_types tt ON t.transaction_type_id = tt.id " +
 		"JOIN categories c ON t.category_id = c.id " +
-		"JOIN transaction_types tt ON c.transaction_type_id = tt.id " +
+		"JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id " +
 		"WHERE t.account_token = $1 "
 
 	args = append(args, accountToken)
@@ -203,20 +252,22 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 
 func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 	query := `
-		SELECT 
-			t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at,
-			c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
-			tt.id, tt.type_name, tt.type_slug
-		FROM transactions t
-		JOIN categories c ON t.category_id = c.id
-		JOIN transaction_types tt ON c.transaction_type_id = tt.id
-		WHERE t.id = $1`
+        SELECT 
+            t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at,
+            c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
+            c_tt.id, c_tt.type_name, c_tt.type_slug,
+            tt.id, tt.type_name, tt.type_slug
+        FROM transactions t
+        JOIN transaction_types tt ON t.transaction_type_id = tt.id
+        JOIN categories c ON t.category_id = c.id
+        JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id
+        WHERE t.id = $1`
 
 	return db.QuerySingle(s.db, query, scanTransactionDTO, id)
 }
 
 func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
-	query := "SELECT id, account_token, category_id, amount, description, date, balance, created_at FROM transactions WHERE id = $1"
+	query := "SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, created_at FROM transactions WHERE id = $1"
 	return db.QuerySingle(s.db, query, scanTransactionRow, id)
 }
 
@@ -259,6 +310,9 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 		return nil, fmt.Errorf("failed to get new category: %w", err)
 	}
 
+	// Update transaction type based on new category
+	newTransactionTypeId := newCategory.TransactionTypeID
+
 	// get the current balance
 	currentBalance := account.Balance
 
@@ -285,7 +339,9 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	amountDifference := newAmount - currentAmount
 	newBalance := currentBalance + amountDifference
 
-	_, err = db.ExecWithValidation(s.db, "UPDATE transactions SET amount = $1, category_id = $2, description = $3, date = $4, balance = $5 WHERE id = $6",
+	_, err = db.ExecWithValidation(s.db,
+		"UPDATE transactions SET transaction_type_id = $1, amount = $2, category_id = $3, description = $4, date = $5, balance = $6 WHERE id = $7",
+		newTransactionTypeId,
 		transaction.Amount,
 		transaction.CategoryID,
 		transaction.Description,
@@ -305,14 +361,16 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 
 	// Get the updated transaction
 	updatedTransaction := &types.Transaction{
-		ID:           tx.ID,
-		AccountToken: tx.AccountToken,
-		CategoryId:   transaction.CategoryID,
-		Amount:       transaction.Amount,
-		Description:  transaction.Description,
-		Date:         transaction.Date,
-		Balance:      newBalance,
-		CreatedAt:    tx.CreatedAt,
+		ID:                tx.ID,
+		AccountToken:      tx.AccountToken,
+		TransactionTypeId: newTransactionTypeId,
+		CategoryId:        transaction.CategoryID,
+		Amount:            transaction.Amount,
+		Description:       transaction.Description,
+		Date:              transaction.Date,
+		Balance:           newBalance,
+		TransferGroupId:   tx.TransferGroupId,
+		CreatedAt:         tx.CreatedAt,
 	}
 
 	return updatedTransaction, nil
