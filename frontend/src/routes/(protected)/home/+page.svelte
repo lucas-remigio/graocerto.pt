@@ -10,7 +10,8 @@
 		TransactionsTotals,
 		TransactionStatistics,
 		TransactionChangeResponse,
-		AccountChangeResponse
+		AccountChangeResponse,
+		TransferResponse
 	} from '$lib/types';
 	import { dataService } from '$lib/services/dataService';
 	import Accounts from '$components/Accounts.svelte';
@@ -323,12 +324,97 @@
 	async function deleteTransaction(transaction: TransactionDto) {
 		try {
 			const response = await dataService.deleteTransaction(transaction);
+
+			// Always remove the deleted transaction from current view
 			transactions = transactions.filter((t) => t.id !== transaction.id);
+
+			// Update current account
 			updateAccountAndMonths(response);
+
+			// Handle transfer deletion
+			if (response.is_transfer) {
+				handleTransferDeletion(transaction, response);
+			}
 		} catch (err) {
 			console.error('Error deleting transaction:', err);
-			error = $t('errors.failed-create-account');
+			error = $t('errors.failed-delete-transaction');
 		}
+	}
+
+	function handleTransferDeletion(
+		deletedTransaction: TransactionDto,
+		response: TransactionChangeResponse
+	) {
+		if (!response.paired_account_token) return;
+
+		// Find and update the paired account
+		const pairedAccount = accounts.find((acc) => acc.token === response.paired_account_token);
+		if (pairedAccount && response.paired_account_balance !== undefined) {
+			pairedAccount.balance = response.paired_account_balance;
+		}
+
+		// If we're currently viewing the paired account, update its view
+		if (isViewingPairedAccount(response.paired_account_token)) {
+			updatePairedAccountView(deletedTransaction, response);
+		}
+	}
+
+	function isViewingPairedAccount(pairedAccountToken: string): boolean {
+		return selectedAccount?.token === pairedAccountToken;
+	}
+
+	function updatePairedAccountView(
+		deletedTransaction: TransactionDto,
+		response: TransactionChangeResponse
+	) {
+		// Update balance
+		if (response.paired_account_balance !== undefined) {
+			selectedAccount!.balance = response.paired_account_balance;
+		}
+
+		// Update available months
+		if (response.paired_account_months) {
+			availableMonths = response.paired_account_months;
+		}
+
+		// Remove the paired transaction using transfer_group_id
+		if (deletedTransaction.transfer_group_id) {
+			transactions = transactions.filter(
+				(t) => t.transfer_group_id !== deletedTransaction.transfer_group_id
+			);
+		}
+	}
+	/* ========================================================
+	 * Transfer Logic
+	 * ========================================================
+	 */
+
+	function handleNewTransfer(event: CustomEvent<TransferResponse>) {
+		const response = event.detail;
+
+		// Update source account balance if it's the selected account
+		if (selectedAccount?.token === response.debit_transaction.account_token) {
+			selectedAccount.balance = response.source_account_balance;
+			availableMonths = response.source_account_months;
+			upsertTransaction(response.debit_transaction);
+		}
+
+		// Update destination account balance
+		const destAccount = accounts.find(
+			(acc) => acc.token === response.credit_transaction.account_token
+		);
+		if (destAccount) {
+			destAccount.balance = response.destination_account_balance;
+		}
+
+		// If destination is selected account, update months and add credit transaction
+		if (selectedAccount?.token === response.credit_transaction.account_token) {
+			selectedAccount.balance = response.destination_account_balance;
+			availableMonths = response.destination_account_months;
+			upsertTransaction(response.credit_transaction);
+		}
+
+		refreshCachesAndNotify();
 	}
 
 	/* ========================================================
@@ -478,6 +564,7 @@
 								on:updateTransaction={handleUpdateTransaction}
 								on:deleteTransaction={({ detail: { transaction } }) =>
 									handleDeleteTransaction(transaction)}
+								on:newTransfer={handleNewTransfer}
 							/>
 						{:else}
 							<TransactionStatisticsComponent

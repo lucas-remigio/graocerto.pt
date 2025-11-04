@@ -27,7 +27,18 @@ func NewStore(db *sql.DB, accountStore types.AccountStore) *Store {
 // Scanner functions for use with db utilities
 func scanTransaction(rows *sql.Rows) (*types.Transaction, error) {
 	t := new(types.Transaction)
-	err := rows.Scan(&t.ID, &t.AccountToken, &t.CategoryId, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt)
+	err := rows.Scan(
+		&t.ID,
+		&t.AccountToken,
+		&t.TransactionTypeId,
+		&t.CategoryId,
+		&t.Amount,
+		&t.Description,
+		&t.Date,
+		&t.Balance,
+		&t.TransferGroupId,
+		&t.CreatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +47,18 @@ func scanTransaction(rows *sql.Rows) (*types.Transaction, error) {
 
 func scanTransactionRow(row *sql.Row) (*types.Transaction, error) {
 	t := new(types.Transaction)
-	err := row.Scan(&t.ID, &t.AccountToken, &t.CategoryId, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt)
+	err := row.Scan(
+		&t.ID,
+		&t.AccountToken,
+		&t.TransactionTypeId,
+		&t.CategoryId,
+		&t.Amount,
+		&t.Description,
+		&t.Date,
+		&t.Balance,
+		&t.TransferGroupId,
+		&t.CreatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +73,29 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 	t := new(types.TransactionDTO)
 	t.Category = &types.CategoryDTO{}
 	t.Category.TransactionType = &types.TransactionType{}
+	t.TransactionType = &types.TransactionType{}
 
 	err := s.Scan(
-		&t.ID, &t.AccountToken, &t.Amount, &t.Description, &t.Date, &t.Balance, &t.CreatedAt,
-		&t.Category.ID, &t.Category.CategoryName, &t.Category.Color, &t.Category.CreatedAt, &t.Category.UpdatedAt, &t.Category.Budget,
-		&t.Category.TransactionType.ID, &t.Category.TransactionType.TypeName, &t.Category.TransactionType.TypeSlug,
+		&t.ID,
+		&t.AccountToken,
+		&t.Amount,
+		&t.Description,
+		&t.Date,
+		&t.Balance,
+		&t.TransferGroupId,
+		&t.CreatedAt,
+		&t.Category.ID,
+		&t.Category.CategoryName,
+		&t.Category.Color,
+		&t.Category.CreatedAt,
+		&t.Category.UpdatedAt,
+		&t.Category.Budget,
+		&t.Category.TransactionType.ID,
+		&t.Category.TransactionType.TypeName,
+		&t.Category.TransactionType.TypeSlug,
+		&t.TransactionType.ID,
+		&t.TransactionType.TypeName,
+		&t.TransactionType.TypeSlug,
 	)
 	if err != nil {
 		return nil, err
@@ -80,9 +120,12 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
 
+	// Set transaction type from category
+	transaction.TransactionTypeId = category.TransactionTypeID
+
 	// do not allow transfers here, they demand a different logic
-	if category.TransactionTypeID == 3 {
-		return nil, fmt.Errorf("transfers are not allowed here")
+	if transaction.TransactionTypeId == int(types.TransferTransactionType) {
+		return nil, fmt.Errorf("transfers are not allowed here, use /transactions/transfer endpoint")
 	}
 
 	account, err := s.accountStore.GetAccountByToken(transaction.AccountToken, userId)
@@ -105,13 +148,17 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 
 	var insertedId int
 	err = s.db.QueryRow(
-		"INSERT INTO transactions (account_token, category_id, amount, description, date, balance) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		`INSERT INTO transactions 
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
 		transaction.AccountToken,
+		transaction.TransactionTypeId,
 		transaction.CategoryId,
 		transaction.Amount,
 		transaction.Description,
 		transaction.Date,
 		newBalance,
+		transaction.TransferGroupId,
 	).Scan(&insertedId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
@@ -153,12 +200,156 @@ func (s *Store) CreateTransactionAndReturn(transaction *types.Transaction, userI
 	}, nil
 }
 
+func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int) (*types.TransferResponse, error) {
+	catStore := category.NewStore(s.db)
+
+	// Verify debit category exists and is a debit type
+	debitCategory, err := catStore.GetCategoryById(payload.DebitCategoryID, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid debit category: %w", err)
+	}
+	if debitCategory.TransactionTypeID != int(types.DebitTransactionType) {
+		return nil, fmt.Errorf("debit category must be a debit type")
+	}
+
+	// Verify credit category exists and is a credit type
+	creditCategory, err := catStore.GetCategoryById(payload.CreditCategoryID, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid credit category: %w", err)
+	}
+	if creditCategory.TransactionTypeID != int(types.CreditTransactionType) {
+		return nil, fmt.Errorf("credit category must be a credit type")
+	}
+
+	// Verify both accounts exist and belong to user
+	sourceAccount, err := s.accountStore.GetAccountByToken(payload.SourceAccountToken, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid source account: %w", err)
+	}
+
+	destAccount, err := s.accountStore.GetAccountByToken(payload.DestinationAccountToken, userId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid destination account: %w", err)
+	}
+
+	// Verify ownership
+	if err := db.ValidateOwnership(sourceAccount.UserID, userId, "source account"); err != nil {
+		return nil, err
+	}
+	if err := db.ValidateOwnership(destAccount.UserID, userId, "destination account"); err != nil {
+		return nil, err
+	}
+
+	// Generate unique transfer group ID
+	transferGroupID, err := utils.GenerateUUID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate transfer group ID: %w", err)
+	}
+
+	// Start database transaction
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Create DEBIT transaction on source account (money going out)
+	debitBalance := sourceAccount.Balance - payload.Amount
+	var debitTxId int
+	err = tx.QueryRow(
+		`INSERT INTO transactions 
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+		payload.SourceAccountToken,
+		int(types.DebitTransactionType),
+		payload.DebitCategoryID, // Use debit category
+		payload.Amount,
+		payload.Description,
+		payload.Date,
+		debitBalance,
+		transferGroupID,
+	).Scan(&debitTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create debit transaction: %w", err)
+	}
+
+	// Update source account balance
+	_, err = tx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", debitBalance, payload.SourceAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update source account balance: %w", err)
+	}
+
+	// Create CREDIT transaction on destination account (money coming in)
+	creditBalance := destAccount.Balance + payload.Amount
+	var creditTxId int
+	err = tx.QueryRow(
+		`INSERT INTO transactions 
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+		payload.DestinationAccountToken,
+		int(types.CreditTransactionType),
+		payload.CreditCategoryID, // Use credit category
+		payload.Amount,
+		payload.Description,
+		payload.Date,
+		creditBalance,
+		transferGroupID,
+	).Scan(&creditTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create credit transaction: %w", err)
+	}
+
+	// Update destination account balance
+	_, err = tx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", creditBalance, payload.DestinationAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update destination account balance: %w", err)
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transfer: %w", err)
+	}
+
+	// Get the created transaction DTOs
+	debitTxDTO, err := s.GetTransactionDTOById(debitTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get debit transaction: %w", err)
+	}
+
+	creditTxDTO, err := s.GetTransactionDTOById(creditTxId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get credit transaction: %w", err)
+	}
+
+	// Get available months for source account
+	sourceMonths, err := s.GetAvailableTransactionMonthsByAccountToken(payload.SourceAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get source account months: %w", err)
+	}
+
+	// Get available months for destination account
+	destMonths, err := s.GetAvailableTransactionMonthsByAccountToken(payload.DestinationAccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get destination account months: %w", err)
+	}
+
+	return &types.TransferResponse{
+		TransferGroupID:           transferGroupID,
+		DebitTransaction:          debitTxDTO,
+		CreditTransaction:         creditTxDTO,
+		SourceAccountBalance:      debitBalance,
+		DestinationAccountBalance: creditBalance,
+		SourceAccountMonths:       sourceMonths,
+		DestinationAccountMonths:  destMonths,
+	}, nil
+}
+
 func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *int) ([]*types.Transaction, error) {
 	var query string
 	var args []interface{}
 
 	baseQuery := `
-        SELECT id, account_token, category_id, amount, description, date, balance, created_at 
+        SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, created_at 
         FROM transactions 
         WHERE account_token = $1`
 
@@ -180,12 +371,14 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 	var args []interface{}
 
 	baseQuery := "SELECT " +
-		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at, " +
+		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at, " +
 		"c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
+		"c_tt.id, c_tt.type_name, c_tt.type_slug, " +
 		"tt.id, tt.type_name, tt.type_slug " +
 		"FROM transactions t " +
+		"JOIN transaction_types tt ON t.transaction_type_id = tt.id " +
 		"JOIN categories c ON t.category_id = c.id " +
-		"JOIN transaction_types tt ON c.transaction_type_id = tt.id " +
+		"JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id " +
 		"WHERE t.account_token = $1 "
 
 	args = append(args, accountToken)
@@ -203,20 +396,22 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 
 func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 	query := `
-		SELECT 
-			t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.created_at,
-			c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
-			tt.id, tt.type_name, tt.type_slug
-		FROM transactions t
-		JOIN categories c ON t.category_id = c.id
-		JOIN transaction_types tt ON c.transaction_type_id = tt.id
-		WHERE t.id = $1`
+        SELECT 
+            t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at,
+            c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
+            c_tt.id, c_tt.type_name, c_tt.type_slug,
+            tt.id, tt.type_name, tt.type_slug
+        FROM transactions t
+        JOIN transaction_types tt ON t.transaction_type_id = tt.id
+        JOIN categories c ON t.category_id = c.id
+        JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id
+        WHERE t.id = $1`
 
 	return db.QuerySingle(s.db, query, scanTransactionDTO, id)
 }
 
 func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
-	query := "SELECT id, account_token, category_id, amount, description, date, balance, created_at FROM transactions WHERE id = $1"
+	query := "SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, created_at FROM transactions WHERE id = $1"
 	return db.QuerySingle(s.db, query, scanTransactionRow, id)
 }
 
@@ -259,6 +454,9 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 		return nil, fmt.Errorf("failed to get new category: %w", err)
 	}
 
+	// Update transaction type based on new category
+	newTransactionTypeId := newCategory.TransactionTypeID
+
 	// get the current balance
 	currentBalance := account.Balance
 
@@ -285,7 +483,9 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	amountDifference := newAmount - currentAmount
 	newBalance := currentBalance + amountDifference
 
-	_, err = db.ExecWithValidation(s.db, "UPDATE transactions SET amount = $1, category_id = $2, description = $3, date = $4, balance = $5 WHERE id = $6",
+	_, err = db.ExecWithValidation(s.db,
+		"UPDATE transactions SET transaction_type_id = $1, amount = $2, category_id = $3, description = $4, date = $5, balance = $6 WHERE id = $7",
+		newTransactionTypeId,
 		transaction.Amount,
 		transaction.CategoryID,
 		transaction.Description,
@@ -305,14 +505,16 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 
 	// Get the updated transaction
 	updatedTransaction := &types.Transaction{
-		ID:           tx.ID,
-		AccountToken: tx.AccountToken,
-		CategoryId:   transaction.CategoryID,
-		Amount:       transaction.Amount,
-		Description:  transaction.Description,
-		Date:         transaction.Date,
-		Balance:      newBalance,
-		CreatedAt:    tx.CreatedAt,
+		ID:                tx.ID,
+		AccountToken:      tx.AccountToken,
+		TransactionTypeId: newTransactionTypeId,
+		CategoryId:        transaction.CategoryID,
+		Amount:            transaction.Amount,
+		Description:       transaction.Description,
+		Date:              transaction.Date,
+		Balance:           newBalance,
+		TransferGroupId:   tx.TransferGroupId,
+		CreatedAt:         tx.CreatedAt,
 	}
 
 	return updatedTransaction, nil
@@ -360,6 +562,21 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 		return nil, err
 	}
 
+	// Check if this is a transfer transaction
+	if tx.TransferGroupId != nil && *tx.TransferGroupId != "" {
+		// This is a transfer - need to delete both transactions
+		result, err := s.deleteTransferPair(*tx.TransferGroupId, userId)
+		if err != nil {
+			return nil, err
+		}
+		return &result.primaryBalance, nil
+	}
+
+	// Not a transfer - delete single transaction normally
+	return s.deleteSingleTransaction(tx, account, userId)
+}
+
+func (s *Store) deleteSingleTransaction(tx *types.Transaction, account *types.Account, userId int) (*float64, error) {
 	// get the transaction category
 	catStore := category.NewStore(s.db)
 	category, err := catStore.GetCategoryById(tx.CategoryId, userId)
@@ -367,7 +584,6 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
 
-	// check if the category is a transfer
 	// if the transaction was a credit, we must remove that amount
 	amount := tx.Amount
 	if category.TransactionTypeID == int(types.CreditTransactionType) {
@@ -380,7 +596,7 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 	// get the new balance
 	newBalance := currentBalance + amount
 
-	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = $1", transactionId)
+	_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = $1", tx.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete transaction: %w", err)
 	}
@@ -394,20 +610,160 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 	return &newBalance, nil
 }
 
+type deleteTransferResult struct {
+	primaryAccountToken   string
+	primaryBalance        float64
+	secondaryAccountToken string
+	secondaryBalance      float64
+}
+
+func (s *Store) deleteTransferPair(transferGroupID string, userId int) (*deleteTransferResult, error) {
+	// Get both transactions in the transfer
+	query := `
+        SELECT t.id, t.account_token, t.transaction_type_id, t.category_id, t.amount, t.description, 
+               t.date, t.balance, t.transfer_group_id, t.created_at
+        FROM transactions t
+        INNER JOIN accounts a ON t.account_token = a.token
+        WHERE t.transfer_group_id = $1 AND a.user_id = $2
+    `
+
+	rows, err := s.db.Query(query, transferGroupID, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query transfer transactions: %w", err)
+	}
+	defer rows.Close()
+
+	var transactions []*types.Transaction
+	for rows.Next() {
+		tx, err := scanTransaction(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		transactions = append(transactions, tx)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating transactions: %w", err)
+	}
+
+	if len(transactions) != 2 {
+		return nil, fmt.Errorf("invalid transfer: expected 2 transactions, found %d", len(transactions))
+	}
+
+	// Start database transaction for atomic deletion
+	dbTx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer dbTx.Rollback()
+
+	result := &deleteTransferResult{}
+
+	// Delete both transactions and update both account balances
+	for i, tx := range transactions {
+		// Get the account
+		account, err := s.accountStore.GetAccountByToken(tx.AccountToken, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get account: %w", err)
+		}
+
+		// Calculate balance adjustment
+		amount := tx.Amount
+		if tx.TransactionTypeId == int(types.CreditTransactionType) {
+			amount = amount * -1
+		}
+
+		newBalance := account.Balance + amount
+
+		// Delete transaction
+		_, err = dbTx.Exec("DELETE FROM transactions WHERE id = $1", tx.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete transaction %d: %w", tx.ID, err)
+		}
+
+		// Update account balance
+		_, err = dbTx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", newBalance, tx.AccountToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update account balance: %w", err)
+		}
+
+		// Store both account info
+		if i == 0 {
+			result.primaryAccountToken = tx.AccountToken
+			result.primaryBalance = newBalance
+		} else {
+			result.secondaryAccountToken = tx.AccountToken
+			result.secondaryBalance = newBalance
+		}
+	}
+
+	if err := dbTx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return result, nil
+}
+
 func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*types.TransactionChangeResponse, error) {
 	transactionDTO, err := s.GetTransactionDTOById(transactionId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction DTO: %w", err)
 	}
 
+	// Check if this is a transfer
+	isTransfer := transactionDTO.TransferGroupId != nil && *transactionDTO.TransferGroupId != ""
+
+	if isTransfer {
+		// Handle transfer deletion - returns both accounts' info
+		result, err := s.deleteTransferPair(*transactionDTO.TransferGroupId, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete transfer: %w", err)
+		}
+
+		// Get available months for primary account
+		primaryMonths, err := s.GetAvailableTransactionMonthsByAccountToken(result.primaryAccountToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get primary account months: %w", err)
+		}
+
+		// Get available months for secondary account
+		secondaryMonths, err := s.GetAvailableTransactionMonthsByAccountToken(result.secondaryAccountToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get secondary account months: %w", err)
+		}
+
+		// Determine which is the paired account (not the one being deleted)
+		var pairedToken string
+		var pairedBalance float64
+		var pairedMonths []*types.MonthYear
+
+		if transactionDTO.AccountToken == result.primaryAccountToken {
+			pairedToken = result.secondaryAccountToken
+			pairedBalance = result.secondaryBalance
+			pairedMonths = secondaryMonths
+		} else {
+			pairedToken = result.primaryAccountToken
+			pairedBalance = result.primaryBalance
+			pairedMonths = primaryMonths
+		}
+
+		return &types.TransactionChangeResponse{
+			Transaction:          transactionDTO,
+			AccountBalance:       &result.primaryBalance,
+			Months:               primaryMonths,
+			IsTransfer:           true,
+			PairedAccountToken:   &pairedToken,
+			PairedAccountBalance: &pairedBalance,
+			PairedAccountMonths:  pairedMonths,
+		}, nil
+	}
+
+	// Not a transfer - handle normally
 	balance, err := s.DeleteTransaction(transactionId, userId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete transaction: %w", err)
 	}
 
-	transactionDTO.Balance = *balance
-
-	// Get available months for the account token
 	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(transactionDTO.AccountToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get available months: %w", err)
@@ -415,8 +771,9 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 
 	return &types.TransactionChangeResponse{
 		Transaction:    transactionDTO,
-		AccountBalance: &transactionDTO.Balance,
+		AccountBalance: balance,
 		Months:         availableMonths,
+		IsTransfer:     false,
 	}, nil
 }
 

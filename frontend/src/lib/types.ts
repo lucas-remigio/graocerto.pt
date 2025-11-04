@@ -29,6 +29,8 @@ export interface TransactionDto {
 	balance: number;
 	created_at: string;
 	category: CategoryDto;
+	transaction_type: TransactionType;
+	transfer_group_id?: string; // Optional, present if part of a transfer
 }
 
 export interface Transaction {
@@ -44,10 +46,38 @@ export interface TransactionsResponse {
 	transactions: TransactionDto[];
 }
 // this applies to both create, edit and delete transaction responses
+// ...existing code...
+
 export interface TransactionChangeResponse {
 	transaction: TransactionDto;
 	account_balance: number;
 	months: MonthYear[];
+	is_transfer: boolean;
+	paired_account_token?: string;
+	paired_account_balance?: number;
+	paired_account_months?: MonthYear[];
+}
+
+// ...existing code...
+
+export interface CreateTransferPayload {
+	source_account_token: string;
+	destination_account_token: string;
+	debit_category_id: number;
+	credit_category_id: number;
+	amount: number;
+	description: string;
+	date: string;
+}
+
+export interface TransferResponse {
+	transfer_group_id: string;
+	debit_transaction: TransactionDto;
+	credit_transaction: TransactionDto;
+	source_account_balance: number;
+	destination_account_balance: number;
+	source_account_months: MonthYear[];
+	destination_account_months: MonthYear[];
 }
 
 export interface AccountChangeResponse {
