@@ -13,7 +13,7 @@
 		};
 
 		transactions.forEach((transaction) => {
-			switch (transaction.category.transaction_type.id) {
+			switch (transaction.transaction_type.id) {
 				case TransactionTypeId.Credit:
 					result.credit += transaction.amount;
 					result.difference += transaction.amount;

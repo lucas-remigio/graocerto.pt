@@ -136,7 +136,7 @@
 	}
 
 	function getRowClass(tx: TransactionDto): string {
-		const type = tx.category.transaction_type.type_slug;
+		const type = tx.transaction_type.type_slug;
 		if ($appliedTheme === 'dark') {
 			if (type === 'debit') return 'bg-red-900 bg-opacity-40';
 			if (type === 'credit') return 'bg-green-900 bg-opacity-100';
@@ -375,9 +375,5 @@
 {/if}
 
 {#if showTransferModal}
-    <TransferModal
-        {account}
-        on:closeModal={closeTransferModal}
-        on:newTransfer={handleNewTransfer}
-    />
+	<TransferModal {account} on:closeModal={closeTransferModal} on:newTransfer={handleNewTransfer} />
 {/if}
