@@ -1055,8 +1055,11 @@ func (s *Store) processCategoryBreakdown(
 		}
 	}
 
-	// Sort parents by total (descending)
+	// Sort parents by budget_percentage (descending), then by total
 	sort.Slice(rootCategories, func(i, j int) bool {
+		if rootCategories[i].BudgetPercentage != rootCategories[j].BudgetPercentage {
+			return rootCategories[i].BudgetPercentage > rootCategories[j].BudgetPercentage
+		}
 		return rootCategories[i].Total > rootCategories[j].Total
 	})
 

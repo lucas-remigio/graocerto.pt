@@ -7,7 +7,6 @@
 	import { themeService } from '$lib/services/themeService';
 
 	export let data: CategoryStatistic[] = [];
-	export let isCredit: boolean = false;
 
 	let canvas: HTMLCanvasElement;
 	let chart: Chart | null = null;
@@ -16,8 +15,11 @@
 
 	Chart.register(...registerables);
 
+	// Sort parent data by percentage (descending)
+	$: sortedData = [...data].sort((a, b) => b.percentage - a.percentage);
+
 	// Parent-level data (only root categories)
-	$: parentData = data.map((cat) => ({
+	$: parentData = sortedData.map((cat) => ({
 		name: cat.name,
 		total: cat.total,
 		percentage: cat.percentage,
@@ -26,7 +28,7 @@
 		hasChildren: cat.subcategories && cat.subcategories.length > 0
 	}));
 
-	// Drill-down data when a parent is selected
+	// Drill-down data when a parent is selected (also sorted)
 	$: drillDownData = selectedParent
 		? [
 				// Parent direct spending (if any)
@@ -38,7 +40,7 @@
 								total:
 									selectedParent.total -
 									(selectedParent.subcategories?.reduce((sum, sub) => sum + sub.total, 0) || 0),
-								percentage: 0, // Will recalculate
+								percentage: 0,
 								color: selectedParent.color,
 								count:
 									selectedParent.count -
@@ -46,14 +48,17 @@
 							}
 						]
 					: []),
-				// Subcategories
-				...(selectedParent.subcategories?.map((sub) => ({
-					name: sub.name,
-					total: sub.total,
-					percentage: 0, // Will recalculate
-					color: sub.color,
-					count: sub.count
-				})) || [])
+				// Subcategories (sorted by percentage)
+				...(selectedParent.subcategories
+					?.slice()
+					.sort((a, b) => b.percentage - a.percentage)
+					.map((sub) => ({
+						name: sub.name,
+						total: sub.total,
+						percentage: sub.percentage,
+						color: sub.color,
+						count: sub.count
+					})) || [])
 			]
 		: null;
 
@@ -93,15 +98,30 @@
 				maintainAspectRatio: false,
 				onClick: (event, elements) => {
 					if (drillDownData) {
-						// In drill-down mode, clicking goes back
 						selectedParent = null;
 					} else if (elements.length > 0) {
-						// In parent mode, clicking drills down if has children
 						const index = elements[0].index;
-						const clickedCategory = data[index];
+						const clickedCategory = sortedData[index];
 						if (clickedCategory.subcategories && clickedCategory.subcategories.length > 0) {
 							selectedParent = clickedCategory;
 						}
+					}
+				},
+				onHover: (event, elements) => {
+					const target = event.native?.target as HTMLElement | null;
+					if (!target) return;
+
+					if (!drillDownData && elements.length > 0) {
+						const index = elements[0].index;
+						const hoveredCategory = sortedData[index];
+						target.style.cursor =
+							hoveredCategory.subcategories && hoveredCategory.subcategories.length > 0
+								? 'pointer'
+								: 'default';
+					} else if (drillDownData) {
+						target.style.cursor = 'pointer';
+					} else {
+						target.style.cursor = 'default';
 					}
 				},
 				plugins: {
@@ -206,19 +226,26 @@
 					<button
 						class="bg-base-200 hover:bg-base-300 flex w-full items-center justify-between rounded p-2 transition-colors"
 						class:cursor-pointer={item.hasChildren}
+						class:cursor-default={!item.hasChildren}
 						on:click={() => {
 							if (item.hasChildren) {
-								selectedParent = data[index];
+								selectedParent = sortedData[index];
 							}
 						}}
 						disabled={!item.hasChildren}
+						class:tooltip={item.hasChildren}
+						class:tooltip-top={item.hasChildren}
+						data-tip={item.hasChildren
+							? $t('statistics.click-to-view-details', { default: 'Click to view details' })
+							: ''}
 					>
 						<div class="flex items-center gap-2">
 							<span class="h-3 w-3 rounded-full" style="background-color: {item.color};"></span>
 							<span class="text-sm">{item.name}</span>
 							{#if item.hasChildren}
 								<span class="badge badge-xs">
-									{data[index].subcategories?.length || 0}
+									{sortedData[index].subcategories?.length || 0}
+									<!-- ← Use sortedData -->
 								</span>
 							{/if}
 						</div>

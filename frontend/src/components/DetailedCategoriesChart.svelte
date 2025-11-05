@@ -7,7 +7,6 @@
 	import { themeService } from '$lib/services/themeService';
 
 	export let data: CategoryStatistic[] = [];
-	export let isCredit: boolean = false;
 
 	let canvas: HTMLCanvasElement;
 	let chart: Chart | null = null;
@@ -16,51 +15,57 @@
 	Chart.register(...registerables);
 
 	// Flatten all categories and subcategories into one list
-	$: flattenedData = data.flatMap((cat) => {
-		const items = [];
+	$: flattenedData = data
+		.slice()
+		.sort((a, b) => b.percentage - a.percentage) // Sort parents first
+		.flatMap((cat) => {
+			const items = [];
 
-		// If category has subcategories, add them individually
-		if (cat.subcategories && cat.subcategories.length > 0) {
-			// Add parent direct spending if any
-			const directTotal = cat.total - cat.subcategories.reduce((sum, sub) => sum + sub.total, 0);
-			const directCount = cat.count - cat.subcategories.reduce((sum, sub) => sum + sub.count, 0);
+			if (cat.subcategories && cat.subcategories.length > 0) {
+				const directTotal = cat.total - cat.subcategories.reduce((sum, sub) => sum + sub.total, 0);
+				const directCount = cat.count - cat.subcategories.reduce((sum, sub) => sum + sub.count, 0);
 
-			if (directCount > 0) {
+				if (directCount > 0) {
+					items.push({
+						name: `${cat.name}`,
+						total: directTotal,
+						color: cat.color,
+						count: directCount,
+						parent: null,
+						percentage: (directTotal / cat.total) * cat.percentage // Calculate percentage
+					});
+				}
+
+				// Sort subcategories by percentage
+				cat.subcategories
+					.slice()
+					.sort((a, b) => b.percentage - a.percentage)
+					.forEach((sub) => {
+						items.push({
+							name: sub.name,
+							total: sub.total,
+							color: sub.color,
+							count: sub.count,
+							parent: cat.name,
+							percentage: sub.percentage
+						});
+					});
+			} else {
 				items.push({
-					name: `${cat.name}`,
-					total: directTotal,
+					name: cat.name,
+					total: cat.total,
 					color: cat.color,
-					count: directCount,
-					parent: null
+					count: cat.count,
+					parent: null,
+					percentage: cat.percentage
 				});
 			}
 
-			// Add all subcategories
-			cat.subcategories.forEach((sub) => {
-				items.push({
-					name: sub.name,
-					total: sub.total,
-					color: sub.color,
-					count: sub.count,
-					parent: cat.name
-				});
-			});
-		} else {
-			// No subcategories, add category as-is
-			items.push({
-				name: cat.name,
-				total: cat.total,
-				color: cat.color,
-				count: cat.count,
-				parent: null
-			});
-		}
+			return items;
+		});
 
-		return items;
-	});
-
-	// Sort by total descending
-	$: sortedData = [...flattenedData].sort((a, b) => b.total - a.total);
+	// Sort by percentage descending (not by total anymore)
+	$: sortedData = [...flattenedData].sort((a, b) => b.percentage - a.percentage);
 
 	function createChart() {
 		if (!canvas || sortedData.length === 0) return;

@@ -179,7 +179,8 @@
 		"detailed-view": "Detailed View",
 		"all-credit-categories": "All Credit Categories",
 		"all-debit-categories": "All Debit Categories",
-		"budget": "Budget"
+		"budget": "Budget",
+		"click-to-view-details": "Click to view details"
 	},
 
 	"errors": {
@@ -315,8 +316,8 @@
 		"add-subcategory": "Add Subcategory",
 		"new-subcategory-for": "New Subcategory for",
 		"parent-category": "Parent Category",
-		"no-parent": "No Parent (Root Category)",
-		"parent-help": "Optional: Make this a subcategory of another category"
+		"parent-category-help": "Optional: Make this a subcategory of another category",
+		"no-parent": "No Parent (Root Category)"
 	},
 
 	"modals": {
