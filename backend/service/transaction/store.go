@@ -75,6 +75,11 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 	t.Category.TransactionType = &types.TransactionType{}
 	t.TransactionType = &types.TransactionType{}
 
+	// Nullable parent category fields
+	var parentCategoryID sql.NullInt64
+	var parentCategoryName sql.NullString
+	var parentCategoryColor sql.NullString
+
 	err := s.Scan(
 		&t.ID,
 		&t.AccountToken,
@@ -85,6 +90,7 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 		&t.TransferGroupId,
 		&t.CreatedAt,
 		&t.Category.ID,
+		&t.Category.ParentCategoryId,
 		&t.Category.CategoryName,
 		&t.Category.Color,
 		&t.Category.CreatedAt,
@@ -96,10 +102,23 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 		&t.TransactionType.ID,
 		&t.TransactionType.TypeName,
 		&t.TransactionType.TypeSlug,
+		&parentCategoryID,
+		&parentCategoryName,
+		&parentCategoryColor,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	// Populate parent category if it exists (minimal DTO with just needed fields)
+	if parentCategoryID.Valid {
+		t.Category.ParentCategory = &types.CategoryDTO{
+			ID:           int(parentCategoryID.Int64),
+			CategoryName: parentCategoryName.String,
+			Color:        parentCategoryColor.String,
+		}
+	}
+
 	return t, nil
 }
 
@@ -372,13 +391,15 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 
 	baseQuery := "SELECT " +
 		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at, " +
-		"c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
+		"c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
 		"c_tt.id, c_tt.type_name, c_tt.type_slug, " +
-		"tt.id, tt.type_name, tt.type_slug " +
+		"tt.id, tt.type_name, tt.type_slug, " +
+		"pc.id, pc.category_name, pc.color " + // Parent category fields
 		"FROM transactions t " +
 		"JOIN transaction_types tt ON t.transaction_type_id = tt.id " +
 		"JOIN categories c ON t.category_id = c.id " +
 		"JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id " +
+		"LEFT JOIN categories pc ON c.parent_category_id = pc.id " + // LEFT JOIN for parent
 		"WHERE t.account_token = $1 "
 
 	args = append(args, accountToken)
@@ -398,13 +419,15 @@ func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 	query := `
         SELECT 
             t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at,
-            c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
+            c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
             c_tt.id, c_tt.type_name, c_tt.type_slug,
-            tt.id, tt.type_name, tt.type_slug
+            tt.id, tt.type_name, tt.type_slug,
+            pc.id, pc.category_name, pc.color
         FROM transactions t
         JOIN transaction_types tt ON t.transaction_type_id = tt.id
         JOIN categories c ON t.category_id = c.id
         JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id
+        LEFT JOIN categories pc ON c.parent_category_id = pc.id
         WHERE t.id = $1`
 
 	return db.QuerySingle(s.db, query, scanTransactionDTO, id)
