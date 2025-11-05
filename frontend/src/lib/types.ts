@@ -126,8 +126,7 @@ export interface UpdateCategoryPayload {
 export interface Category {
 	id: number;
 	transaction_type_id: number;
-	category_name: string;
-	color: string;
+	category_name: string; color: string;
 	budget: number | null;
 	created_at: string;
 	updated_at: string;

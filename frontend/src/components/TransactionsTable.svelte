@@ -199,11 +199,13 @@
 			return false;
 		}
 
-		// Date range
-		if (filters.startDate && tx.date < filters.startDate) {
+		// Date range - Compare only the date part (YYYY-MM-DD)
+		const txDate = tx.date.split('T')[0]; // Extract "2025-11-04" from "2025-11-04T00:00:00Z"
+
+		if (filters.startDate && txDate < filters.startDate) {
 			return false;
 		}
-		if (filters.endDate && tx.date > filters.endDate) {
+		if (filters.endDate && txDate > filters.endDate) {
 			return false;
 		}
 
