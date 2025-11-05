@@ -106,13 +106,16 @@ type TransactionTotals struct {
 }
 
 type CategoryStatistic struct {
-	Name             string  `json:"name"`
-	Count            int     `json:"count"`
-	Total            float64 `json:"total"`
-	Percentage       float64 `json:"percentage"`
-	Color            string  `json:"color"`
-	Budget           *int    `json:"budget"`
-	BudgetPercentage float64 `json:"budget_percentage"`
+	ID               int                 `json:"id"`
+	ParentID         *int                `json:"parent_id,omitempty"`
+	Name             string              `json:"name"`
+	Count            int                 `json:"count"`
+	Total            float64             `json:"total"`
+	Percentage       float64             `json:"percentage"`
+	Color            string              `json:"color"`
+	Budget           *int                `json:"budget"`
+	BudgetPercentage float64             `json:"budget_percentage"`
+	Subcategories    []CategoryStatistic `json:"subcategories,omitempty"`
 }
 
 type DailyTotal struct {
