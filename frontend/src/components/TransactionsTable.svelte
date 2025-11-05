@@ -6,7 +6,16 @@
 		TransactionGroup,
 		TransactionChangeResponse
 	} from '$lib/types';
-	import { ArrowRightLeft, Bot, CircleDollarSign, List, Pencil, Plus, Trash } from 'lucide-svelte';
+	import {
+		ArrowRightLeft,
+		Bot,
+		CircleDollarSign,
+		Filter,
+		List,
+		Pencil,
+		Plus,
+		Trash
+	} from 'lucide-svelte';
 	import TransactionModal from './TransactionModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 
@@ -21,6 +30,7 @@
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { fade, fly, scale } from 'svelte/transition';
 	import TransferModal from './TransferModal.svelte';
+	import TransactionFilters from './TransactionFilters.svelte';
 
 	// Export props for transactions array and the account name.
 	export let transactions: TransactionDto[] = [];
@@ -34,15 +44,16 @@
 	}
 
 	// Group transactions by month/year when isAll is true, otherwise create a single group
+	// Use filtered transactions for grouping
 	$: transactionsGroups =
-		transactions && transactions.length > 0
+		filteredTransactions && filteredTransactions.length > 0
 			? isAll
-				? groupTransactionsByMonth(transactions)
+				? groupTransactionsByMonth(filteredTransactions)
 				: [
 						{
 							month: new Date().getMonth() + 1,
 							year: new Date().getFullYear(),
-							transactions: transactions
+							transactions: filteredTransactions
 						}
 					]
 			: [];
@@ -79,6 +90,7 @@
 	let showDeleteTransactionModal = false;
 	let showTransferModal = false;
 	let error: string = '';
+	let showFilters = false; // Add this state
 
 	let selectedTransaction: TransactionDto | null = null;
 
@@ -148,6 +160,56 @@
 		}
 	}
 
+	// Add filter state
+	let filters = {
+		searchTerm: '',
+		categoryId: null as number | null,
+		typeSlug: null as string | null,
+		minAmount: null as number | null,
+		maxAmount: null as number | null,
+		startDate: '',
+		endDate: ''
+	};
+
+	// Filter transactions
+	$: filteredTransactions = transactions.filter((tx) => {
+		// Search term (description)
+		if (
+			filters.searchTerm &&
+			!tx.description?.toLowerCase().includes(filters.searchTerm.toLowerCase())
+		) {
+			return false;
+		}
+
+		// Category filter
+		if (filters.categoryId && tx.category.id !== filters.categoryId) {
+			return false;
+		}
+
+		// Type filter
+		if (filters.typeSlug && tx.transaction_type.type_slug !== filters.typeSlug) {
+			return false;
+		}
+
+		// Amount range
+		if (filters.minAmount !== null && tx.amount < filters.minAmount) {
+			return false;
+		}
+		if (filters.maxAmount !== null && tx.amount > filters.maxAmount) {
+			return false;
+		}
+
+		// Date range
+		if (filters.startDate && tx.date < filters.startDate) {
+			return false;
+		}
+		if (filters.endDate && tx.date > filters.endDate) {
+			return false;
+		}
+
+		return true;
+	});
+
 	function openCreateTransactionModal() {
 		showCreateTransactionModal = true;
 	}
@@ -211,6 +273,14 @@
 		closeTransferModal();
 		dispatch('newTransfer', event.detail);
 	}
+
+	function handleFilter(event: CustomEvent) {
+		filters = event.detail;
+	}
+
+	function toggleFilters() {
+		showFilters = !showFilters;
+	}
 </script>
 
 {#if loading}
@@ -230,6 +300,21 @@
 		<div
 			class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
 		>
+			<!-- Filter Button -->
+			<button
+				class="btn btn-outline gap-2"
+				class:btn-active={showFilters}
+				aria-label="Toggle Filters"
+				on:click={toggleFilters}
+			>
+				<Filter size={20} />
+				{#if Object.values(filters).some(Boolean)}
+					<span class="badge badge-sm badge-primary">
+						{Object.values(filters).filter(Boolean).length}
+					</span>
+				{/if}
+			</button>
+
 			<!-- Transfer Button -->
 			<button
 				class="btn btn-secondary shadow-lg"
@@ -255,6 +340,20 @@
 			<TransactionsStats {transactions} />
 		</div>
 	</div>
+
+	<!-- Filters Component (shown only when toggled) -->
+	<TransactionFilters
+		show={showFilters}
+		filteredCount={filteredTransactions.length}
+		totalCount={transactions.length}
+		categories={[...new Map(transactions.map((tx) => [tx.category.id, tx.category])).values()]}
+		transactionTypes={[
+			...new Map(
+				transactions.map((tx) => [tx.transaction_type.type_slug, tx.transaction_type])
+			).values()
+		]}
+		on:filter={handleFilter}
+	/>
 
 	<div class="overflow-x-auto">
 		{#if transactions.length === 0}
@@ -292,7 +391,7 @@
 								<td class="text-base-content">
 									<div class="flex flex-col items-center gap-0.5">
 										{#if tx.category.parent_category_id}
-											<span class="text-xs opacity-60">
+											<span class="text-xs opacity-90">
 												{tx.category.parent_category?.category_name || 'Parent'}
 											</span>
 										{/if}

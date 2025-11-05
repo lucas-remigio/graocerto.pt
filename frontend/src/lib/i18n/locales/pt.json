@@ -137,7 +137,8 @@
 		"optional": "Opcional",
 		"back": "Voltar",
 		"transaction": "transação",
-		"transactions": "transações"
+		"transactions": "transações",
+		"clear-all": "Limpar tudo"
 	},
 
 	"views": {
@@ -243,7 +244,18 @@
 		"total-credit": "Total Créditos",
 		"total-transfer": "Total Transferências",
 		"net-balance": "Saldo Líquido",
-		"transfer": "Transferência"
+		"transfer": "Transferência",
+		"showing-filtered": "A mostrar {count} de {total} transações",
+		"filters": "Filtros",
+		"search-description": "Pesquisar descrição",
+		"search-placeholder": "Digite para pesquisar...",
+		"amount-range": "Intervalo de Valor",
+		"start-date": "Data Inicial",
+		"end-date": "Data Final",
+		"date-range": "Período",
+		"showing": "A mostrar",
+		"of": "de",
+		"transactions-lowercase": "transações"
 	},
 
 	"transfers": {

@@ -417,9 +417,13 @@
 						<label class="label" for="date">
 							<span class="label-text">{$t('transactions.date')}</span>
 						</label>
-						<input id="date" type="date" class="input input-bordered w-full" bind:value={date} />
+						<input
+							id="date"
+							type="date"
+							class="input input-bordered hover:border-primary date-input w-full transition-all hover:shadow-md"
+							bind:value={date}
+						/>
 					</div>
-
 					<!-- Amount Field -->
 					<div class="form-control flex-1">
 						<label class="label" for="amount">
@@ -471,8 +475,23 @@
 <style>
 	:global(.dark) input[type='date']::-webkit-calendar-picker-indicator {
 		filter: invert(1);
+		cursor: pointer;
 	}
 	:global(.dark) input[type='date']::-moz-calendar-picker-indicator {
 		filter: invert(1);
+		cursor: pointer;
+	}
+
+	/* Light mode */
+	input[type='date']::-webkit-calendar-picker-indicator {
+		cursor: pointer;
+	}
+	input[type='date']::-moz-calendar-picker-indicator {
+		cursor: pointer;
+	}
+
+	/* Remove cursor pointer from the input itself */
+	.date-input {
+		cursor: text;
 	}
 </style>
