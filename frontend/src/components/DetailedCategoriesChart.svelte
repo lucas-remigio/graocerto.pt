@@ -27,11 +27,11 @@
 
 			if (directCount > 0) {
 				items.push({
-					name: `${cat.name} (Direct)`,
+					name: `${cat.name}`,
 					total: directTotal,
 					color: cat.color,
 					count: directCount,
-					parent: cat.name
+					parent: null
 				});
 			}
 
@@ -108,7 +108,7 @@
 								const percentage = ((item.total / total) * 100).toFixed(1);
 								return [
 									`${item.name}`,
-									...(item.parent ? [`Parent: ${item.parent}`] : []),
+									...(item.parent ? [`- ${item.parent}`] : []),
 									`${item.count} ${item.count === 1 ? $t('common.transaction') : $t('common.transactions')}`,
 									`€${item.total.toFixed(2)} (${percentage}%)`
 								];

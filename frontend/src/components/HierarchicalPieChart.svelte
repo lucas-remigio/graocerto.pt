@@ -34,7 +34,7 @@
 				(selectedParent.subcategories?.reduce((sum, sub) => sum + sub.count, 0) || 0)
 					? [
 							{
-								name: `${selectedParent.name} (Direct)`,
+								name: `${selectedParent.name}`,
 								total:
 									selectedParent.total -
 									(selectedParent.subcategories?.reduce((sum, sub) => sum + sub.total, 0) || 0),
