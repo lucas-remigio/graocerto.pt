@@ -993,13 +993,6 @@ func (s *Store) processCategoryBreakdown(
 	categoryMap map[int]*types.CategoryStatistic,
 	totalAmount float64) []*types.CategoryStatistic {
 
-	// DEBUG: Log what we have before processing
-	fmt.Printf("DEBUG: Processing %d categories, total amount: %.2f\n", len(categoryMap), totalAmount)
-	for id, cat := range categoryMap {
-		fmt.Printf("  - ID: %d, Name: %s, ParentID: %v, Total: %.2f, Count: %d\n",
-			id, cat.Name, cat.ParentID, cat.Total, cat.Count)
-	}
-
 	// First pass: calculate percentages for all categories
 	for _, categoryStat := range categoryMap {
 		if totalAmount > 0 {
@@ -1067,13 +1060,6 @@ func (s *Store) processCategoryBreakdown(
 		return rootCategories[i].Total > rootCategories[j].Total
 	})
 
-	// DEBUG: Log what we're returning
-	fmt.Printf("DEBUG: Returning %d root categories\n", len(rootCategories))
-	for _, root := range rootCategories {
-		fmt.Printf("  - ID: %d, Name: %s, Total: %.2f, Subcategories: %d\n",
-			root.ID, root.Name, root.Total, len(root.Subcategories))
-	}
-
 	return rootCategories
 }
 
@@ -1088,9 +1074,6 @@ func (s *Store) addMissingParents(categoryMap map[int]*types.CategoryStatistic) 
 		}
 	}
 
-	// DEBUG: Log missing parent IDs
-	fmt.Printf("DEBUG: Missing parent IDs: %v\n", missingIDs)
-
 	if len(missingIDs) == 0 {
 		return
 	}
@@ -1098,23 +1081,18 @@ func (s *Store) addMissingParents(categoryMap map[int]*types.CategoryStatistic) 
 	query := `SELECT id, category_name, color, budget FROM categories WHERE id = ANY($1)`
 	rows, err := s.db.Query(query, pq.Array(missingIDs))
 	if err != nil {
-		fmt.Printf("DEBUG: Error querying parents: %v\n", err)
 		return
 	}
 	defer rows.Close()
 
-	fetchedCount := 0
 	for rows.Next() {
 		var id int
 		var name, color string
 		var budget *int
 
 		if err := rows.Scan(&id, &name, &color, &budget); err != nil {
-			fmt.Printf("DEBUG: Error scanning parent: %v\n", err)
 			continue
 		}
-
-		fmt.Printf("DEBUG: Fetched parent - ID: %d, Name: %s\n", id, name)
 
 		categoryMap[id] = &types.CategoryStatistic{
 			ID:               id,
@@ -1128,11 +1106,7 @@ func (s *Store) addMissingParents(categoryMap map[int]*types.CategoryStatistic) 
 			BudgetPercentage: 0,
 			Subcategories:    []types.CategoryStatistic{},
 		}
-
-		fetchedCount++
 	}
-
-	fmt.Printf("DEBUG: Fetched %d parent categories from DB\n", fetchedCount)
 }
 
 func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) (*types.TransactionStatistics, error) {
