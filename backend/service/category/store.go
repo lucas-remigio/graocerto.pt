@@ -21,7 +21,7 @@ func NewStore(db *sql.DB) *Store {
 func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
 	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget
           FROM categories
-          WHERE user_id = $1 AND deleted_at IS NULL
+          WHERE user_id = $1
           ORDER BY created_at DESC`
 	return db.QueryList(s.db, query, scanRowsIntoCategory, userId)
 }
@@ -29,7 +29,7 @@ func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
 func (s *Store) GetCategoryById(id int, userId int) (*types.Category, error) {
 	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget
           FROM categories
-          WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`
+          WHERE id = $1 AND user_id = $2`
 	return db.QuerySingle(s.db, query, scanRowIntoCategory, id, userId)
 }
 
