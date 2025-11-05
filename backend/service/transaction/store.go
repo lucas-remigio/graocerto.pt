@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/types"
@@ -75,6 +76,11 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 	t.Category.TransactionType = &types.TransactionType{}
 	t.TransactionType = &types.TransactionType{}
 
+	// Nullable parent category fields
+	var parentCategoryID sql.NullInt64
+	var parentCategoryName sql.NullString
+	var parentCategoryColor sql.NullString
+
 	err := s.Scan(
 		&t.ID,
 		&t.AccountToken,
@@ -85,6 +91,7 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 		&t.TransferGroupId,
 		&t.CreatedAt,
 		&t.Category.ID,
+		&t.Category.ParentCategoryId,
 		&t.Category.CategoryName,
 		&t.Category.Color,
 		&t.Category.CreatedAt,
@@ -96,10 +103,23 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 		&t.TransactionType.ID,
 		&t.TransactionType.TypeName,
 		&t.TransactionType.TypeSlug,
+		&parentCategoryID,
+		&parentCategoryName,
+		&parentCategoryColor,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	// Populate parent category if it exists (minimal DTO with just needed fields)
+	if parentCategoryID.Valid {
+		t.Category.ParentCategory = &types.CategoryDTO{
+			ID:           int(parentCategoryID.Int64),
+			CategoryName: parentCategoryName.String,
+			Color:        parentCategoryColor.String,
+		}
+	}
+
 	return t, nil
 }
 
@@ -372,13 +392,15 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 
 	baseQuery := "SELECT " +
 		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at, " +
-		"c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
+		"c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
 		"c_tt.id, c_tt.type_name, c_tt.type_slug, " +
-		"tt.id, tt.type_name, tt.type_slug " +
+		"tt.id, tt.type_name, tt.type_slug, " +
+		"pc.id, pc.category_name, pc.color " + // Parent category fields
 		"FROM transactions t " +
 		"JOIN transaction_types tt ON t.transaction_type_id = tt.id " +
 		"JOIN categories c ON t.category_id = c.id " +
 		"JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id " +
+		"LEFT JOIN categories pc ON c.parent_category_id = pc.id " + // LEFT JOIN for parent
 		"WHERE t.account_token = $1 "
 
 	args = append(args, accountToken)
@@ -398,13 +420,15 @@ func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 	query := `
         SELECT 
             t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at,
-            c.id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
+            c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
             c_tt.id, c_tt.type_name, c_tt.type_slug,
-            tt.id, tt.type_name, tt.type_slug
+            tt.id, tt.type_name, tt.type_slug,
+            pc.id, pc.category_name, pc.color
         FROM transactions t
         JOIN transaction_types tt ON t.transaction_type_id = tt.id
         JOIN categories c ON t.category_id = c.id
         JOIN transaction_types c_tt ON c.transaction_type_id = c_tt.id
+        LEFT JOIN categories pc ON c.parent_category_id = pc.id
         WHERE t.id = $1`
 
 	return db.QuerySingle(s.db, query, scanTransactionDTO, id)
@@ -905,70 +929,77 @@ func (s *Store) calculateLargestAmountsAndDailyTotals(
 }
 
 // Build category breakdown maps from transactions
+// Build category breakdown maps from transactions
 func (s *Store) buildCategoryBreakdowns(transactions []*types.TransactionDTO) (
-	creditCategoryMap, debitCategoryMap map[string]*types.CategoryStatistic) {
+	creditCategoryMap, debitCategoryMap map[int]*types.CategoryStatistic) {
 
-	creditCategoryMap = make(map[string]*types.CategoryStatistic)
-	debitCategoryMap = make(map[string]*types.CategoryStatistic)
+	creditCategoryMap = make(map[int]*types.CategoryStatistic)
+	debitCategoryMap = make(map[int]*types.CategoryStatistic)
 
 	for _, tx := range transactions {
-		categoryName := "Unknown"
-		categoryColor := "#6b7280" // Default gray color
-		var categoryBudget *int = nil
-
-		if tx.Category != nil {
-			categoryName = tx.Category.CategoryName
-			categoryColor = tx.Category.Color
-			categoryBudget = tx.Category.Budget
+		if tx.Category == nil {
+			continue
 		}
+
+		categoryID := tx.Category.ID
+		categoryName := tx.Category.CategoryName
+		categoryColor := tx.Category.Color
+		categoryBudget := tx.Category.Budget
+		parentID := tx.Category.ParentCategoryId
 
 		absAmount := abs(tx.Amount)
 
 		// Process based on transaction type
-		if tx.Category != nil {
-			switch tx.Category.TransactionType.ID {
-			case int(types.CreditTransactionType):
-				s.updateCategoryMap(creditCategoryMap, categoryName, categoryColor, categoryBudget, absAmount)
-			case int(types.DebitTransactionType):
-				s.updateCategoryMap(debitCategoryMap, categoryName, categoryColor, categoryBudget, absAmount)
-			}
+		switch tx.Category.TransactionType.ID {
+		case int(types.CreditTransactionType):
+			s.updateCategoryMapByID(creditCategoryMap, categoryID, parentID, categoryName, categoryColor, categoryBudget, absAmount)
+		case int(types.DebitTransactionType):
+			s.updateCategoryMapByID(debitCategoryMap, categoryID, parentID, categoryName, categoryColor, categoryBudget, absAmount)
 		}
 	}
 
 	return creditCategoryMap, debitCategoryMap
 }
 
-// Helper to update category map (reduces code duplication)
-func (s *Store) updateCategoryMap(categoryMap map[string]*types.CategoryStatistic,
-	categoryName, categoryColor string, budget *int, amount float64) {
+// Helper to update category map using category ID as key
+func (s *Store) updateCategoryMapByID(
+	categoryMap map[int]*types.CategoryStatistic,
+	categoryID int,
+	parentID *int,
+	categoryName, categoryColor string,
+	budget *int,
+	amount float64) {
 
-	if _, exists := categoryMap[categoryName]; !exists {
-		categoryMap[categoryName] = &types.CategoryStatistic{
-			Name:       categoryName,
-			Count:      0,
-			Total:      0,
-			Percentage: 0,
-			Color:      categoryColor,
-			Budget:     budget,
+	if _, exists := categoryMap[categoryID]; !exists {
+		categoryMap[categoryID] = &types.CategoryStatistic{
+			ID:               categoryID,
+			ParentID:         parentID,
+			Name:             categoryName,
+			Count:            0,
+			Total:            0,
+			Percentage:       0,
+			Color:            categoryColor,
+			Budget:           budget,
+			BudgetPercentage: 0,
+			Subcategories:    []types.CategoryStatistic{},
 		}
 	}
-	categoryMap[categoryName].Count++
-	categoryMap[categoryName].Total += amount
+	categoryMap[categoryID].Count++
+	categoryMap[categoryID].Total += amount
 }
 
-// Calculate percentages and convert map to slice
-func (s *Store) processCategoryBreakdown(categoryMap map[string]*types.CategoryStatistic,
+// Calculate percentages, build hierarchy, and convert map to slice
+func (s *Store) processCategoryBreakdown(
+	categoryMap map[int]*types.CategoryStatistic,
 	totalAmount float64) []*types.CategoryStatistic {
 
-	breakdown := make([]*types.CategoryStatistic, 0, len(categoryMap))
-
+	// First pass: calculate percentages for all categories
 	for _, categoryStat := range categoryMap {
 		if totalAmount > 0 {
 			percentage := (categoryStat.Total / totalAmount) * 100
 			categoryStat.Percentage = utils.Round(percentage, 2)
 		}
 
-		// Calculate budget percentage (how much of the budget was spent)
 		if categoryStat.Budget != nil && *categoryStat.Budget > 0 {
 			budgetPct := (categoryStat.Total / float64(*categoryStat.Budget)) * 100
 			categoryStat.BudgetPercentage = utils.Round(budgetPct, 2)
@@ -977,17 +1008,108 @@ func (s *Store) processCategoryBreakdown(categoryMap map[string]*types.CategoryS
 		}
 
 		categoryStat.Total = utils.Round(categoryStat.Total, 2)
-		breakdown = append(breakdown, categoryStat)
 	}
 
-	// Sort by percentage of budget spent (descending)
-	// Categories without budget will appear at the end (0% spent)
-	sort.Slice(breakdown, func(i, j int) bool {
-		// Sort descending (highest budget percentage first)
-		return breakdown[i].BudgetPercentage > breakdown[j].BudgetPercentage
+	// Second pass: fetch missing parents from database
+	s.addMissingParents(categoryMap)
+
+	// Third pass: build hierarchy
+	parentMap := make(map[int]*types.CategoryStatistic)
+	var rootCategories []*types.CategoryStatistic
+
+	for id, cat := range categoryMap {
+		if cat.ParentID == nil {
+			parentMap[id] = cat
+			rootCategories = append(rootCategories, cat)
+		}
+	}
+
+	// Attach children to parents and aggregate totals
+	for _, cat := range categoryMap {
+		if cat.ParentID != nil {
+			if parent, exists := parentMap[*cat.ParentID]; exists {
+				parent.Subcategories = append(parent.Subcategories, *cat)
+				parent.Total += cat.Total
+				parent.Count += cat.Count
+			}
+		}
+	}
+
+	// Recalculate parent percentages and budget after aggregation
+	for _, parent := range rootCategories {
+		if len(parent.Subcategories) > 0 {
+			parent.Total = utils.Round(parent.Total, 2)
+
+			if totalAmount > 0 {
+				parent.Percentage = utils.Round((parent.Total/totalAmount)*100, 2)
+			}
+
+			if parent.Budget != nil && *parent.Budget > 0 {
+				parent.BudgetPercentage = utils.Round((parent.Total/float64(*parent.Budget))*100, 2)
+			}
+
+			// Sort subcategories by total (descending)
+			sort.Slice(parent.Subcategories, func(i, j int) bool {
+				return parent.Subcategories[i].Total > parent.Subcategories[j].Total
+			})
+		}
+	}
+
+	// Sort parents by budget_percentage (descending), then by total
+	sort.Slice(rootCategories, func(i, j int) bool {
+		if rootCategories[i].BudgetPercentage != rootCategories[j].BudgetPercentage {
+			return rootCategories[i].BudgetPercentage > rootCategories[j].BudgetPercentage
+		}
+		return rootCategories[i].Total > rootCategories[j].Total
 	})
 
-	return breakdown
+	return rootCategories
+}
+
+// Add missing parent categories to the map
+func (s *Store) addMissingParents(categoryMap map[int]*types.CategoryStatistic) {
+	var missingIDs []int
+	for _, cat := range categoryMap {
+		if cat.ParentID != nil {
+			if _, exists := categoryMap[*cat.ParentID]; !exists {
+				missingIDs = append(missingIDs, *cat.ParentID)
+			}
+		}
+	}
+
+	if len(missingIDs) == 0 {
+		return
+	}
+
+	query := `SELECT id, category_name, color, budget FROM categories WHERE id = ANY($1)`
+	rows, err := s.db.Query(query, pq.Array(missingIDs))
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var name, color string
+		var budget *int
+
+		if err := rows.Scan(&id, &name, &color, &budget); err != nil {
+			continue
+		}
+
+		categoryMap[id] = &types.CategoryStatistic{
+			ID:               id,
+			ParentID:         nil,
+			Name:             name,
+			Color:            color,
+			Budget:           budget,
+			Count:            0,
+			Total:            0,
+			Percentage:       0,
+			BudgetPercentage: 0,
+			Subcategories:    []types.CategoryStatistic{},
+		}
+	}
 }
 
 func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) (*types.TransactionStatistics, error) {

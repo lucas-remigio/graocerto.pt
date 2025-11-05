@@ -134,7 +134,10 @@
 		"too-short": "Muito curto",
 		"too-long": "Muito longo",
 		"no-data": "Sem dados",
-		"optional": "Opcional"
+		"optional": "Opcional",
+		"back": "Voltar",
+		"transaction": "transação",
+		"transactions": "transações"
 	},
 
 	"views": {
@@ -173,7 +176,14 @@
 			"difference": "Líquido",
 			"credits": "Créditos",
 			"debits": "Débitos"
-		}
+		},
+		"main-categories": "Categorias Principais",
+		"detailed-breakdown": "Detalhamento Completo",
+		"detailed-view": "Vista Detalhada",
+		"all-credit-categories": "Todas as Categorias de Crédito",
+		"all-debit-categories": "Todas as Categorias de Débito",
+		"budget": "Orçamento",
+		"click-to-view-details": "Clique para ver detalhes"
 	},
 
 	"errors": {
@@ -309,8 +319,8 @@
 		"add-subcategory": "Adicionar Subcategoria",
 		"new-subcategory-for": "Nova Subcategoria para",
 		"parent-category": "Categoria Pai",
-		"no-parent": "Sem Pai (Categoria Raiz)",
-		"parent-help": "Opcional: Faça desta uma subcategoria de outra categoria"
+		"parent-category-help": "Opcional: Faz desta uma subcategoria de outra categoria",
+		"no-parent": "Sem Pai (Categoria Raiz)"
 	},
 
 	"modals": {

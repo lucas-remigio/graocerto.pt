@@ -290,15 +290,21 @@
 									{formatDate(tx.date)}
 								</td>
 								<td class="text-base-content">
-									<span
-										class="inline-flex items-center justify-center rounded px-3 py-1 {getTextColor(
-											tx.category.color
-										)}"
-										style="background-color: {tx.category
-											.color}; min-width: 4rem; text-align: center;"
-									>
-										{tx.category.category_name}
-									</span>
+									<div class="flex flex-col items-center gap-0.5">
+										{#if tx.category.parent_category_id}
+											<span class="text-xs opacity-60">
+												{tx.category.parent_category?.category_name || 'Parent'}
+											</span>
+										{/if}
+										<span
+											class="inline-flex items-center justify-center rounded px-3 py-1 {getTextColor(
+												tx.category.color
+											)}"
+											style="background-color: {tx.category.color}; min-width: 4rem;"
+										>
+											{tx.category.category_name}
+										</span>
+									</div>
 								</td>
 								<td class="text-base-content">
 									<div class="flex items-center justify-center gap-2">

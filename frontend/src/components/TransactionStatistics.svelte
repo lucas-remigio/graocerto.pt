@@ -11,10 +11,11 @@
 		BarChart
 	} from 'lucide-svelte';
 	import { t } from '$lib/i18n';
-	import PieChartComponent from './CategoriesPieChart.svelte';
 	import TransactionsHeatmap from './TransactionsHeatmap.svelte';
 	import AiFeedback from './AiFeedback.svelte';
-	import CategoryBudgetCard from './CategoryBudgetCard.svelte';
+	import HierarchicalPieChart from './HierarchicalPieChart.svelte';
+	import DetailedCategoriesChart from './DetailedCategoriesChart.svelte';
+	import HierarchicalBudgetCard from './HierarchicalBudgetCard.svelte';
 
 	export let selectedMonth: number | null;
 	export let selectedYear: number | null;
@@ -217,47 +218,64 @@
 	{/if}
 
 	{#if statsView === 'overview'}
-		<!-- Overview: Just Pie Charts -->
-		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-			<!-- Credit Pie Chart -->
-			<div class="bg-base-100 rounded-lg p-6">
-				<h3 class="text-success mb-4 text-center text-lg font-semibold">
-					{$t('statistics.credit-categories')}
-				</h3>
-				<PieChartComponent data={statistics.credit_category_breakdown} isCredit={true} />
+		<!-- Overview: Hierarchical Pie Charts at Top, Detailed Below -->
+		<div class="space-y-8">
+			<!-- Main Categories (Clickable for drill-down) -->
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+				<div class="bg-base-100 rounded-lg p-6">
+					<h3 class="text-success mb-4 text-center text-lg font-semibold">
+						{$t('statistics.credit-categories')}
+					</h3>
+					<HierarchicalPieChart data={statistics.credit_category_breakdown} />
+				</div>
+
+				<div class="bg-base-100 rounded-lg p-6">
+					<h3 class="text-error mb-4 text-center text-lg font-semibold">
+						{$t('statistics.debit-categories')}
+					</h3>
+					<HierarchicalPieChart data={statistics.debit_category_breakdown} />
+				</div>
 			</div>
 
-			<!-- Debit Pie Chart -->
-			<div
-				class="bg-base-100 border-base-300 mt-4 rounded-lg border-t p-6 pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-6"
-			>
-				<h3 class="text-error mb-4 text-center text-lg font-semibold">
-					{$t('statistics.debit-categories')}
-				</h3>
-				<PieChartComponent data={statistics.debit_category_breakdown} isCredit={false} />
+			<!-- Detailed Breakdown (All categories split) -->
+			<div class="divider">{$t('statistics.detailed-view', { default: 'Detailed View' })}</div>
+
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+				<div class="bg-base-100 rounded-lg p-6">
+					<h3 class="text-success mb-4 text-center text-lg font-semibold">
+						{$t('statistics.all-credit-categories', { default: 'All Credit Categories' })}
+					</h3>
+					<DetailedCategoriesChart data={statistics.credit_category_breakdown} />
+				</div>
+
+				<div class="bg-base-100 rounded-lg p-6">
+					<h3 class="text-error mb-4 text-center text-lg font-semibold">
+						{$t('statistics.all-debit-categories', { default: 'All Debit Categories' })}
+					</h3>
+					<DetailedCategoriesChart data={statistics.debit_category_breakdown} />
+				</div>
 			</div>
 		</div>
 	{/if}
 
 	{#if statsView === 'categories'}
-		<!-- Category Breakdowns with Pie Charts -->
+		<!-- Category Breakdowns with Hierarchical Cards -->
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-			<!-- Credit Column: cards (scrollable) above the chart -->
+			<!-- Credit Column -->
 			<div class="bg-base-100">
 				<div class="px-6 py-4">
 					<h3 class="text-success mb-3 text-lg font-semibold">
 						{$t('statistics.credit-categories')}
 					</h3>
-					<!-- Cards list -->
 					<div class="space-y-3">
 						{#each statistics.credit_category_breakdown as cat}
-							<CategoryBudgetCard category={cat} isCredit={true} />
+							<HierarchicalBudgetCard category={cat} isCredit={true} />
 						{/each}
 					</div>
 				</div>
 			</div>
 
-			<!-- Debit Column: cards (scrollable) above the chart -->
+			<!-- Debit Column -->
 			<div
 				class="bg-base-100 border-base-300 mt-4 border-t pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
 			>
@@ -265,10 +283,9 @@
 					<h3 class="text-error mb-3 text-lg font-semibold">
 						{$t('statistics.debit-categories')}
 					</h3>
-					<!-- Cards list -->
 					<div class="space-y-3">
 						{#each statistics.debit_category_breakdown as cat}
-							<CategoryBudgetCard category={cat} isCredit={false} />
+							<HierarchicalBudgetCard category={cat} isCredit={false} />
 						{/each}
 					</div>
 				</div>

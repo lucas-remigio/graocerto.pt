@@ -135,7 +135,10 @@
 		"too-short": "Too Short",
 		"too-long": "Too Long",
 		"no-data": "No data",
-		"optional": "Optional"
+		"optional": "Optional",
+		"back": "Back",
+		"transaction": "Transaction",
+		"transactions": "Transactions"
 	},
 
 	"views": {
@@ -170,7 +173,14 @@
 			"difference": "Net",
 			"credits": "Credits",
 			"debits": "Debits"
-		}
+		},
+		"main-categories": "Main Categories",
+		"detailed-breakdown": "Detailed Breakdown",
+		"detailed-view": "Detailed View",
+		"all-credit-categories": "All Credit Categories",
+		"all-debit-categories": "All Debit Categories",
+		"budget": "Budget",
+		"click-to-view-details": "Click to view details"
 	},
 
 	"errors": {
@@ -306,8 +316,8 @@
 		"add-subcategory": "Add Subcategory",
 		"new-subcategory-for": "New Subcategory for",
 		"parent-category": "Parent Category",
-		"no-parent": "No Parent (Root Category)",
-		"parent-help": "Optional: Make this a subcategory of another category"
+		"parent-category-help": "Optional: Make this a subcategory of another category",
+		"no-parent": "No Parent (Root Category)"
 	},
 
 	"modals": {

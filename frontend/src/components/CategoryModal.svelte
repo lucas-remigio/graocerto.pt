@@ -8,20 +8,54 @@
 	// Unified inputs
 	export let category: CategoryDto | null = null; // edit mode if provided
 	export let transactionType: TransactionType | null = null; // create mode if provided
-	export let parentCategory: CategoryDto | null = null; // NEW: for creating subcategories
+	export let parentCategory: CategoryDto | null = null; // for creating subcategories from table
 
 	// Mode
 	$: isEditMode = !!category;
-	$: isSubcategoryMode = !!parentCategory; // NEW
+	$: isSubcategoryMode = !!parentCategory;
 
 	// Local state
 	let error: string = '';
 	let category_name: string = category ? category.category_name : '';
-	let color: string = category ? category.color : parentCategory?.color || '#ffffff'; // Pre-fill parent's color
+	let color: string = category ? category.color : parentCategory?.color || '#ffffff';
 	let budget: number | null = category ? (category.budget ?? null) : null;
 	let budgetInput: string = category && category.budget != null ? String(category.budget) : '';
+	let selectedParentId: number | null = category?.parent_category_id ?? parentCategory?.id ?? null;
+
+	// Fetch available parent categories based on transaction type
+	let availableParents: CategoryDto[] = [];
+	let loadingParents = false;
 
 	$: currentLocale = $locale || 'pt';
+	$: currentTransactionTypeId = isEditMode
+		? category!.transaction_type.id
+		: isSubcategoryMode
+			? parentCategory!.transaction_type.id
+			: transactionType?.id;
+
+	// Fetch parent categories when transaction type changes
+	$: if (currentTransactionTypeId) {
+		fetchAvailableParents(currentTransactionTypeId);
+	}
+
+	async function fetchAvailableParents(transactionTypeId: number) {
+		loadingParents = true;
+		try {
+			const allCategories = await dataService.fetchCategories();
+			// Filter: same transaction type, no parent (root only), exclude current category if editing
+			availableParents = allCategories.filter(
+				(c) =>
+					c.transaction_type.id === transactionTypeId &&
+					!c.parent_category_id &&
+					(!isEditMode || c.id !== category!.id) // Can't be parent of itself
+			);
+		} catch (err) {
+			console.error('Failed to fetch parent categories:', err);
+			availableParents = [];
+		} finally {
+			loadingParents = false;
+		}
+	}
 
 	function formatCurrency(v: number | null) {
 		if (v == null) return '';
@@ -112,7 +146,7 @@
 
 		if (isEditMode) {
 			const editCategoryData = {
-				parent_category_id: category!.parent_category_id,
+				parent_category_id: selectedParentId,
 				category_name,
 				color,
 				budget
@@ -121,16 +155,14 @@
 			return;
 		}
 
-		// Create mode - determine transaction type and parent
+		// Create mode
 		let transaction_type_id: number;
-		let parent_category_id: number | null = null;
+		let parent_category_id: number | null = selectedParentId;
 
 		if (isSubcategoryMode) {
-			// Creating a subcategory
 			transaction_type_id = parentCategory!.transaction_type.id;
-			parent_category_id = parentCategory!.id;
+			parent_category_id = parentCategory!.id; // Override with explicit parent
 		} else if (transactionType) {
-			// Creating a root category
 			transaction_type_id = transactionType.id;
 		} else {
 			error = $t('errors.failed-create-category');
@@ -144,7 +176,6 @@
 			color,
 			budget
 		};
-		console.log('Creating category with data:', categoryData);
 
 		try {
 			const response: CategoryChangeResponse = await dataService.createCategory(categoryData);
@@ -182,6 +213,38 @@
 		{/if}
 
 		<form on:submit|preventDefault={handleSubmit}>
+			<!-- Parent Category Selector (only if NOT in subcategory mode from table) -->
+			{#if !isSubcategoryMode && availableParents.length > 0}
+				<div class="form-control mt-4">
+					<label class="label" for="parent_category">
+						<span class="label-text"
+							>{$t('categories.parent-category')} ({$t('common.optional')})</span
+						>
+					</label>
+					{#if loadingParents}
+						<div class="flex items-center justify-center py-2">
+							<span class="loading loading-spinner loading-sm"></span>
+						</div>
+					{:else}
+						<select
+							id="parent_category"
+							class="select select-bordered"
+							bind:value={selectedParentId}
+						>
+							<option value={null}>{$t('categories.no-parent')}</option>
+							{#each availableParents as parent}
+								<option value={parent.id}>
+									{parent.category_name}
+								</option>
+							{/each}
+						</select>
+						<p class="text-base-content/70 mt-1 text-xs">
+							{$t('categories.parent-category-help')}
+						</p>
+					{/if}
+				</div>
+			{/if}
+
 			<!-- Category Name Field -->
 			<div class="form-control mt-4">
 				<label class="label" for="category_name">
