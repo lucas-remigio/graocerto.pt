@@ -5,6 +5,7 @@
 	import { t } from '$lib/i18n';
 	import type { CategoryStatistic } from '$lib/types';
 	import { themeService } from '$lib/services/themeService';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	export let data: CategoryStatistic[] = [];
 
@@ -140,7 +141,7 @@
 								return [
 									`${item.name}`,
 									`${item.count} ${item.count === 1 ? $t('common.transaction') : $t('common.transactions')}`,
-									`€${item.total.toFixed(2)} (${percentage}%)`
+									`${formatCurrency(item.total)} (${percentage}%)`
 								];
 							}
 						}
@@ -214,7 +215,7 @@
 							<span class="text-xs opacity-60">({item.count})</span>
 						</div>
 						<div class="text-right">
-							<span class="text-sm font-semibold">€{item.total.toFixed(2)}</span>
+							<span class="text-sm font-semibold">{formatCurrency(item.total)}</span>
 						</div>
 					</div>
 				{/each}
@@ -248,7 +249,7 @@
 							{/if}
 						</div>
 						<div class="text-right">
-							<span class="text-sm font-semibold">€{item.total.toFixed(2)}</span>
+							<span class="text-sm font-semibold">{formatCurrency(item.total)}</span>
 							<span class="ml-2 text-xs opacity-60">{item.percentage.toFixed(1)}%</span>
 						</div>
 					</button>
