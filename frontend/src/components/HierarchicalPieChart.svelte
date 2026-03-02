@@ -97,9 +97,7 @@
 				responsive: true,
 				maintainAspectRatio: false,
 				onClick: (event, elements) => {
-					if (drillDownData) {
-						selectedParent = null;
-					} else if (elements.length > 0) {
+					if (!drillDownData && elements.length > 0) {
 						const index = elements[0].index;
 						const clickedCategory = sortedData[index];
 						if (clickedCategory.subcategories && clickedCategory.subcategories.length > 0) {
@@ -185,14 +183,14 @@
 		<div class="mb-3 text-center">
 			<h4 class="text-sm font-medium opacity-70">
 				{#if selectedParent}
-					{selectedParent.name}
 					<button
-						class="btn btn-ghost btn-xs ml-2"
+						class="btn btn-ghost btn-xs mr-2"
 						on:click={() => (selectedParent = null)}
 						aria-label="Back to overview"
 					>
 						← {$t('common.back', { default: 'Back' })}
 					</button>
+					{selectedParent.name}
 				{:else}
 					{$t('statistics.main-categories', { default: 'Main Categories' })}
 				{/if}
