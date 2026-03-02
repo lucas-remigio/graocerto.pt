@@ -128,7 +128,7 @@
 	<Navbar />
 	<Sidebar />
 	<div class="lg:pl-64">
-		<main class="min-h-screen lg:pt-4">
+		<main class="min-h-screen {$isAuthenticated ? 'lg:pt-4' : ''}">
 			{@render children()}
 		</main>
 		<Footer />

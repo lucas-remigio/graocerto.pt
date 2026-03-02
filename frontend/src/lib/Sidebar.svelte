@@ -1,7 +1,7 @@
 <!-- src/lib/Sidebar.svelte — visible only on lg+ screens -->
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { Calculator, Home, List, LogOut, User } from 'lucide-svelte';
+	import { Calculator, Home, List, LogOut, LogIn, User } from 'lucide-svelte';
 	import { t, locale } from '$lib/i18n';
 	import { isAuthenticated, logout, userEmail } from '$stores/auth';
 	import NavActions from './NavActions.svelte';
@@ -85,6 +85,7 @@
 			</div>
 		{:else}
 			<a href="/login" class="btn btn-primary btn-sm w-full">
+				<LogIn size={16} />
 				{$t('auth.login', { default: 'Login' })}
 			</a>
 		{/if}

@@ -98,7 +98,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   int(jwtExpiration),      // Token expires at the same time as the JWT
 	})
 
-	utils.WriteJson(w, http.StatusOK, map[string]string{"token": token})
+	utils.WriteJson(w, http.StatusOK, map[string]string{"token": token, "created_at": user.CreatedAt})
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {

@@ -11,7 +11,17 @@
 	let deleteConfirmText = '';
 
 	const userEmail = localStorage.getItem('userEmail') || 'unknown@anonymous.pt';
-	const userCreated = localStorage.getItem('userCreated') || 'Unknown';
+	const rawCreated = localStorage.getItem('userCreated') || '';
+	const userCreated = rawCreated
+		? new Date(rawCreated).toLocaleDateString(
+				localStorage.getItem('preferred-language') === 'en' ? 'en-GB' : 'pt-PT',
+				{
+					day: '2-digit',
+					month: 'long',
+					year: 'numeric'
+				}
+			)
+		: '—';
 
 	async function handleDeleteAccount() {
 		if (deleteConfirmText !== 'DELETE') {
@@ -84,10 +94,10 @@
 			<!-- Header -->
 			<div class="mb-6 flex items-center justify-between">
 				<h3 class="flex items-center gap-2 text-lg font-bold">
-					<User class="text-primary h-5 w-5" />
+					<User class="h-5 w-5 text-primary" />
 					{$t('profile.title', { default: 'Profile' })}
 				</h3>
-				<button class="btn btn-ghost btn-sm btn-circle" on:click={closeModal}>
+				<button class="btn btn-circle btn-ghost btn-sm" on:click={closeModal}>
 					<X class="h-4 w-4" />
 				</button>
 			</div>
@@ -95,17 +105,17 @@
 			{#if !showDeleteConfirmation}
 				<!-- Profile Info -->
 				<div class="mb-6 space-y-4">
-					<div class="bg-base-200 rounded-lg p-4">
+					<div class="rounded-lg bg-base-200 p-4">
 						<div class="mb-2 flex items-center gap-2">
-							<Mail class="text-primary h-4 w-4" />
+							<Mail class="h-4 w-4 text-primary" />
 							<span class="text-sm font-medium">{$t('profile.email', { default: 'Email' })}</span>
 						</div>
 						<p class="text-base-content/80">{userEmail}</p>
 					</div>
 
-					<div class="bg-base-200 rounded-lg p-4">
+					<div class="rounded-lg bg-base-200 p-4">
 						<div class="mb-2 flex items-center gap-2">
-							<User class="text-primary h-4 w-4" />
+							<User class="h-4 w-4 text-primary" />
 							<span class="text-sm font-medium"
 								>{$t('profile.member-since', { default: 'Member since' })}</span
 							>
@@ -124,7 +134,7 @@
 
 					<!-- Delete Account -->
 					<button
-						class="btn btn-error btn-outline w-full"
+						class="btn btn-outline btn-error w-full"
 						on:click={() => (showDeleteConfirmation = true)}
 					>
 						<Trash2 class="mr-2 h-4 w-4" />

@@ -47,7 +47,7 @@
 
 			if (authToken) {
 				// Store in both localStorage and Svelte store
-				login(authToken, email);
+				login(authToken, email, data.created_at ?? null);
 			}
 
 			goto('/home');
@@ -68,17 +68,15 @@
 	};
 </script>
 
-<main
-	class="bg-base-200 flex min-h-screen items-center justify-center overflow-auto p-4 md:h-[calc(100vh-64px)] md:min-h-0"
->
-	<div class="bg-base-100 w-full max-w-md rounded-xl p-8 shadow-lg">
+<main class="flex min-h-screen items-center justify-center overflow-auto bg-base-200 p-4">
+	<div class="w-full max-w-md rounded-xl bg-base-100 p-8 shadow-lg">
 		<!-- Logo and Brand -->
 		<div class="mb-8 text-center">
 			<div class="mb-4 flex justify-center">
 				<img src="/logo.png" alt="Grão Certo Logo" class="h-16 w-auto object-contain" />
 			</div>
-			<h1 class="text-primary text-3xl font-bold">Grão Certo</h1>
-			<p class="text-base-content/70 mt-2 text-sm">{$t('auth.welcome-back')}</p>
+			<h1 class="text-3xl font-bold text-primary">Grão Certo</h1>
+			<p class="mt-2 text-sm text-base-content/70">{$t('auth.welcome-back')}</p>
 		</div>
 
 		<form class="space-y-3" on:submit|preventDefault={handleLogin}>
@@ -91,7 +89,7 @@
 					type="email"
 					bind:value={email}
 					required
-					class="input input-bordered focus:input-primary w-full"
+					class="input input-bordered w-full focus:input-primary"
 					placeholder={$t('auth.enter-email')}
 				/>
 			</div>
@@ -105,15 +103,15 @@
 					type="password"
 					bind:value={password}
 					required
-					class="input input-bordered focus:input-primary w-full"
+					class="input input-bordered w-full focus:input-primary"
 					placeholder={$t('auth.enter-password')}
 				/>
 			</div>
 
 			{#if errorMessage}
 				<div class="alert alert-error shadow-sm">
-					<XIcon class="text-base-100 h-6 w-6" />
-					<span class="text-base-100 text-sm">{errorMessage}</span>
+					<XIcon class="h-6 w-6 text-base-100" />
+					<span class="text-sm text-base-100">{errorMessage}</span>
 				</div>
 			{/if}
 
@@ -127,7 +125,7 @@
 		<div class="divider text-base-content/50">{$t('auth.or')}</div>
 
 		<div class="text-center">
-			<p class="text-base-content/70 text-sm">
+			<p class="text-sm text-base-content/70">
 				{$t('auth.no-account')}
 			</p>
 			<a href="/register" class="btn btn-outline btn-primary mt-2 w-full">
