@@ -1,20 +1,15 @@
 <script lang="ts">
 	import type { CategoryStatistic } from '$lib/types';
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
-	import { t, locale } from '$lib/i18n';
+	import { t } from '$lib/i18n';
 	import BudgetProgressBar from './BudgetProgressBar.svelte';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	export let category: CategoryStatistic;
 	export let isCredit: boolean;
 
 	let expanded = false;
-
-	$: currentLocale = $locale || 'pt-PT';
-
-	const fmt = (v: number | null) => {
-		if (v === null) return '—';
-		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 2 }).format(v) + '\u00A0€';
-	};
+	const fmt = (v: number | null) => (v === null ? '—' : formatCurrency(v));
 
 	$: hasSubcategories = !!(category.subcategories && category.subcategories.length > 0);
 
@@ -30,13 +25,13 @@
 			: 0;
 </script>
 
-<article class="card bg-base-100 border shadow-sm">
+<article class="card border bg-base-100 shadow-sm">
 	<!-- Parent Header -->
 	<header class="flex items-center gap-3 p-4">
 		<!-- Expand button -->
 		{#if hasSubcategories}
 			<button
-				class="btn btn-ghost btn-xs btn-circle flex-shrink-0"
+				class="btn btn-circle btn-ghost btn-xs flex-shrink-0"
 				on:click={() => (expanded = !expanded)}
 				aria-label={expanded ? 'Collapse' : 'Expand'}
 			>
@@ -69,17 +64,17 @@
 			<BudgetProgressBar stat={category} {isCredit} />
 		</div>
 	{:else}
-		<div class="text-base-content/60 px-4 pb-4 text-sm">
+		<div class="px-4 pb-4 text-sm text-base-content/60">
 			{fmt(category.total)}
 		</div>
 	{/if}
 
 	<!-- Subcategories (Collapsible) -->
 	{#if hasSubcategories && expanded && category.subcategories}
-		<div class="border-base-300 bg-base-200/30 space-y-3 border-t px-4 py-4">
+		<div class="space-y-3 border-t border-base-300 bg-base-200/30 px-4 py-4">
 			<!-- Direct Spending -->
 			{#if directCount > 0}
-				<div class="bg-base-100 rounded-lg p-3">
+				<div class="rounded-lg bg-base-100 p-3">
 					<div class="flex items-center justify-between">
 						<span class="text-xs opacity-70">{category.name} (Direto)</span>
 						<span class="text-xs font-semibold {isCredit ? 'text-success' : 'text-error'}">
@@ -91,7 +86,7 @@
 
 			<!-- Subcategories -->
 			{#each category.subcategories as sub}
-				<div class="bg-base-100 rounded-lg p-3">
+				<div class="rounded-lg bg-base-100 p-3">
 					<!-- Sub Header -->
 					<div class="mb-2 flex items-center justify-between gap-4">
 						<span class="text-xs font-medium">{sub.name}</span>
@@ -115,7 +110,7 @@
 										: $t('statistics.over-budget')
 									: $t('statistics.within-budget')}
 							</span>
-							<span class="text-base-content/60 font-medium">{fmt(sub.total)}</span>
+							<span class="font-medium text-base-content/60">{fmt(sub.total)}</span>
 						</div>
 					{:else}
 						<div class="text-xs opacity-60">{fmt(sub.total)}</div>

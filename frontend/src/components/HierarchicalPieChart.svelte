@@ -16,7 +16,7 @@
 	Chart.register(...registerables);
 
 	// Sort parent data by percentage (descending)
-	$: sortedData = [...data].sort((a, b) => b.percentage - a.percentage);
+	$: sortedData = [...(data ?? [])].sort((a, b) => b.percentage - a.percentage);
 
 	// Parent-level data (only root categories)
 	$: parentData = sortedData.map((cat) => ({
@@ -63,7 +63,7 @@
 		: null;
 
 	function createChart() {
-		if (!canvas || data.length === 0) return;
+		if (!canvas || !data?.length) return;
 
 		if (chart) {
 			chart.destroy();
@@ -180,7 +180,7 @@
 </script>
 
 <div class="relative">
-	{#if data.length > 0}
+	{#if data?.length > 0}
 		<!-- Chart Title -->
 		<div class="mb-3 text-center">
 			<h4 class="text-sm font-medium opacity-70">
@@ -209,7 +209,7 @@
 			{#if drillDownData}
 				<!-- Drill-down legend -->
 				{#each drillDownData as item}
-					<div class="bg-base-200 flex items-center justify-between rounded p-2">
+					<div class="flex items-center justify-between rounded bg-base-200 p-2">
 						<div class="flex items-center gap-2">
 							<span class="h-3 w-3 rounded-full" style="background-color: {item.color};"></span>
 							<span class="text-sm">{item.name}</span>
@@ -224,7 +224,7 @@
 				<!-- Parent-level legend -->
 				{#each parentData as item, index}
 					<button
-						class="bg-base-200 hover:bg-base-300 flex w-full items-center justify-between rounded p-2 transition-colors"
+						class="flex w-full items-center justify-between rounded bg-base-200 p-2 transition-colors hover:bg-base-300"
 						class:cursor-pointer={item.hasChildren}
 						class:cursor-default={!item.hasChildren}
 						on:click={() => {
@@ -261,8 +261,8 @@
 		<!-- Empty state -->
 		<div class="flex h-64 items-center justify-center">
 			<div class="text-center">
-				<PieChart size={48} class="text-base-content/30 mx-auto mb-3" />
-				<p class="text-base-content/60 text-base font-medium">{$t('statistics.no-data')}</p>
+				<PieChart size={48} class="mx-auto mb-3 text-base-content/30" />
+				<p class="text-base font-medium text-base-content/60">{$t('statistics.no-data')}</p>
 			</div>
 		</div>
 	{/if}

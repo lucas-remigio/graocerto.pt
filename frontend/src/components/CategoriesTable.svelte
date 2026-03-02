@@ -12,9 +12,10 @@
 	import CategoryModal from './CategoryModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
-	import { locale, t } from '$lib/i18n';
+	import { t } from '$lib/i18n';
 	import { dataService } from '$lib/services/dataService';
 	import { flip } from 'svelte/animate';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	export let categories: CategoryDto[] = [];
 	export let categoryType: 'debit' | 'credit' = 'debit';
@@ -33,10 +34,6 @@
 	// Track expanded parent categories
 	let expandedCategories = new Set<number>();
 
-	$: currentLocale = $locale || 'pt';
-
-	// Build hierarchy from flat list
-	// Build hierarchy from flatCategories, sorted by order_index
 	$: categoryHierarchy = buildHierarchy(localCategories);
 
 	$: {
@@ -92,11 +89,6 @@
 			expandedCategories.add(categoryId);
 		}
 		expandedCategories = expandedCategories; // trigger reactivity
-	}
-
-	function formatCurrency(v: number | null) {
-		if (v == null) return '';
-		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(v) + '€';
 	}
 
 	const borderClasses: Record<string, string> = {
@@ -268,7 +260,7 @@
 						</td>
 						<!-- Budget (shared) -->
 						<td class={row.type === 'parent' ? '' : 'text-sm'}>
-							{row.cat.budget ? formatCurrency(row.cat.budget) : '—'}
+							{row.cat.budget ? formatCurrency(row.cat.budget, 0) : '—'}
 						</td>
 						<!-- Actions -->
 						<td>

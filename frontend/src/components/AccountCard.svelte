@@ -4,6 +4,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { ArrowDown, ArrowUp, Pencil, Star, Trash } from 'lucide-svelte';
 	import { hideBalances } from '$lib/stores/uiPreferences';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	export let account: Account;
 	export let selectedAccount: Account | null = null;
@@ -18,11 +19,6 @@
 		moveDown: { account: Account };
 		toggleFavorite: { account: Account };
 	}>();
-
-	function formatCurrency(amount: number): string {
-		// make the currency have a , every 3 digits
-		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-	}
 
 	function handleCardClick() {
 		dispatch('select', { account });
@@ -54,18 +50,18 @@
 <div class="group relative">
 	<button
 		type="button"
-		class="card bg-base-100 w-full cursor-pointer p-0 outline-none transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl
-		{isSelected ? 'ring-primary ring-2 ' : 'border-base-200 hover:border-primary/20 border shadow-lg'}"
+		class="card w-full cursor-pointer bg-base-100 p-0 outline-none transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl
+		{isSelected ? 'ring-2 ring-primary ' : 'border border-base-200 shadow-lg hover:border-primary/20'}"
 		on:click={handleCardClick}
 	>
 		<div class="card-body items-start px-6 py-4">
-			<h2 class="text-base-content/80 mb-1 truncate text-base font-semibold">
+			<h2 class="mb-1 truncate text-base font-semibold text-base-content/80">
 				{account.account_name}
 			</h2>
 			{#if $hideBalances}
-				<p class="text-base-content/60 select-none text-3xl font-bold tracking-widest">••••••</p>
+				<p class="select-none text-3xl font-bold tracking-widest text-base-content/60">••••••</p>
 			{:else}
-				<p class="text-base-content text-3xl font-bold">{formatCurrency(account.balance)}€</p>
+				<p class="text-3xl font-bold text-base-content">{formatCurrency(account.balance)}</p>
 			{/if}
 		</div>
 	</button>
@@ -77,25 +73,25 @@
 		>
 			<!-- Add a star button -->
 			<button
-				class="btn btn-ghost btn-sm btn-circle"
+				class="btn btn-circle btn-ghost btn-sm"
 				on:click|stopPropagation={handleFavorite}
 				title={account.is_favorite ? 'Unfavorite' : 'Favorite'}
 			>
 				{#if account.is_favorite}
-					<Star fill="currentColor" size={16} class="text-amber-400"/>
+					<Star fill="currentColor" size={16} class="text-amber-400" />
 				{:else}
 					<Star size={16} />
 				{/if}
 			</button>
 			<button
-				class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
+				class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
 				on:click|stopPropagation={handleEditAccount}
 				title="Edit account"
 			>
 				<Pencil size={16} />
 			</button>
 			<button
-				class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
+				class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
 				on:click|stopPropagation={handleDeleteAccount}
 				title="Delete account"
 			>
@@ -107,7 +103,7 @@
 			class="absolute bottom-2 right-2 flex flex-row gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
 		>
 			<button
-				class="btn btn-ghost btn-sm btn-circle bg-base-100/80"
+				class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
 				on:click|stopPropagation={handleMoveUp}
 				title="Move up"
 				disabled={!canMoveUp}
@@ -115,7 +111,7 @@
 				<ArrowUp size={16} />
 			</button>
 			<button
-				class="btn btn-ghost btn-sm btn-circle bg-base-100/80"
+				class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
 				on:click|stopPropagation={handleMoveDown}
 				title="Move down"
 				disabled={!canMoveDown}

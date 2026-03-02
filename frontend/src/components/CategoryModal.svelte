@@ -4,6 +4,7 @@
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { locale, t } from '$lib/i18n';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	// Unified inputs
 	export let category: CategoryDto | null = null; // edit mode if provided
@@ -55,11 +56,6 @@
 		} finally {
 			loadingParents = false;
 		}
-	}
-
-	function formatCurrency(v: number | null) {
-		if (v == null) return '';
-		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(v) + '\u00A0€';
 	}
 
 	function onBudgetInput(e: Event) {
@@ -189,7 +185,7 @@
 
 <div class="modal modal-open">
 	<div class="modal-box relative border-4 {modalBorderClass}">
-		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}>
+		<button class="btn btn-circle btn-sm absolute right-2 top-2" on:click={handleCloseModal}>
 			<X />
 		</button>
 
@@ -238,7 +234,7 @@
 								</option>
 							{/each}
 						</select>
-						<p class="text-base-content/70 mt-1 text-xs">
+						<p class="mt-1 text-xs text-base-content/70">
 							{$t('categories.parent-category-help')}
 						</p>
 					{/if}
@@ -267,12 +263,12 @@
 				</label>
 				<div class="relative flex h-14 w-full items-center gap-4">
 					<div
-						class="border-base-300 h-14 w-14 rounded-full border-2 shadow"
+						class="h-14 w-14 rounded-full border-2 border-base-300 shadow"
 						style="background-color: {color};"
 					></div>
 					<input
 						type="text"
-						class="input input-bordered input-sm w-24 text-center"
+						class="input input-sm input-bordered w-24 text-center"
 						value={color}
 						readonly
 						tabindex="-1"
@@ -305,15 +301,15 @@
 						on:input={onBudgetInput}
 						aria-describedby="budget-help"
 					/>
-					<div class="text-base-content/60 rounded border px-3 py-2 text-sm">
+					<div class="rounded border px-3 py-2 text-sm text-base-content/60">
 						{#if budget != null}
-							{formatCurrency(budget)}
+							{formatCurrency(budget, 0)}
 						{:else}
 							<span class="text-base-content/40">—</span>
 						{/if}
 					</div>
 				</div>
-				<p id="budget-help" class="text-base-content/70 mt-2 text-xs">
+				<p id="budget-help" class="mt-2 text-xs text-base-content/70">
 					{$t('categories.budget-help')}
 				</p>
 			</div>

@@ -10,7 +10,12 @@
 	import { t } from '$lib/i18n';
 	import api_axios from '$lib/axios';
 	import { flip } from 'svelte/animate';
-	import { showNonFavorites, updateShowNonFavorites } from '$lib/stores/uiPreferences';
+	import {
+		showNonFavorites,
+		updateShowNonFavorites,
+		hideBalances
+	} from '$lib/stores/uiPreferences';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	// Export a prop to receive the accounts array.
 	export let accounts: Account[] = [];
@@ -24,6 +29,7 @@
 
 	$: favoriteAccounts = accounts.filter((acc) => acc.is_favorite);
 	$: nonFavoriteAccounts = accounts.filter((acc) => !acc.is_favorite);
+	$: totalNetWorth = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
 	function toggleShowNonFavorites(value: boolean) {
 		updateShowNonFavorites(value);
@@ -204,7 +210,7 @@
 			</div>
 			<div class="flex justify-center">
 				<button
-					class="btn btn-sm btn-ghost mt-2 flex items-center gap-1"
+					class="btn btn-ghost btn-sm mt-2 flex items-center gap-1"
 					on:click={() => toggleShowNonFavorites(false)}
 				>
 					<EyeOff size={16} />
@@ -214,7 +220,7 @@
 		{:else}
 			<div class="flex justify-center">
 				<button
-					class="btn btn-sm btn-ghost mt-2 flex items-center gap-1"
+					class="btn btn-ghost btn-sm mt-2 flex items-center gap-1"
 					on:click={() => toggleShowNonFavorites(true)}
 				>
 					<Eye size={16} />
@@ -223,6 +229,13 @@
 			</div>
 		{/if}
 	{/if}
+	<!-- Net worth summary -->
+	<div class="mt-4 flex items-center justify-between border-t border-base-300 pt-3">
+		<span class="text-sm text-base-content/50">{$t('accounts.total-networth')}</span>
+		<span class="text-md tabular-nums text-base-content/70">
+			{$hideBalances ? '••••••' : formatCurrency(totalNetWorth)}
+		</span>
+	</div>
 {:else}
 	<p class="text-gray-500">{$t('page.no-accounts')}</p>
 {/if}

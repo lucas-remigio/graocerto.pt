@@ -37,17 +37,10 @@
 	}> = [];
 
 	let canvasElement: HTMLCanvasElement;
+	import { formatCurrency } from '$lib/utils/currency';
+
 	let chart: ChartJS | null = null;
 	let unsubscribeTheme: (() => void) | null = null;
-
-	function formatCurrency(value: number): string {
-		return new Intl.NumberFormat('pt-PT', {
-			style: 'currency',
-			currency: 'EUR',
-			minimumFractionDigits: 0,
-			maximumFractionDigits: 0
-		}).format(value);
-	}
 
 	function createChart() {
 		if (!canvasElement || !yearlyBreakdown.length) return;
@@ -135,7 +128,7 @@
 						callbacks: {
 							label: function (context: any) {
 								const label = context.dataset.label || '';
-								const value = formatCurrency(context.parsed.y);
+								const value = formatCurrency(context.parsed.y, 0);
 								return `${label}: ${value}`;
 							}
 						}
@@ -167,7 +160,7 @@
 								size: 11
 							},
 							callback: function (value: any) {
-								return formatCurrency(Number(value));
+								return formatCurrency(Number(value), 0);
 							}
 						}
 					}

@@ -1,19 +1,15 @@
 <!-- src/components/PieChart.svelte -->
 <script lang="ts">
 	import type { CategoryStatistic } from '$lib/types';
-	import { locale, t } from 'svelte-i18n';
+	import { t } from 'svelte-i18n';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	// Accept a single category stat
 	export let category: CategoryStatistic;
 	export let isCredit: boolean;
 
-	$: currentLocale = $locale || 'pt-PT';
-
 	// Safe helpers
-	const fmt = (v: number | null) => {
-		if (v === null) return '—';
-		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 2 }).format(v) + '\u00A0€';
-	};
+	const fmt = (v: number | null) => (v === null ? '—' : formatCurrency(v));
 
 	$: spent = Math.abs(category?.total ?? 0);
 	$: budget = category?.budget ?? null;
@@ -35,7 +31,7 @@
 	$: pctInside = fillPct >= 18;
 </script>
 
-<article class="card bg-base-100 border p-4 shadow-sm">
+<article class="card border bg-base-100 p-4 shadow-sm">
 	<header class="flex items-center justify-between gap-4">
 		<h4 class="truncate text-sm font-semibold leading-tight">{category?.name ?? 'Unnamed'}</h4>
 		<div class="text-right text-sm">
@@ -49,7 +45,7 @@
 
 	<!-- Progress bar -->
 	<div aria-hidden="false" aria-label="Budget progress" class="mt-3">
-		<div class="bg-base-200 border-base-300 relative h-4 w-full overflow-hidden rounded-lg border">
+		<div class="relative h-4 w-full overflow-hidden rounded-lg border border-base-300 bg-base-200">
 			<!-- filled portion -->
 			<div class="h-full transition-all {fillClass}" style="width: {fillPct}%; {barStyle}"></div>
 
@@ -86,7 +82,7 @@
 			{/if}
 
 			<!-- spent aligned to the right -->
-			<div class="text-base-content/60 ml-auto whitespace-nowrap text-sm font-medium">
+			<div class="ml-auto whitespace-nowrap text-sm font-medium text-base-content/60">
 				{fmt(spent)}
 			</div>
 		</div>

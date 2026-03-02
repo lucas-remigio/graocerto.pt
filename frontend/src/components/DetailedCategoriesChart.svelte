@@ -5,6 +5,7 @@
 	import { t } from '$lib/i18n';
 	import type { CategoryStatistic } from '$lib/types';
 	import { themeService } from '$lib/services/themeService';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	export let data: CategoryStatistic[] = [];
 
@@ -15,7 +16,7 @@
 	Chart.register(...registerables);
 
 	// Flatten all categories and subcategories into one list
-	$: flattenedData = data
+	$: flattenedData = (data ?? [])
 		.slice()
 		.sort((a, b) => b.percentage - a.percentage) // Sort parents first
 		.flatMap((cat) => {
@@ -115,7 +116,7 @@
 									`${item.name}`,
 									...(item.parent ? [`- ${item.parent}`] : []),
 									`${item.count} ${item.count === 1 ? $t('common.transaction') : $t('common.transactions')}`,
-									`€${item.total.toFixed(2)} (${percentage}%)`
+									`${formatCurrency(item.total)} (${percentage}%)`
 								];
 							}
 						}
@@ -169,7 +170,7 @@
 		<!-- Legend -->
 		<div class="mt-4 max-h-96 space-y-2 overflow-y-auto">
 			{#each sortedData as item}
-				<div class="bg-base-200 flex items-center justify-between rounded p-2">
+				<div class="flex items-center justify-between rounded bg-base-200 p-2">
 					<div class="flex items-center gap-2">
 						<span class="h-3 w-3 flex-shrink-0 rounded-full" style="background-color: {item.color};"
 						></span>
@@ -181,7 +182,7 @@
 						</div>
 					</div>
 					<div class="text-right">
-						<div class="text-sm font-semibold">€{item.total.toFixed(2)}</div>
+						<div class="text-sm font-semibold">{formatCurrency(item.total)}</div>
 						<div class="text-xs opacity-60">{item.count} tx</div>
 					</div>
 				</div>
@@ -191,8 +192,8 @@
 		<!-- Empty state -->
 		<div class="flex h-80 items-center justify-center">
 			<div class="text-center">
-				<PieChart size={48} class="text-base-content/30 mx-auto mb-3" />
-				<p class="text-base-content/60 text-base font-medium">{$t('statistics.no-data')}</p>
+				<PieChart size={48} class="mx-auto mb-3 text-base-content/30" />
+				<p class="text-base font-medium text-base-content/60">{$t('statistics.no-data')}</p>
 			</div>
 		</div>
 	{/if}

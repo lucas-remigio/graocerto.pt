@@ -11,6 +11,7 @@
 		BarChart
 	} from 'lucide-svelte';
 	import { t } from '$lib/i18n';
+	import { formatCurrency } from '$lib/utils/currency';
 	import TransactionsHeatmap from './TransactionsHeatmap.svelte';
 	import AiFeedback from './AiFeedback.svelte';
 	import HierarchicalPieChart from './HierarchicalPieChart.svelte';
@@ -32,10 +33,6 @@
 
 	$: month = selectedMonth !== null ? selectedMonth : new Date().getMonth() + 1;
 	$: year = selectedYear !== null ? selectedYear : new Date().getFullYear();
-
-	function formatCurrency(amount: number): string {
-		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-	}
 
 	function openAiFeedbackModal() {
 		if (!statistics || statistics.total_transactions === 0) {
@@ -65,7 +62,7 @@
 {:else if !statistics || statistics.total_transactions === 0}
 	<!-- Empty State -->
 	<div class="py-12 text-center">
-		<PieChart size={64} class="text-base-content/50 mx-auto mb-4" />
+		<PieChart size={64} class="mx-auto mb-4 text-base-content/50" />
 		<h3 class="mb-2 text-lg font-semibold">{$t('statistics.no-data')}</h3>
 	</div>
 {:else}
@@ -131,7 +128,7 @@
 						<p class="text-xs uppercase tracking-wide opacity-60">
 							{$t('statistics.total-transactions')}
 						</p>
-						<p class="text-primary text-xl font-bold">{statistics.total_transactions}</p>
+						<p class="text-xl font-bold text-primary">{statistics.total_transactions}</p>
 					</div>
 
 					<!-- Total Credits -->
@@ -139,8 +136,8 @@
 						<p class="text-xs uppercase tracking-wide opacity-60">
 							{$t('statistics.total-credits')}
 						</p>
-						<p class="text-success text-xl font-bold">
-							+{formatCurrency(statistics.totals.credit)}€
+						<p class="text-xl font-bold text-success">
+							+{formatCurrency(statistics.totals.credit)}
 						</p>
 					</div>
 
@@ -149,7 +146,7 @@
 						<p class="text-xs uppercase tracking-wide opacity-60">
 							{$t('statistics.total-debits')}
 						</p>
-						<p class="text-error text-xl font-bold">-{formatCurrency(statistics.totals.debit)}€</p>
+						<p class="text-xl font-bold text-error">-{formatCurrency(statistics.totals.debit)}</p>
 					</div>
 
 					<!-- Net Balance -->
@@ -181,26 +178,26 @@
 				<!-- Largest Transactions Row -->
 				<div class="grid grid-cols-2 gap-4">
 					<!-- Largest Credit -->
-					<div class="bg-success/10 flex items-center justify-between rounded-lg p-3">
+					<div class="flex items-center justify-between rounded-lg bg-success/10 p-3">
 						<div>
 							<p class="text-xs uppercase tracking-wide opacity-60">
 								{$t('statistics.largest-credit')}
 							</p>
-							<p class="text-success text-lg font-bold">
-								+{formatCurrency(statistics.largest_credit)}€
+							<p class="text-lg font-bold text-success">
+								+{formatCurrency(statistics.largest_credit)}
 							</p>
 						</div>
 						<TrendingUp size={20} class="text-success" />
 					</div>
 
 					<!-- Largest Debit -->
-					<div class="bg-error/10 flex items-center justify-between rounded-lg p-3">
+					<div class="flex items-center justify-between rounded-lg bg-error/10 p-3">
 						<div>
 							<p class="text-xs uppercase tracking-wide opacity-60">
 								{$t('statistics.largest-debit')}
 							</p>
-							<p class="text-error text-lg font-bold">
-								-{formatCurrency(statistics.largest_debit)}€
+							<p class="text-lg font-bold text-error">
+								-{formatCurrency(statistics.largest_debit)}
 							</p>
 						</div>
 						<TrendingDown size={20} class="text-error" />
@@ -222,15 +219,15 @@
 		<div class="space-y-8">
 			<!-- Main Categories (Clickable for drill-down) -->
 			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				<div class="bg-base-100 rounded-lg p-6">
-					<h3 class="text-success mb-4 text-center text-lg font-semibold">
+				<div class="rounded-lg bg-base-100 p-6">
+					<h3 class="mb-4 text-center text-lg font-semibold text-success">
 						{$t('statistics.credit-categories')}
 					</h3>
 					<HierarchicalPieChart data={statistics.credit_category_breakdown} />
 				</div>
 
-				<div class="bg-base-100 rounded-lg p-6">
-					<h3 class="text-error mb-4 text-center text-lg font-semibold">
+				<div class="rounded-lg bg-base-100 p-6">
+					<h3 class="mb-4 text-center text-lg font-semibold text-error">
 						{$t('statistics.debit-categories')}
 					</h3>
 					<HierarchicalPieChart data={statistics.debit_category_breakdown} />
@@ -241,15 +238,15 @@
 			<div class="divider">{$t('statistics.detailed-view', { default: 'Detailed View' })}</div>
 
 			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				<div class="bg-base-100 rounded-lg p-6">
-					<h3 class="text-success mb-4 text-center text-lg font-semibold">
+				<div class="rounded-lg bg-base-100 p-6">
+					<h3 class="mb-4 text-center text-lg font-semibold text-success">
 						{$t('statistics.all-credit-categories', { default: 'All Credit Categories' })}
 					</h3>
 					<DetailedCategoriesChart data={statistics.credit_category_breakdown} />
 				</div>
 
-				<div class="bg-base-100 rounded-lg p-6">
-					<h3 class="text-error mb-4 text-center text-lg font-semibold">
+				<div class="rounded-lg bg-base-100 p-6">
+					<h3 class="mb-4 text-center text-lg font-semibold text-error">
 						{$t('statistics.all-debit-categories', { default: 'All Debit Categories' })}
 					</h3>
 					<DetailedCategoriesChart data={statistics.debit_category_breakdown} />
@@ -264,12 +261,19 @@
 			<!-- Credit Column -->
 			<div class="bg-base-100">
 				<div class="px-6 py-4">
-					<h3 class="text-success mb-3 text-lg font-semibold">
+					<h3 class="mb-3 text-lg font-semibold text-success">
 						{$t('statistics.credit-categories')}
 					</h3>
 					<div class="space-y-3">
-						{#each statistics.credit_category_breakdown as cat}
+						{#each statistics.credit_category_breakdown ?? [] as cat}
 							<HierarchicalBudgetCard category={cat} isCredit={true} />
+						{:else}
+							<div class="flex h-32 items-center justify-center">
+								<div class="text-center">
+									<PieChart size={36} class="mx-auto mb-2 text-base-content/30" />
+									<p class="text-sm text-base-content/60">{$t('statistics.no-data')}</p>
+								</div>
+							</div>
 						{/each}
 					</div>
 				</div>
@@ -277,15 +281,22 @@
 
 			<!-- Debit Column -->
 			<div
-				class="bg-base-100 border-base-300 mt-4 border-t pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
+				class="mt-4 border-t border-base-300 bg-base-100 pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
 			>
 				<div class="px-6 py-4">
-					<h3 class="text-error mb-3 text-lg font-semibold">
+					<h3 class="mb-3 text-lg font-semibold text-error">
 						{$t('statistics.debit-categories')}
 					</h3>
 					<div class="space-y-3">
-						{#each statistics.debit_category_breakdown as cat}
+						{#each statistics.debit_category_breakdown ?? [] as cat}
 							<HierarchicalBudgetCard category={cat} isCredit={false} />
+						{:else}
+							<div class="flex h-32 items-center justify-center">
+								<div class="text-center">
+									<PieChart size={36} class="mx-auto mb-2 text-base-content/30" />
+									<p class="text-sm text-base-content/60">{$t('statistics.no-data')}</p>
+								</div>
+							</div>
 						{/each}
 					</div>
 				</div>

@@ -29,6 +29,7 @@
 	} from '$lib/services/draftTransactionService';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { fade, fly, scale } from 'svelte/transition';
+	import { formatCurrency } from '$lib/utils/currency';
 	import TransferModal from './TransferModal.svelte';
 	import TransactionFilters from './TransactionFilters.svelte';
 
@@ -96,13 +97,8 @@
 
 	$: currentLocale = $locale || 'pt';
 
-	function formatCurrency(amount: number): string {
-		// make the currency have a , every 3 digits
-		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-	}
-
 	function getTransactionDetails(transaction: TransactionDto): string {
-		return `${transaction.description} (${formatCurrency(transaction.amount)}€) ${$t('modals.with-category')} ${transaction.category.category_name} ${$t('common.at')} ${formatDate(transaction.date)}`;
+		`${transaction.description} (${formatCurrency(transaction.amount)}) ${$t('modals.with-category')} ${transaction.category.category_name} ${$t('common.at')} ${formatDate(transaction.date)}`;
 	}
 
 	function formatDate(date: string): string {
@@ -311,7 +307,7 @@
 			>
 				<Filter size={20} />
 				{#if Object.values(filters).some(Boolean)}
-					<span class="badge badge-sm badge-primary">
+					<span class="badge badge-primary badge-sm">
 						{Object.values(filters).filter(Boolean).length}
 					</span>
 				{/if}
@@ -414,21 +410,21 @@
 												<ArrowRightLeft size={14} class="text-info" />
 											</span>
 										{/if}
-										<span>{formatCurrency(tx.amount)}€</span>
+										<span>{formatCurrency(tx.amount)}</span>
 									</div>
 								</td>
 								<td class="text-base-content"> {tx.description || 'N/A'} </td>
 								<td class="text-base-content">
 									<div class="flex items-center justify-center gap-x-2">
 										<button
-											class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
+											class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
 											aria-label="Edit Transaction"
 											on:click={() => handleEditTransaction(tx)}
 										>
 											<Pencil size={20} />
 										</button>
 										<button
-											class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
+											class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
 											aria-label="Delete Transaction"
 											on:click={() => handleDeleteTransaction(tx)}
 										>
@@ -456,7 +452,7 @@
 			on:click={openCreateTransactionModal}
 			aria-label="Add New Transaction"
 		>
-			<CircleDollarSign size={20} class="text-base-100 h-5 w-5" />
+			<CircleDollarSign size={20} class="h-5 w-5 text-base-100" />
 			<span class="text-base-100">{$t('transactions.create-first')}</span>
 		</button>
 	</div>

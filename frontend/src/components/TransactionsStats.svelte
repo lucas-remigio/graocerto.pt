@@ -2,6 +2,7 @@
 	import type { TransactionDto, TransactionsTotals } from '$lib/types';
 	import { t } from '$lib/i18n';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	let { transactions = [] }: { transactions: TransactionDto[] } = $props();
 
@@ -27,32 +28,28 @@
 
 		return result;
 	});
-
-	function formatCurrency(amount: number): string {
-		return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-	}
 </script>
 
 <div class="flex items-center justify-end gap-4 text-sm">
 	<div class="stats stats-horizontal shadow-sm">
 		<div class="stat px-4 py-2 text-right">
-			<div class="stat-title text-base-content/70 text-right text-xs">
+			<div class="stat-title text-right text-xs text-base-content/70">
 				{$t('transactions.total-credit')}
 			</div>
-			<div class="stat-value text-success text-right text-sm">
-				+{formatCurrency(totals().credit)}€
+			<div class="stat-value text-right text-sm text-success">
+				+{formatCurrency(totals().credit)}
 			</div>
 		</div>
 		<div class="stat px-4 py-2 text-right">
-			<div class="stat-title text-base-content/70 text-right text-xs">
+			<div class="stat-title text-right text-xs text-base-content/70">
 				{$t('transactions.total-debit')}
 			</div>
-			<div class="stat-value text-error text-right text-sm">
-				-{formatCurrency(totals().debit)}€
+			<div class="stat-value text-right text-sm text-error">
+				-{formatCurrency(totals().debit)}
 			</div>
 		</div>
 		<div class="stat px-4 py-2 text-right">
-			<div class="stat-title text-base-content/70 text-right text-xs">
+			<div class="stat-title text-right text-xs text-base-content/70">
 				{$t('transactions.net-balance')}
 			</div>
 			<div
@@ -60,7 +57,7 @@
 					? 'text-success'
 					: 'text-error'}"
 			>
-				{totals().difference >= 0 ? '+' : ''}{formatCurrency(totals().difference)}€
+				{totals().difference >= 0 ? '+' : ''}{formatCurrency(totals().difference)}
 			</div>
 		</div>
 	</div>

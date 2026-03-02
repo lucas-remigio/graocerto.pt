@@ -296,7 +296,8 @@
 		"balance-too-large": "O saldo deve ser menor que 999999999",
 		"account-name-required": "O nome da conta é obrigatório",
 		"account-name-too-short": "O nome da conta deve ter pelo menos 3 caracteres",
-		"account-name-too-long": "O nome da conta deve ter menos de 50 caracteres"
+		"account-name-too-long": "O nome da conta deve ter menos de 50 caracteres",
+		"total-networth": "Património total"
 	},
 
 	"categories": {

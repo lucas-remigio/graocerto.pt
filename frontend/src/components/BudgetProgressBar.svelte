@@ -1,18 +1,14 @@
 <script lang="ts">
 	import type { CategoryStatistic } from '$lib/types';
-	import { t, locale } from '$lib/i18n';
+	import { t } from '$lib/i18n';
+	import { formatCurrency } from '$lib/utils/currency';
 
 	export let stat: CategoryStatistic;
 	export let isCredit: boolean;
 	export let size: 'sm' | 'md' = 'md';
 	export let showStatus: boolean = true;
 
-	$: currentLocale = $locale || 'pt-PT';
-
-	const fmt = (v: number | null) => {
-		if (v === null) return '—';
-		return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 2 }).format(v) + '\u00A0€';
-	};
+	const fmt = (v: number | null) => (v === null ? '—' : formatCurrency(v));
 
 	$: pct = Math.round(stat.budget_percentage);
 	$: fillPct = Math.min(Math.max(pct, 0), 100);
@@ -28,7 +24,7 @@
 <div class="w-full">
 	<!-- Progress Bar -->
 	<div
-		class="bg-base-200 border-base-300 {barHeight} relative w-full overflow-hidden rounded-lg border"
+		class="border-base-300 bg-base-200 {barHeight} relative w-full overflow-hidden rounded-lg border"
 	>
 		<div class="h-full transition-all {fillClass}" style="width: {fillPct}%; {barStyle}"></div>
 		<div class="absolute right-2 top-1/2 -translate-y-1/2 {textSize} font-semibold">
@@ -53,7 +49,7 @@
 			{:else}
 				<span class="text-base-content/80">{$t('statistics.within-budget')}</span>
 			{/if}
-			<div class="text-base-content/60 ml-auto whitespace-nowrap font-medium">
+			<div class="ml-auto whitespace-nowrap font-medium text-base-content/60">
 				{fmt(stat.total)}
 			</div>
 		</div>

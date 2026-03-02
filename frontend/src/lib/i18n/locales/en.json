@@ -293,7 +293,8 @@
 		"balance-too-large": "Balance must be less than 999999999",
 		"account-name-required": "Account name is required",
 		"account-name-too-short": "Account name must be at least 3 characters",
-		"account-name-too-long": "Account name must be less than 50 characters"
+		"account-name-too-long": "Account name must be less than 50 characters",
+		"total-networth": "Total net worth"
 	},
 
 	"categories": {
