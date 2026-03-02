@@ -53,16 +53,16 @@
 	}
 
 	type FlatRow =
-		| { type: 'parent'; node: CategoryNode; nodeIdx: number }
-		| { type: 'child'; subcategory: CategoryDto; parentNode: CategoryNode; childIdx: number };
+		| { type: 'parent'; cat: CategoryDto; node: CategoryNode; nodeIdx: number }
+		| { type: 'child'; cat: CategoryDto; parentNode: CategoryNode; childIdx: number };
 
 	function buildFlatRows(hierarchy: CategoryNode[], expanded: Set<number>): FlatRow[] {
 		const rows: FlatRow[] = [];
 		hierarchy.forEach((node, nodeIdx) => {
-			rows.push({ type: 'parent', node, nodeIdx });
+			rows.push({ type: 'parent', cat: node.category, node, nodeIdx });
 			if (expanded.has(node.category.id)) {
 				node.children.forEach((subcategory, childIdx) => {
-					rows.push({ type: 'child', subcategory, parentNode: node, childIdx });
+					rows.push({ type: 'child', cat: subcategory, parentNode: node, childIdx });
 				});
 			}
 		});
@@ -227,133 +227,101 @@
 				</tr>
 			</thead>
 			<tbody class="text-center">
-				{#each flatRows as row (`${row.type}-${row.type === 'parent' ? row.node.category.id : row.subcategory.id}`)}
+				{#each flatRows as row (`${row.type}-${row.cat.id}`)}
 					<tr
 						animate:flip={{ duration: 300 }}
 						class={row.type === 'parent' ? 'font-medium' : 'bg-base-200/50'}
 					>
-						{#if row.type === 'parent'}
-							<td>
-								{#if row.node.children.length > 0}
-									<button
-										class="btn btn-circle btn-ghost btn-xs"
-										on:click={() => toggleExpand(row.node.category.id)}
-										aria-label={expandedCategories.has(row.node.category.id)
-											? 'Collapse'
-											: 'Expand'}
-									>
-										{#if expandedCategories.has(row.node.category.id)}
-											<ChevronDown size={16} />
-										{:else}
-											<ChevronRight size={16} />
-										{/if}
-									</button>
-								{/if}
-							</td>
-							<td class="text-left">{row.node.category.category_name}</td>
-							<td>
-								<div class="flex items-center justify-center space-x-2">
-									<span
-										class="inline-block h-4 w-4 rounded-full"
-										style="background-color: {row.node.category.color};"
-									></span>
-									<span class="text-sm">{row.node.category.color}</span>
-								</div>
-							</td>
-							<td>{row.node.category.budget ? formatCurrency(row.node.category.budget) : '—'}</td>
-							<td>
-								<div class="flex items-center justify-center gap-1">
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
-										on:click={() => moveParent(row.node, 'up')}
-										title="Move up"
-										disabled={row.nodeIdx === 0}
-									>
-										<ArrowUp size={16} />
-									</button>
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
-										on:click={() => moveParent(row.node, 'down')}
-										title="Move down"
-										disabled={row.nodeIdx === categoryHierarchy.length - 1}
-									>
-										<ArrowDown size={16} />
-									</button>
+						<!-- Expand toggle -->
+						<td>
+							{#if row.type === 'parent' && row.node.children.length > 0}
+								<button
+									class="btn btn-circle btn-ghost btn-xs"
+									on:click={() => toggleExpand(row.cat.id)}
+									aria-label={expandedCategories.has(row.cat.id) ? 'Collapse' : 'Expand'}
+								>
+									{#if expandedCategories.has(row.cat.id)}
+										<ChevronDown size={16} />
+									{:else}
+										<ChevronRight size={16} />
+									{/if}
+								</button>
+							{/if}
+						</td>
+						<!-- Name -->
+						<td class="text-left">
+							{#if row.type === 'parent'}
+								{row.cat.category_name}
+							{:else}
+								<span class="ml-8 text-sm opacity-90">{row.cat.category_name}</span>
+							{/if}
+						</td>
+						<!-- Color (shared) -->
+						<td>
+							<div class="flex items-center justify-center space-x-2">
+								<span
+									class="inline-block h-4 w-4 rounded-full"
+									style="background-color: {row.cat.color};"
+								></span>
+								<span class="text-sm">{row.cat.color}</span>
+							</div>
+						</td>
+						<!-- Budget (shared) -->
+						<td class={row.type === 'parent' ? '' : 'text-sm'}>
+							{row.cat.budget ? formatCurrency(row.cat.budget) : '—'}
+						</td>
+						<!-- Actions -->
+						<td>
+							<div class="flex items-center justify-center gap-1">
+								<button
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
+									on:click={() =>
+										row.type === 'parent'
+											? moveParent(row.node, 'up')
+											: moveChild(row.cat, row.parentNode.category.id, 'up')}
+									title="Move up"
+									disabled={row.type === 'parent' ? row.nodeIdx === 0 : row.childIdx === 0}
+								>
+									<ArrowUp size={16} />
+								</button>
+								<button
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
+									on:click={() =>
+										row.type === 'parent'
+											? moveParent(row.node, 'down')
+											: moveChild(row.cat, row.parentNode.category.id, 'down')}
+									title="Move down"
+									disabled={row.type === 'parent'
+										? row.nodeIdx === categoryHierarchy.length - 1
+										: row.childIdx === row.parentNode.children.length - 1}
+								>
+									<ArrowDown size={16} />
+								</button>
+								{#if row.type === 'parent'}
 									<button
 										class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-success backdrop-blur-sm hover:bg-success/20"
-										on:click={() => openCreateSubcategoryModal(row.node.category)}
+										on:click={() => openCreateSubcategoryModal(row.cat)}
 										title={$t('categories.add-subcategory')}
 									>
 										<Plus size={20} />
 									</button>
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
-										on:click={() => openEditCategoryModal(row.node.category)}
-										title={$t('common.edit')}
-									>
-										<Pencil size={20} />
-									</button>
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
-										on:click={() => openPromptDeleteCategoryModal(row.node.category)}
-										title={$t('common.delete')}
-									>
-										<Trash size={20} />
-									</button>
-								</div>
-							</td>
-						{:else}
-							<td></td>
-							<td class="text-left">
-								<span class="ml-8 text-sm opacity-90">{row.subcategory.category_name}</span>
-							</td>
-							<td>
-								<div class="flex items-center justify-center space-x-2">
-									<span
-										class="inline-block h-4 w-4 rounded-full"
-										style="background-color: {row.subcategory.color};"
-									></span>
-									<span class="text-sm">{row.subcategory.color}</span>
-								</div>
-							</td>
-							<td class="text-sm">
-								{row.subcategory.budget ? formatCurrency(row.subcategory.budget) : '—'}
-							</td>
-							<td>
-								<div class="flex items-center justify-center gap-1">
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
-										on:click={() => moveChild(row.subcategory, row.parentNode.category.id, 'up')}
-										title="Move up"
-										disabled={row.childIdx === 0}
-									>
-										<ArrowUp size={16} />
-									</button>
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
-										on:click={() => moveChild(row.subcategory, row.parentNode.category.id, 'down')}
-										title="Move down"
-										disabled={row.childIdx === row.parentNode.children.length - 1}
-									>
-										<ArrowDown size={16} />
-									</button>
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
-										on:click={() => openEditCategoryModal(row.subcategory)}
-										title={$t('common.edit')}
-									>
-										<Pencil size={18} />
-									</button>
-									<button
-										class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
-										on:click={() => openPromptDeleteCategoryModal(row.subcategory)}
-										title={$t('common.delete')}
-									>
-										<Trash size={18} />
-									</button>
-								</div>
-							</td>
-						{/if}
+								{/if}
+								<button
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
+									on:click={() => openEditCategoryModal(row.cat)}
+									title={$t('common.edit')}
+								>
+									<Pencil size={row.type === 'parent' ? 20 : 18} />
+								</button>
+								<button
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
+									on:click={() => openPromptDeleteCategoryModal(row.cat)}
+									title={$t('common.delete')}
+								>
+									<Trash size={row.type === 'parent' ? 20 : 18} />
+								</button>
+							</div>
+						</td>
 					</tr>
 				{/each}
 			</tbody>
