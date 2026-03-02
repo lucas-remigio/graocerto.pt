@@ -16,7 +16,7 @@
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { validateTransactionForm } from '$lib/transactionValidation';
 	import CategoryModal from './CategoryModal.svelte';
-	import { buildCategoryGroups, type CategoryGroup } from '$lib/categoryUtils';
+	import { buildCategoryGroups, type CategoryGroup } from '$lib/utils/categoryUtils';
 
 	// Inputs
 	export let account: Account;

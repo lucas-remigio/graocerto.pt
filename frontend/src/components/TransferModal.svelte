@@ -5,7 +5,7 @@
 	import { ArrowRight, X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { buildCategoryGroups, type CategoryGroup } from '$lib/categoryUtils';
+	import { buildCategoryGroups, type CategoryGroup } from '$lib/utils/categoryUtils';
 
 	export let account: Account;
 
