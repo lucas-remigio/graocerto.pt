@@ -87,33 +87,73 @@
 		dispatch('newAccount', event.detail);
 	}
 
-	function handleMoveUp(event: CustomEvent<{ account: Account }>) {
-		moveAccount(event.detail.account, 'up');
-	}
-
-	function handleMoveDown(event: CustomEvent<{ account: Account }>) {
-		moveAccount(event.detail.account, 'down');
-	}
-
 	function handleToggleFavorite(event: CustomEvent<{ account: Account }>) {
 		favoriteAccountRequest(event.detail.account);
 	}
 
-	function moveAccount(account: Account, direction: 'up' | 'down') {
-		// get the current index and calculate the target index
-		const idx = accounts.findIndex((acc) => acc.token === account.token);
-		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-		// Ensure target index is within bounds
-		if (targetIdx < 0 || targetIdx >= accounts.length) {
+	// ── Drag-and-drop ──────────────────────────────────────────────────
+	let draggedToken: string | null = null;
+	let dragOverToken: string | null = null;
+
+	function isFavorite(token: string) {
+		return favoriteAccounts.some((a) => a.token === token);
+	}
+
+	function handleDragStart(token: string, event: DragEvent) {
+		draggedToken = token;
+		if (event.dataTransfer) {
+			event.dataTransfer.effectAllowed = 'move';
+			event.dataTransfer.setData('text/plain', token);
+		}
+	}
+
+	function handleDragOver(token: string, event: DragEvent) {
+		event.preventDefault();
+		if (draggedToken && draggedToken !== token && isFavorite(draggedToken) === isFavorite(token)) {
+			dragOverToken = token;
+			if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+		}
+	}
+
+	function handleDragLeave(event: DragEvent) {
+		const related = event.relatedTarget as HTMLElement | null;
+		if (!related || !(event.currentTarget as HTMLElement).contains(related)) {
+			dragOverToken = null;
+		}
+	}
+
+	function handleDrop(targetToken: string, event: DragEvent) {
+		event.preventDefault();
+		if (
+			!draggedToken ||
+			draggedToken === targetToken ||
+			isFavorite(draggedToken) !== isFavorite(targetToken)
+		) {
+			draggedToken = null;
+			dragOverToken = null;
 			return;
 		}
 
-		const newAccounts = [...accounts];
-		// swap them outtttt
-		[newAccounts[idx], newAccounts[targetIdx]] = [newAccounts[targetIdx], newAccounts[idx]];
-		accounts = newAccounts;
+		const favs = isFavorite(draggedToken);
+		const group = favs ? [...favoriteAccounts] : [...nonFavoriteAccounts];
+		const other = favs ? [...nonFavoriteAccounts] : [...favoriteAccounts];
+
+		const fromIdx = group.findIndex((a) => a.token === draggedToken);
+		const toIdx = group.findIndex((a) => a.token === targetToken);
+		const [dragged] = group.splice(fromIdx, 1);
+		group.splice(toIdx, 0, dragged);
+
+		accounts = favs ? [...group, ...other] : [...other, ...group];
 		sendReorderRequest();
+		draggedToken = null;
+		dragOverToken = null;
 	}
+
+	function handleDragEnd() {
+		draggedToken = null;
+		dragOverToken = null;
+	}
+
 	async function sendReorderRequest() {
 		const payload = {
 			accounts: accounts.map((acc, idx) => ({
@@ -165,18 +205,27 @@
 			? 'flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto p-2'
 			: 'grid grid-cols-1 gap-4 p-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}
 	>
-		{#each favoriteAccounts as account, i (account.token)}
-			<div animate:flip={{ duration: 500 }}>
+		{#each favoriteAccounts as account (account.token)}
+			<div
+				animate:flip={{ duration: 300 }}
+				draggable="true"
+				on:dragstart={(e) => handleDragStart(account.token, e)}
+				on:dragover={(e) => handleDragOver(account.token, e)}
+				on:dragleave={handleDragLeave}
+				on:drop={(e) => handleDrop(account.token, e)}
+				on:dragend={handleDragEnd}
+				class="transition-all duration-150
+					{dragOverToken === account.token
+					? 'scale-[1.03] rounded-2xl ring-2 ring-primary ring-offset-2'
+					: ''}
+					{draggedToken === account.token ? 'opacity-40' : ''}"
+			>
 				<AccountCard
 					{account}
 					{selectedAccount}
-					canMoveUp={i > 0}
-					canMoveDown={i < favoriteAccounts.length - 1}
 					on:select={handleCardSelect}
 					on:edit={handleCardEdit}
 					on:delete={handleCardDelete}
-					on:moveUp={handleMoveUp}
-					on:moveDown={handleMoveDown}
 					on:toggleFavorite={handleToggleFavorite}
 				/>
 			</div>
@@ -191,18 +240,27 @@
 					? 'flex flex-col gap-4'
 					: 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}"
 			>
-				{#each nonFavoriteAccounts as account, i (account.token)}
-					<div animate:flip={{ duration: 500 }}>
+				{#each nonFavoriteAccounts as account (account.token)}
+					<div
+						animate:flip={{ duration: 300 }}
+						draggable="true"
+						on:dragstart={(e) => handleDragStart(account.token, e)}
+						on:dragover={(e) => handleDragOver(account.token, e)}
+						on:dragleave={handleDragLeave}
+						on:drop={(e) => handleDrop(account.token, e)}
+						on:dragend={handleDragEnd}
+						class="transition-all duration-150
+							{dragOverToken === account.token
+							? 'scale-[1.03] rounded-2xl ring-2 ring-primary ring-offset-2'
+							: ''}
+							{draggedToken === account.token ? 'opacity-40' : ''}"
+					>
 						<AccountCard
 							{account}
 							{selectedAccount}
-							canMoveUp={i > 0}
-							canMoveDown={i < nonFavoriteAccounts.length - 1}
 							on:select={handleCardSelect}
 							on:edit={handleCardEdit}
 							on:delete={handleCardDelete}
-							on:moveUp={handleMoveUp}
-							on:moveDown={handleMoveDown}
 							on:toggleFavorite={handleToggleFavorite}
 						/>
 					</div>

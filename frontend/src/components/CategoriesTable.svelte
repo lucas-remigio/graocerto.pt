@@ -289,9 +289,9 @@
 						<td class="w-16">
 							<div class="flex items-center justify-center gap-1">
 								<span
-									class="cursor-grab text-base-content/30 hover:text-base-content/60 active:cursor-grabbing"
+									class="cursor-grab p-2 text-base-content/30 hover:text-base-content/60 active:cursor-grabbing"
 								>
-									<GripVertical size={16} />
+									<GripVertical size={18} />
 								</span>
 								{#if row.type === 'parent' && row.node.children.length > 0}
 									<button
