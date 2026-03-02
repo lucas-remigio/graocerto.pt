@@ -39,7 +39,7 @@
 	}
 </script>
 
-<div class="navbar bg-base-100 border-base-300 h-16 min-h-16 border-b">
+<div class="navbar h-16 min-h-16 border-b border-base-300 bg-base-100 lg:hidden">
 	<div class="navbar-start">
 		<!--  If the user is not authenticated and on mobile, we show the logo on the left -->
 		{#if !$isAuthenticated}
@@ -52,7 +52,7 @@
 			<div class="dropdown relative {isDropdownOpen ? 'dropdown-open' : ''}">
 				<button
 					type="button"
-					class="btn btn-ghost btn-circle"
+					class="btn btn-circle btn-ghost"
 					on:touchend={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
@@ -74,7 +74,7 @@
 				</button>
 				{#if isDropdownOpen}
 					<ul
-						class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[50] mt-3 w-52 p-2 shadow"
+						class="menu dropdown-content menu-sm z-[50] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
 					>
 						<li>
 							<button
@@ -163,7 +163,7 @@
 			<div class="flex items-center gap-1 lg:hidden">
 				<NavActions theme={$theme} {toggleTheme} locale={$locale || 'pt'} {toggleLanguage} t={$t} />
 			</div>
-			<a href={loginUrl} class="btn btn-ghost btn-circle" aria-label="Login">
+			<a href={loginUrl} class="btn btn-circle btn-ghost" aria-label="Login">
 				<LogIn size={20} class="h-5 w-5" />
 			</a>
 		{/if}

@@ -9,6 +9,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { isLoading, setupI18n, t, i18nReady } from '$lib/i18n';
 	import Footer from '$lib/Footer.svelte';
+	import Sidebar from '$lib/Sidebar.svelte';
 	import { cookieConsent } from '$lib/stores/cookieConsent';
 	import CookieBanner from '$components/CookieBanner.svelte';
 
@@ -118,17 +119,20 @@
 </script>
 
 {#if !appReady}
-	<div class="bg-neutral flex h-screen items-center justify-center">
+	<div class="flex h-screen items-center justify-center bg-neutral">
 		<div class="text-center">
 			<span class="loading loading-spinner loading-lg text-primary"></span>
 		</div>
 	</div>
 {:else}
 	<Navbar />
-	<main class="min-h-screen">
-		{@render children()}
-	</main>
-	<Footer />
+	<Sidebar />
+	<div class="lg:pl-64">
+		<main class="min-h-screen">
+			{@render children()}
+		</main>
+		<Footer />
+	</div>
 
 	<CookieBanner />
 {/if}
