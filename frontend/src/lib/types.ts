@@ -103,6 +103,7 @@ export interface CategoryDto {
 	category_name: string;
 	color: string;
 	budget?: number | null;
+	order_index: number;
 	created_at: string;
 	updated_at: string;
 	deleted_at?: string | null;
@@ -126,7 +127,8 @@ export interface UpdateCategoryPayload {
 export interface Category {
 	id: number;
 	transaction_type_id: number;
-	category_name: string; color: string;
+	category_name: string;
+	color: string;
 	budget: number | null;
 	created_at: string;
 	updated_at: string;

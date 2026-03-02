@@ -277,6 +277,18 @@ class DataService {
 		return change;
 	}
 
+	// Reorder categories
+	async reorderCategories(categories: { id: number; order_index: number }[]): Promise<void> {
+		const response = await api_axios.post('categories/reorder', { categories });
+		if (response.status !== 200) {
+			throw new Error(`Failed to reorder categories: ${response.status}`);
+		}
+		this.mutateCategoriesCache((list) => {
+			const indexMap = new Map(categories.map((c) => [c.id, c.order_index]));
+			return list.map((c) => (indexMap.has(c.id) ? { ...c, order_index: indexMap.get(c.id)! } : c));
+		});
+	}
+
 	// Delete category
 	async deleteCategory(categoryId: number): Promise<void> {
 		const response = await api_axios.delete(`categories/${categoryId}`);

@@ -24,6 +24,11 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 		}),
 	))
 	router.HandleFunc("/categories/dto", middleware.AuthMiddleware(h.GetCategoriesDtoByUserId))
+	router.HandleFunc("/categories/reorder", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.ReorderCategories,
+		}),
+	))
 	router.HandleFunc("/categories/{id}", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
 			http.MethodPut:    h.UpdateCategory,
@@ -163,6 +168,29 @@ func (h *Handler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := h.store.DeleteCategory(categoryIdInt, userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteSuccessResponse(w)
+}
+
+func (h *Handler) ReorderCategories(w http.ResponseWriter, r *http.Request) {
+	// require authentication
+	userId, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// parse and validate JSON payload
+	var payload types.ReorderCategoriesPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	// call store to update order indexes
+	err := h.store.ReorderCategories(userId, payload.Categories)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

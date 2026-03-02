@@ -11,6 +11,16 @@ type CategoryStore interface {
 	GetCategoriesDtoByUserId(userId int) ([]*CategoryDTO, error)
 	DeleteCategory(id int, userId int) error
 	SoftDeleteCategory(id int, userId int) error
+	ReorderCategories(userId int, categories []ReorderCategory) error
+}
+
+type ReorderCategoriesPayload struct {
+	Categories []ReorderCategory `json:"categories" validate:"required,dive"`
+}
+
+type ReorderCategory struct {
+	ID         int `json:"id" validate:"required,gte=1"`
+	OrderIndex int `json:"order_index" validate:"gte=0"`
 }
 
 type CreateCategoryPayload struct {
@@ -36,6 +46,7 @@ type Category struct {
 	CategoryName      string  `json:"category_name"`
 	Color             string  `json:"color"`
 	Budget            *int    `json:"budget"`
+	OrderIndex        int     `json:"order_index"`
 	CreatedAt         string  `json:"created_at"`
 	UpdatedAt         string  `json:"updated_at"`
 	DeletedAt         *string `json:"deleted_at,omitempty"` // Nullable field for soft delete
@@ -50,6 +61,7 @@ type CategoryDTO struct {
 	CategoryName     string           `json:"category_name"`
 	Color            string           `json:"color"`
 	Budget           *int             `json:"budget"`
+	OrderIndex       int              `json:"order_index"`
 	CreatedAt        string           `json:"created_at"`
 	UpdatedAt        string           `json:"updated_at"`
 	DeletedAt        *string          `json:"deleted_at,omitempty"` // Nullable field for soft delete

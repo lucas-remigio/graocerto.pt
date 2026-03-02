@@ -3,6 +3,7 @@ package category
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
@@ -19,33 +20,33 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) GetCategoriesByUserId(userId int) ([]*types.Category, error) {
-	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget
+	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget, order_index
           FROM categories
           WHERE user_id = $1
-          ORDER BY created_at DESC`
+          ORDER BY order_index ASC, id ASC`
 	return db.QueryList(s.db, query, scanRowsIntoCategory, userId)
 }
 
 func (s *Store) GetCategoryById(id int, userId int) (*types.Category, error) {
-	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget
+	query := `SELECT id, user_id, transaction_type_id, parent_category_id, category_name, color, created_at, updated_at, deleted_at, budget, order_index
           FROM categories
           WHERE id = $1 AND user_id = $2`
 	return db.QuerySingle(s.db, query, scanRowIntoCategory, id, userId)
 }
 
 func (s *Store) GetCategoriesDtoByUserId(userId int) ([]*types.CategoryDTO, error) {
-	query := `SELECT c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
+	query := `SELECT c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget, c.order_index,
                  tt.id, tt.type_name, tt.type_slug
           FROM categories c
           JOIN transaction_types tt ON c.transaction_type_id = tt.id
           WHERE c.user_id = $1 AND c.deleted_at IS NULL
-          ORDER BY c.created_at DESC`
+          ORDER BY c.order_index ASC, c.id ASC`
 
 	return db.QueryList(s.db, query, scanRowsIntoCategoryDto, userId)
 }
 
 func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, error) {
-	query := `SELECT c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget,
+	query := `SELECT c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.deleted_at, c.budget, c.order_index,
                  tt.id, tt.type_name, tt.type_slug
           FROM categories c
           JOIN transaction_types tt ON c.transaction_type_id = tt.id
@@ -246,11 +247,53 @@ func (s *Store) SoftDeleteCategory(id int, userId int) error {
 	return err
 }
 
+func (s *Store) ReorderCategories(userId int, categories []types.ReorderCategory) error {
+	// Verify all IDs belong to the user
+	ids := make([]any, len(categories))
+	placeholders := make([]string, len(categories))
+	for i, cat := range categories {
+		ids[i] = cat.ID
+		placeholders[i] = fmt.Sprintf("$%d", i+2) // $1 is userId
+	}
+	query := fmt.Sprintf(
+		"SELECT COUNT(*) FROM categories WHERE user_id = $1 AND id IN (%s)",
+		strings.Join(placeholders, ","),
+	)
+	args := append([]any{userId}, ids...)
+	var count int
+	if err := s.db.QueryRow(query, args...).Scan(&count); err != nil {
+		return fmt.Errorf("failed to verify category ownership: %w", err)
+	}
+	if count != len(categories) {
+		return fmt.Errorf("one or more categories do not belong to the user")
+	}
+
+	// Verify order indexes are unique within the submitted list
+	orderIndexes := make(map[int]bool)
+	for _, cat := range categories {
+		if orderIndexes[cat.OrderIndex] {
+			return fmt.Errorf("duplicate order_index found: %d", cat.OrderIndex)
+		}
+		orderIndexes[cat.OrderIndex] = true
+	}
+
+	// Bulk update
+	for _, cat := range categories {
+		_, err := db.ExecWithValidation(s.db,
+			"UPDATE categories SET order_index = $1 WHERE id = $2 AND user_id = $3",
+			cat.OrderIndex, cat.ID, userId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Update scanner functions
 func scanRowsIntoCategory(rows *sql.Rows) (*types.Category, error) {
 	c := new(types.Category)
 	err := rows.Scan(&c.ID, &c.UserID, &c.TransactionTypeId, &c.ParentCategoryId,
-		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
+		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget, &c.OrderIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +305,7 @@ func scanRowsIntoCategoryDto(rows *sql.Rows) (*types.CategoryDTO, error) {
 	c.TransactionType = &types.TransactionType{}
 
 	err := rows.Scan(
-		&c.ID, &c.ParentCategoryId, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
+		&c.ID, &c.ParentCategoryId, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget, &c.OrderIndex,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
@@ -276,7 +319,7 @@ func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
 	c.TransactionType = &types.TransactionType{}
 
 	err := row.Scan(
-		&c.ID, &c.ParentCategoryId, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget,
+		&c.ID, &c.ParentCategoryId, &c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget, &c.OrderIndex,
 		&c.TransactionType.ID, &c.TransactionType.TypeName, &c.TransactionType.TypeSlug)
 
 	if err != nil {
@@ -288,7 +331,7 @@ func scanRowIntoCategoryDto(row *sql.Row) (*types.CategoryDTO, error) {
 func scanRowIntoCategory(row *sql.Row) (*types.Category, error) {
 	c := new(types.Category)
 	err := row.Scan(&c.ID, &c.UserID, &c.TransactionTypeId, &c.ParentCategoryId,
-		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget)
+		&c.CategoryName, &c.Color, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Budget, &c.OrderIndex)
 	if err != nil {
 		return nil, err
 	}

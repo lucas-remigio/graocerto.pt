@@ -1,0 +1,2 @@
+ALTER TABLE categories
+ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0;

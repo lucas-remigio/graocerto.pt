@@ -1,13 +1,26 @@
 <script lang="ts">
 	import type { CategoryDto } from '$lib/types';
-	import { ChevronDown, ChevronRight, Pencil, Plus, Trash } from 'lucide-svelte';
+	import {
+		ArrowDown,
+		ArrowUp,
+		ChevronDown,
+		ChevronRight,
+		Pencil,
+		Plus,
+		Trash
+	} from 'lucide-svelte';
 	import CategoryModal from './CategoryModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 	import { locale, t } from '$lib/i18n';
+	import { dataService } from '$lib/services/dataService';
 
 	export let categories: CategoryDto[] = [];
 	export let categoryType: 'debit' | 'credit' = 'debit';
+
+	// Local mutable copy so we can reorder without mutating the prop
+	let localCategories: CategoryDto[] = [];
+	$: localCategories = [...categories];
 
 	let editCategoryModalOpen = false;
 	let createSubcategoryModalOpen = false;
@@ -22,10 +35,11 @@
 	$: currentLocale = $locale || 'pt';
 
 	// Build hierarchy from flat list
-	$: categoryHierarchy = buildHierarchy(categories);
+	// Build hierarchy from flatCategories, sorted by order_index
+	$: categoryHierarchy = buildHierarchy(localCategories);
 
 	$: {
-		categoryHierarchy = buildHierarchy(categories);
+		categoryHierarchy = buildHierarchy(localCategories);
 		// Auto-expand all parents with children
 		expandedCategories = new Set(
 			categoryHierarchy.filter((node) => node.children.length > 0).map((node) => node.category.id)
@@ -38,12 +52,16 @@
 	}
 
 	function buildHierarchy(flatCategories: CategoryDto[]): CategoryNode[] {
-		const parents = flatCategories.filter((c) => !c.parent_category_id);
+		const parents = flatCategories
+			.filter((c) => !c.parent_category_id)
+			.sort((a, b) => a.order_index - b.order_index);
 		const children = flatCategories.filter((c) => c.parent_category_id);
 
 		return parents.map((parent) => ({
 			category: parent,
-			children: children.filter((child) => child.parent_category_id === parent.id)
+			children: children
+				.filter((child) => child.parent_category_id === parent.id)
+				.sort((a, b) => a.order_index - b.order_index)
 		}));
 	}
 
@@ -110,9 +128,57 @@
 		dispatch('newCategory', event.detail);
 	}
 
-	function handlePromptDeleteCategory(category: CategoryDto) {
+	function openPromptDeleteCategoryModal(category: CategoryDto) {
 		selectedCategory = category;
 		promptDeleteCategoryModalOpen = true;
+	}
+
+	function moveParent(node: CategoryNode, direction: 'up' | 'down') {
+		const parents = categoryHierarchy.map((n) => n.category);
+		const idx = parents.findIndex((p) => p.id === node.category.id);
+		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+		if (targetIdx < 0 || targetIdx >= parents.length) return;
+
+		const aOrderIndex = parents[idx].order_index;
+		const bOrderIndex = parents[targetIdx].order_index;
+		localCategories = localCategories.map((c) => {
+			if (c.id === parents[idx].id) return { ...c, order_index: bOrderIndex };
+			if (c.id === parents[targetIdx].id) return { ...c, order_index: aOrderIndex };
+			return c;
+		});
+		sendReorderRequest([
+			{ id: parents[idx].id, order_index: bOrderIndex },
+			{ id: parents[targetIdx].id, order_index: aOrderIndex }
+		]);
+	}
+
+	function moveChild(child: CategoryDto, parentId: number, direction: 'up' | 'down') {
+		const node = categoryHierarchy.find((n) => n.category.id === parentId);
+		if (!node) return;
+		const children = node.children;
+		const idx = children.findIndex((c) => c.id === child.id);
+		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+		if (targetIdx < 0 || targetIdx >= children.length) return;
+
+		const aOrderIndex = children[idx].order_index;
+		const bOrderIndex = children[targetIdx].order_index;
+		localCategories = localCategories.map((c) => {
+			if (c.id === children[idx].id) return { ...c, order_index: bOrderIndex };
+			if (c.id === children[targetIdx].id) return { ...c, order_index: aOrderIndex };
+			return c;
+		});
+		sendReorderRequest([
+			{ id: children[idx].id, order_index: bOrderIndex },
+			{ id: children[targetIdx].id, order_index: aOrderIndex }
+		]);
+	}
+
+	async function sendReorderRequest(updates: { id: number; order_index: number }[]) {
+		try {
+			await dataService.reorderCategories(updates);
+		} catch (error) {
+			console.error('Error reordering categories:', error);
+		}
 	}
 
 	function closePromptDeleteCategoryModal() {
@@ -127,10 +193,10 @@
 </script>
 
 {#if categories.length === 0}
-	<p class="text-base-content/70 py-8 text-center">{$t('categories.no-categories')}</p>
+	<p class="py-8 text-center text-base-content/70">{$t('categories.no-categories')}</p>
 {:else}
 	<div class="overflow-x-auto rounded-xl border-2 {modalBorderClass}">
-		<table class="table-zebra table w-full">
+		<table class="table table-zebra w-full">
 			<thead class="text-center">
 				<tr>
 					<th class="w-12"></th>
@@ -141,14 +207,14 @@
 				</tr>
 			</thead>
 			<tbody class="text-center">
-				{#each categoryHierarchy as node (node.category.id)}
+				{#each categoryHierarchy as node, nodeIdx (node.category.id)}
 					<!-- Parent Category Row -->
 					{@const { category } = node}
 					<tr class="font-medium">
 						<td>
 							{#if node.children.length > 0}
 								<button
-									class="btn btn-ghost btn-xs btn-circle"
+									class="btn btn-circle btn-ghost btn-xs"
 									on:click={() => toggleExpand(category.id)}
 									aria-label={expandedCategories.has(category.id) ? 'Collapse' : 'Expand'}
 								>
@@ -174,22 +240,38 @@
 						<td>
 							<div class="flex items-center justify-center gap-1">
 								<button
-									class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-success hover:bg-success/20 backdrop-blur-sm"
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
+									on:click={() => moveParent(node, 'up')}
+									title="Move up"
+									disabled={nodeIdx === 0}
+								>
+									<ArrowUp size={16} />
+								</button>
+								<button
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
+									on:click={() => moveParent(node, 'down')}
+									title="Move down"
+									disabled={nodeIdx === categoryHierarchy.length - 1}
+								>
+									<ArrowDown size={16} />
+								</button>
+								<button
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-success backdrop-blur-sm hover:bg-success/20"
 									on:click={() => openCreateSubcategoryModal(category)}
 									title={$t('categories.add-subcategory')}
 								>
 									<Plus size={20} />
 								</button>
 								<button
-									class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
 									on:click={() => openEditCategoryModal(category)}
 									title={$t('common.edit')}
 								>
 									<Pencil size={20} />
 								</button>
 								<button
-									class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
-									on:click={() => handlePromptDeleteCategory(category)}
+									class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
+									on:click={() => openPromptDeleteCategoryModal(category)}
 									title={$t('common.delete')}
 								>
 									<Trash size={20} />
@@ -200,7 +282,7 @@
 
 					<!-- Subcategories -->
 					{#if expandedCategories.has(category.id) && node.children.length > 0}
-						{#each node.children as subcategory (subcategory.id)}
+						{#each node.children as subcategory, childIdx (subcategory.id)}
 							<tr class="bg-base-200/50">
 								<td></td>
 								<td class="text-left">
@@ -221,15 +303,31 @@
 								<td>
 									<div class="flex items-center justify-center gap-1">
 										<button
-											class="btn btn-ghost btn-sm btn-circle bg-base-100/80 backdrop-blur-sm"
+											class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
+											on:click={() => moveChild(subcategory, category.id, 'up')}
+											title="Move up"
+											disabled={childIdx === 0}
+										>
+											<ArrowUp size={16} />
+										</button>
+										<button
+											class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
+											on:click={() => moveChild(subcategory, category.id, 'down')}
+											title="Move down"
+											disabled={childIdx === node.children.length - 1}
+										>
+											<ArrowDown size={16} />
+										</button>
+										<button
+											class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
 											on:click={() => openEditCategoryModal(subcategory)}
 											title={$t('common.edit')}
 										>
 											<Pencil size={18} />
 										</button>
 										<button
-											class="btn btn-ghost btn-sm btn-circle bg-base-100/80 text-error hover:bg-error/20 backdrop-blur-sm"
-											on:click={() => handlePromptDeleteCategory(subcategory)}
+											class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
+											on:click={() => openPromptDeleteCategoryModal(subcategory)}
 											title={$t('common.delete')}
 										>
 											<Trash size={18} />
