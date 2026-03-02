@@ -275,7 +275,6 @@
 														&nbsp;&nbsp;&nbsp;&nbsp;{child.category_name}
 													</option>
 												{/each}
-												<option disabled>────────────</option>
 											{:else}
 												<option value={String(group.parent.id)}>
 													{group.parent.category_name}
