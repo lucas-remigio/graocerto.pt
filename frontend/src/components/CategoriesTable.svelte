@@ -1,14 +1,6 @@
 <script lang="ts">
 	import type { CategoryDto } from '$lib/types';
-	import {
-		ArrowDown,
-		ArrowUp,
-		ChevronDown,
-		ChevronRight,
-		Pencil,
-		Plus,
-		Trash
-	} from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, Trash } from 'lucide-svelte';
 	import CategoryModal from './CategoryModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
@@ -145,44 +137,103 @@
 		promptDeleteCategoryModalOpen = true;
 	}
 
-	function moveParent(node: CategoryNode, direction: 'up' | 'down') {
-		const parents = categoryHierarchy.map((n) => n.category);
-		const idx = parents.findIndex((p) => p.id === node.category.id);
-		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-		if (targetIdx < 0 || targetIdx >= parents.length) return;
+	// ── Drag-and-drop state ──────────────────────────────────────────────────
+	let draggedRowKey: string | null = null;
+	let dragOverRowKey: string | null = null;
 
-		const aOrderIndex = parents[idx].order_index;
-		const bOrderIndex = parents[targetIdx].order_index;
-		localCategories = localCategories.map((c) => {
-			if (c.id === parents[idx].id) return { ...c, order_index: bOrderIndex };
-			if (c.id === parents[targetIdx].id) return { ...c, order_index: aOrderIndex };
-			return c;
-		});
-		sendReorderRequest([
-			{ id: parents[idx].id, order_index: bOrderIndex },
-			{ id: parents[targetIdx].id, order_index: aOrderIndex }
-		]);
+	function rowKey(row: FlatRow) {
+		return `${row.type}-${row.cat.id}`;
 	}
 
-	function moveChild(child: CategoryDto, parentId: number, direction: 'up' | 'down') {
-		const node = categoryHierarchy.find((n) => n.category.id === parentId);
-		if (!node) return;
-		const children = node.children;
-		const idx = children.findIndex((c) => c.id === child.id);
-		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-		if (targetIdx < 0 || targetIdx >= children.length) return;
+	function isCompatibleTarget(sourceKey: string, targetKey: string): boolean {
+		if (sourceKey === targetKey) return false;
+		const src = flatRows.find((r) => rowKey(r) === sourceKey);
+		const tgt = flatRows.find((r) => rowKey(r) === targetKey);
+		if (!src || !tgt) return false;
+		if (src.type === 'parent' && tgt.type === 'parent') return true;
+		if (
+			src.type === 'child' &&
+			tgt.type === 'child' &&
+			src.parentNode.category.id === tgt.parentNode.category.id
+		)
+			return true;
+		return false;
+	}
 
-		const aOrderIndex = children[idx].order_index;
-		const bOrderIndex = children[targetIdx].order_index;
+	function handleDragStart(event: DragEvent, row: FlatRow) {
+		draggedRowKey = rowKey(row);
+		if (event.dataTransfer) {
+			event.dataTransfer.effectAllowed = 'move';
+			event.dataTransfer.setData('text/plain', draggedRowKey);
+		}
+	}
+
+	function handleDragOver(event: DragEvent, row: FlatRow) {
+		event.preventDefault();
+		if (draggedRowKey && isCompatibleTarget(draggedRowKey, rowKey(row))) {
+			dragOverRowKey = rowKey(row);
+			if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+		}
+	}
+
+	function handleDragLeave(event: DragEvent) {
+		// Only clear when leaving the row entirely (not entering a child element)
+		const related = event.relatedTarget as HTMLElement | null;
+		if (!related || !(event.currentTarget as HTMLElement).contains(related)) {
+			dragOverRowKey = null;
+		}
+	}
+
+	function handleDrop(event: DragEvent, targetRow: FlatRow) {
+		event.preventDefault();
+		if (!draggedRowKey) return;
+		if (!isCompatibleTarget(draggedRowKey, rowKey(targetRow))) {
+			draggedRowKey = null;
+			dragOverRowKey = null;
+			return;
+		}
+
+		const sourceRow = flatRows.find((r) => rowKey(r) === draggedRowKey);
+		if (!sourceRow) return;
+
+		if (sourceRow.type === 'parent' && targetRow.type === 'parent') {
+			reorderGroup(
+				categoryHierarchy.map((n) => n.category),
+				sourceRow.cat.id,
+				targetRow.cat.id
+			);
+		} else if (sourceRow.type === 'child' && targetRow.type === 'child') {
+			const node = categoryHierarchy.find(
+				(n) => n.category.id === sourceRow.parentNode.category.id
+			);
+			if (node) reorderGroup(node.children, sourceRow.cat.id, targetRow.cat.id);
+		}
+
+		draggedRowKey = null;
+		dragOverRowKey = null;
+	}
+
+	function handleDragEnd() {
+		draggedRowKey = null;
+		dragOverRowKey = null;
+	}
+
+	/** Splice `sourceId` into the position of `targetId` within `group`, then save. */
+	function reorderGroup(group: CategoryDto[], sourceId: number, targetId: number) {
+		const items = [...group];
+		const fromIdx = items.findIndex((c) => c.id === sourceId);
+		const toIdx = items.findIndex((c) => c.id === targetId);
+		if (fromIdx === -1 || toIdx === -1) return;
+
+		const [dragged] = items.splice(fromIdx, 1);
+		items.splice(toIdx, 0, dragged);
+
+		const updates = items.map((c, i) => ({ id: c.id, order_index: i + 1 }));
 		localCategories = localCategories.map((c) => {
-			if (c.id === children[idx].id) return { ...c, order_index: bOrderIndex };
-			if (c.id === children[targetIdx].id) return { ...c, order_index: aOrderIndex };
-			return c;
+			const u = updates.find((upd) => upd.id === c.id);
+			return u ? { ...c, order_index: u.order_index } : c;
 		});
-		sendReorderRequest([
-			{ id: children[idx].id, order_index: bOrderIndex },
-			{ id: children[targetIdx].id, order_index: aOrderIndex }
-		]);
+		sendReorderRequest(updates);
 	}
 
 	async function sendReorderRequest(updates: { id: number; order_index: number }[]) {
@@ -221,24 +272,41 @@
 			<tbody class="text-center">
 				{#each flatRows as row (`${row.type}-${row.cat.id}`)}
 					<tr
-						animate:flip={{ duration: 300 }}
-						class={row.type === 'parent' ? 'font-medium' : 'bg-base-200/50'}
+						animate:flip={{ duration: 200 }}
+						draggable="true"
+						on:dragstart={(e) => handleDragStart(e, row)}
+						on:dragover={(e) => handleDragOver(e, row)}
+						on:dragleave={handleDragLeave}
+						on:drop={(e) => handleDrop(e, row)}
+						on:dragend={handleDragEnd}
+						class="{row.type === 'parent' ? 'font-medium' : 'bg-base-200/50'} transition-colors
+							{dragOverRowKey === `${row.type}-${row.cat.id}`
+							? 'outline outline-2 outline-offset-[-2px] outline-primary'
+							: ''}
+							{draggedRowKey === `${row.type}-${row.cat.id}` ? 'opacity-40' : ''}"
 					>
-						<!-- Expand toggle -->
-						<td>
-							{#if row.type === 'parent' && row.node.children.length > 0}
-								<button
-									class="btn btn-circle btn-ghost btn-xs"
-									on:click={() => toggleExpand(row.cat.id)}
-									aria-label={expandedCategories.has(row.cat.id) ? 'Collapse' : 'Expand'}
+						<!-- Drag handle + expand toggle -->
+						<td class="w-16">
+							<div class="flex items-center justify-center gap-1">
+								<span
+									class="cursor-grab text-base-content/30 hover:text-base-content/60 active:cursor-grabbing"
 								>
-									{#if expandedCategories.has(row.cat.id)}
-										<ChevronDown size={16} />
-									{:else}
-										<ChevronRight size={16} />
-									{/if}
-								</button>
-							{/if}
+									<GripVertical size={16} />
+								</span>
+								{#if row.type === 'parent' && row.node.children.length > 0}
+									<button
+										class="btn btn-circle btn-ghost btn-xs"
+										on:click={() => toggleExpand(row.cat.id)}
+										aria-label={expandedCategories.has(row.cat.id) ? 'Collapse' : 'Expand'}
+									>
+										{#if expandedCategories.has(row.cat.id)}
+											<ChevronDown size={16} />
+										{:else}
+											<ChevronRight size={16} />
+										{/if}
+									</button>
+								{/if}
+							</div>
 						</td>
 						<!-- Name -->
 						<td class="text-left">
@@ -265,30 +333,6 @@
 						<!-- Actions -->
 						<td>
 							<div class="flex items-center justify-center gap-1">
-								<button
-									class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
-									on:click={() =>
-										row.type === 'parent'
-											? moveParent(row.node, 'up')
-											: moveChild(row.cat, row.parentNode.category.id, 'up')}
-									title="Move up"
-									disabled={row.type === 'parent' ? row.nodeIdx === 0 : row.childIdx === 0}
-								>
-									<ArrowUp size={16} />
-								</button>
-								<button
-									class="btn btn-circle btn-ghost btn-sm bg-base-100/80"
-									on:click={() =>
-										row.type === 'parent'
-											? moveParent(row.node, 'down')
-											: moveChild(row.cat, row.parentNode.category.id, 'down')}
-									title="Move down"
-									disabled={row.type === 'parent'
-										? row.nodeIdx === categoryHierarchy.length - 1
-										: row.childIdx === row.parentNode.children.length - 1}
-								>
-									<ArrowDown size={16} />
-								</button>
 								{#if row.type === 'parent'}
 									<button
 										class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-success backdrop-blur-sm hover:bg-success/20"
