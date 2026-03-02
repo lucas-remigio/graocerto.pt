@@ -8,6 +8,7 @@
 	export let t: (key: string) => string;
 	export let isMenu = false; // If true, render as menu items (li), else as inline buttons
 	export let isAuthenticated: boolean = false;
+	export let tooltipDir: 'bottom' | 'right' = 'bottom';
 
 	const themeCycle: ThemeOption[] = ['system', 'dark', 'light'];
 
@@ -89,7 +90,7 @@
 {:else}
 	{#each actions.filter((a) => a.show) as action (action.key)}
 		<button
-			class="btn btn-ghost btn-circle tooltip tooltip-bottom flex items-center justify-center"
+			class="btn btn-circle btn-ghost tooltip tooltip-{tooltipDir} flex items-center justify-center"
 			on:click={action.onClick}
 			aria-label={action.text()}
 			data-tip={action.text()}

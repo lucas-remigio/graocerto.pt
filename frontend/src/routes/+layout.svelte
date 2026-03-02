@@ -12,6 +12,7 @@
 	import Sidebar from '$lib/Sidebar.svelte';
 	import { cookieConsent } from '$lib/stores/cookieConsent';
 	import CookieBanner from '$components/CookieBanner.svelte';
+	import { sidebarCollapsed } from '$lib/stores/uiPreferences';
 
 	let { children } = $props();
 
@@ -127,7 +128,11 @@
 {:else}
 	<Navbar />
 	<Sidebar />
-	<div class="lg:pl-64">
+	<div
+		class="{$sidebarCollapsed
+			? 'lg:pl-16'
+			: 'lg:pl-64'} transition-[padding] duration-200 ease-in-out"
+	>
 		<main class="min-h-screen {$isAuthenticated ? 'lg:pt-4' : ''}">
 			{@render children()}
 		</main>
