@@ -1,11 +1,11 @@
-import { Calculator, Home, List } from 'lucide-svelte';
+import { Calculator, Home, Tag } from 'lucide-svelte';
 import { locale, setLocale } from '$lib/i18n';
 import { theme, updateTheme, type ThemeOption } from '$stores/uiPreferences';
 import { get } from 'svelte/store';
 
 export const navLinks = [
 	{ href: '/home', icon: Home, labelKey: 'navbar.home' },
-	{ href: '/categories', icon: List, labelKey: 'navbar.categories' },
+	{ href: '/categories', icon: Tag, labelKey: 'navbar.categories' },
 	{ href: '/investment-calculator', icon: Calculator, labelKey: 'navbar.calculator' }
 ] as const;
 
