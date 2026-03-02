@@ -320,10 +320,9 @@
 						<td>
 							<div class="flex items-center justify-center space-x-2">
 								<span
-									class="inline-block h-4 w-4 rounded-full"
+									class="inline-block h-6 w-6 rounded-full"
 									style="background-color: {row.cat.color};"
 								></span>
-								<span class="text-sm">{row.cat.color}</span>
 							</div>
 						</td>
 						<!-- Budget (shared) -->
