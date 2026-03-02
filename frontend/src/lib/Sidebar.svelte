@@ -17,13 +17,13 @@
 </script>
 
 <aside
-	class="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-base-300 bg-base-100 transition-[width] duration-200 ease-in-out lg:flex
+	class="fixed inset-y-0 left-0 z-40 hidden flex-col overflow-x-clip border-r border-base-300 bg-base-100 transition-[width] duration-200 ease-in-out lg:flex
 		{$sidebarCollapsed ? 'w-16' : 'w-64'}"
 >
 	<!-- Logo + collapse toggle -->
 	<div
-		class="flex h-16 shrink-0 items-center border-b border-base-300
-		{$sidebarCollapsed ? 'justify-center px-0' : 'justify-between px-4'}"
+		class="flex shrink-0 items-center border-b border-base-300
+		{$sidebarCollapsed ? 'h-auto flex-col gap-1 px-0 py-3' : 'h-16 justify-between px-4'}"
 	>
 		{#if !$sidebarCollapsed}
 			<a
@@ -33,6 +33,13 @@
 				<img src="/logo.png" alt="Logo" class="h-8 w-8 shrink-0" />
 				Grão Certo
 			</a>
+			<button
+				class="btn btn-square btn-ghost btn-sm shrink-0"
+				on:click={toggle}
+				aria-label="Collapse sidebar"
+			>
+				<ChevronLeft size={18} />
+			</button>
 		{:else}
 			<a
 				href={$isAuthenticated ? '/home' : '/'}
@@ -41,20 +48,15 @@
 			>
 				<img src="/logo.png" alt="Logo" class="h-8 w-8 shrink-0" />
 			</a>
+			<button class="btn btn-square btn-ghost btn-sm" on:click={toggle} aria-label="Expand sidebar">
+				<ChevronRight size={18} />
+			</button>
 		{/if}
-
-		<button
-			class="btn btn-square btn-ghost btn-sm shrink-0 {$sidebarCollapsed ? 'hidden' : ''}"
-			on:click={toggle}
-			aria-label="Collapse sidebar"
-		>
-			<ChevronLeft size={18} />
-		</button>
 	</div>
 
 	<!-- Navigation links (authenticated only) -->
 	{#if $isAuthenticated}
-		<nav class="flex-1 overflow-y-auto px-2 py-4">
+		<nav class="flex-1 px-2 py-4 {$sidebarCollapsed ? 'overflow-y-visible' : 'overflow-y-auto'}">
 			<ul class="space-y-1">
 				{#each navLinks as link}
 					{@const active = $page.url.pathname === link.href}
@@ -92,19 +94,6 @@
 
 	<!-- Bottom section: actions + user -->
 	<div class="shrink-0 border-t border-base-300 px-2 py-3">
-		<!-- Expand button (only shown when collapsed) -->
-		{#if $sidebarCollapsed}
-			<div class="mb-2 flex justify-center">
-				<button
-					class="btn btn-square btn-ghost btn-sm"
-					on:click={toggle}
-					aria-label="Expand sidebar"
-				>
-					<ChevronRight size={18} />
-				</button>
-			</div>
-		{/if}
-
 		<!-- Theme / Language / Balance icon buttons -->
 		<div
 			class="mb-2 flex {$sidebarCollapsed
