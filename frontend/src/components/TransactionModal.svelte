@@ -16,6 +16,7 @@
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { validateTransactionForm } from '$lib/transactionValidation';
 	import CategoryModal from './CategoryModal.svelte';
+	import { buildCategoryGroups, type CategoryGroup } from '$lib/categoryUtils';
 
 	// Inputs
 	export let account: Account;
@@ -79,36 +80,7 @@
 		? borderClasses[selectedTransactionType.type_slug]
 		: 'bg-gray-50';
 
-	//  helper to build category hierarchy for display
-	interface CategoryGroup {
-		parent: CategoryDto | null;
-		children: CategoryDto[];
-	}
-
 	$: groupedCategories = buildCategoryGroups(filteredCategories);
-
-	function buildCategoryGroups(cats: CategoryDto[]): CategoryGroup[] {
-		const parents = cats.filter((c) => !c.parent_category_id);
-		const children = cats.filter((c) => c.parent_category_id);
-
-		const groups: CategoryGroup[] = [];
-
-		// Parents with their children
-		parents.forEach((parent) => {
-			const parentChildren = children.filter((child) => child.parent_category_id === parent.id);
-			groups.push({ parent, children: parentChildren });
-		});
-
-		// Orphaned children (shouldn't happen, but just in case)
-		const orphans = children.filter(
-			(child) => !parents.some((p) => p.id === child.parent_category_id)
-		);
-		if (orphans.length > 0) {
-			groups.push({ parent: null, children: orphans });
-		}
-
-		return groups;
-	}
 
 	// Events
 	const dispatch = createEventDispatcher();
@@ -271,7 +243,7 @@
 <div class="modal modal-open">
 	<div class="modal-box relative border-4 {modalBorderClass}">
 		<!-- Close button -->
-		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
+		<button class="btn btn-circle btn-sm absolute right-2 top-2" on:click={handleCloseModal}
 			><X /></button
 		>
 		<h3 class="mb-4 text-lg font-bold">
@@ -346,8 +318,6 @@
 													&nbsp;&nbsp;&nbsp;&nbsp;{child.category_name}
 												</option>
 											{/each}
-											<!-- Separator (visual only, disabled) -->
-											<option disabled>────────────</option>
 										{:else}
 											<!-- Parent without children -->
 											<option value={String(group.parent.id)}>
@@ -420,7 +390,7 @@
 						<input
 							id="date"
 							type="date"
-							class="input input-bordered hover:border-primary date-input w-full transition-all hover:shadow-md"
+							class="date-input input input-bordered w-full transition-all hover:border-primary hover:shadow-md"
 							bind:value={date}
 						/>
 					</div>

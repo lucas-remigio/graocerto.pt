@@ -5,6 +5,7 @@
 	import { ArrowRight, X } from 'lucide-svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
+	import { buildCategoryGroups, type CategoryGroup } from '$lib/categoryUtils';
 
 	export let account: Account;
 
@@ -29,6 +30,8 @@
 	$: selectedCreditCategory = creditCategories.find((c) => c.id === Number(creditCategoryId));
 	$: debitBorderColor = selectedDebitCategory?.color || '#ef4444';
 	$: creditBorderColor = selectedCreditCategory?.color || '#22c55e';
+	$: groupedDebitCategories = buildCategoryGroups(debitCategories);
+	$: groupedCreditCategories = buildCategoryGroups(creditCategories);
 
 	function handleCloseModal() {
 		dispatch('closeModal');
@@ -126,7 +129,7 @@
 
 <div class="modal modal-open">
 	<div class="modal-box relative max-w-3xl border-4 border-blue-500 dark:border-blue-400">
-		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}>
+		<button class="btn btn-circle btn-sm absolute right-2 top-2" on:click={handleCloseModal}>
 			<X />
 		</button>
 
@@ -184,8 +187,27 @@
 									required
 									style="border-color: {debitBorderColor} !important;"
 								>
-									{#each debitCategories as cat}
-										<option value={String(cat.id)}>{cat.category_name}</option>
+									{#each groupedDebitCategories as group}
+										{#if group.parent}
+											{#if group.children.length > 0}
+												<option value={String(group.parent.id)} class="font-semibold">
+													{group.parent.category_name}
+												</option>
+												{#each group.children as child}
+													<option value={String(child.id)}>
+														&nbsp;&nbsp;&nbsp;&nbsp;{child.category_name}
+													</option>
+												{/each}
+											{:else}
+												<option value={String(group.parent.id)}>
+													{group.parent.category_name}
+												</option>
+											{/if}
+										{:else}
+											{#each group.children as child}
+												<option value={String(child.id)}>{child.category_name}</option>
+											{/each}
+										{/if}
 									{/each}
 								</select>
 							</div>
@@ -242,8 +264,28 @@
 									required
 									style="border-color: {creditBorderColor} !important;"
 								>
-									{#each creditCategories as cat}
-										<option value={String(cat.id)}>{cat.category_name}</option>
+									{#each groupedCreditCategories as group}
+										{#if group.parent}
+											{#if group.children.length > 0}
+												<option value={String(group.parent.id)} class="font-semibold">
+													{group.parent.category_name}
+												</option>
+												{#each group.children as child}
+													<option value={String(child.id)}>
+														&nbsp;&nbsp;&nbsp;&nbsp;{child.category_name}
+													</option>
+												{/each}
+												<option disabled>────────────</option>
+											{:else}
+												<option value={String(group.parent.id)}>
+													{group.parent.category_name}
+												</option>
+											{/if}
+										{:else}
+											{#each group.children as child}
+												<option value={String(child.id)}>{child.category_name}</option>
+											{/each}
+										{/if}
 									{/each}
 								</select>
 							</div>
