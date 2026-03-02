@@ -1,37 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Calculator, Home, List, LogIn, Menu } from 'lucide-svelte';
-	import { t, locale, setLocale } from '$lib/i18n';
+	import { LogIn, Menu } from 'lucide-svelte';
+	import { t, locale } from '$lib/i18n';
 	import { isAuthenticated, logout } from '$stores/auth';
 	import UserMenu from './UserMenu.svelte';
 	import NavActions from './NavActions.svelte';
-	import { theme, updateTheme, type ThemeOption } from '$stores/uiPreferences';
+	import { theme } from '$stores/uiPreferences';
 	import { isLargeScreen } from '$stores/screen';
+	import { navLinks, toggleTheme, toggleLanguage } from '$lib/nav';
 
 	let isDropdownOpen = false;
 
-	let categoriesUrl = '/categories';
-	let investmentCalculatorUrl = '/investment-calculator';
 	let loginUrl = '/login';
 	let homeUrl = '/home';
 
 	// Flag to indicate that a touch event already handled the toggle
 	let touchHandled = false;
-
-	function toggleLanguage() {
-		const newLang = $locale === 'en' ? 'pt' : 'en';
-		$locale = newLang;
-		setLocale(newLang);
-	}
-
-	// Toggle theme function
-	const themeCycle: ThemeOption[] = ['system', 'dark', 'light'];
-
-	function toggleTheme() {
-		const currentIdx = themeCycle.indexOf($theme);
-		const nextTheme = themeCycle[(currentIdx + 1) % themeCycle.length];
-		updateTheme(nextTheme);
-	}
 
 	function handleNavigation(url: string) {
 		isDropdownOpen = false;
@@ -76,39 +60,19 @@
 					<ul
 						class="menu dropdown-content menu-sm z-[50] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
 					>
-						<li>
-							<button
-								type="button"
-								on:click={() => handleNavigation(homeUrl)}
-								class="text-lg"
-								aria-label="Home"
-							>
-								<Home size={18} class="mr-2" />
-								{$t('navbar.home')}
-							</button>
-						</li>
-						<li>
-							<button
-								type="button"
-								on:click={() => handleNavigation(categoriesUrl)}
-								class="text-lg"
-								aria-label="Categories"
-							>
-								<List size={18} class="mr-2" />
-								{$t('navbar.categories')}
-							</button>
-						</li>
-						<li>
-							<button
-								type="button"
-								on:click={() => handleNavigation(investmentCalculatorUrl)}
-								class="text-lg"
-								aria-label="Investment Calculator"
-							>
-								<Calculator size={18} class="mr-2" />
-								{$t('navbar.calculator')}
-							</button>
-						</li>
+						{#each navLinks as link}
+							<li>
+								<button
+									type="button"
+									on:click={() => handleNavigation(link.href)}
+									class="text-lg"
+									aria-label={$t(link.labelKey)}
+								>
+									<svelte:component this={link.icon} size={18} class="mr-2" />
+									{$t(link.labelKey)}
+								</button>
+							</li>
+						{/each}
 					</ul>
 				{/if}
 			</div>

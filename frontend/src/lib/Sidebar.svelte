@@ -1,32 +1,13 @@
 <!-- src/lib/Sidebar.svelte — visible only on lg+ screens -->
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import { Calculator, Home, List, LogOut, User } from 'lucide-svelte';
-	import { t, locale, setLocale } from '$lib/i18n';
+	import { t, locale } from '$lib/i18n';
 	import { isAuthenticated, logout, userEmail } from '$stores/auth';
 	import NavActions from './NavActions.svelte';
 	import ProfileModal from './ProfileModal.svelte';
-	import { theme, updateTheme, type ThemeOption } from '$stores/uiPreferences';
-
-	const themeCycle: ThemeOption[] = ['system', 'dark', 'light'];
-
-	function toggleTheme() {
-		const currentIdx = themeCycle.indexOf($theme);
-		updateTheme(themeCycle[(currentIdx + 1) % themeCycle.length]);
-	}
-
-	function toggleLanguage() {
-		const newLang = $locale === 'en' ? 'pt' : 'en';
-		$locale = newLang;
-		setLocale(newLang);
-	}
-
-	const navLinks = [
-		{ href: '/home', icon: Home, labelKey: 'navbar.home' },
-		{ href: '/categories', icon: List, labelKey: 'navbar.categories' },
-		{ href: '/investment-calculator', icon: Calculator, labelKey: 'navbar.calculator' }
-	];
+	import { theme } from '$stores/uiPreferences';
+	import { navLinks, toggleTheme, toggleLanguage } from '$lib/nav';
 
 	let showProfileModal = false;
 </script>
