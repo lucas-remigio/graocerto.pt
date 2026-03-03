@@ -218,6 +218,57 @@
 		dragOverRowKey = null;
 	}
 
+	// ── Touch drag state ────────────────────────────────────────────────────
+	function handleTouchStart(event: TouchEvent, row: FlatRow) {
+		draggedRowKey = rowKey(row);
+	}
+
+	function handleTouchMove(event: TouchEvent) {
+		if (!draggedRowKey) return;
+		event.preventDefault();
+
+		const touch = event.touches[0];
+		const el = document.elementFromPoint(touch.clientX, touch.clientY);
+		if (!el) return;
+
+		const trEl = el.closest('[data-row-key]') as HTMLElement | null;
+		if (!trEl) {
+			dragOverRowKey = null;
+			return;
+		}
+
+		const targetKey = trEl.dataset.rowKey ?? null;
+		dragOverRowKey = targetKey && isCompatibleTarget(draggedRowKey, targetKey) ? targetKey : null;
+	}
+
+	function handleTouchEnd() {
+		if (draggedRowKey && dragOverRowKey) {
+			const sourceRow = flatRows.find((r) => rowKey(r) === draggedRowKey);
+			const targetRow = flatRows.find((r) => rowKey(r) === dragOverRowKey);
+			if (sourceRow && targetRow) {
+				if (sourceRow.type === 'parent' && targetRow.type === 'parent') {
+					reorderGroup(
+						categoryHierarchy.map((n) => n.category),
+						sourceRow.cat.id,
+						targetRow.cat.id
+					);
+				} else if (sourceRow.type === 'child' && targetRow.type === 'child') {
+					const node = categoryHierarchy.find(
+						(n) => n.category.id === sourceRow.parentNode.category.id
+					);
+					if (node) reorderGroup(node.children, sourceRow.cat.id, targetRow.cat.id);
+				}
+			}
+		}
+		draggedRowKey = null;
+		dragOverRowKey = null;
+	}
+
+	function handleTouchCancel() {
+		draggedRowKey = null;
+		dragOverRowKey = null;
+	}
+
 	/** Splice `sourceId` into the position of `targetId` within `group`, then save. */
 	function reorderGroup(group: CategoryDto[], sourceId: number, targetId: number) {
 		const items = [...group];
@@ -272,6 +323,7 @@
 			<tbody class="text-center">
 				{#each flatRows as row (`${row.type}-${row.cat.id}`)}
 					<tr
+						data-row-key="{row.type}-{row.cat.id}"
 						animate:flip={{ duration: 200 }}
 						draggable="true"
 						on:dragstart={(e) => handleDragStart(e, row)}
@@ -279,6 +331,10 @@
 						on:dragleave={handleDragLeave}
 						on:drop={(e) => handleDrop(e, row)}
 						on:dragend={handleDragEnd}
+						on:touchstart={(e) => handleTouchStart(e, row)}
+						on:touchmove|nonpassive={handleTouchMove}
+						on:touchend={handleTouchEnd}
+						on:touchcancel={handleTouchCancel}
 						class="{row.type === 'parent' ? 'font-medium' : 'bg-base-200/50'} transition-colors
 							{dragOverRowKey === `${row.type}-${row.cat.id}`
 							? 'outline outline-2 outline-offset-[-2px] outline-primary'
