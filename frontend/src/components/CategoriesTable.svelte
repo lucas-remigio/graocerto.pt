@@ -1,6 +1,15 @@
 <script lang="ts">
 	import type { CategoryDto } from '$lib/types';
-	import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, Trash } from 'lucide-svelte';
+	import {
+		ChevronDown,
+		ChevronRight,
+		GripVertical,
+		Pencil,
+		Plus,
+		Trash,
+		ArrowUp,
+		ArrowDown
+	} from 'lucide-svelte';
 	import CategoryModal from './CategoryModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
@@ -218,55 +227,41 @@
 		dragOverRowKey = null;
 	}
 
-	// ── Touch drag state ────────────────────────────────────────────────────
-	function handleTouchStart(event: TouchEvent, row: FlatRow) {
-		draggedRowKey = rowKey(row);
-	}
-
-	function handleTouchMove(event: TouchEvent) {
-		if (!draggedRowKey) return;
-		event.preventDefault();
-
-		const touch = event.touches[0];
-		const el = document.elementFromPoint(touch.clientX, touch.clientY);
-		if (!el) return;
-
-		const trEl = el.closest('[data-row-key]') as HTMLElement | null;
-		if (!trEl) {
-			dragOverRowKey = null;
-			return;
+	// ── Mobile up/down reorder ───────────────────────────────────────────────
+	function moveRow(row: FlatRow, direction: 'up' | 'down') {
+		if (row.type === 'parent') {
+			const group = categoryHierarchy.map((n) => n.category);
+			const idx = group.findIndex((c) => c.id === row.cat.id);
+			const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+			if (targetIdx < 0 || targetIdx >= group.length) return;
+			reorderGroup(group, row.cat.id, group[targetIdx].id);
+		} else {
+			const node = categoryHierarchy.find((n) => n.category.id === row.parentNode.category.id);
+			if (!node) return;
+			const idx = node.children.findIndex((c) => c.id === row.cat.id);
+			const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+			if (targetIdx < 0 || targetIdx >= node.children.length) return;
+			reorderGroup(node.children, row.cat.id, node.children[targetIdx].id);
 		}
-
-		const targetKey = trEl.dataset.rowKey ?? null;
-		dragOverRowKey = targetKey && isCompatibleTarget(draggedRowKey, targetKey) ? targetKey : null;
 	}
 
-	function handleTouchEnd() {
-		if (draggedRowKey && dragOverRowKey) {
-			const sourceRow = flatRows.find((r) => rowKey(r) === draggedRowKey);
-			const targetRow = flatRows.find((r) => rowKey(r) === dragOverRowKey);
-			if (sourceRow && targetRow) {
-				if (sourceRow.type === 'parent' && targetRow.type === 'parent') {
-					reorderGroup(
-						categoryHierarchy.map((n) => n.category),
-						sourceRow.cat.id,
-						targetRow.cat.id
-					);
-				} else if (sourceRow.type === 'child' && targetRow.type === 'child') {
-					const node = categoryHierarchy.find(
-						(n) => n.category.id === sourceRow.parentNode.category.id
-					);
-					if (node) reorderGroup(node.children, sourceRow.cat.id, targetRow.cat.id);
-				}
-			}
+	function canMoveUp(row: FlatRow): boolean {
+		if (row.type === 'parent') {
+			return categoryHierarchy.findIndex((n) => n.category.id === row.cat.id) > 0;
 		}
-		draggedRowKey = null;
-		dragOverRowKey = null;
+		const node = categoryHierarchy.find((n) => n.category.id === row.parentNode.category.id);
+		return !!node && node.children.findIndex((c) => c.id === row.cat.id) > 0;
 	}
 
-	function handleTouchCancel() {
-		draggedRowKey = null;
-		dragOverRowKey = null;
+	function canMoveDown(row: FlatRow): boolean {
+		if (row.type === 'parent') {
+			const idx = categoryHierarchy.findIndex((n) => n.category.id === row.cat.id);
+			return idx >= 0 && idx < categoryHierarchy.length - 1;
+		}
+		const node = categoryHierarchy.find((n) => n.category.id === row.parentNode.category.id);
+		if (!node) return false;
+		const idx = node.children.findIndex((c) => c.id === row.cat.id);
+		return idx >= 0 && idx < node.children.length - 1;
 	}
 
 	/** Splice `sourceId` into the position of `targetId` within `group`, then save. */
@@ -331,24 +326,40 @@
 						on:dragleave={handleDragLeave}
 						on:drop={(e) => handleDrop(e, row)}
 						on:dragend={handleDragEnd}
-						on:touchstart={(e) => handleTouchStart(e, row)}
-						on:touchmove|nonpassive={handleTouchMove}
-						on:touchend={handleTouchEnd}
-						on:touchcancel={handleTouchCancel}
 						class="{row.type === 'parent' ? 'font-medium' : 'bg-base-200/50'} transition-colors
 							{dragOverRowKey === `${row.type}-${row.cat.id}`
 							? 'outline outline-2 outline-offset-[-2px] outline-primary'
 							: ''}
 							{draggedRowKey === `${row.type}-${row.cat.id}` ? 'opacity-40' : ''}"
 					>
-						<!-- Drag handle + expand toggle -->
+						<!-- Drag handle (desktop) + up/down arrows (mobile) + expand toggle -->
 						<td class="w-16">
 							<div class="flex items-center justify-center gap-1">
+								<!-- Desktop: drag grip -->
 								<span
-									class="cursor-grab p-2 text-base-content/30 hover:text-base-content/60 active:cursor-grabbing"
+									class="hidden cursor-grab p-2 text-base-content/30 hover:text-base-content/60 active:cursor-grabbing lg:inline"
 								>
 									<GripVertical size={18} />
 								</span>
+								<!-- Mobile: up/down buttons -->
+								<div class="flex flex-col lg:hidden">
+									<button
+										class="btn btn-circle btn-ghost btn-xs"
+										disabled={!canMoveUp(row)}
+										on:click={() => moveRow(row, 'up')}
+										aria-label="Move up"
+									>
+										<ArrowUp size={14} />
+									</button>
+									<button
+										class="btn btn-circle btn-ghost btn-xs"
+										disabled={!canMoveDown(row)}
+										on:click={() => moveRow(row, 'down')}
+										aria-label="Move down"
+									>
+										<ArrowDown size={14} />
+									</button>
+								</div>
 								{#if row.type === 'parent' && row.node.children.length > 0}
 									<button
 										class="btn btn-circle btn-ghost btn-xs"
