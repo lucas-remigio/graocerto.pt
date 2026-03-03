@@ -47,7 +47,9 @@
 		<GripVertical size={20} />
 	</span>
 	<!-- Mobile/tablet (< lg): up/down reorder buttons -->
-	<div class="absolute left-1 top-1/2 z-10 flex -translate-y-1/2 flex-col lg:hidden">
+	<div
+		class="absolute left-1 top-1/2 z-10 flex -translate-y-1/2 flex-col opacity-0 transition-opacity duration-200 group-hover:opacity-100 lg:hidden"
+	>
 		<button
 			class="btn btn-circle btn-ghost btn-xs"
 			disabled={!canMoveUp}
