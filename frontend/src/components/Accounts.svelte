@@ -154,55 +154,29 @@
 		dragOverToken = null;
 	}
 
-	// ── Touch drag ──────────────────────────────────────────────────────
-	function handleTouchStart(token: string) {
-		draggedToken = token;
+	// ── Mobile up/down reorder ───────────────────────────────────────────────
+	function moveAccount(token: string, direction: 'up' | 'down') {
+		const favs = isFavorite(token);
+		const group = favs ? [...favoriteAccounts] : [...nonFavoriteAccounts];
+		const other = favs ? [...nonFavoriteAccounts] : [...favoriteAccounts];
+		const idx = group.findIndex((a) => a.token === token);
+		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+		if (targetIdx < 0 || targetIdx >= group.length) return;
+		const [moved] = group.splice(idx, 1);
+		group.splice(targetIdx, 0, moved);
+		accounts = favs ? [...group, ...other] : [...other, ...group];
+		sendReorderRequest();
 	}
 
-	function handleTouchMove(event: TouchEvent) {
-		if (!draggedToken) return;
-		event.preventDefault();
-
-		const touch = event.touches[0];
-		const el = document.elementFromPoint(touch.clientX, touch.clientY);
-		if (!el) return;
-
-		const card = el.closest('[data-token]') as HTMLElement | null;
-		if (!card) {
-			dragOverToken = null;
-			return;
-		}
-
-		const targetToken = card.dataset.token ?? null;
-		dragOverToken =
-			targetToken &&
-			targetToken !== draggedToken &&
-			isFavorite(draggedToken) === isFavorite(targetToken)
-				? targetToken
-				: null;
+	function canMoveUp(token: string): boolean {
+		const group = isFavorite(token) ? favoriteAccounts : nonFavoriteAccounts;
+		return group.findIndex((a) => a.token === token) > 0;
 	}
 
-	function handleTouchEnd() {
-		if (draggedToken && dragOverToken) {
-			const favs = isFavorite(draggedToken);
-			const group = favs ? [...favoriteAccounts] : [...nonFavoriteAccounts];
-			const other = favs ? [...nonFavoriteAccounts] : [...favoriteAccounts];
-
-			const fromIdx = group.findIndex((a) => a.token === draggedToken);
-			const toIdx = group.findIndex((a) => a.token === dragOverToken);
-			const [dragged] = group.splice(fromIdx, 1);
-			group.splice(toIdx, 0, dragged);
-
-			accounts = favs ? [...group, ...other] : [...other, ...group];
-			sendReorderRequest();
-		}
-		draggedToken = null;
-		dragOverToken = null;
-	}
-
-	function handleTouchCancel() {
-		draggedToken = null;
-		dragOverToken = null;
+	function canMoveDown(token: string): boolean {
+		const group = isFavorite(token) ? favoriteAccounts : nonFavoriteAccounts;
+		const idx = group.findIndex((a) => a.token === token);
+		return idx >= 0 && idx < group.length - 1;
 	}
 
 	async function sendReorderRequest() {
@@ -258,6 +232,7 @@
 	>
 		{#each favoriteAccounts as account (account.token)}
 			<div
+				role="listitem"
 				data-token={account.token}
 				animate:flip={{ duration: 300 }}
 				draggable="true"
@@ -266,10 +241,6 @@
 				on:dragleave={handleDragLeave}
 				on:drop={(e) => handleDrop(account.token, e)}
 				on:dragend={handleDragEnd}
-				on:touchstart={() => handleTouchStart(account.token)}
-				on:touchmove|nonpassive={handleTouchMove}
-				on:touchend={handleTouchEnd}
-				on:touchcancel={handleTouchCancel}
 				class="transition-all duration-150
 					{dragOverToken === account.token
 					? 'scale-[1.03] rounded-2xl ring-2 ring-primary ring-offset-2'
@@ -279,10 +250,14 @@
 				<AccountCard
 					{account}
 					{selectedAccount}
+					canMoveUp={canMoveUp(account.token)}
+					canMoveDown={canMoveDown(account.token)}
 					on:select={handleCardSelect}
 					on:edit={handleCardEdit}
 					on:delete={handleCardDelete}
 					on:toggleFavorite={handleToggleFavorite}
+					on:moveUp={() => moveAccount(account.token, 'up')}
+					on:moveDown={() => moveAccount(account.token, 'down')}
 				/>
 			</div>
 		{/each}
@@ -298,6 +273,7 @@
 			>
 				{#each nonFavoriteAccounts as account (account.token)}
 					<div
+						role="listitem"
 						data-token={account.token}
 						animate:flip={{ duration: 300 }}
 						draggable="true"
@@ -306,10 +282,6 @@
 						on:dragleave={handleDragLeave}
 						on:drop={(e) => handleDrop(account.token, e)}
 						on:dragend={handleDragEnd}
-						on:touchstart={() => handleTouchStart(account.token)}
-						on:touchmove|nonpassive={handleTouchMove}
-						on:touchend={handleTouchEnd}
-						on:touchcancel={handleTouchCancel}
 						class="transition-all duration-150
 							{dragOverToken === account.token
 							? 'scale-[1.03] rounded-2xl ring-2 ring-primary ring-offset-2'
@@ -319,10 +291,14 @@
 						<AccountCard
 							{account}
 							{selectedAccount}
+							canMoveUp={canMoveUp(account.token)}
+							canMoveDown={canMoveDown(account.token)}
 							on:select={handleCardSelect}
 							on:edit={handleCardEdit}
 							on:delete={handleCardDelete}
 							on:toggleFavorite={handleToggleFavorite}
+							on:moveUp={() => moveAccount(account.token, 'up')}
+							on:moveDown={() => moveAccount(account.token, 'down')}
 						/>
 					</div>
 				{/each}

@@ -2,18 +2,22 @@
 <script lang="ts">
 	import type { Account } from '$lib/types';
 	import { createEventDispatcher } from 'svelte';
-	import { GripVertical, Pencil, Star, Trash } from 'lucide-svelte';
+	import { GripVertical, Pencil, Star, Trash, ArrowUp, ArrowDown } from 'lucide-svelte';
 	import { hideBalances } from '$lib/stores/uiPreferences';
 	import { formatCurrency } from '$lib/utils/currency';
 
 	export let account: Account;
 	export let selectedAccount: Account | null = null;
+	export let canMoveUp: boolean = false;
+	export let canMoveDown: boolean = false;
 
 	const dispatch = createEventDispatcher<{
 		select: { account: Account };
 		edit: { account: Account };
 		delete: { account: Account };
 		toggleFavorite: { account: Account };
+		moveUp: void;
+		moveDown: void;
 	}>();
 
 	function handleCardClick() {
@@ -36,12 +40,31 @@
 </script>
 
 <div class="group relative">
-	<!-- Drag handle -->
+	<!-- Desktop (lg+): drag grip -->
 	<span
-		class="absolute left-1 top-1/2 z-10 -translate-y-1/2 cursor-grab p-2 text-base-content/20 opacity-0 transition-opacity duration-200 active:cursor-grabbing group-hover:opacity-100"
+		class="absolute left-1 top-1/2 z-10 hidden -translate-y-1/2 cursor-grab p-2 text-base-content/20 opacity-0 transition-opacity duration-200 active:cursor-grabbing group-hover:opacity-100 lg:inline"
 	>
 		<GripVertical size={20} />
 	</span>
+	<!-- Mobile/tablet (< lg): up/down reorder buttons -->
+	<div class="absolute left-1 top-1/2 z-10 flex -translate-y-1/2 flex-col lg:hidden">
+		<button
+			class="btn btn-circle btn-ghost btn-xs"
+			disabled={!canMoveUp}
+			on:click|stopPropagation={() => dispatch('moveUp')}
+			aria-label="Move up"
+		>
+			<ArrowUp size={12} />
+		</button>
+		<button
+			class="btn btn-circle btn-ghost btn-xs"
+			disabled={!canMoveDown}
+			on:click|stopPropagation={() => dispatch('moveDown')}
+			aria-label="Move down"
+		>
+			<ArrowDown size={12} />
+		</button>
+	</div>
 	<button
 		type="button"
 		class="card w-full cursor-pointer bg-base-100 p-0 outline-none transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl
