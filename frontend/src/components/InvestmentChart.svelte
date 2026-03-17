@@ -129,7 +129,7 @@
 						callbacks: {
 							label: function (context: TooltipItem<'line'>) {
 								const label = context.dataset.label || '';
-								const value = formatCurrency(context.parsed.y, 0);
+								const value = formatCurrency(context.parsed.y ?? 0, 0);
 								return `${label}: ${value}`;
 							}
 						}
