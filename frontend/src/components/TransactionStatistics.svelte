@@ -1,15 +1,7 @@
 <!-- src/components/TransactionStatistics.svelte -->
 <script lang="ts">
 	import type { Account, TransactionStatistics } from '$lib/types';
-	import {
-		BarChart3,
-		TrendingUp,
-		TrendingDown,
-		DollarSign,
-		PieChart,
-		Bot,
-		BarChart
-	} from 'lucide-svelte';
+	import { BarChart3, TrendingUp, TrendingDown, PieChart, Bot, BarChart } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { formatCurrency } from '$lib/utils/currency';
 	import TransactionsHeatmap from './TransactionsHeatmap.svelte';

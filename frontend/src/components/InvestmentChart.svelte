@@ -11,7 +11,8 @@
 		CategoryScale,
 		LineController,
 		Filler,
-		type ChartConfiguration
+		type ChartConfiguration,
+		type TooltipItem
 	} from 'chart.js';
 	import { t } from '$lib/i18n';
 	import { themeService } from '$lib/services/themeService';
@@ -126,7 +127,7 @@
 						borderWidth: 1,
 						cornerRadius: 8,
 						callbacks: {
-							label: function (context: any) {
+							label: function (context: TooltipItem<'line'>) {
 								const label = context.dataset.label || '';
 								const value = formatCurrency(context.parsed.y, 0);
 								return `${label}: ${value}`;
@@ -159,7 +160,7 @@
 							font: {
 								size: 11
 							},
-							callback: function (value: any) {
+							callback: function (value: string | number) {
 								return formatCurrency(Number(value), 0);
 							}
 						}

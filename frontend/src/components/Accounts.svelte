@@ -1,8 +1,8 @@
 <!-- src/components/Accounts.svelte -->
 <script lang="ts">
 	import type { Account, AccountChangeResponse } from '$lib/types';
-	import { createEventDispatcher, onMount } from 'svelte';
-	import { Pencil, Trash, Plus, Wallet, EyeOff, Eye } from 'lucide-svelte';
+	import { createEventDispatcher } from 'svelte';
+	import { Plus, Wallet, EyeOff, Eye } from 'lucide-svelte';
 	import AccountModal from './AccountModal.svelte';
 	import ConfirmAction from './ConfirmAction.svelte';
 
@@ -35,7 +35,12 @@
 		updateShowNonFavorites(value);
 	}
 
-	const dispatch = createEventDispatcher<any>();
+	const dispatch = createEventDispatcher<{
+		select: { account: Account };
+		deleteAccount: { account: Account };
+		updatedAccount: AccountChangeResponse;
+		newAccount: AccountChangeResponse;
+	}>();
 
 	function handleCardSelect(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
@@ -54,10 +59,6 @@
 
 	function handleCloseEditAccountModal() {
 		openEditAccountModal = false;
-	}
-
-	function handleConfirmAccountDeletion() {
-		openDeleteAccountModal = true;
 	}
 
 	function handleCloseDeleteAccountModal() {

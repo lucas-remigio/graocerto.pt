@@ -4,7 +4,7 @@
 </script>
 
 <div class="mb-8 text-center">
-	<h1 class="text-primary mb-4 flex items-center justify-center gap-3 text-3xl font-bold">
+	<h1 class="mb-4 flex items-center justify-center gap-3 text-3xl font-bold text-primary">
 		<TrendingUp size={32} class="text-primary" />
 		{$t('investment-calculator.title')}
 	</h1>

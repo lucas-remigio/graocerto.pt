@@ -3,7 +3,7 @@
 	import type { CategoryChangeResponse, CategoryDto, TransactionType } from '$lib/types';
 	import { X } from 'lucide-svelte';
 	import { createEventDispatcher } from 'svelte';
-	import { locale, t } from '$lib/i18n';
+	import { t } from '$lib/i18n';
 	import { formatCurrency } from '$lib/utils/currency';
 
 	// Unified inputs
@@ -27,7 +27,6 @@
 	let availableParents: CategoryDto[] = [];
 	let loadingParents = false;
 
-	$: currentLocale = $locale || 'pt';
 	$: currentTransactionTypeId = isEditMode
 		? category!.transaction_type.id
 		: isSubcategoryMode
@@ -176,9 +175,9 @@
 		try {
 			const response: CategoryChangeResponse = await dataService.createCategory(categoryData);
 			dispatch('newCategory', response);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error in handleSubmit:', err);
-			error = err?.message || $t('errors.failed-create-category');
+			error = err instanceof Error ? err.message : $t('errors.failed-create-category');
 		}
 	}
 </script>

@@ -133,9 +133,9 @@
 {/if}
 
 <!-- Input Form -->
-<div class="card bg-base-100 mb-2 shadow-lg">
+<div class="card mb-2 bg-base-100 shadow-lg">
 	<div class="card-body">
-		<h2 class="card-title text-primary mb-6 justify-center">
+		<h2 class="card-title mb-6 justify-center text-primary">
 			<Calculator size={24} class="text-primary" />
 			{$t('investment-calculator.form.title')}
 		</h2>
@@ -200,7 +200,7 @@
 						<span class="label-text w-full text-center font-semibold">
 							{$t('investment-calculator.form.annual-return-rate')}
 						</span>
-						<span class="label-text-alt text-base-content/70 w-full text-center">
+						<span class="label-text-alt w-full text-center text-base-content/70">
 							{$t('investment-calculator.form.percentage-per-year')}
 						</span>
 					</label>

@@ -1,6 +1,5 @@
 <!-- src/components/ViewToggle.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { BarChart3, List } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { selectedView, updateSelectedView } from '$lib/stores/uiPreferences';

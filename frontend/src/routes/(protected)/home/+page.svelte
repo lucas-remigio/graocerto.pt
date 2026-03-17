@@ -1,13 +1,10 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import { connected, socket, messages, sendMessage } from '$lib/ws'; // Import WebSocket utilities
+	import { connected, messages, sendMessage } from '$lib/ws'; // Import WebSocket utilities
 	import type {
 		Account,
 		TransactionDto,
-		TransactionGroup,
-		CategoryDto,
 		MonthYear,
-		TransactionsTotals,
 		TransactionStatistics,
 		TransactionChangeResponse,
 		AccountChangeResponse,
@@ -20,9 +17,8 @@
 	import MonthSelector from '$components/MonthSelector.svelte';
 	import ViewToggle from '$components/ViewToggle.svelte';
 	import { userEmail } from '$lib/stores/auth';
-	import { t, locale } from '$lib/i18n';
+	import { t } from '$lib/i18n';
 	import { selectedView, updateSelectedView } from '$lib/stores/uiPreferences';
-	import { TransactionTypeId } from '$lib/transaction_types_types';
 
 	// WebSocket state
 	let hasJoinedRoom = $state(false);
@@ -66,7 +62,6 @@
 	let statistics: TransactionStatistics | null = $state(null);
 	let statisticsLoading = $state(false);
 	let statisticsError: string = $state('');
-	let categories: CategoryDto[] = $state([]);
 	let error: string = $state('');
 
 	let selectedAccount: Account | null = $state(null);
@@ -527,7 +522,7 @@
 			</div>
 
 			<!-- Vertical Divider - only visible on large screens -->
-			<div class="lg:bg-base-300 hidden lg:block lg:w-px"></div>
+			<div class="hidden lg:block lg:w-px lg:bg-base-300"></div>
 
 			<!-- Right Column: Transactions (full width on small/medium, remaining space on large) -->
 			{#if accounts.length > 0}

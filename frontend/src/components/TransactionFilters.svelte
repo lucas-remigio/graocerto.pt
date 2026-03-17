@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Category, CategoryDto, TransactionType } from '$lib/types';
-	import { Search, X, Calendar, DollarSign, Tag, FileText, Info } from 'lucide-svelte';
+	import type { CategoryDto, TransactionType } from '$lib/types';
+	import { Search, X, Info } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { createEventDispatcher } from 'svelte';
 
@@ -62,9 +62,9 @@
 </script>
 
 {#if show}
-	<div class="bg-base-100 border-base-300 mb-4 overflow-hidden rounded-xl border shadow-md">
+	<div class="mb-4 overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-md">
 		<!-- Header -->
-		<div class="from-primary/10 via-secondary/10 to-accent/10 bg-gradient-to-r px-4 py-3">
+		<div class="bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 px-4 py-3">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2">
 					<Search size={18} class="text-primary" />
@@ -84,7 +84,7 @@
 
 		<!-- Results Bar -->
 		{#if isFiltering}
-			<div class="bg-info/10 border-info/20 border-b px-4 py-2">
+			<div class="border-b border-info/20 bg-info/10 px-4 py-2">
 				<div class="flex items-center gap-2 text-sm">
 					<Info size={16} class="text-info" />
 					<span>
@@ -102,7 +102,7 @@
 		<div class="space-y-4 p-4">
 			<!-- Search -->
 			<div class="relative">
-				<Search size={18} class="text-base-content/40 absolute left-3 top-1/2 -translate-y-1/2" />
+				<Search size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
 				<input
 					type="text"
 					placeholder={$t('transactions.search-placeholder')}
@@ -111,7 +111,7 @@
 				/>
 				{#if searchTerm}
 					<button
-						class="btn btn-ghost btn-sm btn-circle absolute right-1 top-1/2 -translate-y-1/2"
+						class="btn btn-circle btn-ghost btn-sm absolute right-1 top-1/2 -translate-y-1/2"
 						on:click={() => (searchTerm = '')}
 					>
 						<X size={16} />
@@ -162,13 +162,13 @@
 			<div class="grid grid-cols-2 gap-3">
 				<input
 					type="date"
-					class="input input-bordered date-input"
+					class="date-input input input-bordered"
 					bind:value={startDate}
 					on:change={applyFilters}
 				/>
 				<input
 					type="date"
-					class="input input-bordered date-input"
+					class="date-input input input-bordered"
 					bind:value={endDate}
 					on:change={applyFilters}
 				/>

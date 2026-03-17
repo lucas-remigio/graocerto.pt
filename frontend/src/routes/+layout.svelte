@@ -7,7 +7,7 @@
 	import axios from '$lib/axios';
 	import { get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
-	import { isLoading, setupI18n, t, i18nReady } from '$lib/i18n';
+	import { setupI18n, i18nReady } from '$lib/i18n';
 	import Footer from '$lib/Footer.svelte';
 	import Sidebar from '$lib/Sidebar.svelte';
 	import { cookieConsent } from '$lib/stores/cookieConsent';
@@ -58,9 +58,14 @@
 			await axios.get('/verify-token');
 
 			isAuthenticated.set(true); // Token is valid
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Only redirect for actual authentication failures (401, invalid token, etc.)
-			if (error.response?.status === 401) {
+			if (
+				typeof error === 'object' &&
+				error !== null &&
+				'response' in error &&
+				(error as { response?: { status?: number } }).response?.status === 401
+			) {
 				goto('/login');
 			}
 		} finally {

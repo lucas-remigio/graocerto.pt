@@ -71,8 +71,7 @@
 		}
 
 		const themeColors = themeService.getThemeColors();
-		const { legendColor, tooltipBg, tooltipTitleColor, tooltipBodyColor, tooltipBorderColor } =
-			themeColors;
+		const { tooltipBg, tooltipTitleColor, tooltipBodyColor, tooltipBorderColor } = themeColors;
 
 		const displayData = drillDownData || parentData;
 		const labels = displayData.map((item) => item.name);

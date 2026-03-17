@@ -35,9 +35,19 @@
 			}
 
 			results = response.data;
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error calculating investment:', err);
-			error = err.response?.data?.error || $t('investment-calculator.errors.calculation-failed');
+			if (
+				typeof err === 'object' &&
+				err !== null &&
+				'response' in err &&
+				typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error ===
+					'string'
+			) {
+				error = (err as { response?: { data?: { error?: string } } }).response!.data!.error!;
+			} else {
+				error = $t('investment-calculator.errors.calculation-failed');
+			}
 		} finally {
 			isLoading = false;
 		}

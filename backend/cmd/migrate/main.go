@@ -5,10 +5,11 @@ import (
 	"os"
 
 	"database/sql"
+
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	pgxv5 "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucas-remigio/wallet-tracker/config"
 )
 
@@ -25,14 +26,14 @@ func main() {
 	}
 
 	// Open the database connection
-	db, err := sql.Open("postgres", dbURL)
+	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
 	// Create the migration driver
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	driver, err := pgxv5.WithInstance(db, &pgxv5.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,7 +46,7 @@ func main() {
 
 	m, err := migrate.NewWithDatabaseInstance(
 		migrationsPath,
-		"postgres",
+		"pgx",
 		driver,
 	)
 	if err != nil {

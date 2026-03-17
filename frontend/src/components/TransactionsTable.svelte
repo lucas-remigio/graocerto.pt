@@ -6,29 +6,20 @@
 		TransactionGroup,
 		TransactionChangeResponse
 	} from '$lib/types';
-	import {
-		ArrowRightLeft,
-		Bot,
-		CircleDollarSign,
-		Filter,
-		List,
-		Pencil,
-		Plus,
-		Trash
-	} from 'lucide-svelte';
+	import { ArrowRightLeft, CircleDollarSign, Filter, Pencil, Plus, Trash } from 'lucide-svelte';
 	import TransactionModal from './TransactionModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 
 	import ConfirmAction from './ConfirmAction.svelte';
 	import TransactionsStats from './TransactionsStats.svelte';
 	import { t } from '$lib/i18n';
-	import { format, locale } from 'svelte-i18n';
+	import { locale } from 'svelte-i18n';
 	import {
 		setDraftTransaction,
 		setDraftTransactionAccountToken
 	} from '$lib/services/draftTransactionService';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
-	import { fade, fly, scale } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import { formatCurrency } from '$lib/utils/currency';
 	import TransferModal from './TransferModal.svelte';
 	import TransactionFilters from './TransactionFilters.svelte';
@@ -98,7 +89,7 @@
 	$: currentLocale = $locale || 'pt';
 
 	function getTransactionDetails(transaction: TransactionDto): string {
-		`${transaction.description} (${formatCurrency(transaction.amount)}) ${$t('modals.with-category')} ${transaction.category.category_name} ${$t('common.at')} ${formatDate(transaction.date)}`;
+		return `${transaction.description} (${formatCurrency(transaction.amount)}) ${$t('modals.with-category')} ${transaction.category.category_name} ${$t('common.at')} ${formatDate(transaction.date)}`;
 	}
 
 	function formatDate(date: string): string {

@@ -132,7 +132,7 @@
 
 		<!-- Statistics below chart -->
 		<div class="mt-4 space-y-2">
-			{#each sortedData as category, index}
+			{#each sortedData as category}
 				<div class="flex items-center justify-between text-sm">
 					<div class="flex items-center gap-2">
 						<div
@@ -155,9 +155,9 @@
 		<!-- Enhanced placeholder for empty data -->
 		<div class="flex h-80 items-center justify-center">
 			<div class="text-center">
-				<PieChart size={48} class="text-base-content/30 mx-auto mb-3" />
-				<p class="text-base-content/60 text-base font-medium">{$t('statistics.no-data')}</p>
-				<p class="text-base-content/50 text-sm">
+				<PieChart size={48} class="mx-auto mb-3 text-base-content/30" />
+				<p class="text-base font-medium text-base-content/60">{$t('statistics.no-data')}</p>
+				<p class="text-sm text-base-content/50">
 					{isCredit ? $t('statistics.no-credit-categories') : $t('statistics.no-debit-categories')}
 				</p>
 			</div>

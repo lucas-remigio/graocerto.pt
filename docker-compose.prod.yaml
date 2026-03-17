@@ -27,8 +27,6 @@ services:
     image: lucasremigio/app:${TAG}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
-    # depends_on:
-    #   - db
     environment:
       - IS_PRODUCTION=true
       - PORT=${BACKEND_PORT}
@@ -38,16 +36,6 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_IN_SECONDS=${JWT_EXPIRATION_IN_SECONDS}
-      # db:
-      #   image: mysql:8
-      #   container_name: mysql-container
-      #   environment:
-      #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      #     MYSQL_DATABASE: wallet_tracker
-      #   ports:
-      #     - "3306:3306"
-      #   volumes:
-      #     - mysql_data:/var/lib/mysql
 
 volumes:
   mysql_data:

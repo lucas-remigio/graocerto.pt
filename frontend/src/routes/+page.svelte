@@ -7,7 +7,6 @@
 		Sparkles,
 		Calendar,
 		PieChart,
-		Cloud,
 		Zap,
 		Github,
 		MonitorSmartphone,
@@ -124,15 +123,15 @@
 	}
 
 	// Pick themed asset: supports `{theme}` placeholder or `_light/_dark` suffix
-    function themedSrc(src: string, dark: boolean) {
-        const theme = dark ? 'dark' : 'light';
-        if (src.includes('{theme}')) return src.replace('{theme}', theme);
-        return src.replace(/_(light|dark)(\.\w+)$/, `_${theme}$2`);
-    }
+	function themedSrc(src: string, dark: boolean) {
+		const theme = dark ? 'dark' : 'light';
+		if (src.includes('{theme}')) return src.replace('{theme}', theme);
+		return src.replace(/_(light|dark)(\.\w+)$/, `_${theme}$2`);
+	}
 
-    // Reactive hero image based on theme (explicit dependency on isDarkMode)
-    let baseHeroImg = '/graphs_{theme}.png';
-    $: heroImg = themedSrc(baseHeroImg, isDarkMode);
+	// Reactive hero image based on theme (explicit dependency on isDarkMode)
+	let baseHeroImg = '/graphs_{theme}.png';
+	$: heroImg = themedSrc(baseHeroImg, isDarkMode);
 
 	function openImg(src: string) {
 		zoomedImg = src;
@@ -151,20 +150,20 @@
 	});
 </script>
 
-<div class="bg-base-100 flex min-h-screen flex-col">
+<div class="flex min-h-screen flex-col bg-base-100">
 	<!-- Hero -->
 	<section class="relative">
 		<div
-			class="from-primary/5 pointer-events-none absolute inset-0 bg-gradient-to-b via-transparent to-transparent"
+			class="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent"
 		></div>
 		<div class="container mx-auto max-w-6xl px-4 pb-12 pt-16 md:pt-24">
 			<div class="grid items-center gap-10 md:grid-cols-2">
 				<div>
-					<div class="badge badge-primary text-base-100 mb-4">Grão Certo</div>
+					<div class="badge badge-primary mb-4 text-base-100">Grão Certo</div>
 					<h1 class="text-3xl font-extrabold tracking-tight md:text-5xl">
 						{$t('landing.hero.title', { default: 'Take control of your finances with clarity' })}
 					</h1>
-					<p class="text-base-content/70 mt-4 max-w-prose text-base md:text-lg">
+					<p class="mt-4 max-w-prose text-base text-base-content/70 md:text-lg">
 						{$t('landing.hero.subtitle', {
 							default:
 								'Simple transaction tracking, insightful statistics, and a clean heatmap to visualize your daily activity.'
@@ -213,10 +212,10 @@
 
 				<!-- Hero mockup -->
 				<div class="hidden md:block">
-					<div class="mockup-window border-base-300 bg-base-200 border shadow-xl">
+					<div class="mockup-window border border-base-300 bg-base-200 shadow-xl">
 						<button
 							type="button"
-							class="bg-base-100 flex h-full w-full items-center justify-center p-4"
+							class="flex h-full w-full items-center justify-center bg-base-100 p-4"
 							on:click={() => openImg('graphs_dark.png')}
 							on:keydown={(e) => {
 								if (e.key === 'Enter' || e.key === ' ') openImg('graphs_dark.png');
@@ -234,7 +233,7 @@
 							/>
 						</button>
 					</div>
-					<p class="text-base-content/50 mt-3 text-center text-xs">
+					<p class="mt-3 text-center text-xs text-base-content/50">
 						{$t('landing.images.hero-caption', { default: 'Preview of dashboard and statistics' })}
 					</p>
 				</div>
@@ -248,7 +247,7 @@
 			<h2 class="text-center text-2xl font-bold md:text-3xl">
 				{$t('landing.features.title', { default: "Why you'll love it" })}
 			</h2>
-			<p class="text-base-content/70 mx-auto mt-2 max-w-2xl text-center">
+			<p class="mx-auto mt-2 max-w-2xl text-center text-base-content/70">
 				{$t('landing.features.subtitle', {
 					default: 'Designed for clarity, speed, and real insight into your spending and income.'
 				})}
@@ -256,11 +255,11 @@
 
 			<!-- Integrated financial literacy callout -->
 			<div
-				class="border-primary/20 from-primary/10 via-primary/5 mt-6 rounded-xl border bg-gradient-to-r to-transparent p-4 md:p-5"
+				class="mt-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 md:p-5"
 			>
 				<div class="flex flex-col gap-4 sm:flex-row sm:items-center">
 					<div class="flex flex-1 items-start gap-3">
-						<div class="text-primary bg-primary/10 rounded-lg p-2">
+						<div class="rounded-lg bg-primary/10 p-2 text-primary">
 							<BookOpen size={20} />
 						</div>
 						<div>
@@ -269,7 +268,7 @@
 									default: 'Start with a budget. Understand your spending.'
 								})}
 							</h3>
-							<p class="text-base-content/70 text-sm">
+							<p class="text-sm text-base-content/70">
 								{$t('landing.finlit.callout.desc', {
 									default:
 										'Rooted in Portuguese financial literacy: begin each month with a plan and track where and how your money is spent.'
@@ -283,7 +282,7 @@
 			<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 				{#each features as f}
 					<div
-						class="card bg-base-100 border-base-200 border shadow-sm transition-shadow hover:shadow-md"
+						class="card border border-base-200 bg-base-100 shadow-sm transition-shadow hover:shadow-md"
 					>
 						<div class="card-body">
 							<div class="flex items-center gap-3">
@@ -306,7 +305,7 @@
 			<h2 class="text-center text-2xl font-bold md:text-3xl">
 				{$t('landing.gallery.title', { default: 'A look inside' })}
 			</h2>
-			<p class="text-base-content/70 mx-auto mt-2 max-w-2xl text-center">
+			<p class="mx-auto mt-2 max-w-2xl text-center text-base-content/70">
 				{$t('landing.gallery.subtitle', {
 					default: 'Clean tables, intuitive statistics, and a daily activity heatmap.'
 				})}
@@ -315,7 +314,7 @@
 			<div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
 				{#each screenshots as s}
 					<button
-						class="border-base-300 bg-base-100 group rounded-xl border p-2 shadow transition hover:shadow-lg"
+						class="group rounded-xl border border-base-300 bg-base-100 p-2 shadow transition hover:shadow-lg"
 						on:click={() => openImg(s.src)}
 						aria-label={`${$t('landing.actions.open-screenshot', { default: 'Open screenshot' })}: ${$t(s.altKey, { default: s.defaultAlt })}`}
 					>
@@ -351,7 +350,7 @@
 			<h2 class="text-center text-2xl font-bold md:text-3xl">
 				{$t('landing.testimonials.title', { default: 'What people say' })}
 			</h2>
-			<p class="text-base-content/70 mx-auto mt-2 max-w-2xl text-center">
+			<p class="mx-auto mt-2 max-w-2xl text-center text-base-content/70">
 				{$t('landing.testimonials.subtitle', {
 					default: 'Real stories from users improving their finances.'
 				})}
@@ -359,14 +358,14 @@
 
 			<div class="mt-8 grid justify-items-center gap-6">
 				{#each testimonials as tItem}
-					<figure class="card bg-base-100 border-base-200 w-full max-w-2xl border shadow-sm">
+					<figure class="card w-full max-w-2xl border border-base-200 bg-base-100 shadow-sm">
 						<div class="card-body">
 							<Quote size={18} class="text-primary opacity-80" />
 							<blockquote class="mt-2 text-base">
 								“{$t(tItem.quoteKey, { default: tItem.defaultQuote })}”
 							</blockquote>
 						</div>
-						<figcaption class="text-base-content/60 px-6 pb-5 pt-0 text-sm">
+						<figcaption class="px-6 pb-5 pt-0 text-sm text-base-content/60">
 							— {$t(tItem.authorKey, { default: tItem.defaultAuthor })}
 						</figcaption>
 					</figure>
@@ -383,11 +382,11 @@
 			</h2>
 			<div class="mx-auto mt-6 max-w-3xl space-y-3">
 				{#each faqs as f}
-					<details class="border-base-300 bg-base-100 rounded-lg border p-4">
+					<details class="rounded-lg border border-base-300 bg-base-100 p-4">
 						<summary class="cursor-pointer list-none font-medium">
 							{$t(f.qKey, { default: f.defaultQ })}
 						</summary>
-						<p class="text-base-content/70 mt-2 text-sm">
+						<p class="mt-2 text-sm text-base-content/70">
 							{$t(f.aKey, { default: f.defaultA })}
 						</p>
 					</details>

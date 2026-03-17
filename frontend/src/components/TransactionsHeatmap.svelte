@@ -192,14 +192,14 @@
 <!-- Mode selector -->
 <div class="mb-4 flex justify-center">
 	<div class="dropdown">
-		<div tabindex="0" role="button" class="btn btn-sm btn-primary text-base-100 shadow-lg">
-			<svelte:component this={currentModeInfo.icon} size={16} class="text-base-100 mr-1" />
+		<div tabindex="0" role="button" class="btn btn-primary btn-sm text-base-100 shadow-lg">
+			<svelte:component this={currentModeInfo.icon} size={16} class="mr-1 text-base-100" />
 			<span class="text-base-100">{currentModeInfo.label}</span>
-			<ChevronDown size={16} class="text-base-100 ml-1" />
+			<ChevronDown size={16} class="ml-1 text-base-100" />
 		</div>
 		<ul
 			tabindex="-1"
-			class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-[1] w-48 border p-2 shadow-xl"
+			class="menu dropdown-content z-[1] w-48 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
 		>
 			<li>
 				<button
@@ -249,9 +249,9 @@
 							<td class="text-center align-middle">
 								{#if day}
 									<div
-										class="tooltip heatmap-square mx-auto aspect-square h-6 w-6 rounded {getColor(
+										class="heatmap-square tooltip mx-auto aspect-square h-6 w-6 rounded {getColor(
 											day
-										)} {day === today ? 'border-primary border-2' : ''}"
+										)} {day === today ? 'border-2 border-primary' : ''}"
 										style="--intensity:{getIntensity(day)}"
 										data-tip={getTooltipText(day)}
 									></div>

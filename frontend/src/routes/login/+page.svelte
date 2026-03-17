@@ -4,7 +4,7 @@
 	import { login, token } from '$lib/stores/auth';
 	import { t } from '$lib/i18n';
 	import type { AxiosError } from 'axios';
-	import { validateEmail, isPasswordValid, isPasswordLengthValid } from '$lib/authValidation';
+	import { validateEmail, isPasswordLengthValid } from '$lib/authValidation';
 	import { XIcon } from 'lucide-svelte';
 
 	let email = '';

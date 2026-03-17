@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Eye, EyeOff, MonitorSmartphone, Moon, Phone, Sun } from 'lucide-svelte';
+	import { Eye, EyeOff, MonitorSmartphone, Moon, Sun } from 'lucide-svelte';
 	import { hideBalances, updateHideBalances, type ThemeOption } from '$stores/uiPreferences';
 	export let theme: ThemeOption = 'system';
 	export let toggleTheme: () => void;

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucas-remigio/wallet-tracker/cmd/api"
 	"github.com/lucas-remigio/wallet-tracker/config"
 )
@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Open the Postgres database connection
-	pgdb, err := sql.Open("postgres", dbURL)
+	pgdb, err := sql.Open("pgx", dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
