@@ -21,7 +21,7 @@
 
 <div class="dropdown dropdown-end {isProfileDropdownOpen ? 'dropdown-open' : ''}">
 	<button
-		class="btn btn-ghost btn-circle"
+		class="btn btn-circle btn-ghost"
 		on:click={() => (isProfileDropdownOpen = !isProfileDropdownOpen)}
 		aria-haspopup="true"
 		aria-expanded={isProfileDropdownOpen}
@@ -31,33 +31,33 @@
 	</button>
 
 	{#if isProfileDropdownOpen}
-		<ul class="dropdown-content menu bg-base-100 rounded-box z-[100] mt-4 w-64 p-4 shadow">
+		<ul class="menu dropdown-content z-[100] mt-4 w-64 rounded-box bg-base-100 p-4 shadow">
 			<!-- Profile Button with Email -->
 			<li class="mb-2">
 				<button
-					class="hover:bg-base-200 group flex w-full items-center justify-between rounded-lg p-2 transition-colors"
+					class="group flex w-full items-center justify-between rounded-lg p-2 transition-colors hover:bg-base-200"
 					on:click={openProfile}
 				>
 					<div class="flex items-center gap-2">
-						<User class="text-primary h-4 w-4" />
+						<User class="h-4 w-4 text-primary" />
 						<div class="text-left">
-							<div class="text-base-content/60 text-xs font-medium">
+							<div class="text-xs font-medium text-base-content/60">
 								{$t('profile.view-profile', { default: 'View Profile' })}
 							</div>
-							<div class="text-base-content max-w-[180px] truncate text-sm">
+							<div class="max-w-[180px] truncate text-sm text-base-content">
 								{localStorage.getItem('userEmail') || 'unknown@anonymous.pt'}
 							</div>
 						</div>
 					</div>
 					<ChevronRight
-						class="text-base-content/40 group-hover:text-primary h-4 w-4 transition-colors"
+						class="h-4 w-4 text-base-content/40 transition-colors group-hover:text-primary"
 					/>
 				</button>
 			</li>
 
 			<slot />
 
-			<li class="border-base-200 mt-2 border-t pt-2">
+			<li class="mt-2 border-t border-base-200 pt-2">
 				<button class="btn btn-error btn-sm w-full" on:click={handleLogout}>
 					<LogOut size={18} class="mr-2" />
 					{$t('auth.logout', { default: 'Logout' })}

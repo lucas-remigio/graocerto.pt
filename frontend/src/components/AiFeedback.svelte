@@ -27,7 +27,7 @@
 
 	async function getTransactionsAiFeedback() {
 		isLoading = true;
-		const language = $locale || 'pt'; 
+		const language = $locale || 'pt';
 		try {
 			const res = await api_axios('accounts/' + account.token + '/feedback-month', {
 				params: {
@@ -79,22 +79,22 @@
 		transition:fly={{ y: 20, duration: 300 }}
 	>
 		<!-- Gradient header (fixed) -->
-		<div class="from-primary to-secondary sticky top-0 z-10 bg-gradient-to-r px-6 py-5 shadow-lg">
+		<div class="sticky top-0 z-10 bg-gradient-to-r from-primary to-secondary px-6 py-5 shadow-lg">
 			<div class="flex items-center gap-2">
-				<BarChart class="text-base-100 h-5 w-5" />
-				<h3 class="text-base-100 text-xl font-bold">
+				<BarChart class="h-5 w-5 text-base-100" />
+				<h3 class="text-xl font-bold text-base-100">
 					{$t('ai-feedback.title') + ' ' + account.account_name}
 				</h3>
 			</div>
 			<!-- Close button -->
 			<button
-				class="btn btn-sm btn-circle bg-base-100/20 hover:bg-base-100/30 absolute right-2 top-2 border-none"
+				class="btn btn-circle btn-sm absolute right-2 top-2 border-none bg-base-100/20 hover:bg-base-100/30"
 				on:click={handleCloseModal}
 			>
 				<X class="text-base-100" />
 			</button>
-			<div class="text-base-100/80 mt-1 flex items-center gap-2 text-sm">
-				<CalendarClock class="text-base-100 h-4 w-4" />
+			<div class="mt-1 flex items-center gap-2 text-sm text-base-100/80">
+				<CalendarClock class="h-4 w-4 text-base-100" />
 				<span>{$t('ai-feedback.monthly-analysis-for') + ' ' + formattedDate()}</span>
 			</div>
 		</div>
@@ -103,13 +103,13 @@
 		<div class="overflow-y-auto p-6">
 			{#if isLoading}
 				<div class="flex flex-col items-center justify-center py-12" in:fade>
-					<Loader2 class="text-primary mb-4 h-12 w-12 animate-spin" />
+					<Loader2 class="mb-4 h-12 w-12 animate-spin text-primary" />
 					<p class="text-base-content/70">{$t('ai-feedback.analyzing')}</p>
 				</div>
 			{:else if error}
-				<div class="border-error bg-error/10 rounded border-l-4 p-4" in:fade>
-					<p class="text-error flex items-center gap-2">
-						<AlertCircle class="text-error h-5 w-5" />
+				<div class="rounded border-l-4 border-error bg-error/10 p-4" in:fade>
+					<p class="flex items-center gap-2 text-error">
+						<AlertCircle class="h-5 w-5 text-error" />
 						{$t('ai-feedback.error') + ' ' + error}
 					</p>
 				</div>
@@ -117,14 +117,14 @@
 				<div in:fade={{ duration: 300, delay: 100 }}>
 					<!-- Summary section -->
 					<div
-						class="border-primary/20 from-primary/5 to-secondary/5 mb-6 rounded-lg border bg-gradient-to-r p-5 shadow-sm"
+						class="mb-6 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 p-5 shadow-sm"
 					>
 						<div class="flex items-start gap-3">
-							<div class="bg-primary/10 rounded-full p-2">
-								<Lightbulb class="text-primary h-5 w-5" />
+							<div class="rounded-full bg-primary/10 p-2">
+								<Lightbulb class="h-5 w-5 text-primary" />
 							</div>
 							<div>
-								<h3 class="text-primary mb-2 text-lg font-medium">
+								<h3 class="mb-2 text-lg font-medium text-primary">
 									{$t('ai-feedback.key-insights')}
 								</h3>
 								<p class="text-base-content/80">{feedbackMessage}</p>
@@ -135,21 +135,21 @@
 					<!-- Detailed analysis section -->
 					<div class="mt-6">
 						<div class="mb-4 flex items-center gap-2">
-							<PieChart class="text-secondary h-5 w-5" />
-							<h3 class="text-base-content text-lg font-semibold">
+							<PieChart class="h-5 w-5 text-secondary" />
+							<h3 class="text-lg font-semibold text-base-content">
 								{$t('ai-feedback.detailed-analysis')}
 							</h3>
 						</div>
 
 						<div
-							class="prose prose-sm text-base-content/80 max-w-none whitespace-pre-line leading-relaxed"
+							class="prose prose-sm max-w-none whitespace-pre-line leading-relaxed text-base-content/80"
 						>
 							{inDepthAnalysis}
 						</div>
 
 						<!-- End card with upward trend icon -->
 						<div class="mt-8 flex justify-end">
-							<div class="text-success inline-flex items-center gap-1.5 text-sm">
+							<div class="inline-flex items-center gap-1.5 text-sm text-success">
 								<ArrowUpRight class="h-4 w-4" />
 								<span>{$t('ai-feedback.based-on-history')}</span>
 							</div>

@@ -51,8 +51,8 @@ Before you can improve your finances, you need to understand your spending patte
 ### **Backend - Performance First** ⚡
 
 ```
-🔧 Go 1.23+ (Blazing fast, concurrent)
-📊 MySQL (Reliable data persistence)
+🔧 Go 1.26+ (Blazing fast, concurrent)
+📊 PostgreSQL (Reliable data persistence)
 🔐 JWT Authentication (Secure user sessions)
 🤖 OpenAI Integration (Smart expense categorization)
 📡 WebSocket Support (Real-time updates)
@@ -131,7 +131,7 @@ This project welcomes contributions in both **technical improvements** and **fin
 ```bash
 # Required tools
 - Docker & Docker Compose
-- Go 1.23+
+- Go 1.26+
 - Node.js 18+
 - pnpm
 - Make

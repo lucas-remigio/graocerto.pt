@@ -70,7 +70,7 @@
 <div class="modal modal-open">
 	<div class="modal-box relative">
 		<!-- Close button -->
-		<button class="btn btn-sm btn-circle absolute right-2 top-2" on:click={handleCloseModal}
+		<button class="btn btn-circle btn-sm absolute right-2 top-2" on:click={handleCloseModal}
 			><X /></button
 		>
 		<h3 class="mb-4 text-lg font-bold">

@@ -70,7 +70,7 @@
 
 		try {
 			// Send the register request to the backend
-			const response = await axios.post('register', {
+			await axios.post('register', {
 				first_name,
 				last_name,
 				email,

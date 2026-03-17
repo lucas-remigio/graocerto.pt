@@ -44,7 +44,7 @@
 			<h3 class="text-lg font-bold">{title}</h3>
 			<!-- Close button -->
 			<button
-				class="btn btn-sm btn-circle absolute right-2 top-2 border-none bg-transparent hover:bg-white/20"
+				class="btn btn-circle btn-sm absolute right-2 top-2 border-none bg-transparent hover:bg-white/20"
 				on:click={handleCloseModal}
 			>
 				<X class="text-white" />

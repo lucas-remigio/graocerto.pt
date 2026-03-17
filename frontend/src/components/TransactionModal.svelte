@@ -3,6 +3,7 @@
 	import { dataService } from '$lib/services/dataService';
 	import type {
 		Account,
+		CategoryChangeResponse,
 		CategoryDto,
 		Transaction,
 		TransactionChangeResponse,
@@ -16,7 +17,7 @@
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { validateTransactionForm } from '$lib/transactionValidation';
 	import CategoryModal from './CategoryModal.svelte';
-	import { buildCategoryGroups, type CategoryGroup } from '$lib/utils/categoryUtils';
+	import { buildCategoryGroups } from '$lib/utils/categoryUtils';
 
 	// Inputs
 	export let account: Account;
@@ -213,9 +214,9 @@
 		category_id = value;
 	}
 
-	function handleCreatedCategory(e: CustomEvent<any>) {
+	function handleCreatedCategory(e: CustomEvent<CategoryChangeResponse>) {
 		const payload = e.detail;
-		const newCat = payload?.category ?? payload;
+		const newCat = payload.category;
 		if (!newCat?.id) {
 			showCreateCategoryModal = false;
 			return;

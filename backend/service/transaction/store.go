@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/types"
@@ -1081,8 +1081,18 @@ func (s *Store) addMissingParents(categoryMap map[int]*types.CategoryStatistic) 
 		return
 	}
 
-	query := `SELECT id, category_name, color, budget FROM categories WHERE id = ANY($1)`
-	rows, err := s.db.Query(query, pq.Array(missingIDs))
+	placeholders := make([]string, len(missingIDs))
+	args := make([]interface{}, len(missingIDs))
+	for i, id := range missingIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(
+		"SELECT id, category_name, color, budget FROM categories WHERE id IN (%s)",
+		strings.Join(placeholders, ","),
+	)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return
 	}

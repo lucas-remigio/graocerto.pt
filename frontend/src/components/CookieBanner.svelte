@@ -41,17 +41,17 @@
 <!-- Cookie Banner -->
 {#if showBanner && !showPreferences}
 	<div
-		class="bg-base-300/95 border-base-content/10 fixed bottom-0 left-0 right-0 z-50 border-t shadow-xl backdrop-blur-sm"
+		class="fixed bottom-0 left-0 right-0 z-50 border-t border-base-content/10 bg-base-300/95 shadow-xl backdrop-blur-sm"
 	>
 		<div class="container mx-auto max-w-6xl px-4 py-6">
 			<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 				<div class="flex flex-1 items-start gap-3">
-					<Cookie class="text-primary mt-1 h-6 w-6 flex-shrink-0" />
+					<Cookie class="mt-1 h-6 w-6 flex-shrink-0 text-primary" />
 					<div class="flex-1">
-						<h3 class="text-base-content mb-2 font-semibold">
+						<h3 class="mb-2 font-semibold text-base-content">
 							{$t('cookies.banner.title', { default: 'We value your privacy' })}
 						</h3>
-						<p class="text-base-content/80 text-sm leading-relaxed">
+						<p class="text-sm leading-relaxed text-base-content/80">
 							{$t('cookies.banner.description', {
 								default:
 									'We use cookies to enhance your experience, analyze site usage, and improve our services. Choose your preferences below or accept all to continue.'
@@ -71,7 +71,7 @@
 					<button class="btn btn-outline btn-sm" on:click={rejectAll}>
 						{$t('cookies.banner.reject', { default: 'Reject All' })}
 					</button>
-					<button class="btn btn-primary text-base-100 btn-sm" on:click={acceptAll}>
+					<button class="btn btn-primary btn-sm text-base-100" on:click={acceptAll}>
 						{$t('cookies.banner.accept', { default: 'Accept All' })}
 					</button>
 				</div>
@@ -85,15 +85,15 @@
 	<div
 		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
 	>
-		<div class="card bg-base-100 w-full max-w-md shadow-xl">
+		<div class="card w-full max-w-md bg-base-100 shadow-xl">
 			<div class="card-body">
 				<div class="mb-4 flex items-center justify-between">
 					<h3 class="card-title text-lg">
-						<Cookie class="text-primary h-5 w-5" />
+						<Cookie class="h-5 w-5 text-primary" />
 						{$t('cookies.preferences.title', { default: 'Cookie Preferences' })}
 					</h3>
 					<button
-						class="btn btn-ghost btn-sm btn-circle"
+						class="btn btn-circle btn-ghost btn-sm"
 						on:click={() => (showPreferences = false)}
 						aria-label="Close"
 					>
@@ -105,12 +105,12 @@
 					<!-- Necessary Cookies -->
 					<div class="form-control">
 						<label class="label cursor-pointer justify-start gap-3">
-							<input type="checkbox" checked={true} disabled class="checkbox checkbox-primary" />
+							<input type="checkbox" checked={true} disabled class="checkbox-primary checkbox" />
 							<div class="flex-1">
 								<span class="label-text font-medium">
 									{$t('cookies.preferences.necessary', { default: 'Necessary' })}
 								</span>
-								<p class="text-base-content/60 mt-1 text-xs">
+								<p class="mt-1 text-xs text-base-content/60">
 									{$t('cookies.preferences.necessary-desc', {
 										default: 'Required for the website to function properly. Cannot be disabled.'
 									})}
@@ -125,13 +125,13 @@
 							<input
 								type="checkbox"
 								bind:checked={tempPreferences.analytics}
-								class="checkbox checkbox-primary"
+								class="checkbox-primary checkbox"
 							/>
 							<div class="flex-1">
 								<span class="label-text font-medium">
 									{$t('cookies.preferences.analytics', { default: 'Analytics' })}
 								</span>
-								<p class="text-base-content/60 mt-1 text-xs">
+								<p class="mt-1 text-xs text-base-content/60">
 									{$t('cookies.preferences.analytics-desc', {
 										default: 'Help us understand how visitors interact with our website.'
 									})}
@@ -146,13 +146,13 @@
 							<input
 								type="checkbox"
 								bind:checked={tempPreferences.marketing}
-								class="checkbox checkbox-primary"
+								class="checkbox-primary checkbox"
 							/>
 							<div class="flex-1">
 								<span class="label-text font-medium">
 									{$t('cookies.preferences.marketing', { default: 'Marketing' })}
 								</span>
-								<p class="text-base-content/60 mt-1 text-xs">
+								<p class="mt-1 text-xs text-base-content/60">
 									{$t('cookies.preferences.marketing-desc', {
 										default: 'Used to track visitors across websites for marketing purposes.'
 									})}

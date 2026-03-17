@@ -76,8 +76,7 @@
 		}
 
 		const themeColors = themeService.getThemeColors();
-		const { legendColor, tooltipBg, tooltipTitleColor, tooltipBodyColor, tooltipBorderColor } =
-			themeColors;
+		const { tooltipBg, tooltipTitleColor, tooltipBodyColor, tooltipBorderColor } = themeColors;
 
 		chart = new Chart(canvas, {
 			type: 'pie',

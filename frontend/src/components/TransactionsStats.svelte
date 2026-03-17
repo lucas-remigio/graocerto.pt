@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TransactionDto, TransactionsTotals } from '$lib/types';
+	import type { TransactionDto } from '$lib/types';
 	import { t } from '$lib/i18n';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { formatCurrency } from '$lib/utils/currency';

@@ -6,7 +6,7 @@ Three independent services orchestrated via Docker Compose:
 
 | Service      | Stack                           | Port            |
 | ------------ | ------------------------------- | --------------- |
-| `app`        | Go 1.23 + PostgreSQL            | `$BACKEND_PORT` |
+| `app`        | Go 1.26 + PostgreSQL            | `$BACKEND_PORT` |
 | `frontend`   | SvelteKit + TailwindCSS/DaisyUI | 3000            |
 | `websockets` | Node.js + `ws`                  | `$SOCKETS_PORT` |
 

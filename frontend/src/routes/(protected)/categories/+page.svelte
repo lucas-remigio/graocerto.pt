@@ -45,9 +45,9 @@
 		try {
 			await dataService.deleteCategory(categoryId);
 			categories = categories.filter((c) => c.id !== categoryId);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error in deleteCategory:', err);
-			const error = err.message || 'Unknown error';
+			const error = err instanceof Error ? err.message : 'Unknown error';
 			showErrorMessage(error);
 		}
 	}
@@ -64,9 +64,9 @@
 		try {
 			const response = await dataService.editCategory(categoryId, categoryData);
 			updateCategory(response.category);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error in editCategory:', err);
-			const error = err.message || 'Unknown error';
+			const error = err instanceof Error ? err.message : 'Unknown error';
 			showErrorMessage(error);
 		}
 	}

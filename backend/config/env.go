@@ -30,7 +30,7 @@ func initConfig() Config {
 		JWTExpirationInSeconds: getEnvAsInt("JWT_EXPIRATION_IN_SECONDS", 3600*24*7),
 		JWTSecret:              getEnv("JWT_SECRET", "not-so-secret"),
 		OpenAIKey:              getEnv("OPENAI_API_KEY", "not-so-secret"),
-		DatabaseUrl:            getEnv("DATABASE_URL", "mysql"),
+		DatabaseUrl:            getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/wallet_tracker"),
 		RemoteDBUrl:            getEnv("REMOTE_DB_URL", ""),
 		FrontendUrl:            getEnv("FRONTEND_URL", "http://localhost:3000"),
 		IsProduction:           getEnvAsBool("IS_PRODUCTION", false),

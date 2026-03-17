@@ -1,7 +1,7 @@
 #!/bin/bash
 export PATH="/opt/homebrew/bin:$PATH"
 
-# Remote MySQL credentials
+# Remote PostgreSQL credentials
 REMOTE_HOST="graocerto.pt"  
 REMOTE_PORT=""                 
 REMOTE_USER=""
@@ -16,8 +16,8 @@ DUMP_FILE="${LOCAL_BACKUP_DIR}/${DATE}_${DB_NAME}.sql"
 # Create local backup directory if it doesn't exist
 mkdir -p "$LOCAL_BACKUP_DIR"
 
-# Dump the remote MySQL database to a local file
-mysqldump -h "$REMOTE_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASS" "$DB_NAME" > "$DUMP_FILE"
+# Dump the remote PostgreSQL database to a local file
+PGPASSWORD="$REMOTE_PASS" pg_dump -h "$REMOTE_HOST" -p "$REMOTE_PORT" -U "$REMOTE_USER" -d "$DB_NAME" > "$DUMP_FILE"
 
 # Check if the dump succeeded
 if [ $? -eq 0 ]; then
