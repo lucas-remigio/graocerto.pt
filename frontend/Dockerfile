@@ -36,6 +36,8 @@ RUN pnpm run prepare && pnpm build
 
 # Production stage with Nginx
 FROM nginx:alpine
+# Remove default nginx config to prevent port 80 conflicts
+RUN rm /etc/nginx/conf.d/default.conf
 # Copy the file to the templates directory for environment variable substitution
 COPY nginx.conf /etc/nginx/templates/production.conf.template
 COPY --from=build /app/build /usr/share/nginx/html
