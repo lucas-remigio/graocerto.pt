@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   build:
@@ -98,8 +99,8 @@ jobs:
             docker pull lucasremigio/websockets:${{ github.sha }} &
             wait
 
-            # Deploy with minimal downtime
-            docker compose -f docker-compose.prod.yaml up -d --force-recreate
+            # Deploy with minimal downtime and remove orphans
+            docker compose -f docker-compose.prod.yaml up -d --force-recreate --remove-orphans
             
             # Clean up old images (keep last 3 versions)
             docker image prune -a -f
