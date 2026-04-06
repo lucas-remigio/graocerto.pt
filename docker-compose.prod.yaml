@@ -1,9 +1,14 @@
 services:
   frontend:
     image: lucasremigio/frontend:${TAG}
-    ports:
-      - "80:80"
-      - "443:443"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wallet.rule=Host(`${FRONTEND_DOMAIN}`)"
+      - "traefik.http.routers.wallet.tls.certresolver=myresolver"
+      - "traefik.http.services.wallet.loadbalancer.server.port=80"
+    networks:
+      - proxy
+      - default
     environment:
       # these environments are used on the nginx conf file
       - NODE_ENV=production
@@ -12,8 +17,6 @@ services:
       - SOCKETS_URL=${SOCKETS_URL}
       - BACKEND_PORT=${BACKEND_PORT}
       - SOCKETS_PORT=${SOCKETS_PORT}
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro # Mount SSL certificates as read-only
 
   websockets:
     image: lucasremigio/websockets:${TAG}
@@ -39,3 +42,7 @@ services:
 
 volumes:
   mysql_data:
+
+networks:
+  proxy:
+    external: true
