@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -42,10 +43,13 @@ func GenerateToken(length int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func GenerateSecureRandomPassword(email string) string {
-	randomBytes := make([]byte, 32)
+func GenerateSecureRandomPassword() string {
+	// 50 bytes = 400 bits of cryptographic entropy.
+	// Base64 encoding packs this into exactly 67 characters,
+	// well under bcrypt's 72-byte limit, maximizing unguessability.
+	randomBytes := make([]byte, 50)
 	rand.Read(randomBytes)
-	return fmt.Sprintf("google-%s-%x", email, randomBytes)
+	return base64.RawURLEncoding.EncodeToString(randomBytes)
 }
 
 func ReadContentsFromFile(filePath string) (string, error) {

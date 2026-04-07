@@ -1,7 +1,8 @@
 package user
 
 import (
-	"context"
+	"encoding/json"
+
 	"fmt"
 	"net/http"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/auth"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
-	"google.golang.org/api/idtoken"
 )
 
 // testing v
@@ -95,19 +95,14 @@ func (h *Handler) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientID := config.Envs.GoogleClientID
-	tokenValidator, err := idtoken.Validate(context.Background(), payload.Token, clientID)
+
+	claims, err := h.verifyGoogleTokenInfo(payload.Token, clientID)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid google token: %v", err))
 		return
 	}
 
-	email, ok := tokenValidator.Claims["email"].(string)
-	if !ok {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("email not found in google token"))
-		return
-	}
-
-	user, err := h.getOrCreateGoogleUser(email, tokenValidator)
+	user, err := h.getOrCreateGoogleUser(claims)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -116,24 +111,56 @@ func (h *Handler) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	h.issueAuthToken(w, r, user)
 }
 
-func (h *Handler) getOrCreateGoogleUser(email string, tokenValidator *idtoken.Payload) (*types.User, error) {
+type googleClaims struct {
+	Aud           string `json:"aud"`
+	Email         string `json:"email"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	EmailVerified string `json:"email_verified"`
+	Error         string `json:"error"`
+}
+
+func (h *Handler) verifyGoogleTokenInfo(tokenString, expectedClientID string) (*googleClaims, error) {
+	resp, err := http.Get("https://oauth2.googleapis.com/tokeninfo?id_token=" + tokenString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to contact google tokeninfo: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("google rejected the token (status: %d)", resp.StatusCode)
+	}
+
+	var claims googleClaims
+	if err := json.NewDecoder(resp.Body).Decode(&claims); err != nil {
+		return nil, fmt.Errorf("failed to parse google response: %w", err)
+	}
+
+	// Validate Audience (Client ID)
+	if claims.Aud != expectedClientID {
+		return nil, fmt.Errorf("unauthorized audience: expected %s, got %s", expectedClientID, claims.Aud)
+	}
+
+	// Validate Email
+	if claims.EmailVerified != "true" && claims.EmailVerified != "1" {
+		return nil, fmt.Errorf("google email is not verified")
+	}
+
+	return &claims, nil
+}
+
+func (h *Handler) getOrCreateGoogleUser(claims *googleClaims) (*types.User, error) {
 	// 3. Find User in DB or Create if missing
-	user, err := h.store.GetUserByEmail(email)
+	user, err := h.store.GetUserByEmail(claims.Email)
 	if err == nil {
 		return user, nil
 	}
 
 	// User not found, create a new one
-	firstName := ""
-	if fn, ok := tokenValidator.Claims["given_name"].(string); ok {
-		firstName = fn
-	}
-	lastName := ""
-	if ln, ok := tokenValidator.Claims["family_name"].(string); ok {
-		lastName = ln
-	}
+	firstName := claims.GivenName
+	lastName := claims.FamilyName
 
-	randPass := utils.GenerateSecureRandomPassword(email)
+	randPass := utils.GenerateSecureRandomPassword()
 
 	hashedPassword, err := auth.HashPassword(randPass)
 	if err != nil {
@@ -143,7 +170,7 @@ func (h *Handler) getOrCreateGoogleUser(email string, tokenValidator *idtoken.Pa
 	err = h.store.CreateUser(&types.User{
 		FirstName: firstName,
 		LastName:  lastName,
-		Email:     email,
+		Email:     claims.Email,
 		Password:  hashedPassword,
 	})
 	if err != nil {
@@ -151,7 +178,7 @@ func (h *Handler) getOrCreateGoogleUser(email string, tokenValidator *idtoken.Pa
 	}
 
 	// Fetch the created user to ensure ID is populated properly
-	return h.store.GetUserByEmail(email)
+	return h.store.GetUserByEmail(claims.Email)
 }
 
 func (h *Handler) issueAuthToken(w http.ResponseWriter, r *http.Request, user *types.User) {
