@@ -23,49 +23,25 @@
 	}
 
 	const initGoogle = () => {
-		console.log('[Google Auth] initGoogle called', {
-			hasGoogleClientId: !!googleClientId,
-			windowGooglePresent: !!window.google
-		});
-
 		if (!googleClientId) {
-			console.error(
-				'[Google Auth] VITE_PUBLIC_GOOGLE_CLIENT_ID is blank/undefined in this environment.',
-				import.meta.env
-			);
+			console.error('VITE_PUBLIC_GOOGLE_CLIENT_ID is blank/undefined in this environment.');
 			return;
 		}
 
-		if (!window.google) {
-			console.error('[Google Auth] window.google is not defined yet');
-			return;
-		}
+		if (!window.google) return;
 
-		console.log('[Google Auth] Initializing Google Identity Services');
 		window.google.accounts.id.initialize({
 			client_id: googleClientId,
 			callback: handleGoogleLogin
 		});
 
-		const btnContainer = document.getElementById('googleSignInDiv');
-		console.log('[Google Auth] Rendering button in container:', btnContainer);
-
-		if (btnContainer) {
-			window.google.accounts.id.renderButton(btnContainer, {
-				theme: 'outline',
-				size: 'large'
-			});
-		} else {
-			console.error('[Google Auth] Element #googleSignInDiv not found in DOM');
-		}
+		window.google.accounts.id.renderButton(document.getElementById('googleSignInDiv'), {
+			theme: 'outline',
+			size: 'large'
+		});
 	};
 
 	onMount(() => {
-		console.log('[Google Auth] onMount fired', {
-			hasGoogleClientId: !!googleClientId,
-			windowGooglePresent: !!window.google
-		});
-
 		// Just in case the script loaded incredibly fast from browser cache
 		if (window.google) {
 			initGoogle();
@@ -150,15 +126,7 @@
 
 <svelte:head>
 	{#if googleClientId}
-		<script
-			src="https://accounts.google.com/gsi/client"
-			async
-			defer
-			on:load={() => {
-				console.log('[Google Auth] GSI Script on:load event fired');
-				initGoogle();
-			}}
-		></script>
+		<script src="https://accounts.google.com/gsi/client" async defer on:load={initGoogle}></script>
 	{/if}
 </svelte:head>
 
