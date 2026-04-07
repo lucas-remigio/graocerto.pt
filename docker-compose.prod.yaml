@@ -1,6 +1,7 @@
 services:
   frontend:
     image: lucasremigio/frontend:${TAG}
+    container_name: graocerto-frontend
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.wallet.rule=Host(`${FRONTEND_DOMAIN}`)"
@@ -23,6 +24,9 @@ services:
 
   websockets:
     image: lucasremigio/websockets:${TAG}
+    container_name: graocerto-websockets
+    profiles:
+      - websockets
     ports:
       - "${SOCKETS_PORT}:${SOCKETS_PORT}"
     environment:
@@ -31,6 +35,7 @@ services:
 
   app:
     image: lucasremigio/app:${TAG}
+    container_name: graocerto-server
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     environment:

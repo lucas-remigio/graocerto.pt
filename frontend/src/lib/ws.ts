@@ -6,6 +6,7 @@ import { browser } from '$app/environment';
 const SOCKETS_URL = import.meta.env.VITE_SOCKETS_URL || 'localhost';
 const SOCKETS_PORT = import.meta.env.VITE_SOCKETS_PORT || '3002';
 const isProd = import.meta.env.VITE_IS_PRODUCTION === 'true';
+const ENABLE_WEBSOCKETS = import.meta.env.VITE_ENABLE_WEBSOCKETS === 'true';
 
 const protocol = isProd ? 'wss:' : 'ws:';
 const WS_URL = isProd
@@ -25,7 +26,7 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Connect to websocket
 export function connect() {
-	if (!browser) return;
+	if (!browser || !ENABLE_WEBSOCKETS) return;
 
 	// Prevent multiple simultaneous connection attempts
 	if (isConnecting || get(socket) !== null) return;
@@ -71,6 +72,7 @@ export function connect() {
 
 // Send a message
 export function sendMessage(message: any) {
+	if (!ENABLE_WEBSOCKETS) return false;
 	const ws = get(socket);
 	if (ws && ws.readyState === WebSocket.OPEN) {
 		ws.send(JSON.stringify(message));

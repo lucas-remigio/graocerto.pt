@@ -41,6 +41,8 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
   websockets:
+    profiles:
+      - websockets
     build:
       context: ./sockets
       dockerfile: Dockerfile

@@ -51,6 +51,7 @@ jobs:
             ${{ matrix.service == 'frontend' && format('BACKEND_PORT={0}', vars.BACKEND_PORT) || '' }}
             ${{ matrix.service == 'frontend' && format('SOCKETS_PORT={0}', vars.SOCKETS_PORT) || '' }}
             ${{ matrix.service == 'frontend' && format('PUBLIC_GOOGLE_CLIENT_ID={0}', secrets.GOOGLE_CLIENT_ID) || '' }}
+            ${{ matrix.service == 'frontend' && format('ENABLE_WEBSOCKETS={0}', vars.ENABLE_WEBSOCKETS || 'false') || '' }}
             ${{ matrix.service == 'frontend' && 'IS_PRODUCTION=true' || '' }}
 
   deploy:
@@ -95,10 +96,20 @@ jobs:
             export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
             export GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
 
+            # Setup COMPOSE_PROFILES based on ENABLE_WEBSOCKETS
+            ENABLE_WEBSOCKETS="${{ vars.ENABLE_WEBSOCKETS }}"
+            if [ "$ENABLE_WEBSOCKETS" = "true" ]; then
+              export COMPOSE_PROFILES="websockets"
+            else
+              export COMPOSE_PROFILES=""
+            fi
+
             # Pull images in parallel
             docker pull lucasremigio/frontend:${{ github.sha }} &
             docker pull lucasremigio/app:${{ github.sha }} &
-            docker pull lucasremigio/websockets:${{ github.sha }} &
+            if [ "$ENABLE_WEBSOCKETS" = "true" ]; then
+              docker pull lucasremigio/websockets:${{ github.sha }} &
+            fi
             wait
 
             # Deploy with minimal downtime and remove orphans

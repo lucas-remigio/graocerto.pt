@@ -144,11 +144,14 @@ This project welcomes contributions in both **technical improvements** and **fin
 git clone https://github.com/lucas-remigio/wallet-tracker.git
 cd wallet-tracker
 
-# Start all services
+# Start all services (without optional WebSockets)
 docker compose up --build
+
+# Start all services (including WebSockets)
+docker compose --profile websockets up --build
 
 # Access the application
 # Frontend: http://localhost:3000
 # Backend API: http://localhost:3001
-# WebSockets: http://localhost:3002
+# WebSockets (if using profile): http://localhost:3002
 ```
