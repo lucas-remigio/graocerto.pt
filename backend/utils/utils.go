@@ -42,6 +42,12 @@ func GenerateToken(length int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
+func GenerateSecureRandomPassword(email string) string {
+	randomBytes := make([]byte, 32)
+	rand.Read(randomBytes)
+	return fmt.Sprintf("google-%s-%x", email, randomBytes)
+}
+
 func ReadContentsFromFile(filePath string) (string, error) {
 	// Read the file
 	data, err := os.ReadFile(filePath)

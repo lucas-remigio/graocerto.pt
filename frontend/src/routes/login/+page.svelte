@@ -6,15 +6,69 @@
 	import type { AxiosError } from 'axios';
 	import { validateEmail, isPasswordLengthValid } from '$lib/authValidation';
 	import { XIcon } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+
+	// Vite will replace this at build time, failing gracefully if undefined
+	const googleClientId = import.meta.env.VITE_PUBLIC_GOOGLE_CLIENT_ID || '';
 
 	let email = '';
 	let password = '';
 	let errorMessage = '';
+	let isLoading = false;
+	let isGoogleLoading = false;
 
 	interface APIErrorResponse {
 		token?: string; // The main error message
 		error?: string; // Optional error code or additional details
 	}
+
+	const initGoogle = () => {
+		if (!googleClientId) {
+			console.error('VITE_PUBLIC_GOOGLE_CLIENT_ID is blank/undefined in this environment.');
+			return;
+		}
+
+		if (!window.google) return;
+
+		window.google.accounts.id.initialize({
+			client_id: googleClientId,
+			callback: handleGoogleLogin
+		});
+
+		window.google.accounts.id.renderButton(document.getElementById('googleSignInDiv'), {
+			theme: 'outline',
+			size: 'large'
+		});
+	};
+
+	onMount(() => {
+		// Just in case the script loaded incredibly fast from browser cache
+		if (window.google) {
+			initGoogle();
+		}
+	});
+
+	const handleGoogleLogin = async (response: any) => {
+		try {
+			errorMessage = '';
+			isGoogleLoading = true;
+			const res = await axios.post('auth/google', { token: response.credential });
+			const { token: authToken, email, created_at } = res.data;
+
+			if (authToken) {
+				login(authToken, email, created_at ?? null);
+				goto('/home');
+			}
+		} catch (error) {
+			const axiosError = error as AxiosError;
+			const apiResponse = axiosError.response?.data as APIErrorResponse;
+			errorMessage = apiResponse?.error || $t('auth.error-occurred');
+			localStorage.removeItem('token');
+			token.set(null);
+		} finally {
+			isGoogleLoading = false;
+		}
+	};
 
 	const validateForm = (): boolean => {
 		if (!email || !validateEmail(email)) {
@@ -39,8 +93,8 @@
 			return;
 		}
 
-		// Send the login request to the backend
 		try {
+			isLoading = true;
 			const response = await axios.post('login', { email, password });
 			const data = response.data;
 			const authToken = data.token;
@@ -64,9 +118,17 @@
 			// Clear any existing tokens on error
 			localStorage.removeItem('token');
 			token.set(null);
+		} finally {
+			isLoading = false;
 		}
 	};
 </script>
+
+<svelte:head>
+	{#if googleClientId}
+		<script src="https://accounts.google.com/gsi/client" async defer on:load={initGoogle}></script>
+	{/if}
+</svelte:head>
 
 <main class="flex min-h-screen items-center justify-center overflow-auto bg-base-200 p-4">
 	<div class="w-full max-w-md rounded-xl bg-base-100 p-8 shadow-lg">
@@ -116,7 +178,14 @@
 			{/if}
 
 			<div class="form-control mt-8">
-				<button type="submit" class="btn btn-primary w-full text-lg font-semibold">
+				<button
+					type="submit"
+					class="btn btn-primary w-full text-lg font-semibold"
+					disabled={isLoading || isGoogleLoading}
+				>
+					{#if isLoading}
+						<span class="loading loading-spinner"></span>
+					{/if}
 					<span class="text-base-100">{$t('auth.login')}</span>
 				</button>
 			</div>
@@ -128,10 +197,28 @@
 			<p class="text-sm text-base-content/70">
 				{$t('auth.no-account')}
 			</p>
-			<a href="/register" class="btn btn-outline btn-primary mt-2 w-full">
+			<a
+				href="/register"
+				class="btn btn-outline btn-primary mt-2 w-full"
+				class:btn-disabled={isLoading || isGoogleLoading}
+				aria-disabled={isLoading || isGoogleLoading}
+			>
 				{$t('auth.create-account')}
 			</a>
 		</div>
+
+		{#if googleClientId}
+			<div class="mt-4 w-full">
+				<div id="googleSignInDiv" class="flex justify-center" class:hidden={isGoogleLoading}></div>
+
+				{#if isGoogleLoading}
+					<button class="btn btn-disabled btn-outline w-full !text-base-content" disabled>
+						<span class="loading loading-spinner"></span>
+						{$t('common.loading')}...
+					</button>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </main>
 

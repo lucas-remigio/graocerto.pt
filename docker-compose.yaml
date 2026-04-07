@@ -9,12 +9,14 @@ services:
         BACKEND_PORT: ${BACKEND_PORT}
         SOCKETS_PORT: ${SOCKETS_PORT}
         IS_PRODUCTION: false
+        PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     ports:
       - "3000:3000"
     depends_on:
       - app
     environment:
       - NODE_ENV=development
+      - PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
   app:
     build:
@@ -36,6 +38,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_IN_SECONDS=${JWT_EXPIRATION_IN_SECONDS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
   websockets:
     build:

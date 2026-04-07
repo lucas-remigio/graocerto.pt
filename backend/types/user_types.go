@@ -19,6 +19,10 @@ type RegisterUserPayload struct {
 	Password  string `json:"password" validate:"required,min=8,max=64"`
 }
 
+type GoogleLoginPayload struct {
+	Token string `json:"token" validate:"required"`
+}
+
 type LoginUserPayload struct {
 	Email    string `json:"email" validate:"required,email,max=255"`
 	Password string `json:"password" validate:"required,min=8,max=64"`

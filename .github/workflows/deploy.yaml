@@ -50,6 +50,7 @@ jobs:
             ${{ matrix.service == 'frontend' && format('SOCKETS_URL={0}', vars.SOCKETS_URL) || '' }}
             ${{ matrix.service == 'frontend' && format('BACKEND_PORT={0}', vars.BACKEND_PORT) || '' }}
             ${{ matrix.service == 'frontend' && format('SOCKETS_PORT={0}', vars.SOCKETS_PORT) || '' }}
+            ${{ matrix.service == 'frontend' && format('PUBLIC_GOOGLE_CLIENT_ID={0}', vars.GOOGLE_CLIENT_ID) || '' }}
             ${{ matrix.service == 'frontend' && 'IS_PRODUCTION=true' || '' }}
 
   deploy:
@@ -92,6 +93,7 @@ jobs:
             export BACKEND_PORT=${{ vars.BACKEND_PORT }}
             export SOCKETS_URL=${{ vars.SOCKETS_URL }}
             export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
+            export GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
 
             # Pull images in parallel
             docker pull lucasremigio/frontend:${{ github.sha }} &

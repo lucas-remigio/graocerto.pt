@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/auth"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
+	"google.golang.org/api/idtoken"
 )
 
 // testing v
@@ -40,6 +42,7 @@ func NewHandler(store types.UserStore, accountStore types.AccountStore, category
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/login", h.handleLogin)
+	router.HandleFunc("/auth/google", h.handleGoogleLogin)
 	router.HandleFunc("/register", h.handleRegister)
 	router.HandleFunc("/verify-token", middleware.AuthMiddleware(h.verifyToken))
 	router.HandleFunc("/auth/delete-account", middleware.AuthMiddleware(h.handleDeleteAccount))
@@ -77,6 +80,81 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.issueAuthToken(w, r, user)
+}
+
+func (h *Handler) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var payload types.GoogleLoginPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	clientID := config.Envs.GoogleClientID
+	tokenValidator, err := idtoken.Validate(context.Background(), payload.Token, clientID)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid google token: %v", err))
+		return
+	}
+
+	email, ok := tokenValidator.Claims["email"].(string)
+	if !ok {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("email not found in google token"))
+		return
+	}
+
+	user, err := h.getOrCreateGoogleUser(email, tokenValidator)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	h.issueAuthToken(w, r, user)
+}
+
+func (h *Handler) getOrCreateGoogleUser(email string, tokenValidator *idtoken.Payload) (*types.User, error) {
+	// 3. Find User in DB or Create if missing
+	user, err := h.store.GetUserByEmail(email)
+	if err == nil {
+		return user, nil
+	}
+
+	// User not found, create a new one
+	firstName := ""
+	if fn, ok := tokenValidator.Claims["given_name"].(string); ok {
+		firstName = fn
+	}
+	lastName := ""
+	if ln, ok := tokenValidator.Claims["family_name"].(string); ok {
+		lastName = ln
+	}
+
+	randPass := utils.GenerateSecureRandomPassword(email)
+
+	hashedPassword, err := auth.HashPassword(randPass)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.store.CreateUser(&types.User{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		Password:  hashedPassword,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the created user to ensure ID is populated properly
+	return h.store.GetUserByEmail(email)
+}
+
+func (h *Handler) issueAuthToken(w http.ResponseWriter, r *http.Request, user *types.User) {
 	secret := []byte(config.Envs.JWTSecret)
 	token, err := auth.CreateJWT(secret, user.ID)
 	if err != nil {

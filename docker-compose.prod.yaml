@@ -19,6 +19,7 @@ services:
       - SOCKETS_URL=${SOCKETS_URL}
       - BACKEND_PORT=${BACKEND_PORT}
       - SOCKETS_PORT=${SOCKETS_PORT}
+      - PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
   websockets:
     image: lucasremigio/websockets:${TAG}
@@ -41,6 +42,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_IN_SECONDS=${JWT_EXPIRATION_IN_SECONDS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
 volumes:
   mysql_data:
