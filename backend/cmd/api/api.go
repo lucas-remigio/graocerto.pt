@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -19,8 +21,9 @@ import (
 )
 
 type APIServer struct {
-	addr string
-	db   *sql.DB
+	addr   string
+	db     *sql.DB
+	dbPing func(context.Context) error
 }
 
 func NewAPIServer(addr string, db *sql.DB) *APIServer {
@@ -34,6 +37,8 @@ func (s *APIServer) Run() error {
 	router := http.NewServeMux()
 
 	apiV1Router := http.NewServeMux()
+	apiV1Router.HandleFunc("/healthz", s.handleHealthz)
+	apiV1Router.HandleFunc("/readyz", s.handleReadyz)
 
 	// Initialize all stores first
 	userStore := user.NewStore(s.db)
@@ -79,6 +84,39 @@ func (s *APIServer) Run() error {
 	log.Println("Server is running on", s.addr)
 	log.Printf("Starting HTTP server on %s", s.addr)
 	return http.ListenAndServe(s.addr, corsMiddleware(router))
+}
+
+func (s *APIServer) handleHealthz(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"ok"}`))
+}
+
+func (s *APIServer) handleReadyz(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := s.pingDatabase(r.Context()); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(`{"status":"degraded","db":"unreachable"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"ok","db":"reachable"}`))
+}
+
+func (s *APIServer) pingDatabase(ctx context.Context) error {
+	if s.dbPing != nil {
+		return s.dbPing(ctx)
+	}
+
+	if s.db == nil {
+		return errors.New("database connection is not configured")
+	}
+
+	checkCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	return s.db.PingContext(checkCtx)
 }
 
 // Define a helper function to chain middlewares
