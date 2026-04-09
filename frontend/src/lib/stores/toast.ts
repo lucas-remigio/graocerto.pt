@@ -1,0 +1,40 @@
+import { writable } from 'svelte/store';
+
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+export interface ToastMessage {
+	id: string;
+	type: ToastType;
+	message: string;
+	duration: number;
+}
+
+function createToastStore() {
+	const { subscribe, update } = writable<ToastMessage[]>([]);
+
+	function addToast(message: string, type: ToastType = 'info', duration: number = 3000) {
+		const id = Math.random().toString(36).substring(2, 9);
+		update((toasts) => [...toasts, { id, type, message, duration }]);
+
+		if (duration > 0) {
+			setTimeout(() => {
+				removeToast(id);
+			}, duration);
+		}
+	}
+
+	function removeToast(id: string) {
+		update((toasts) => toasts.filter((t) => t.id !== id));
+	}
+
+	return {
+		subscribe,
+		success: (msg: string, duration?: number) => addToast(msg, 'success', duration),
+		error: (msg: string, duration?: number) => addToast(msg, 'error', duration),
+		info: (msg: string, duration?: number) => addToast(msg, 'info', duration),
+		warning: (msg: string, duration?: number) => addToast(msg, 'warning', duration),
+		remove: removeToast
+	};
+}
+
+export const toastStore = createToastStore();

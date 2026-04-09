@@ -4,6 +4,7 @@
 	import { Settings, ArrowLeft, Bell } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { dataService } from '$lib/services/dataService';
+	import { toastStore } from '$lib/stores/toast';
 	import type {
 		NotificationItem,
 		NotificationPreferences,
@@ -140,7 +141,7 @@
 			notifications = notifications.map((notification) =>
 				notification.id === notificationId ? { ...notification, is_read: true } : notification
 			);
-			refreshUnreadNotificationCount();
+			refreshUnreadNotificationCount(true);
 		} catch (err) {
 			console.error(err);
 			error = $t('errors.server-error');
@@ -167,6 +168,7 @@
 	async function handleSavePreferences() {
 		if (!preferences) return;
 		savingPreferences = true;
+		error = '';
 		try {
 			const minTotalDebit =
 				minDebitInput.trim() === '' ? null : Math.max(0, Number.parseFloat(minDebitInput));
@@ -177,6 +179,9 @@
 			};
 			preferences = await dataService.updateNotificationPreferences(payload);
 			notifyDaysAheadInput = String(preferences.notify_days_ahead || 1);
+
+			// Show global success toast
+			toastStore.success($t('notifications.preferences-saved'));
 		} catch (err) {
 			console.error(err);
 			error = $t('errors.server-error');
@@ -327,7 +332,7 @@
 
 				<div class="flex items-center justify-end pt-4">
 					<button
-						class="btn btn-primary w-full min-w-[140px] font-medium shadow-lg sm:w-auto"
+						class="btn btn-primary w-full min-w-[140px] font-medium text-base-100 shadow-lg sm:w-auto"
 						disabled={savingPreferences}
 						onclick={handleSavePreferences}
 					>

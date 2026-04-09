@@ -226,6 +226,7 @@
 		"recurring-due-in-days-both": "Daqui a {days} dias tens {debitCount} débitos pendentes num total de {debitTotal} e {creditCount} créditos num total de {creditTotal}.",
 		"target-date": "Data prevista: {date}",
 		"mark-as-read": "Marcar como lida",
+		"preferences-saved": "Preferências atualizadas com sucesso",
 		"preferences-title": "Preferências de notificação",
 		"notify-days-ahead": "Notificar com dias de antecedência",
 		"notify-days-ahead-desc": "Quantos dias antes da data estipulada queres ser notificado? Padrão é 1 dia.",

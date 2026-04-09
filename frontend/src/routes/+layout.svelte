@@ -12,6 +12,7 @@
 	import Sidebar from '$lib/Sidebar.svelte';
 	import { cookieConsent } from '$lib/stores/cookieConsent';
 	import CookieBanner from '$components/CookieBanner.svelte';
+	import ToastProvider from '$components/ToastProvider.svelte';
 	import { sidebarCollapsed } from '$lib/stores/uiPreferences';
 	import { refreshUnreadNotificationCount } from '$lib/stores/notifications';
 
@@ -147,4 +148,5 @@
 	</div>
 
 	<CookieBanner />
+	<ToastProvider />
 {/if}

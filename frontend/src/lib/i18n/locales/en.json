@@ -223,6 +223,7 @@
 		"recurring-due-in-days-both": "In {days} days you have {debitCount} pending debits totaling {debitTotal} and {creditCount} pending credits totaling {creditTotal}.",
 		"target-date": "Target date: {date}",
 		"mark-as-read": "Mark as read",
+		"preferences-saved": "Preferences updated successfully",
 		"preferences-title": "Notification preferences",
 		"notify-days-ahead": "Notify days ahead",
 		"notify-days-ahead-desc": "How many days before the scheduled date should the assistant notify you? Default is 1 day.",
