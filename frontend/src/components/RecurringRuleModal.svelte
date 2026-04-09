@@ -46,6 +46,9 @@
 		if (!filteredCategories.find((c) => c.id === form.category_id) && filteredCategories.length > 0) {
 			form.category_id = filteredCategories[0].id;
 		}
+		if (form.frequency === 'weekly' && form.execution_weekday === undefined) {
+			form.execution_weekday = new Date().getUTCDay();
+		}
 	});
 
 	let form: CreateRecurringRulePayload = $state({
@@ -81,6 +84,15 @@
 			error = $t('recurring.execution-day-help');
 			return false;
 		}
+		if (
+			form.frequency === 'weekly' &&
+			(form.execution_weekday === undefined ||
+				form.execution_weekday < 0 ||
+				form.execution_weekday > 6)
+		) {
+			error = $t('recurring.execution-weekday-help');
+			return false;
+		}
 		return true;
 	}
 
@@ -104,6 +116,9 @@
 
 				if (form.frequency === 'monthly' && form.execution_day) {
 					payload.execution_day = form.execution_day;
+				}
+				if (form.frequency === 'weekly' && form.execution_weekday !== undefined) {
+					payload.execution_weekday = form.execution_weekday;
 				}
 
 				const updatedRule = await dataService.updateRecurringRule(recurringRule.id, payload);
@@ -131,6 +146,10 @@
 					recurringRule.frequency === 'monthly'
 						? new Date(recurringRule.next_run_date).getUTCDate()
 						: undefined;
+				const weeklyExecutionWeekday =
+					recurringRule.frequency === 'weekly'
+						? new Date(recurringRule.next_run_date).getUTCDay()
+						: undefined;
 				transaction_type_id = recurringRule.transaction_type_id;
 				form = {
 					account_token: recurringRule.account_token,
@@ -141,6 +160,7 @@
 					frequency: recurringRule.frequency,
 					interval_value: recurringRule.interval_value,
 					execution_day: monthlyExecutionDay,
+					execution_weekday: weeklyExecutionWeekday,
 					active: recurringRule.active
 				};
 			}
@@ -319,6 +339,30 @@
 								</span>
 							</div>
 						{/if}
+					</div>
+				{/if}
+
+				{#if form.frequency === 'weekly'}
+					<div class="form-control mt-4">
+						<label class="label" for="execution-weekday">
+							<span class="label-text">{$t('recurring.execution-weekday')}</span>
+						</label>
+						<select
+							id="execution-weekday"
+							class="select select-bordered w-full"
+							bind:value={form.execution_weekday}
+						>
+							<option value={0}>{$t('recurring.weekday-sunday')}</option>
+							<option value={1}>{$t('recurring.weekday-monday')}</option>
+							<option value={2}>{$t('recurring.weekday-tuesday')}</option>
+							<option value={3}>{$t('recurring.weekday-wednesday')}</option>
+							<option value={4}>{$t('recurring.weekday-thursday')}</option>
+							<option value={5}>{$t('recurring.weekday-friday')}</option>
+							<option value={6}>{$t('recurring.weekday-saturday')}</option>
+						</select>
+						<div class="label">
+							<span class="label-text-alt">{$t('recurring.execution-weekday-help')}</span>
+						</div>
 					</div>
 				{/if}
 

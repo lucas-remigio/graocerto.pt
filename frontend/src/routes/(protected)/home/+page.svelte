@@ -269,6 +269,9 @@
 
 	function updateAccountAndMonths(response: TransactionChangeResponse) {
 		selectedAccount!.balance = response.account_balance;
+		if (response.account_pending_balance !== undefined) {
+			selectedAccount!.pending_balance = response.account_pending_balance;
+		}
 		availableMonths = response.months;
 	}
 
@@ -358,6 +361,9 @@
 		if (pairedAccount && response.paired_account_balance !== undefined) {
 			pairedAccount.balance = response.paired_account_balance;
 		}
+		if (pairedAccount && response.paired_account_pending_balance !== undefined) {
+			pairedAccount.pending_balance = response.paired_account_pending_balance;
+		}
 
 		// If we're currently viewing the paired account, update its view
 		if (isViewingPairedAccount(response.paired_account_token)) {
@@ -376,6 +382,9 @@
 		// Update balance
 		if (response.paired_account_balance !== undefined) {
 			selectedAccount!.balance = response.paired_account_balance;
+		}
+		if (response.paired_account_pending_balance !== undefined) {
+			selectedAccount!.pending_balance = response.paired_account_pending_balance;
 		}
 
 		// Update available months

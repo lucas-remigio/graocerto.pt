@@ -4,6 +4,7 @@ export interface Account {
 	user_id: number;
 	account_name: string;
 	balance: number;
+	pending_balance: number;
 	created_at: string;
 	order_index: number;
 	is_favorite: boolean;
@@ -52,10 +53,12 @@ export interface TransactionsResponse {
 export interface TransactionChangeResponse {
 	transaction: TransactionDto;
 	account_balance: number;
+	account_pending_balance?: number;
 	months: MonthYear[];
 	is_transfer: boolean;
 	paired_account_token?: string;
 	paired_account_balance?: number;
+	paired_account_pending_balance?: number;
 	paired_account_months?: MonthYear[];
 }
 
@@ -247,6 +250,7 @@ export interface CreateRecurringRulePayload {
 	frequency: RecurringFrequency;
 	interval_value: number;
 	execution_day?: number;
+	execution_weekday?: number;
 	active?: boolean;
 }
 
@@ -265,6 +269,7 @@ export interface CreateRecurringTransferPayload {
 	frequency: RecurringFrequency;
 	interval_value: number;
 	execution_day?: number;
+	execution_weekday?: number;
 	active?: boolean;
 }
 

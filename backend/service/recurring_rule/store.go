@@ -123,7 +123,7 @@ func (s *Store) CreateRecurringTransfer(payload *types.CreateRecurringTransferPa
 		active = *payload.Active
 	}
 
-	nextRunDate := calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay)
+	nextRunDate := calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay, payload.ExecutionWeekday)
 	groupID, err := newRecurringTransferGroupID()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate recurring transfer group id: %w", err)
@@ -186,7 +186,7 @@ func (s *Store) UpdateRecurringTransfer(groupID string, payload *types.UpdateRec
 
 	nextRunDate := payload.NextRunDate
 	if nextRunDate == "" {
-		nextRunDate = calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay)
+		nextRunDate = calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay, payload.ExecutionWeekday)
 	}
 
 	tx, err := s.db.Begin()
@@ -460,7 +460,7 @@ func calculateNextRunDate(currentDate string, frequency types.RecurringFrequency
 	return next.Format("2006-01-02"), nil
 }
 
-func calculateInitialNextRunDate(frequency types.RecurringFrequency, executionDay *int) string {
+func calculateInitialNextRunDate(frequency types.RecurringFrequency, executionDay *int, executionWeekday *int) string {
 	now := time.Now().UTC()
 
 	if frequency == types.RecurringMonthly && executionDay != nil {
@@ -479,6 +479,25 @@ func calculateInitialNextRunDate(frequency types.RecurringFrequency, executionDa
 			y2, m2, _ := nextMonth.Date()
 			candidate = dateWithMonthEndFallback(y2, m2, day)
 		}
+		return candidate.Format("2006-01-02")
+	}
+
+	if frequency == types.RecurringWeekly && executionWeekday != nil {
+		weekday := *executionWeekday
+		if weekday < 0 {
+			weekday = 0
+		}
+		if weekday > 6 {
+			weekday = 6
+		}
+
+		todayStart := now.Truncate(24 * time.Hour)
+		currentWeekday := int(todayStart.Weekday())
+		offsetDays := weekday - currentWeekday
+		if offsetDays < 0 {
+			offsetDays += 7
+		}
+		candidate := todayStart.AddDate(0, 0, offsetDays)
 		return candidate.Format("2006-01-02")
 	}
 

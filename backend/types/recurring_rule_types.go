@@ -46,6 +46,7 @@ type CreateRecurringRulePayload struct {
 	Frequency         RecurringFrequency `json:"frequency" validate:"required,oneof=daily weekly monthly every_x_days"`
 	IntervalValue     int                `json:"interval_value" validate:"required,min=1,max=365"`
 	ExecutionDay      *int               `json:"execution_day" validate:"omitempty,min=1,max=31"`
+	ExecutionWeekday  *int               `json:"execution_weekday" validate:"omitempty,min=0,max=6"`
 	Active            *bool              `json:"active"`
 }
 
@@ -58,6 +59,7 @@ type UpdateRecurringRulePayload struct {
 	Frequency         RecurringFrequency `json:"frequency" validate:"required,oneof=daily weekly monthly every_x_days"`
 	IntervalValue     int                `json:"interval_value" validate:"required,min=1,max=365"`
 	ExecutionDay      *int               `json:"execution_day" validate:"omitempty,min=1,max=31"`
+	ExecutionWeekday  *int               `json:"execution_weekday" validate:"omitempty,min=0,max=6"`
 	NextRunDate       string             `json:"next_run_date" validate:"omitempty"`
 	Active            bool               `json:"active"`
 }
@@ -76,6 +78,7 @@ type CreateRecurringTransferPayload struct {
 	Frequency               RecurringFrequency `json:"frequency" validate:"required,oneof=daily weekly monthly every_x_days"`
 	IntervalValue           int                `json:"interval_value" validate:"required,min=1,max=365"`
 	ExecutionDay            *int               `json:"execution_day" validate:"omitempty,min=1,max=31"`
+	ExecutionWeekday        *int               `json:"execution_weekday" validate:"omitempty,min=0,max=6"`
 	Active                  *bool              `json:"active"`
 }
 
@@ -89,6 +92,7 @@ type UpdateRecurringTransferPayload struct {
 	Frequency               RecurringFrequency `json:"frequency" validate:"required,oneof=daily weekly monthly every_x_days"`
 	IntervalValue           int                `json:"interval_value" validate:"required,min=1,max=365"`
 	ExecutionDay            *int               `json:"execution_day" validate:"omitempty,min=1,max=31"`
+	ExecutionWeekday        *int               `json:"execution_weekday" validate:"omitempty,min=0,max=6"`
 	NextRunDate             string             `json:"next_run_date" validate:"omitempty"`
 	Active                  bool               `json:"active"`
 }

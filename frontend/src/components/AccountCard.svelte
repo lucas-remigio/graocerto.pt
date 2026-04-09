@@ -37,6 +37,8 @@
 	}
 
 	$: isSelected = selectedAccount?.token === account.token;
+	$: hasPendingDifference = Math.abs(account.pending_balance - account.balance) > 0.000001;
+	$: pendingDelta = account.pending_balance - account.balance;
 </script>
 
 <div class="group relative">
@@ -80,7 +82,14 @@
 			{#if $hideBalances}
 				<p class="select-none text-3xl font-bold tracking-widest text-base-content/60">••••••</p>
 			{:else}
-				<p class="text-3xl font-bold text-base-content">{formatCurrency(account.balance)}</p>
+				<div class="flex items-baseline gap-2">
+					<p class="text-3xl font-bold text-base-content">{formatCurrency(account.balance)}</p>
+					{#if hasPendingDifference}
+						<span class="text-sm {pendingDelta >= 0 ? 'text-success' : 'text-error'}">
+							({pendingDelta >= 0 ? '+' : ''}{formatCurrency(pendingDelta)})
+						</span>
+					{/if}
+				</div>
 			{/if}
 		</div>
 	</button>

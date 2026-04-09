@@ -40,6 +40,7 @@
 	let frequency = $state<CreateRecurringTransferPayload['frequency']>('monthly');
 	let intervalValue = $state(1);
 	let executionDay = $state<number | undefined>(undefined);
+	let executionWeekday = $state<number | undefined>(undefined);
 	let active = $state(true);
 
 	let selectedDebitCategory = $derived(
@@ -87,6 +88,13 @@
 			error = $t('recurring.execution-day-help');
 			return false;
 		}
+		if (
+			frequency === 'weekly' &&
+			(executionWeekday === undefined || executionWeekday < 0 || executionWeekday > 6)
+		) {
+			error = $t('recurring.execution-weekday-help');
+			return false;
+		}
 		return true;
 	}
 
@@ -108,6 +116,9 @@
 			};
 			if (frequency === 'monthly' && executionDay) {
 				payloadBase.execution_day = executionDay;
+			}
+			if (frequency === 'weekly' && executionWeekday !== undefined) {
+				payloadBase.execution_weekday = executionWeekday;
 			}
 
 			if (transferGroupId) {
@@ -165,6 +176,9 @@
 					if (debitRule.frequency === 'monthly') {
 						executionDay = new Date(debitRule.next_run_date).getUTCDate();
 					}
+					if (debitRule.frequency === 'weekly') {
+						executionWeekday = new Date(debitRule.next_run_date).getUTCDay();
+					}
 				}
 
 				if (creditRule) {
@@ -185,6 +199,9 @@
 	$effect(() => {
 		if (!sourceAccountToken) {
 			sourceAccountToken = account.token;
+		}
+		if (frequency === 'weekly' && executionWeekday === undefined) {
+			executionWeekday = new Date().getUTCDay();
 		}
 	});
 </script>
@@ -429,6 +446,30 @@
 								</span>
 							</div>
 						{/if}
+					</div>
+				{/if}
+
+				{#if frequency === 'weekly'}
+					<div class="form-control mt-4">
+						<label class="label" for="execution-weekday">
+							<span class="label-text">{$t('recurring.execution-weekday')}</span>
+						</label>
+						<select
+							id="execution-weekday"
+							class="select select-bordered w-full"
+							bind:value={executionWeekday}
+						>
+							<option value={0}>{$t('recurring.weekday-sunday')}</option>
+							<option value={1}>{$t('recurring.weekday-monday')}</option>
+							<option value={2}>{$t('recurring.weekday-tuesday')}</option>
+							<option value={3}>{$t('recurring.weekday-wednesday')}</option>
+							<option value={4}>{$t('recurring.weekday-thursday')}</option>
+							<option value={5}>{$t('recurring.weekday-friday')}</option>
+							<option value={6}>{$t('recurring.weekday-saturday')}</option>
+						</select>
+						<div class="label">
+							<span class="label-text-alt">{$t('recurring.execution-weekday-help')}</span>
+						</div>
 					</div>
 				{/if}
 

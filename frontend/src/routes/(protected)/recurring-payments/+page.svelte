@@ -7,6 +7,7 @@
 	import RecurringRuleModal from '$components/RecurringRuleModal.svelte';
 	import RecurringTransferModal from '$components/RecurringTransferModal.svelte';
 	import RecurringRulesTable from '$components/RecurringRulesTable.svelte';
+	import TransactionsStats from '$components/TransactionsStats.svelte';
 	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
 	import ConfirmAction from '$components/ConfirmAction.svelte';
 
@@ -203,11 +204,14 @@
 				</button>
 			</div>
 			<div class="order-2 flex justify-center md:order-1 md:justify-start">
-				<span class="badge badge-outline badge-lg">
-					{$t('recurring.templates-active', {
-						values: { count: filteredRecurringRules.length }
-					})}
-				</span>
+				<div class="flex flex-col items-center gap-2 md:items-start">
+					<span class="badge badge-outline badge-lg">
+						{$t('recurring.templates-active', {
+							values: { count: filteredRecurringRules.length }
+						})}
+					</span>
+					<TransactionsStats recurringRules={filteredRecurringRules} />
+				</div>
 			</div>
 		</div>
 

@@ -25,6 +25,15 @@ func NewStore(db *sql.DB, accountStore types.AccountStore) *Store {
 	}
 }
 
+func (s *Store) getAccountBalances(accountToken string, userID int) (balance float64, pendingBalance float64, err error) {
+	account, err := s.accountStore.GetAccountByToken(accountToken, userID)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return account.Balance, account.PendingBalance, nil
+}
+
 // Scanner functions for use with db utilities
 func scanTransaction(rows *sql.Rows) (*types.Transaction, error) {
 	t := new(types.Transaction)
@@ -217,9 +226,10 @@ func (s *Store) CreateTransactionAndReturn(transaction *types.Transaction, userI
 	}
 
 	return &types.TransactionChangeResponse{
-		Transaction:    createdDTO,
-		AccountBalance: &createdDTO.Balance,
-		Months:         availableMonths,
+		Transaction:           createdDTO,
+		AccountBalance:        &createdDTO.Balance,
+		AccountPendingBalance: &createdDTO.Balance,
+		Months:                availableMonths,
 	}, nil
 }
 
@@ -569,9 +579,10 @@ func (s *Store) UpdateTransactionAndReturn(payload *types.UpdateTransactionPaylo
 	}
 
 	return &types.TransactionChangeResponse{
-		Transaction:    transactionDTO,
-		AccountBalance: &transactionDTO.Balance,
-		Months:         availableMonths,
+		Transaction:           transactionDTO,
+		AccountBalance:        &transactionDTO.Balance,
+		AccountPendingBalance: &transactionDTO.Balance,
+		Months:                availableMonths,
 	}, nil
 }
 
@@ -774,26 +785,47 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 		// Determine which is the paired account (not the one being deleted)
 		var pairedToken string
 		var pairedBalance float64
+		var pairedPendingBalance float64
 		var pairedMonths []*types.MonthYear
+		var currentBalance float64
+		var currentPendingBalance float64
+		var currentMonths []*types.MonthYear
 
 		if transactionDTO.AccountToken == result.primaryAccountToken {
 			pairedToken = result.secondaryAccountToken
 			pairedBalance = result.secondaryBalance
 			pairedMonths = secondaryMonths
+
+			currentBalance = result.primaryBalance
+			currentMonths = primaryMonths
 		} else {
 			pairedToken = result.primaryAccountToken
 			pairedBalance = result.primaryBalance
 			pairedMonths = primaryMonths
+
+			currentBalance = result.secondaryBalance
+			currentMonths = secondaryMonths
+		}
+
+		_, currentPendingBalance, err = s.getAccountBalances(transactionDTO.AccountToken, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current account pending balance: %w", err)
+		}
+		_, pairedPendingBalance, err = s.getAccountBalances(pairedToken, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get paired account pending balance: %w", err)
 		}
 
 		return &types.TransactionChangeResponse{
-			Transaction:          transactionDTO,
-			AccountBalance:       &result.primaryBalance,
-			Months:               primaryMonths,
-			IsTransfer:           true,
-			PairedAccountToken:   &pairedToken,
-			PairedAccountBalance: &pairedBalance,
-			PairedAccountMonths:  pairedMonths,
+			Transaction:                 transactionDTO,
+			AccountBalance:              &currentBalance,
+			AccountPendingBalance:       &currentPendingBalance,
+			Months:                      currentMonths,
+			IsTransfer:                  true,
+			PairedAccountToken:          &pairedToken,
+			PairedAccountBalance:        &pairedBalance,
+			PairedAccountPendingBalance: &pairedPendingBalance,
+			PairedAccountMonths:         pairedMonths,
 		}, nil
 	}
 
@@ -808,11 +840,17 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 		return nil, fmt.Errorf("failed to get available months: %w", err)
 	}
 
+	_, pendingBalance, err := s.getAccountBalances(transactionDTO.AccountToken, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account pending balance: %w", err)
+	}
+
 	return &types.TransactionChangeResponse{
-		Transaction:    transactionDTO,
-		AccountBalance: balance,
-		Months:         availableMonths,
-		IsTransfer:     false,
+		Transaction:           transactionDTO,
+		AccountBalance:        balance,
+		AccountPendingBalance: &pendingBalance,
+		Months:                availableMonths,
+		IsTransfer:            false,
 	}, nil
 }
 
@@ -883,9 +921,10 @@ func (s *Store) ApprovePendingTransactionAndReturn(transactionID int, userID int
 	}
 
 	return &types.TransactionChangeResponse{
-		Transaction:    dto,
-		AccountBalance: &newBalance,
-		Months:         availableMonths,
+		Transaction:           dto,
+		AccountBalance:        &newBalance,
+		AccountPendingBalance: &newBalance,
+		Months:                availableMonths,
 	}, nil
 }
 
@@ -908,10 +947,16 @@ func (s *Store) RejectPendingTransactionAndReturn(transactionID int, userID int)
 		return nil, fmt.Errorf("failed to get available months: %w", err)
 	}
 
+	_, pendingBalance, err := s.getAccountBalances(dto.AccountToken, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account pending balance: %w", err)
+	}
+
 	return &types.TransactionChangeResponse{
-		Transaction:    dto,
-		AccountBalance: balance,
-		Months:         availableMonths,
+		Transaction:           dto,
+		AccountBalance:        balance,
+		AccountPendingBalance: &pendingBalance,
+		Months:                availableMonths,
 	}, nil
 }
 

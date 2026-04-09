@@ -86,7 +86,7 @@ func (h *Handler) CreateRecurringRule(w http.ResponseWriter, r *http.Request) {
 		Description:       payload.Description,
 		Frequency:         payload.Frequency,
 		IntervalValue:     payload.IntervalValue,
-		NextRunDate:       calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay),
+		NextRunDate:       calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay, payload.ExecutionWeekday),
 		Active:            active,
 	})
 	if err != nil {
@@ -124,8 +124,12 @@ func (h *Handler) UpdateRecurringRule(w http.ResponseWriter, r *http.Request) {
 	nextRunDate := current.NextRunDate
 	if payload.NextRunDate != "" {
 		nextRunDate = payload.NextRunDate
-	} else if payload.ExecutionDay != nil {
-		nextRunDate = calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay)
+	} else if payload.ExecutionDay != nil || payload.ExecutionWeekday != nil {
+		nextRunDate = calculateInitialNextRunDate(
+			payload.Frequency,
+			payload.ExecutionDay,
+			payload.ExecutionWeekday,
+		)
 	}
 
 	updated, err := h.store.UpdateRecurringRule(&types.RecurringRule{

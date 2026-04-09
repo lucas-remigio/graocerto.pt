@@ -233,7 +233,16 @@
 		"next-run": "Próxima execução",
 		"execution-day": "Dia de execução (mensal)",
 		"execution-day-help": "Escolhe um dia entre 1 e 31",
-		"execution-day-end-of-month-note": "Nos meses com menos dias, será executado no último dia do mês."
+		"execution-day-end-of-month-note": "Nos meses com menos dias, será executado no último dia do mês.",
+		"execution-weekday": "Dia da semana de execução (semanal)",
+		"execution-weekday-help": "Escolhe um dia da semana para recorrência semanal",
+		"weekday-sunday": "Domingo",
+		"weekday-monday": "Segunda-feira",
+		"weekday-tuesday": "Terça-feira",
+		"weekday-wednesday": "Quarta-feira",
+		"weekday-thursday": "Quinta-feira",
+		"weekday-friday": "Sexta-feira",
+		"weekday-saturday": "Sábado"
 	},
 
 	"transactions": {
@@ -324,6 +333,7 @@
 		"account-name-required": "O nome da conta é obrigatório",
 		"account-name-too-short": "O nome da conta deve ter pelo menos 3 caracteres",
 		"account-name-too-long": "O nome da conta deve ter menos de 50 caracteres",
+		"pending-balance": "Saldo c/ pendentes",
 		"total-networth": "Património total"
 	},
 

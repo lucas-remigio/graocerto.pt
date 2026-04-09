@@ -230,7 +230,16 @@
 		"next-run": "Next Run",
 		"execution-day": "Execution day (monthly)",
 		"execution-day-help": "Choose a day between 1 and 31",
-		"execution-day-end-of-month-note": "For months with fewer days, this will run on the last day of the month."
+		"execution-day-end-of-month-note": "For months with fewer days, this will run on the last day of the month.",
+		"execution-weekday": "Execution weekday (weekly)",
+		"execution-weekday-help": "Choose a weekday for weekly recurrence",
+		"weekday-sunday": "Sunday",
+		"weekday-monday": "Monday",
+		"weekday-tuesday": "Tuesday",
+		"weekday-wednesday": "Wednesday",
+		"weekday-thursday": "Thursday",
+		"weekday-friday": "Friday",
+		"weekday-saturday": "Saturday"
 	},
 
 	"transactions": {
@@ -321,6 +330,7 @@
 		"account-name-required": "Account name is required",
 		"account-name-too-short": "Account name must be at least 3 characters",
 		"account-name-too-long": "Account name must be less than 50 characters",
+		"pending-balance": "Balance incl. pending",
 		"total-networth": "Total net worth"
 	},
 
