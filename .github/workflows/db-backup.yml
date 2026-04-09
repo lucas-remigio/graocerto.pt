@@ -32,9 +32,9 @@ jobs:
           # We explicitly call the newly installed pg_dump for version 17
           /usr/lib/postgresql/17/bin/pg_dump "${{ secrets.REMOTE_DB_URL }}" > "$DUMP_FILE"
 
-          # Compress the file to save space
-          gzip "$DUMP_FILE"
-          COMPRESSED_FILE="${DUMP_FILE}.gz"
+          # Compress the file to save space and encrypt with password
+          COMPRESSED_FILE="${DUMP_FILE}.zip"
+          zip -P "${{ secrets.BACKUP_PASSWORD }}" "$COMPRESSED_FILE" "$DUMP_FILE"
 
           echo "Backup completed successfully."
           echo "COMPRESSED_FILE=$COMPRESSED_FILE" >> $GITHUB_ENV
@@ -53,6 +53,6 @@ jobs:
           # Change `gdrive:/GraoCerto_Backups/` to match your remote name and folder path
           rclone copy ${{ env.COMPRESSED_FILE }} gdrive:/GraoCerto_Backups/
 
-          # Keep only the last x days of backups to save space
-          echo "Deleting backups older than 60 days..."
-          rclone delete gdrive:/GraoCerto_Backups/ --min-age 60d
+          # Keep only the last 365 days of backups to save space
+          echo "Deleting backups older than 365 days..."
+          rclone delete gdrive:/GraoCerto_Backups/ --min-age 365d
