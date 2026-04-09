@@ -3,17 +3,22 @@
 	import { dataService } from '$lib/services/dataService';
 	import type { Account, CategoryDto, RecurringRule } from '$lib/types';
 	import { t } from '$lib/i18n';
-	import { Plus, Repeat } from 'lucide-svelte';
+	import { ArrowRightLeft, Plus, Repeat } from 'lucide-svelte';
 	import RecurringRuleModal from '$components/RecurringRuleModal.svelte';
+	import RecurringTransferModal from '$components/RecurringTransferModal.svelte';
 	import RecurringRulesTable from '$components/RecurringRulesTable.svelte';
-	import Accounts from '$components/Accounts.svelte';
+	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
+	import ConfirmAction from '$components/ConfirmAction.svelte';
 
 	let loading = $state(true);
 	let error = $state('');
 	let recurringRules: RecurringRule[] = $state([]);
 	let showCreateRecurringModal = $state(false);
+	let showCreateRecurringTransferModal = $state(false);
 	let showEditRecurringModal = $state(false);
+	let showDeleteRecurringModal = $state(false);
 	let selectedRule: RecurringRule | null = $state(null);
+	let pendingDeleteRuleId: number | null = $state(null);
 	let accounts: Account[] = $state([]);
 	let categories: CategoryDto[] = $state([]);
 	let accountsLoading = $state(false);
@@ -83,10 +88,34 @@
 		}
 	}
 
+	function handleRequestDeleteRule(ruleId: number) {
+		pendingDeleteRuleId = ruleId;
+		showDeleteRecurringModal = true;
+	}
+
+	function handleDeleteRecurringCancel() {
+		showDeleteRecurringModal = false;
+		pendingDeleteRuleId = null;
+	}
+
+	async function handleDeleteRecurringConfirm() {
+		if (!pendingDeleteRuleId) return;
+		await deleteRule(pendingDeleteRuleId);
+		showDeleteRecurringModal = false;
+		pendingDeleteRuleId = null;
+	}
+
 	async function handleNewRecurringRule(event: CustomEvent<RecurringRule>) {
 		showCreateRecurringModal = false;
 		const created = event.detail;
 		recurringRules = [created, ...recurringRules];
+		await loadData();
+	}
+
+	async function handleNewRecurringTransfer(event: CustomEvent<{ rules: RecurringRule[] }>) {
+		showCreateRecurringTransferModal = false;
+		const createdRules = event.detail.rules;
+		recurringRules = [...createdRules, ...recurringRules];
 		await loadData();
 	}
 
@@ -124,65 +153,62 @@
 		<div class="alert alert-error mb-4">{error}</div>
 	{/if}
 
-	<div class="flex flex-col lg:flex-row">
-		<div class="lg:w-80 lg:flex-shrink-0 lg:pr-6">
-			<Accounts
-				{accounts}
-				{selectedAccount}
-				isVertical={isLargeScreen}
-				loading={accountsLoading}
-				on:select={handleSelectAccount}
-			/>
-		</div>
-		<div class="hidden lg:block lg:w-px lg:bg-base-300"></div>
-		{#if selectedAccount}
-			<div class="flex-1 lg:flex lg:max-h-screen lg:flex-col lg:overflow-hidden lg:pl-6">
-				<div class="my-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-					<div
-						class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
-					>
-						<button
-							class="btn btn-primary shadow-lg"
-							onclick={() => (showCreateRecurringModal = true)}
-						>
-							<Plus size={20} class="text-base-100" />
-							<Repeat size={20} class="text-base-100" />
-						</button>
-					</div>
-					<div class="order-2 flex justify-center md:order-1 md:justify-start">
-						<span class="badge badge-outline badge-lg">
-							{$t('recurring.templates-active', {
-								values: { count: filteredRecurringRules.length }
-							})}
-						</span>
-					</div>
-				</div>
-
-				{#if loading}
-					<div class="loading loading-spinner loading-lg"></div>
-				{:else if filteredRecurringRules.length === 0}
-					<div class="flex h-64 flex-col items-center justify-center">
-						<p class="text-base-content/70">{$t('recurring.no-templates-yet')}</p>
-						<button
-							class="btn btn-primary mt-4 flex items-center gap-2 shadow-lg"
-							onclick={() => (showCreateRecurringModal = true)}
-						>
-							<Plus size={20} class="text-base-100" />
-							<Repeat size={20} class="text-base-100" />
-							<span class="text-base-100">{$t('recurring.create-first-recurring')}</span>
-						</button>
-					</div>
-				{:else}
-					<RecurringRulesTable
-						recurringRules={filteredRecurringRules}
-						{categories}
-						on:editRule={({ detail: { rule } }) => handleEditRule(rule)}
-						on:deleteRule={({ detail: { ruleId } }) => deleteRule(ruleId)}
-					/>
-				{/if}
+	<AccountsSplitLayout
+		{accounts}
+		{selectedAccount}
+		{isLargeScreen}
+		accountsLoading={accountsLoading}
+		showRightPanel={!!selectedAccount}
+		on:select={handleSelectAccount}
+	>
+		<div class="my-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+			<div
+				class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
+			>
+				<button
+					class="btn btn-secondary shadow-lg"
+					aria-label={$t('recurring.new-recurring-transfer')}
+					onclick={() => (showCreateRecurringTransferModal = true)}
+				>
+					<ArrowRightLeft size={20} class="text-base-100" />
+				</button>
+				<button class="btn btn-primary shadow-lg" onclick={() => (showCreateRecurringModal = true)}>
+					<Plus size={20} class="text-base-100" />
+					<Repeat size={20} class="text-base-100" />
+				</button>
 			</div>
+			<div class="order-2 flex justify-center md:order-1 md:justify-start">
+				<span class="badge badge-outline badge-lg">
+					{$t('recurring.templates-active', {
+						values: { count: filteredRecurringRules.length }
+					})}
+				</span>
+			</div>
+		</div>
+
+		{#if loading}
+			<div class="loading loading-spinner loading-lg"></div>
+		{:else if filteredRecurringRules.length === 0}
+			<div class="flex h-64 flex-col items-center justify-center">
+				<p class="text-base-content/70">{$t('recurring.no-templates-yet')}</p>
+				<button
+					class="btn btn-primary mt-4 flex items-center gap-2 shadow-lg"
+					onclick={() => (showCreateRecurringModal = true)}
+				>
+					<Plus size={20} class="text-base-100" />
+					<Repeat size={20} class="text-base-100" />
+					<span class="text-base-100">{$t('recurring.create-first-recurring')}</span>
+				</button>
+			</div>
+		{:else}
+			<RecurringRulesTable
+				recurringRules={filteredRecurringRules}
+				{categories}
+				on:editRule={({ detail: { rule } }) => handleEditRule(rule)}
+				on:deleteRule={({ detail: { ruleId } }) => handleRequestDeleteRule(ruleId)}
+			/>
 		{/if}
-	</div>
+	</AccountsSplitLayout>
 </div>
 
 {#if showCreateRecurringModal}
@@ -191,6 +217,14 @@
 		recurringRule={null}
 		on:closeModal={() => (showCreateRecurringModal = false)}
 		on:newRecurringRule={handleNewRecurringRule}
+	/>
+{/if}
+
+{#if showCreateRecurringTransferModal}
+	<RecurringTransferModal
+		account={selectedAccount!}
+		on:closeModal={() => (showCreateRecurringTransferModal = false)}
+		on:newRecurringTransfer={handleNewRecurringTransfer}
 	/>
 {/if}
 
@@ -204,4 +238,14 @@
 		}}
 		on:updateRecurringRule={handleUpdateRecurringRule}
 	/>
+{/if}
+
+{#if showDeleteRecurringModal}
+	<ConfirmAction
+		title={$t('modals.confirm')}
+		message={`${$t('recurring.delete-recurring-confirm')} ${$t('modals.cannot-be-undone')}`}
+		type="danger"
+		onConfirm={handleDeleteRecurringConfirm}
+		onCancel={handleDeleteRecurringCancel}
+	></ConfirmAction>
 {/if}

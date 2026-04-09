@@ -26,6 +26,10 @@
 	let filteredCategories = $derived(
 		categories.filter((c) => c.transaction_type.id === transaction_type_id)
 	);
+	let selectedCategory = $derived(
+		filteredCategories.find((category) => category.id === Number(form.category_id))
+	);
+	let categoryBorderColor = $derived(selectedCategory?.color || '#ccc');
 	let groupedCategories = $derived(buildCategoryGroups(filteredCategories));
 	const borderClasses: Record<string, string> = {
 		credit: 'border-green-500 dark:border-green-400',
@@ -123,6 +127,10 @@
 			categories = categoriesData;
 			form.account_token = account.token;
 			if (recurringRule) {
+				const monthlyExecutionDay =
+					recurringRule.frequency === 'monthly'
+						? new Date(recurringRule.next_run_date).getUTCDate()
+						: undefined;
 				transaction_type_id = recurringRule.transaction_type_id;
 				form = {
 					account_token: recurringRule.account_token,
@@ -132,6 +140,7 @@
 					description: recurringRule.description,
 					frequency: recurringRule.frequency,
 					interval_value: recurringRule.interval_value,
+					execution_day: monthlyExecutionDay,
 					active: recurringRule.active
 				};
 			}
@@ -200,7 +209,13 @@
 						<label class="label" for="category">
 							<span class="label-text">{$t('transactions.category')}</span>
 						</label>
-						<select id="category" class="select select-bordered w-full" bind:value={form.category_id} required>
+						<select
+							id="category"
+							class="select select-bordered w-full border-2"
+							bind:value={form.category_id}
+							required
+							style="border-color: {categoryBorderColor} !important;"
+						>
 							{#each groupedCategories as group}
 								{#if group.parent}
 									{#if group.children.length > 0}

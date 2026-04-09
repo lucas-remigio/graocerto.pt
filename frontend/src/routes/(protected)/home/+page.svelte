@@ -7,11 +7,10 @@
 		MonthYear,
 		TransactionStatistics,
 		TransactionChangeResponse,
-		AccountChangeResponse,
 		TransferResponse
 	} from '$lib/types';
 	import { dataService } from '$lib/services/dataService';
-	import Accounts from '$components/Accounts.svelte';
+	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
 	import TransactionsTable from '$components/TransactionsTable.svelte';
 	import TransactionStatisticsComponent from '$components/TransactionStatistics.svelte';
 	import MonthSelector from '$components/MonthSelector.svelte';
@@ -439,16 +438,14 @@
 		accounts.sort((a, b) => a.order_index - b.order_index);
 	}
 
-	function handleNewAccount(event: CustomEvent<AccountChangeResponse>) {
-		const { account } = event.detail;
+	function handleNewAccount(account: Account) {
 		upsertAccount(account);
 		selectedAccount = null; // Clear selected account
 		getSelectedAccount(); // Update selected account if needed
 		wsUpdateScreen();
 	}
 
-	function handleUpdateAccount(event: CustomEvent<AccountChangeResponse>) {
-		const { account } = event.detail;
+	function handleUpdateAccount(account: Account) {
 		upsertAccount(account);
 		wsUpdateScreen();
 	}
@@ -517,79 +514,66 @@
 			<p>{error}</p>
 		</div>
 	{:else}
-		<!-- Responsive Layout: Vertical on large screens, horizontal on small/medium -->
-		<div class="flex flex-col lg:flex-row">
-			<!-- Left Column: Accounts (full width on small/medium, fixed width on large) -->
-			<div class="lg:w-80 lg:flex-shrink-0 lg:pr-6">
-				<Accounts
-					{accounts}
-					{selectedAccount}
-					isVertical={isLargeScreen}
-					loading={accountsLoading}
-					on:select={handleSelectAccount}
-					on:updatedAccount={handleUpdateAccount}
-					on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
-					on:newAccount={handleNewAccount}
+		<AccountsSplitLayout
+			{accounts}
+			{selectedAccount}
+			{isLargeScreen}
+			accountsLoading={accountsLoading}
+			showRightPanel={accounts.length > 0}
+			on:select={handleSelectAccount}
+			on:updatedAccount={({ detail: { account } }) => handleUpdateAccount(account)}
+			on:deleteAccount={({ detail: { account } }) => handleDeleteAccount(account)}
+			on:newAccount={({ detail: { account } }) => handleNewAccount(account)}
+		>
+			<!-- Horizontal Divider - only visible on small/medium screens -->
+			<div class="divider lg:hidden"></div>
+
+			<!-- Month Selector Component -->
+			<div class="lg:flex-shrink-0">
+				<MonthSelector
+					{availableMonths}
+					{selectedMonth}
+					{selectedYear}
+					on:monthSelect={({ detail }) => handleMonthSelect(detail.month, detail.year)}
 				/>
 			</div>
 
-			<!-- Vertical Divider - only visible on large screens -->
-			<div class="hidden lg:block lg:w-px lg:bg-base-300"></div>
+			<!-- View Toggle Component -->
+			<div class="lg:flex-shrink-0">
+				<ViewToggle />
+			</div>
 
-			<!-- Right Column: Transactions (full width on small/medium, remaining space on large) -->
-			{#if accounts.length > 0}
-				<div class="flex-1 lg:flex lg:max-h-screen lg:flex-col lg:overflow-hidden lg:pl-6">
-					<!-- Horizontal Divider - only visible on small/medium screens -->
-					<div class="divider lg:hidden"></div>
+			<div class="divider my-0"></div>
 
-					<!-- Month Selector Component -->
-					<div class="lg:flex-shrink-0">
-						<MonthSelector
-							{availableMonths}
-							{selectedMonth}
-							{selectedYear}
-							on:monthSelect={({ detail }) => handleMonthSelect(detail.month, detail.year)}
-						/>
-					</div>
-
-					<!-- View Toggle Component -->
-					<div class="lg:flex-shrink-0">
-						<ViewToggle />
-					</div>
-
-					<div class="divider my-0"></div>
-
-					<!-- Content Container with scroll -->
-					<div class="min-h-0 flex-1 overflow-y-auto">
-						{#if $selectedView === 'transactions'}
-							<TransactionsTable
-								{transactions}
-								account={selectedAccount!}
-								isAll={selectedMonth === null && selectedYear === null}
-								loading={transactionsLoading}
-								on:newTransaction={handleNewTransaction}
-								on:updateTransaction={handleUpdateTransaction}
-								on:deleteTransaction={({ detail: { transaction } }) =>
-									handleDeleteTransaction(transaction)}
-								on:newTransfer={handleNewTransfer}
-								on:approvePendingTransaction={({ detail: { transaction } }) =>
-									handleApprovePendingTransaction(transaction)}
-								on:rejectPendingTransaction={({ detail: { transaction } }) =>
-									handleDeleteTransaction(transaction)}
-							/>
-						{:else}
-							<TransactionStatisticsComponent
-								{selectedMonth}
-								{selectedYear}
-								{statistics}
-								account={selectedAccount!}
-								loading={statisticsLoading}
-								error={statisticsError}
-							/>
-						{/if}
-					</div>
-				</div>
-			{/if}
-		</div>
+			<!-- Content Container with scroll -->
+			<div class="min-h-0 flex-1 overflow-y-auto">
+				{#if $selectedView === 'transactions'}
+					<TransactionsTable
+						{transactions}
+						account={selectedAccount!}
+						isAll={selectedMonth === null && selectedYear === null}
+						loading={transactionsLoading}
+						on:newTransaction={handleNewTransaction}
+						on:updateTransaction={handleUpdateTransaction}
+						on:deleteTransaction={({ detail: { transaction } }) =>
+							handleDeleteTransaction(transaction)}
+						on:newTransfer={handleNewTransfer}
+						on:approvePendingTransaction={({ detail: { transaction } }) =>
+							handleApprovePendingTransaction(transaction)}
+						on:rejectPendingTransaction={({ detail: { transaction } }) =>
+							handleDeleteTransaction(transaction)}
+					/>
+				{:else}
+					<TransactionStatisticsComponent
+						{selectedMonth}
+						{selectedYear}
+						{statistics}
+						account={selectedAccount!}
+						loading={statisticsLoading}
+						error={statisticsError}
+					/>
+				{/if}
+			</div>
+		</AccountsSplitLayout>
 	{/if}
 </div>

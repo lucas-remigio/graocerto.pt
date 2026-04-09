@@ -214,6 +214,8 @@
 	"recurring": {
 		"templates-active": "{count} modelos ativos",
 		"new-recurring-payment": "Novo pagamento recorrente",
+		"new-recurring-transfer": "Nova transferência recorrente",
+		"create-recurring-transfer": "Criar transferência recorrente",
 		"edit-recurring-payment": "Editar pagamento recorrente",
 		"description-placeholder": "Descrição",
 		"frequency-daily": "Diário",

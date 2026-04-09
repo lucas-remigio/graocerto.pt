@@ -253,3 +253,16 @@ export interface UpdateRecurringRulePayload extends CreateRecurringRulePayload {
 	next_run_date?: string;
 	active: boolean;
 }
+
+export interface CreateRecurringTransferPayload {
+	source_account_token: string;
+	destination_account_token: string;
+	debit_category_id: number;
+	credit_category_id: number;
+	amount: number;
+	description: string;
+	frequency: RecurringFrequency;
+	interval_value: number;
+	execution_day?: number;
+	active?: boolean;
+}

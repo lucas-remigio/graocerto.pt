@@ -211,6 +211,8 @@
 	"recurring": {
 		"templates-active": "{count} active templates",
 		"new-recurring-payment": "New recurring payment",
+		"new-recurring-transfer": "New recurring transfer",
+		"create-recurring-transfer": "Create recurring transfer",
 		"edit-recurring-payment": "Edit recurring payment",
 		"description-placeholder": "Description",
 		"frequency-daily": "Daily",
