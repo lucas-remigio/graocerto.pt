@@ -1,5 +1,6 @@
 <script lang="ts">
 	import api_axios from '$lib/axios';
+	import { toastStore } from '$lib/stores/toast';
 	import type { Account, AiFeedbackResponse } from '$lib/types';
 	import {
 		X,
@@ -20,7 +21,6 @@
 	export let month: number;
 	export let year: number;
 
-	let error: string = '';
 	let isLoading: boolean = true;
 	let feedbackMessage: string = '';
 	let inDepthAnalysis: string = '';
@@ -39,7 +39,7 @@
 
 			if (res.status !== 200) {
 				console.error('Non-200 response status for transactions:', res.status);
-				error = `Error: ${res.status}`;
+				toastStore.error(`Error: ${res.status}`);
 				return;
 			}
 
@@ -48,7 +48,7 @@
 			inDepthAnalysis = data.in_depth_analysis;
 		} catch (err) {
 			console.error('Error in getAccountTransactions:', err);
-			error = 'Failed to load transactions';
+			toastStore.error('Failed to load transactions');
 		} finally {
 			isLoading = false;
 		}
@@ -105,13 +105,6 @@
 				<div class="flex flex-col items-center justify-center py-12" in:fade>
 					<Loader2 class="mb-4 h-12 w-12 animate-spin text-primary" />
 					<p class="text-base-content/70">{$t('ai-feedback.analyzing')}</p>
-				</div>
-			{:else if error}
-				<div class="rounded border-l-4 border-error bg-error/10 p-4" in:fade>
-					<p class="flex items-center gap-2 text-error">
-						<AlertCircle class="h-5 w-5 text-error" />
-						{$t('ai-feedback.error') + ' ' + error}
-					</p>
 				</div>
 			{:else}
 				<div in:fade={{ duration: 300, delay: 100 }}>

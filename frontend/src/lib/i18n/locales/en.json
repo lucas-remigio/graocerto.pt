@@ -246,6 +246,8 @@
 		"edit-recurring-payment": "Edit recurring payment",
 		"delete-recurring-confirm": "Are you sure you want to delete this recurring rule?",
 		"description-placeholder": "Description",
+		"recurring.recurring-transfer-updated": "Recurring transfer rule updated successfully",
+		"recurring.recurring-transfer-created": "Recurring transfer rule created successfully",
 		"frequency-daily": "Daily",
 		"frequency-weekly": "Weekly",
 		"frequency-monthly": "Monthly",

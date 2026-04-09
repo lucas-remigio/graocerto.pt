@@ -12,12 +12,17 @@
 	} from '$lib/types';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { buildCategoryGroups } from '$lib/utils/categoryUtils';
+	import { toastStore } from '$lib/stores/toast';
 
 	let {
 		account,
 		transferGroupId = null,
 		initialRules = []
-	}: { account: Account; transferGroupId?: string | null; initialRules?: RecurringRule[] } = $props();
+	}: {
+		account: Account;
+		transferGroupId?: string | null;
+		initialRules?: RecurringRule[];
+	} = $props();
 
 	const dispatch = createEventDispatcher<{
 		closeModal: void;
@@ -25,7 +30,6 @@
 		updateRecurringTransfer: { rules: RecurringRule[] };
 	}>();
 
-	let error = $state('');
 	let isLoading = $state(true);
 	let accounts: Account[] = $state([]);
 	let debitCategories: CategoryDto[] = $state([]);
@@ -61,45 +65,44 @@
 
 	function isFormValid(): boolean {
 		if (!destinationAccountToken) {
-			error = $t('transfers.select-destination-account');
+			toastStore.error($t('transfers.select-destination-account'));
 			return false;
 		}
 		if (sourceAccountToken === destinationAccountToken) {
-			error = $t('transfers.same-account-error');
+			toastStore.error($t('transfers.same-account-error'));
 			return false;
 		}
 		if (!debitCategoryId) {
-			error = $t('transfers.select-debit-category');
+			toastStore.error($t('transfers.select-debit-category'));
 			return false;
 		}
 		if (!creditCategoryId) {
-			error = $t('transfers.select-credit-category');
+			toastStore.error($t('transfers.select-credit-category'));
 			return false;
 		}
 		if (amount <= 0) {
-			error = $t('transfers.amount-must-be-positive');
+			toastStore.error($t('transfers.amount-must-be-positive'));
 			return false;
 		}
 		if (intervalValue < 1) {
-			error = $t('common.invalid');
+			toastStore.error($t('common.invalid'));
 			return false;
 		}
 		if (frequency === 'monthly' && (!executionDay || executionDay < 1 || executionDay > 31)) {
-			error = $t('recurring.execution-day-help');
+			toastStore.error($t('recurring.execution-day-help'));
 			return false;
 		}
 		if (
 			frequency === 'weekly' &&
 			(executionWeekday === undefined || executionWeekday < 0 || executionWeekday > 6)
 		) {
-			error = $t('recurring.execution-weekday-help');
+			toastStore.error($t('recurring.execution-weekday-help'));
 			return false;
 		}
 		return true;
 	}
 
 	async function handleSubmit() {
-		error = '';
 		if (!isFormValid()) return;
 
 		try {
@@ -132,20 +135,26 @@
 			}
 
 			const rules = await dataService.createRecurringTransfer(payloadBase);
+			toastStore.success(
+				isEditMode
+					? $t('recurring.recurring-transfer-updated')
+					: $t('recurring.recurring-transfer-created')
+			);
 			dispatch('newRecurringTransfer', { rules });
 		} catch (err) {
 			console.error('Error creating recurring transfer:', err);
-			error = $t('errors.server-error');
+			toastStore.error($t('errors.server-error'));
 		}
 	}
 
 	async function fetchData() {
 		isLoading = true;
-		error = '';
 		try {
 			accounts = await dataService.fetchAccounts();
 			const allCategories = await dataService.fetchCategories();
-			debitCategories = allCategories.filter((category) => category.transaction_type.type_slug === 'debit');
+			debitCategories = allCategories.filter(
+				(category) => category.transaction_type.type_slug === 'debit'
+			);
 			creditCategories = allCategories.filter(
 				(category) => category.transaction_type.type_slug === 'credit'
 			);
@@ -188,7 +197,7 @@
 			}
 		} catch (err) {
 			console.error('Error loading recurring transfer data:', err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		} finally {
 			isLoading = false;
 		}
@@ -213,14 +222,10 @@
 		</button>
 
 		<h3 class="mb-4 text-lg font-bold">
-			{isEditMode ? $t('recurring.edit-recurring-transfer') : $t('recurring.new-recurring-transfer')}
+			{isEditMode
+				? $t('recurring.edit-recurring-transfer')
+				: $t('recurring.new-recurring-transfer')}
 		</h3>
-
-		{#if error}
-			<div class="alert alert-error mb-4">
-				<p class="text-gray-100">{error}</p>
-			</div>
-		{/if}
 
 		{#if isLoading}
 			<div class="py-12 text-center">
@@ -256,7 +261,9 @@
 							<div class="form-control">
 								<label class="label" for="debit-category">
 									<span class="label-text">{$t('transfers.debit-category')}</span>
-									<span class="label-text-alt text-xs opacity-70">{$t('transfers.money-leaving')}</span>
+									<span class="label-text-alt text-xs opacity-70"
+										>{$t('transfers.money-leaving')}</span
+									>
 								</label>
 								<select
 									id="debit-category"
@@ -322,7 +329,9 @@
 							<div class="form-control">
 								<label class="label" for="credit-category">
 									<span class="label-text">{$t('transfers.credit-category')}</span>
-									<span class="label-text-alt text-xs opacity-70">{$t('transfers.money-entering')}</span>
+									<span class="label-text-alt text-xs opacity-70"
+										>{$t('transfers.money-entering')}</span
+									>
 								</label>
 								<select
 									id="credit-category"
@@ -481,7 +490,8 @@
 				</div>
 
 				<div class="modal-action mt-6">
-					<button type="button" class="btn" onclick={handleCloseModal}>{$t('common.cancel')}</button>
+					<button type="button" class="btn" onclick={handleCloseModal}>{$t('common.cancel')}</button
+					>
 					<button
 						type="submit"
 						class="btn btn-primary text-base-100"

@@ -15,7 +15,6 @@
 
 	let loading = $state(true);
 	let savingPreferences = $state(false);
-	let error = $state('');
 	let notifications: NotificationItem[] = $state([]);
 	let preferences: NotificationPreferences | null = $state(null);
 	let minDebitInput = $state('');
@@ -113,7 +112,6 @@
 
 	async function loadData() {
 		loading = true;
-		error = '';
 		try {
 			const [fetchedNotifications, fetchedPreferences] = await Promise.all([
 				dataService.fetchNotifications(),
@@ -129,7 +127,7 @@
 					: '';
 		} catch (err) {
 			console.error(err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		} finally {
 			loading = false;
 		}
@@ -144,7 +142,7 @@
 			refreshUnreadNotificationCount(true);
 		} catch (err) {
 			console.error(err);
-			error = $t('errors.server-error');
+			toastStore.error($t('errors.server-error'));
 		}
 	}
 
@@ -168,7 +166,6 @@
 	async function handleSavePreferences() {
 		if (!preferences) return;
 		savingPreferences = true;
-		error = '';
 		try {
 			const minTotalDebit =
 				minDebitInput.trim() === '' ? null : Math.max(0, Number.parseFloat(minDebitInput));
@@ -184,7 +181,7 @@
 			toastStore.success($t('notifications.preferences-saved'));
 		} catch (err) {
 			console.error(err);
-			error = $t('errors.server-error');
+			toastStore.error($t('errors.server-error'));
 		} finally {
 			savingPreferences = false;
 		}
@@ -201,7 +198,7 @@
 			preferences = await dataService.updateNotificationPreferences(payload);
 		} catch (err) {
 			console.error(err);
-			error = $t('errors.server-error');
+			toastStore.error($t('errors.server-error'));
 		}
 	}
 
@@ -246,10 +243,6 @@
 			</div>
 		{/if}
 	</div>
-
-	{#if error}
-		<div class="alert alert-error mb-6 flex items-center shadow-sm">{error}</div>
-	{/if}
 
 	{#if loading}
 		<div class="flex justify-center py-12">

@@ -249,6 +249,8 @@
 		"edit-recurring-payment": "Editar pagamento recorrente",
 		"delete-recurring-confirm": "Tem certeza de que deseja excluir esta regra recorrente?",
 		"description-placeholder": "Descrição",
+		"recurring.recurring-transfer-updated": "Transferência recorrente atualizada com sucesso",
+		"recurring.recurring-transfer-created": "Transferência recorrente criada com sucesso",
 		"frequency-daily": "Diário",
 		"frequency-weekly": "Semanal",
 		"frequency-monthly": "Mensal",
