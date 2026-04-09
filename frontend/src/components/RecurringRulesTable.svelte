@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CategoryDto, RecurringRule } from '$lib/types';
 	import { t } from '$lib/i18n';
-	import { Pencil, Trash2 } from 'lucide-svelte';
+	import { ArrowRightLeft, Pencil, Trash2 } from 'lucide-svelte';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { formatCurrency } from '$lib/utils/currency';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
@@ -118,7 +118,16 @@
 							</span>
 						</div>
 					</td>
-					<td class="text-base-content">{formatCurrency(rule.amount)}</td>
+					<td class="text-base-content">
+						<div class="flex items-center justify-center gap-2">
+							{#if rule.recurring_transfer_group_id}
+								<span class="tooltip" data-tip={$t('transactions.transfer')}>
+									<ArrowRightLeft size={14} class="text-info" />
+								</span>
+							{/if}
+							<span>{formatCurrency(rule.amount)}</span>
+						</div>
+					</td>
 					<td class="text-base-content">{rule.description || 'N/A'}</td>
 					<td class="font-medium text-base-content">{rule.interval_value}</td>
 					<td class="text-base-content">

@@ -3,14 +3,26 @@
 	import { ArrowRight, X } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { dataService } from '$lib/services/dataService';
-	import type { Account, CategoryDto, CreateRecurringTransferPayload, RecurringRule } from '$lib/types';
+	import type {
+		Account,
+		CategoryDto,
+		CreateRecurringTransferPayload,
+		RecurringRule,
+		UpdateRecurringTransferPayload
+	} from '$lib/types';
+	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { buildCategoryGroups } from '$lib/utils/categoryUtils';
 
-	let { account }: { account: Account } = $props();
+	let {
+		account,
+		transferGroupId = null,
+		initialRules = []
+	}: { account: Account; transferGroupId?: string | null; initialRules?: RecurringRule[] } = $props();
 
 	const dispatch = createEventDispatcher<{
 		closeModal: void;
 		newRecurringTransfer: { rules: RecurringRule[] };
+		updateRecurringTransfer: { rules: RecurringRule[] };
 	}>();
 
 	let error = $state('');
@@ -40,6 +52,7 @@
 	let creditBorderColor = $derived(selectedCreditCategory?.color || '#22c55e');
 	let groupedDebitCategories = $derived(buildCategoryGroups(debitCategories));
 	let groupedCreditCategories = $derived(buildCategoryGroups(creditCategories));
+	let isEditMode = $derived(!!transferGroupId);
 
 	function handleCloseModal() {
 		dispatch('closeModal');
@@ -82,7 +95,7 @@
 		if (!isFormValid()) return;
 
 		try {
-			const payload: CreateRecurringTransferPayload = {
+			const payloadBase: CreateRecurringTransferPayload = {
 				source_account_token: sourceAccountToken,
 				destination_account_token: destinationAccountToken,
 				debit_category_id: Number(debitCategoryId),
@@ -94,10 +107,20 @@
 				active
 			};
 			if (frequency === 'monthly' && executionDay) {
-				payload.execution_day = executionDay;
+				payloadBase.execution_day = executionDay;
 			}
 
-			const rules = await dataService.createRecurringTransfer(payload);
+			if (transferGroupId) {
+				const updatePayload: UpdateRecurringTransferPayload = {
+					...payloadBase,
+					active
+				};
+				const rules = await dataService.updateRecurringTransfer(transferGroupId, updatePayload);
+				dispatch('updateRecurringTransfer', { rules });
+				return;
+			}
+
+			const rules = await dataService.createRecurringTransfer(payloadBase);
 			dispatch('newRecurringTransfer', { rules });
 		} catch (err) {
 			console.error('Error creating recurring transfer:', err);
@@ -122,6 +145,33 @@
 			if (creditCategories.length > 0 && !creditCategoryId) {
 				creditCategoryId = String(creditCategories[0].id);
 			}
+
+			if (initialRules.length > 0) {
+				const debitRule = initialRules.find(
+					(rule) => rule.transaction_type_id === TransactionTypeId.Debit
+				);
+				const creditRule = initialRules.find(
+					(rule) => rule.transaction_type_id === TransactionTypeId.Credit
+				);
+
+				if (debitRule) {
+					sourceAccountToken = debitRule.account_token;
+					debitCategoryId = String(debitRule.category_id);
+					amount = debitRule.amount;
+					description = debitRule.description;
+					frequency = debitRule.frequency;
+					intervalValue = debitRule.interval_value;
+					active = debitRule.active;
+					if (debitRule.frequency === 'monthly') {
+						executionDay = new Date(debitRule.next_run_date).getUTCDate();
+					}
+				}
+
+				if (creditRule) {
+					destinationAccountToken = creditRule.account_token;
+					creditCategoryId = String(creditRule.category_id);
+				}
+			}
 		} catch (err) {
 			console.error('Error loading recurring transfer data:', err);
 			error = $t('errors.failed-load-data');
@@ -145,7 +195,9 @@
 			<X />
 		</button>
 
-		<h3 class="mb-4 text-lg font-bold">{$t('recurring.new-recurring-transfer')}</h3>
+		<h3 class="mb-4 text-lg font-bold">
+			{isEditMode ? $t('recurring.edit-recurring-transfer') : $t('recurring.new-recurring-transfer')}
+		</h3>
 
 		{#if error}
 			<div class="alert alert-error mb-4">
@@ -394,7 +446,9 @@
 						class="btn btn-primary text-base-100"
 						disabled={debitCategories.length === 0 || creditCategories.length === 0}
 					>
-						{$t('recurring.create-recurring-transfer')}
+						{isEditMode
+							? $t('recurring.update-recurring-transfer')
+							: $t('recurring.create-recurring-transfer')}
 					</button>
 				</div>
 			</form>

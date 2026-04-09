@@ -1,7 +1,9 @@
 package recurring_rule
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -13,6 +15,11 @@ import (
 type Store struct {
 	db *sql.DB
 }
+
+const (
+	transactionTypeCredit = 1
+	transactionTypeDebit  = 2
+)
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
@@ -29,13 +36,14 @@ func (s *Store) CreateRecurringRule(rule *types.RecurringRule) (*types.Recurring
 	var id int
 	err := s.db.QueryRow(
 		`INSERT INTO recurring_rules
-		(user_id, account_token, category_id, transaction_type_id, amount, description, frequency, interval_value, next_run_date, active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::date, $10)
+		(user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::date, $11)
 		RETURNING id`,
 		rule.UserID,
 		rule.AccountToken,
 		rule.CategoryID,
 		rule.TransactionTypeID,
+		rule.RecurringTransferGroupID,
 		rule.Amount,
 		rule.Description,
 		string(rule.Frequency),
@@ -51,7 +59,7 @@ func (s *Store) CreateRecurringRule(rule *types.RecurringRule) (*types.Recurring
 }
 
 func (s *Store) GetRecurringRulesByUserID(userID int) ([]*types.RecurringRule, error) {
-	query := `SELECT id, user_id, account_token, category_id, transaction_type_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
+	query := `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
 		FROM recurring_rules
 		WHERE user_id = $1
 		ORDER BY active DESC, next_run_date ASC, id DESC`
@@ -59,7 +67,7 @@ func (s *Store) GetRecurringRulesByUserID(userID int) ([]*types.RecurringRule, e
 }
 
 func (s *Store) GetRecurringRuleByID(id int, userID int) (*types.RecurringRule, error) {
-	query := `SELECT id, user_id, account_token, category_id, transaction_type_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
+	query := `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
 		FROM recurring_rules
 		WHERE id = $1 AND user_id = $2`
 	return db.QuerySingle(s.db, query, scanRecurringRuleRow, id, userID)
@@ -105,6 +113,212 @@ func (s *Store) UpdateRecurringRule(rule *types.RecurringRule, userID int) (*typ
 	return s.GetRecurringRuleByID(rule.ID, userID)
 }
 
+func (s *Store) CreateRecurringTransfer(payload *types.CreateRecurringTransferPayload, userID int) ([]*types.RecurringRule, error) {
+	if payload.SourceAccountToken == payload.DestinationAccountToken {
+		return nil, fmt.Errorf("source and destination accounts must be different")
+	}
+
+	active := true
+	if payload.Active != nil {
+		active = *payload.Active
+	}
+
+	nextRunDate := calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay)
+	groupID, err := newRecurringTransferGroupID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate recurring transfer group id: %w", err)
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin recurring transfer creation: %w", err)
+	}
+	defer tx.Rollback()
+
+	debitRule, err := s.createRecurringTransferSide(tx, &types.RecurringRule{
+		UserID:                   userID,
+		AccountToken:             payload.SourceAccountToken,
+		CategoryID:               payload.DebitCategoryID,
+		TransactionTypeID:        transactionTypeDebit,
+		RecurringTransferGroupID: &groupID,
+		Amount:                   payload.Amount,
+		Description:              payload.Description,
+		Frequency:                payload.Frequency,
+		IntervalValue:            payload.IntervalValue,
+		NextRunDate:              nextRunDate,
+		Active:                   active,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	creditRule, err := s.createRecurringTransferSide(tx, &types.RecurringRule{
+		UserID:                   userID,
+		AccountToken:             payload.DestinationAccountToken,
+		CategoryID:               payload.CreditCategoryID,
+		TransactionTypeID:        transactionTypeCredit,
+		RecurringTransferGroupID: &groupID,
+		Amount:                   payload.Amount,
+		Description:              payload.Description,
+		Frequency:                payload.Frequency,
+		IntervalValue:            payload.IntervalValue,
+		NextRunDate:              nextRunDate,
+		Active:                   active,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit recurring transfer creation: %w", err)
+	}
+
+	return []*types.RecurringRule{debitRule, creditRule}, nil
+}
+
+func (s *Store) UpdateRecurringTransfer(groupID string, payload *types.UpdateRecurringTransferPayload, userID int) ([]*types.RecurringRule, error) {
+	if groupID == "" {
+		return nil, fmt.Errorf("group id is required")
+	}
+	if payload.SourceAccountToken == payload.DestinationAccountToken {
+		return nil, fmt.Errorf("source and destination accounts must be different")
+	}
+
+	nextRunDate := payload.NextRunDate
+	if nextRunDate == "" {
+		nextRunDate = calculateInitialNextRunDate(payload.Frequency, payload.ExecutionDay)
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin recurring transfer update: %w", err)
+	}
+	defer tx.Rollback()
+
+	var ownerCount int
+	err = tx.QueryRow(
+		`SELECT COUNT(1)
+		 FROM recurring_rules
+		 WHERE user_id = $1 AND recurring_transfer_group_id = $2`,
+		userID,
+		groupID,
+	).Scan(&ownerCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate recurring transfer ownership: %w", err)
+	}
+	if ownerCount == 0 {
+		return nil, fmt.Errorf("recurring transfer not found")
+	}
+
+	if err := s.validateOwnership(userID, payload.SourceAccountToken, payload.DebitCategoryID); err != nil {
+		return nil, err
+	}
+	if err := s.validateOwnership(userID, payload.DestinationAccountToken, payload.CreditCategoryID); err != nil {
+		return nil, err
+	}
+	if err := s.validateCategoryTransactionType(userID, payload.DebitCategoryID, transactionTypeDebit); err != nil {
+		return nil, err
+	}
+	if err := s.validateCategoryTransactionType(userID, payload.CreditCategoryID, transactionTypeCredit); err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec(
+		`UPDATE recurring_rules
+		 SET account_token = $1,
+		     category_id = $2,
+		     transaction_type_id = $3,
+		     amount = $4,
+		     description = $5,
+		     frequency = $6,
+		     interval_value = $7,
+		     next_run_date = $8::date,
+		     active = $9,
+		     updated_at = CURRENT_TIMESTAMP
+		 WHERE user_id = $10
+		   AND recurring_transfer_group_id = $11
+		   AND transaction_type_id = $12`,
+		payload.SourceAccountToken,
+		payload.DebitCategoryID,
+		transactionTypeDebit,
+		payload.Amount,
+		payload.Description,
+		string(payload.Frequency),
+		payload.IntervalValue,
+		nextRunDate,
+		payload.Active,
+		userID,
+		groupID,
+		transactionTypeDebit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update debit recurring transfer rule: %w", err)
+	}
+
+	_, err = tx.Exec(
+		`UPDATE recurring_rules
+		 SET account_token = $1,
+		     category_id = $2,
+		     transaction_type_id = $3,
+		     amount = $4,
+		     description = $5,
+		     frequency = $6,
+		     interval_value = $7,
+		     next_run_date = $8::date,
+		     active = $9,
+		     updated_at = CURRENT_TIMESTAMP
+		 WHERE user_id = $10
+		   AND recurring_transfer_group_id = $11
+		   AND transaction_type_id = $12`,
+		payload.DestinationAccountToken,
+		payload.CreditCategoryID,
+		transactionTypeCredit,
+		payload.Amount,
+		payload.Description,
+		string(payload.Frequency),
+		payload.IntervalValue,
+		nextRunDate,
+		payload.Active,
+		userID,
+		groupID,
+		transactionTypeCredit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update credit recurring transfer rule: %w", err)
+	}
+
+	rows, err := tx.Query(
+		`SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
+		 FROM recurring_rules
+		 WHERE user_id = $1 AND recurring_transfer_group_id = $2
+		 ORDER BY transaction_type_id DESC`,
+		userID,
+		groupID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch updated recurring transfer rules: %w", err)
+	}
+	defer rows.Close()
+
+	updatedRules := []*types.RecurringRule{}
+	for rows.Next() {
+		rule, scanErr := scanRecurringRuleRows(rows)
+		if scanErr != nil {
+			return nil, scanErr
+		}
+		updatedRules = append(updatedRules, rule)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit recurring transfer update: %w", err)
+	}
+
+	return updatedRules, nil
+}
+
 func (s *Store) DeleteRecurringRule(id int, userID int) error {
 	current, err := s.GetRecurringRuleByID(id, userID)
 	if err != nil {
@@ -114,7 +328,16 @@ func (s *Store) DeleteRecurringRule(id int, userID int) error {
 		return err
 	}
 
-	_, err = db.ExecWithValidation(s.db, "DELETE FROM recurring_rules WHERE id = $1", id)
+	if current.RecurringTransferGroupID != nil && *current.RecurringTransferGroupID != "" {
+		_, err = db.ExecWithValidation(
+			s.db,
+			"DELETE FROM recurring_rules WHERE user_id = $1 AND recurring_transfer_group_id = $2",
+			userID,
+			*current.RecurringTransferGroupID,
+		)
+	} else {
+		_, err = db.ExecWithValidation(s.db, "DELETE FROM recurring_rules WHERE id = $1", id)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to delete recurring rule: %w", err)
 	}
@@ -122,7 +345,7 @@ func (s *Store) DeleteRecurringRule(id int, userID int) error {
 }
 
 func (s *Store) GeneratePendingTransactionsForDueRules() error {
-	const query = `SELECT id, user_id, account_token, category_id, transaction_type_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
+	const query = `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
 		FROM recurring_rules
 		WHERE active = true AND next_run_date <= CURRENT_DATE
 		ORDER BY next_run_date ASC, id ASC
@@ -323,12 +546,14 @@ func scanRecurringRuleRows(rows *sql.Rows) (*types.RecurringRule, error) {
 	var nextRunDate time.Time
 	var createdAt time.Time
 	var updatedAt time.Time
+	var recurringTransferGroupID sql.NullString
 	err := rows.Scan(
 		&r.ID,
 		&r.UserID,
 		&r.AccountToken,
 		&r.CategoryID,
 		&r.TransactionTypeID,
+		&recurringTransferGroupID,
 		&r.Amount,
 		&r.Description,
 		&r.Frequency,
@@ -340,6 +565,9 @@ func scanRecurringRuleRows(rows *sql.Rows) (*types.RecurringRule, error) {
 	)
 	if err != nil {
 		return nil, err
+	}
+	if recurringTransferGroupID.Valid {
+		r.RecurringTransferGroupID = &recurringTransferGroupID.String
 	}
 	r.NextRunDate = nextRunDate.Format("2006-01-02")
 	r.CreatedAt = createdAt.Format(time.RFC3339)
@@ -352,12 +580,14 @@ func scanRecurringRuleRow(row *sql.Row) (*types.RecurringRule, error) {
 	var nextRunDate time.Time
 	var createdAt time.Time
 	var updatedAt time.Time
+	var recurringTransferGroupID sql.NullString
 	err := row.Scan(
 		&r.ID,
 		&r.UserID,
 		&r.AccountToken,
 		&r.CategoryID,
 		&r.TransactionTypeID,
+		&recurringTransferGroupID,
 		&r.Amount,
 		&r.Description,
 		&r.Frequency,
@@ -370,8 +600,79 @@ func scanRecurringRuleRow(row *sql.Row) (*types.RecurringRule, error) {
 	if err != nil {
 		return nil, err
 	}
+	if recurringTransferGroupID.Valid {
+		r.RecurringTransferGroupID = &recurringTransferGroupID.String
+	}
 	r.NextRunDate = nextRunDate.Format("2006-01-02")
 	r.CreatedAt = createdAt.Format(time.RFC3339)
 	r.UpdatedAt = updatedAt.Format(time.RFC3339)
 	return r, nil
+}
+
+func (s *Store) createRecurringTransferSide(tx *sql.Tx, rule *types.RecurringRule) (*types.RecurringRule, error) {
+	if err := s.validateOwnership(rule.UserID, rule.AccountToken, rule.CategoryID); err != nil {
+		return nil, err
+	}
+	if err := s.validateCategoryTransactionType(rule.UserID, rule.CategoryID, rule.TransactionTypeID); err != nil {
+		return nil, err
+	}
+
+	var insertedRule types.RecurringRule
+	var nextRunDate time.Time
+	var createdAt time.Time
+	var updatedAt time.Time
+	var recurringTransferGroupID sql.NullString
+
+	err := tx.QueryRow(
+		`INSERT INTO recurring_rules
+		 (user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::date, $11)
+		 RETURNING id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at`,
+		rule.UserID,
+		rule.AccountToken,
+		rule.CategoryID,
+		rule.TransactionTypeID,
+		rule.RecurringTransferGroupID,
+		rule.Amount,
+		rule.Description,
+		string(rule.Frequency),
+		rule.IntervalValue,
+		rule.NextRunDate,
+		rule.Active,
+	).Scan(
+		&insertedRule.ID,
+		&insertedRule.UserID,
+		&insertedRule.AccountToken,
+		&insertedRule.CategoryID,
+		&insertedRule.TransactionTypeID,
+		&recurringTransferGroupID,
+		&insertedRule.Amount,
+		&insertedRule.Description,
+		&insertedRule.Frequency,
+		&insertedRule.IntervalValue,
+		&nextRunDate,
+		&insertedRule.Active,
+		&createdAt,
+		&updatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert recurring transfer rule: %w", err)
+	}
+
+	if recurringTransferGroupID.Valid {
+		insertedRule.RecurringTransferGroupID = &recurringTransferGroupID.String
+	}
+	insertedRule.NextRunDate = nextRunDate.Format("2006-01-02")
+	insertedRule.CreatedAt = createdAt.Format(time.RFC3339)
+	insertedRule.UpdatedAt = updatedAt.Format(time.RFC3339)
+
+	return &insertedRule, nil
+}
+
+func newRecurringTransferGroupID() (string, error) {
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(buf), nil
 }

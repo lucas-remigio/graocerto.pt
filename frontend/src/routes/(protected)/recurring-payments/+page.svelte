@@ -16,8 +16,11 @@
 	let showCreateRecurringModal = $state(false);
 	let showCreateRecurringTransferModal = $state(false);
 	let showEditRecurringModal = $state(false);
+	let showEditRecurringTransferModal = $state(false);
 	let showDeleteRecurringModal = $state(false);
 	let selectedRule: RecurringRule | null = $state(null);
+	let selectedTransferGroupId: string | null = $state(null);
+	let selectedTransferRules: RecurringRule[] = $state([]);
 	let pendingDeleteRuleId: number | null = $state(null);
 	let accounts: Account[] = $state([]);
 	let categories: CategoryDto[] = $state([]);
@@ -119,6 +122,18 @@
 		await loadData();
 	}
 
+	async function handleUpdateRecurringTransfer(event: CustomEvent<{ rules: RecurringRule[] }>) {
+		showEditRecurringTransferModal = false;
+		selectedTransferGroupId = null;
+		selectedTransferRules = [];
+
+		const updatedRules = event.detail.rules;
+		const updatedIds = new Set(updatedRules.map((rule) => rule.id));
+		const withoutUpdated = recurringRules.filter((rule) => !updatedIds.has(rule.id));
+		recurringRules = [...updatedRules, ...withoutUpdated];
+		await loadData();
+	}
+
 	async function handleUpdateRecurringRule(event: CustomEvent<RecurringRule>) {
 		showEditRecurringModal = false;
 		selectedRule = null;
@@ -128,6 +143,16 @@
 	}
 
 	function handleEditRule(rule: RecurringRule) {
+		if (rule.recurring_transfer_group_id) {
+			selectedTransferGroupId = rule.recurring_transfer_group_id;
+			selectedTransferRules = recurringRules.filter(
+				(recurringRule) =>
+					recurringRule.recurring_transfer_group_id === rule.recurring_transfer_group_id
+			);
+			showEditRecurringTransferModal = true;
+			return;
+		}
+
 		selectedRule = rule;
 		showEditRecurringModal = true;
 	}
@@ -223,8 +248,24 @@
 {#if showCreateRecurringTransferModal}
 	<RecurringTransferModal
 		account={selectedAccount!}
+		transferGroupId={null}
+		initialRules={[]}
 		on:closeModal={() => (showCreateRecurringTransferModal = false)}
 		on:newRecurringTransfer={handleNewRecurringTransfer}
+	/>
+{/if}
+
+{#if showEditRecurringTransferModal && selectedTransferGroupId}
+	<RecurringTransferModal
+		account={selectedAccount!}
+		transferGroupId={selectedTransferGroupId}
+		initialRules={selectedTransferRules}
+		on:closeModal={() => {
+			showEditRecurringTransferModal = false;
+			selectedTransferGroupId = null;
+			selectedTransferRules = [];
+		}}
+		on:updateRecurringTransfer={handleUpdateRecurringTransfer}
 	/>
 {/if}
 

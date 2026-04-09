@@ -17,9 +17,9 @@ import type {
 	RecurringRulesResponse,
 	CreateRecurringTransferPayload,
 	CreateRecurringRulePayload,
+	UpdateRecurringTransferPayload,
 	UpdateRecurringRulePayload
 } from '$lib/types';
-import { TransactionTypeId } from '$lib/transaction_types_types';
 
 // Cache types
 type TransactionsCacheValue = {
@@ -369,49 +369,24 @@ class DataService {
 	}
 
 	async createRecurringTransfer(payload: CreateRecurringTransferPayload): Promise<RecurringRule[]> {
-		const common = {
-			amount: payload.amount,
-			description: payload.description,
-			frequency: payload.frequency,
-			interval_value: payload.interval_value,
-			active: payload.active ?? true
-		};
-
-		const debitPayload: CreateRecurringRulePayload = {
-			account_token: payload.source_account_token,
-			category_id: payload.debit_category_id,
-			transaction_type_id: TransactionTypeId.Debit,
-			...common
-		};
-		const creditPayload: CreateRecurringRulePayload = {
-			account_token: payload.destination_account_token,
-			category_id: payload.credit_category_id,
-			transaction_type_id: TransactionTypeId.Credit,
-			...common
-		};
-
-		if (payload.frequency === 'monthly' && payload.execution_day) {
-			debitPayload.execution_day = payload.execution_day;
-			creditPayload.execution_day = payload.execution_day;
+		const res = await api_axios.post('recurring-transfers', payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to create recurring transfer: ${res.status}`);
 		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rules as RecurringRule[];
+	}
 
-		const createdRules: RecurringRule[] = [];
-		try {
-			const debitRule = await this.createRecurringRule(debitPayload);
-			createdRules.push(debitRule);
-			const creditRule = await this.createRecurringRule(creditPayload);
-			createdRules.push(creditRule);
-			return createdRules;
-		} catch (error) {
-			await Promise.all(
-				createdRules.map((rule) =>
-					this.deleteRecurringRule(rule.id).catch((rollbackError) => {
-						console.error('Failed to rollback recurring transfer rule:', rollbackError);
-					})
-				)
-			);
-			throw error;
+	async updateRecurringTransfer(
+		groupId: string,
+		payload: UpdateRecurringTransferPayload
+	): Promise<RecurringRule[]> {
+		const res = await api_axios.put(`recurring-transfers/${groupId}`, payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to update recurring transfer: ${res.status}`);
 		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rules as RecurringRule[];
 	}
 
 	async updateRecurringRule(id: number, payload: UpdateRecurringRulePayload): Promise<RecurringRule> {

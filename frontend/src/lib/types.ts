@@ -223,6 +223,7 @@ export interface RecurringRule {
 	account_token: string;
 	category_id: number;
 	transaction_type_id: number;
+	recurring_transfer_group_id?: string;
 	amount: number;
 	description: string;
 	frequency: RecurringFrequency;
@@ -265,4 +266,9 @@ export interface CreateRecurringTransferPayload {
 	interval_value: number;
 	execution_day?: number;
 	active?: boolean;
+}
+
+export interface UpdateRecurringTransferPayload extends CreateRecurringTransferPayload {
+	next_run_date?: string;
+	active: boolean;
 }

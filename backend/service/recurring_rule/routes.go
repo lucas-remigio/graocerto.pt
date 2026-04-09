@@ -30,6 +30,18 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 			http.MethodDelete: h.DeleteRecurringRule,
 		}),
 	))
+
+	router.HandleFunc("/recurring-transfers", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.CreateRecurringTransfer,
+		}),
+	))
+
+	router.HandleFunc("/recurring-transfers/{groupID}", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPut: h.UpdateRecurringTransfer,
+		}),
+	))
 }
 
 func (h *Handler) GetRecurringRules(w http.ResponseWriter, r *http.Request) {
@@ -156,4 +168,53 @@ func (h *Handler) DeleteRecurringRule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.WriteSuccessResponse(w)
+}
+
+func (h *Handler) CreateRecurringTransfer(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	var payload types.CreateRecurringTransferPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	createdRules, err := h.store.CreateRecurringTransfer(&payload, userID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteDataResponse(w, map[string]interface{}{
+		"recurring_rules": createdRules,
+	})
+}
+
+func (h *Handler) UpdateRecurringTransfer(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	groupID, ok := middleware.ExtractPathParamAndRespond(w, r, 1)
+	if !ok {
+		return
+	}
+
+	var payload types.UpdateRecurringTransferPayload
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	updatedRules, err := h.store.UpdateRecurringTransfer(groupID, &payload, userID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteDataResponse(w, map[string]interface{}{
+		"recurring_rules": updatedRules,
+	})
 }
