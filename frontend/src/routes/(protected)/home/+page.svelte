@@ -316,6 +316,18 @@
 		wsUpdateScreen();
 	}
 
+	async function handleApprovePendingTransaction(transaction: TransactionDto) {
+		try {
+			const response = await dataService.approvePendingTransaction(transaction);
+			updateAccountAndMonths(response);
+			upsertTransaction(response.transaction);
+			refreshCachesAndNotify();
+		} catch (err) {
+			console.error('Error approving pending transaction:', err);
+			error = $t('errors.failed-update-transaction');
+		}
+	}
+
 	async function deleteTransaction(transaction: TransactionDto) {
 		try {
 			const response = await dataService.deleteTransaction(transaction);
@@ -560,6 +572,10 @@
 								on:deleteTransaction={({ detail: { transaction } }) =>
 									handleDeleteTransaction(transaction)}
 								on:newTransfer={handleNewTransfer}
+								on:approvePendingTransaction={({ detail: { transaction } }) =>
+									handleApprovePendingTransaction(transaction)}
+								on:rejectPendingTransaction={({ detail: { transaction } }) =>
+									handleDeleteTransaction(transaction)}
 							/>
 						{:else}
 							<TransactionStatisticsComponent

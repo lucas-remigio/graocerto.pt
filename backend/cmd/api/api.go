@@ -15,6 +15,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/service/investment_calculator"
 	"github.com/lucas-remigio/wallet-tracker/service/openai"
+	"github.com/lucas-remigio/wallet-tracker/service/recurring_rule"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
@@ -44,6 +45,7 @@ func (s *APIServer) Run() error {
 	userStore := user.NewStore(s.db)
 	transactionTypesStore := transaction_types.NewStore(s.db)
 	categoryStore := category.NewStore(s.db)
+	recurringRuleStore := recurring_rule.NewStore(s.db)
 	openAiStore := openai.NewClient()
 	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
 	transactionStore := transaction.NewStore(s.db, accountStore)
@@ -64,11 +66,16 @@ func (s *APIServer) Run() error {
 	transactionHandler := transaction.NewHandler(transactionStore)
 	transactionHandler.RegisterRoutes(apiV1Router)
 
+	recurringRuleHandler := recurring_rule.NewHandler(recurringRuleStore)
+	recurringRuleHandler.RegisterRoutes(apiV1Router)
+
 	accountStore.SetTransactionStore(transactionStore)
 
 	investmentCalculatorStore := investment_calculator.NewStore()
 	investmentCalculatorHandler := investment_calculator.NewHandler(investmentCalculatorStore)
 	investmentCalculatorHandler.RegisterRoutes(apiV1Router)
+
+	go s.runRecurringRuleScheduler(recurringRuleStore)
 
 	// Set up rate limiting middleware
 	// Allow 2 requests per second, with a burst of 10 requests, and a
@@ -163,4 +170,20 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule.Store) {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+
+	run := func() {
+		if err := recurringRuleStore.GeneratePendingTransactionsForDueRules(); err != nil {
+			log.Printf("recurring rule scheduler error: %v", err)
+		}
+	}
+
+	run()
+	for range ticker.C {
+		run()
+	}
 }

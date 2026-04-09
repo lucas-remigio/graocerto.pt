@@ -12,7 +12,11 @@ import type {
 	TransactionTypesResponse,
 	TransactionsResponse,
 	TransactionChangeResponse,
-	CategoryChangeResponse
+	CategoryChangeResponse,
+	RecurringRule,
+	RecurringRulesResponse,
+	CreateRecurringRulePayload,
+	UpdateRecurringRulePayload
 } from '$lib/types';
 
 // Cache types
@@ -34,6 +38,7 @@ class DataService {
 	private availableMonthsCache = new Map<string, TimedValue<MonthYear[]>>();
 	private categoriesCache: TimedValue<CategoryDto[]> | null = null;
 	private transactionTypesCache: TimedValue<TransactionType[]> | null = null;
+	private recurringRulesCache: TimedValue<RecurringRule[]> | null = null;
 
 	private now() {
 		return Date.now();
@@ -65,6 +70,7 @@ class DataService {
 		this.availableMonthsCache.clear();
 		this.categoriesCache = null;
 		this.transactionTypesCache = null;
+		this.recurringRulesCache = null;
 	}
 
 	clearTransactionCaches(): void {
@@ -93,6 +99,10 @@ class DataService {
 	clearCategoryCaches(): void {
 		this.categoriesCache = null;
 		this.transactionTypesCache = null;
+	}
+
+	clearRecurringRulesCache(): void {
+		this.recurringRulesCache = null;
 	}
 
 	// Fetch accounts
@@ -325,6 +335,52 @@ class DataService {
 		// Clear caches only for the account this transaction belongs to
 		this.clearAccountCaches(transaction.account_token);
 		return response.data;
+	}
+
+	async approvePendingTransaction(transaction: TransactionDto): Promise<TransactionChangeResponse> {
+		const response = await api_axios.post(`transactions/approve/${transaction.id}`);
+		if (response.status !== 200) {
+			throw new Error(`Failed to approve transaction: ${response.status}`);
+		}
+		this.clearAccountCaches(transaction.account_token);
+		return response.data;
+	}
+
+	async fetchRecurringRules(): Promise<RecurringRule[]> {
+		if (this.isValid(this.recurringRulesCache)) return this.recurringRulesCache.data;
+		const res = await api_axios.get('recurring-rules');
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch recurring rules: ${res.status}`);
+		}
+		const data: RecurringRulesResponse = res.data;
+		this.recurringRulesCache = this.wrap(data.recurring_rules);
+		return data.recurring_rules;
+	}
+
+	async createRecurringRule(payload: CreateRecurringRulePayload): Promise<RecurringRule> {
+		const res = await api_axios.post('recurring-rules', payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to create recurring rule: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rule as RecurringRule;
+	}
+
+	async updateRecurringRule(id: number, payload: UpdateRecurringRulePayload): Promise<RecurringRule> {
+		const res = await api_axios.put(`recurring-rules/${id}`, payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to update recurring rule: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rule as RecurringRule;
+	}
+
+	async deleteRecurringRule(id: number): Promise<void> {
+		const res = await api_axios.delete(`recurring-rules/${id}`);
+		if (res.status !== 200) {
+			throw new Error(`Failed to delete recurring rule: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
 	}
 }
 

@@ -13,6 +13,8 @@ type TransactionStore interface {
 	UpdateTransactionAndReturn(payload *UpdateTransactionPayload, userId int) (*TransactionChangeResponse, error)
 	DeleteTransaction(transactionId int, userId int) (balance *float64, err error)
 	DeleteTransactionAndReturn(transactionId int, userId int) (*TransactionChangeResponse, error)
+	ApprovePendingTransactionAndReturn(transactionID int, userID int) (*TransactionChangeResponse, error)
+	RejectPendingTransactionAndReturn(transactionID int, userID int) (*TransactionChangeResponse, error)
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
@@ -53,6 +55,7 @@ type Transaction struct {
 	Description       string  `json:"description"`
 	Date              string  `json:"date"`
 	Balance           float64 `json:"balance"`
+	IsPending         bool    `json:"is_pending"`
 	TransferGroupId   *string `json:"transfer_group_id,omitempty"`
 	CreatedAt         string  `json:"created_at"`
 }
@@ -64,6 +67,7 @@ type TransactionDTO struct {
 	Description     string           `json:"description"`
 	Date            time.Time        `json:"date"`
 	Balance         float64          `json:"balance"`
+	IsPending       bool             `json:"is_pending"`
 	CreatedAt       time.Time        `json:"created_at"`
 	Category        *CategoryDTO     `json:"category,omitempty"`
 	TransferGroupId *string          `json:"transfer_group_id,omitempty"`

@@ -27,6 +27,7 @@ export interface TransactionDto {
 	description: string;
 	date: string;
 	balance: number;
+	is_pending: boolean;
 	created_at: string;
 	category: CategoryDto;
 	transaction_type: TransactionType;
@@ -212,4 +213,43 @@ export interface TransactionStatistics {
 	daily_totals: DailyTotals[];
 	start_date: string; // Format: YYYY-MM-DD
 	end_date: string; // Format: YYYY-MM-DD
+}
+
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'every_x_days';
+
+export interface RecurringRule {
+	id: number;
+	user_id: number;
+	account_token: string;
+	category_id: number;
+	transaction_type_id: number;
+	amount: number;
+	description: string;
+	frequency: RecurringFrequency;
+	interval_value: number;
+	next_run_date: string;
+	active: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface RecurringRulesResponse {
+	recurring_rules: RecurringRule[];
+}
+
+export interface CreateRecurringRulePayload {
+	account_token: string;
+	category_id: number;
+	transaction_type_id: number;
+	amount: number;
+	description: string;
+	frequency: RecurringFrequency;
+	interval_value: number;
+	execution_day?: number;
+	active?: boolean;
+}
+
+export interface UpdateRecurringRulePayload extends CreateRecurringRulePayload {
+	next_run_date?: string;
+	active: boolean;
 }

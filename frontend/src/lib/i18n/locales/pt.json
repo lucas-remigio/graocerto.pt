@@ -90,6 +90,7 @@
 	"navbar": {
 		"home": "Início",
 		"categories": "Categorias",
+		"recurring-payments": "Pagamentos Recorrentes",
 		"notifications": "Notificações",
 		"calculator": "Calculadora",
 		"investment-calculator": "Calculadora de Investimentos",
@@ -210,6 +211,26 @@
 		"show-all-transactions": "Mostrar todas as transações"
 	},
 
+	"recurring": {
+		"templates-active": "{count} modelos ativos",
+		"new-recurring-payment": "Novo pagamento recorrente",
+		"edit-recurring-payment": "Editar pagamento recorrente",
+		"description-placeholder": "Descrição",
+		"frequency-daily": "Diário",
+		"frequency-weekly": "Semanal",
+		"frequency-monthly": "Mensal",
+		"frequency-every-x-days": "A cada X dias",
+		"active": "Ativo",
+		"no-templates-yet": "Ainda não existem modelos recorrentes.",
+		"create-first-recurring": "Criar o primeiro recorrente",
+		"frequency": "Frequência",
+		"interval": "Intervalo",
+		"next-run": "Próxima execução",
+		"execution-day": "Dia de execução (mensal)",
+		"execution-day-help": "Escolhe um dia entre 1 e 31",
+		"execution-day-end-of-month-note": "Nos meses com menos dias, será executado no último dia do mês."
+	},
+
 	"transactions": {
 		"no-transactions": "Nenhuma transação encontrada",
 		"no-transactions-for": "Nenhuma transação encontrada para",
@@ -253,6 +274,7 @@
 		"start-date": "Data Inicial",
 		"end-date": "Data Final",
 		"date-range": "Período",
+		"pending": "Pendente",
 		"showing": "A mostrar",
 		"of": "de",
 		"transactions-lowercase": "transações"

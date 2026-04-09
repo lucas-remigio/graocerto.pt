@@ -6,7 +6,16 @@
 		TransactionGroup,
 		TransactionChangeResponse
 	} from '$lib/types';
-	import { ArrowRightLeft, CircleDollarSign, Filter, Pencil, Plus, Trash } from 'lucide-svelte';
+	import {
+		ArrowRightLeft,
+		Check,
+		CircleDollarSign,
+		Filter,
+		Pencil,
+		Plus,
+		Trash,
+		X
+	} from 'lucide-svelte';
 	import TransactionModal from './TransactionModal.svelte';
 	import { createEventDispatcher } from 'svelte';
 
@@ -135,6 +144,10 @@
 	}
 
 	function getRowClass(tx: TransactionDto): string {
+		if (tx.is_pending) {
+			return $appliedTheme === 'dark' ? 'bg-base-300/80' : 'bg-base-200';
+		}
+
 		const type = tx.transaction_type.type_slug;
 		if ($appliedTheme === 'dark') {
 			if (type === 'debit') return 'bg-red-900 bg-opacity-40';
@@ -223,6 +236,14 @@
 	function handleDeleteTransaction(transaction: TransactionDto) {
 		showDeleteTransactionModal = true;
 		selectedTransaction = transaction;
+	}
+
+	function handleApprovePendingTransaction(transaction: TransactionDto) {
+		dispatch('approvePendingTransaction', { transaction });
+	}
+
+	function handleRejectPendingTransaction(transaction: TransactionDto) {
+		dispatch('rejectPendingTransaction', { transaction });
 	}
 
 	function closeDeleteTransactionModal() {
@@ -401,26 +422,46 @@
 												<ArrowRightLeft size={14} class="text-info" />
 											</span>
 										{/if}
+										{#if tx.is_pending}
+											<span class="badge badge-warning badge-sm">{$t('transactions.pending')}</span>
+										{/if}
 										<span>{formatCurrency(tx.amount)}</span>
 									</div>
 								</td>
 								<td class="text-base-content"> {tx.description || 'N/A'} </td>
 								<td class="text-base-content">
 									<div class="flex items-center justify-center gap-x-2">
-										<button
-											class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
-											aria-label="Edit Transaction"
-											on:click={() => handleEditTransaction(tx)}
-										>
-											<Pencil size={20} />
-										</button>
-										<button
-											class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
-											aria-label="Delete Transaction"
-											on:click={() => handleDeleteTransaction(tx)}
-										>
-											<Trash size={20} />
-										</button>
+										{#if tx.is_pending}
+											<button
+												class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-success backdrop-blur-sm"
+												aria-label="Approve Transaction"
+												on:click={() => handleApprovePendingTransaction(tx)}
+											>
+												<Check size={20} />
+											</button>
+											<button
+												class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm"
+												aria-label="Reject Transaction"
+												on:click={() => handleRejectPendingTransaction(tx)}
+											>
+												<X size={20} />
+											</button>
+										{:else}
+											<button
+												class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
+												aria-label="Edit Transaction"
+												on:click={() => handleEditTransaction(tx)}
+											>
+												<Pencil size={20} />
+											</button>
+											<button
+												class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-error backdrop-blur-sm hover:bg-error/20"
+												aria-label="Delete Transaction"
+												on:click={() => handleDeleteTransaction(tx)}
+											>
+												<Trash size={20} />
+											</button>
+										{/if}
 									</div>
 								</td>
 							</tr>

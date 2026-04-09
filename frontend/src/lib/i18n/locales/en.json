@@ -94,6 +94,7 @@
 	"navbar": {
 		"home": "Home",
 		"categories": "Categories",
+		"recurring-payments": "Recurring Payments",
 		"notifications": "Notifications",
 		"calculator": "Calculator",
 		"investment-calculator": "Investment Calculator",
@@ -207,6 +208,26 @@
 		"show-all-transactions": "Show all transactions"
 	},
 
+	"recurring": {
+		"templates-active": "{count} active templates",
+		"new-recurring-payment": "New recurring payment",
+		"edit-recurring-payment": "Edit recurring payment",
+		"description-placeholder": "Description",
+		"frequency-daily": "Daily",
+		"frequency-weekly": "Weekly",
+		"frequency-monthly": "Monthly",
+		"frequency-every-x-days": "Every X days",
+		"active": "Active",
+		"no-templates-yet": "No recurring templates yet.",
+		"create-first-recurring": "Create first recurring",
+		"frequency": "Frequency",
+		"interval": "Interval",
+		"next-run": "Next Run",
+		"execution-day": "Execution day (monthly)",
+		"execution-day-help": "Choose a day between 1 and 31",
+		"execution-day-end-of-month-note": "For months with fewer days, this will run on the last day of the month."
+	},
+
 	"transactions": {
 		"no-transactions": "No transactions found",
 		"no-transactions-for": "No transactions found for",
@@ -250,6 +271,7 @@
 		"start-date": "Initial Date",
 		"end-date": "Final Date",
 		"date-range": "Period",
+		"pending": "Pending",
 		"showing": "Showing",
 		"of": "of",
 		"transactions-lowercase": "transactions"
