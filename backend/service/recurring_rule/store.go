@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
@@ -64,6 +65,90 @@ func (s *Store) GetRecurringRulesByUserID(userID int) ([]*types.RecurringRule, e
 		WHERE user_id = $1
 		ORDER BY active DESC, next_run_date ASC, id DESC`
 	return db.QueryList(s.db, query, scanRecurringRuleRows, userID)
+}
+
+func (s *Store) GetRecurringForecast(userID int, accountToken string, days int) (*types.RecurringForecastResponse, error) {
+	if days <= 0 {
+		days = 30
+	}
+
+	if err := s.validateAccountOwnership(userID, accountToken); err != nil {
+		return nil, err
+	}
+
+	query := `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
+		FROM recurring_rules
+		WHERE user_id = $1 AND account_token = $2 AND active = true
+		ORDER BY next_run_date ASC, id ASC`
+	rules, err := db.QueryList(s.db, query, scanRecurringRuleRows, userID, accountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load recurring rules for forecast: %w", err)
+	}
+
+	windowStart := time.Now().UTC().Truncate(24 * time.Hour)
+	windowEnd := windowStart.AddDate(0, 0, days)
+
+	items := make([]*types.RecurringForecastItem, 0)
+	summary := &types.RecurringForecastSummary{}
+
+	for _, rule := range rules {
+		nextDate, err := time.Parse("2006-01-02", rule.NextRunDate)
+		if err != nil {
+			return nil, fmt.Errorf("invalid next run date for rule %d: %w", rule.ID, err)
+		}
+
+		// Protect against malformed loops in case of unexpected frequency/date issues.
+		for iteration := 0; iteration < 2000; iteration++ {
+			if nextDate.After(windowEnd) {
+				break
+			}
+
+			if !nextDate.Before(windowStart) {
+				items = append(items, &types.RecurringForecastItem{
+					RecurringRuleID:          rule.ID,
+					AccountToken:             rule.AccountToken,
+					CategoryID:               rule.CategoryID,
+					TransactionTypeID:        rule.TransactionTypeID,
+					RecurringTransferGroupID: rule.RecurringTransferGroupID,
+					Amount:                   rule.Amount,
+					Description:              rule.Description,
+					Date:                     nextDate.Format("2006-01-02"),
+				})
+
+				switch rule.TransactionTypeID {
+				case transactionTypeCredit:
+					summary.Credit += rule.Amount
+					summary.Difference += rule.Amount
+				case transactionTypeDebit:
+					summary.Debit += rule.Amount
+					summary.Difference -= rule.Amount
+				}
+			}
+
+			nextDateStr, err := calculateNextRunDate(nextDate.Format("2006-01-02"), rule.Frequency, rule.IntervalValue)
+			if err != nil {
+				return nil, fmt.Errorf("failed to calculate forecast next run date for rule %d: %w", rule.ID, err)
+			}
+			nextDate, err = time.Parse("2006-01-02", nextDateStr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse forecast next run date for rule %d: %w", rule.ID, err)
+			}
+		}
+	}
+
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].Date != items[j].Date {
+			return items[i].Date < items[j].Date
+		}
+		return items[i].RecurringRuleID < items[j].RecurringRuleID
+	})
+
+	return &types.RecurringForecastResponse{
+		AccountToken: accountToken,
+		Days:         days,
+		Items:        items,
+		Summary:      summary,
+	}, nil
 }
 
 func (s *Store) GetRecurringRuleByID(id int, userID int) (*types.RecurringRule, error) {
@@ -527,6 +612,23 @@ func daysInMonth(year int, month time.Month) int {
 }
 
 func (s *Store) validateOwnership(userID int, accountToken string, categoryID int) error {
+	if err := s.validateAccountOwnership(userID, accountToken); err != nil {
+		return err
+	}
+
+	var categoryOwnerID int
+	err := s.db.QueryRow("SELECT user_id FROM categories WHERE id = $1", categoryID).Scan(&categoryOwnerID)
+	if err != nil {
+		return fmt.Errorf("failed to get category ownership: %w", err)
+	}
+	if err := db.ValidateOwnership(categoryOwnerID, userID, "category"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) validateAccountOwnership(userID int, accountToken string) error {
 	var accountOwnerID int
 	err := s.db.QueryRow("SELECT user_id FROM accounts WHERE token = $1", accountToken).Scan(&accountOwnerID)
 	if err != nil {
@@ -535,16 +637,6 @@ func (s *Store) validateOwnership(userID int, accountToken string, categoryID in
 	if err := db.ValidateOwnership(accountOwnerID, userID, "account"); err != nil {
 		return err
 	}
-
-	var categoryOwnerID int
-	err = s.db.QueryRow("SELECT user_id FROM categories WHERE id = $1", categoryID).Scan(&categoryOwnerID)
-	if err != nil {
-		return fmt.Errorf("failed to get category ownership: %w", err)
-	}
-	if err := db.ValidateOwnership(categoryOwnerID, userID, "category"); err != nil {
-		return err
-	}
-
 	return nil
 }
 

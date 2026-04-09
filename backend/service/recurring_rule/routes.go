@@ -1,7 +1,9 @@
 package recurring_rule
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/lucas-remigio/wallet-tracker/middleware"
 	"github.com/lucas-remigio/wallet-tracker/types"
@@ -21,6 +23,12 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 		middleware.MethodRouter(map[string]http.HandlerFunc{
 			http.MethodPost: h.CreateRecurringRule,
 			http.MethodGet:  h.GetRecurringRules,
+		}),
+	))
+
+	router.HandleFunc("/recurring-rules/forecast", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodGet: h.GetRecurringForecast,
 		}),
 	))
 
@@ -59,6 +67,37 @@ func (h *Handler) GetRecurringRules(w http.ResponseWriter, r *http.Request) {
 	middleware.WriteDataResponse(w, map[string]interface{}{
 		"recurring_rules": recurringRules,
 	})
+}
+
+func (h *Handler) GetRecurringForecast(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	accountToken := r.URL.Query().Get("account_token")
+	if accountToken == "" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account_token is required"))
+		return
+	}
+
+	days := 30
+	if rawDays := r.URL.Query().Get("days"); rawDays != "" {
+		parsedDays, err := strconv.Atoi(rawDays)
+		if err != nil || (parsedDays != 30 && parsedDays != 60 && parsedDays != 90) {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("days must be one of 30, 60, or 90"))
+			return
+		}
+		days = parsedDays
+	}
+
+	forecast, err := h.store.GetRecurringForecast(userID, accountToken, days)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteDataResponse(w, forecast)
 }
 
 func (h *Handler) CreateRecurringRule(w http.ResponseWriter, r *http.Request) {

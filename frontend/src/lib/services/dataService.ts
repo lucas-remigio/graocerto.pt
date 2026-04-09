@@ -14,6 +14,8 @@ import type {
 	TransactionChangeResponse,
 	CategoryChangeResponse,
 	RecurringRule,
+	RecurringForecastResponse,
+	RecurringForecastRangeDays,
 	RecurringRulesResponse,
 	CreateRecurringTransferPayload,
 	CreateRecurringRulePayload,
@@ -357,6 +359,22 @@ class DataService {
 		const data: RecurringRulesResponse = res.data;
 		this.recurringRulesCache = this.wrap(data.recurring_rules);
 		return data.recurring_rules;
+	}
+
+	async fetchRecurringForecast(
+		accountToken: string,
+		days: RecurringForecastRangeDays
+	): Promise<RecurringForecastResponse> {
+		const res = await api_axios.get('recurring-rules/forecast', {
+			params: {
+				account_token: accountToken,
+				days
+			}
+		});
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch recurring forecast: ${res.status}`);
+		}
+		return res.data as RecurringForecastResponse;
 	}
 
 	async createRecurringRule(payload: CreateRecurringRulePayload): Promise<RecurringRule> {

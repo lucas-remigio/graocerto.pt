@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { CategoryDto, RecurringRule } from '$lib/types';
 	import { t } from '$lib/i18n';
+	import { locale } from 'svelte-i18n';
 	import { ArrowRightLeft, Pencil, Trash2 } from 'lucide-svelte';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { formatCurrency } from '$lib/utils/currency';
@@ -72,12 +73,13 @@
 		return type === 'debit' ? 'bg-red-100' : 'bg-green-100';
 	}
 
-	function formatDateDDMMYYYY(date: string): string {
-		const parsed = new Date(date);
-		const day = String(parsed.getUTCDate()).padStart(2, '0');
-		const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-		const year = parsed.getUTCFullYear();
-		return `${day}-${month}-${year}`;
+	let currentLocale = $derived($locale || 'pt');
+
+	function formatNextRunDate(date: string): string {
+		return new Date(date).toLocaleDateString(currentLocale, {
+			day: 'numeric',
+			month: 'long'
+		});
 	}
 </script>
 
@@ -100,7 +102,7 @@
 					<td class="text-base-content">
 						<span class="badge badge-ghost">{getFrequencyLabel(rule)}</span>
 					</td>
-					<td class="text-base-content">{formatDateDDMMYYYY(rule.next_run_date)}</td>
+					<td class="text-base-content">{formatNextRunDate(rule.next_run_date)}</td>
 					<td class="text-base-content">
 						<div class="flex flex-col items-center gap-0.5">
 							{#if getParentCategoryName(getRuleCategory(rule))}

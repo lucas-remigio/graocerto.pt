@@ -17,6 +17,7 @@ type RecurringRuleStore interface {
 	DeleteRecurringRule(id int, userID int) error
 	GetRecurringRuleByID(id int, userID int) (*RecurringRule, error)
 	GetRecurringRulesByUserID(userID int) ([]*RecurringRule, error)
+	GetRecurringForecast(userID int, accountToken string, days int) (*RecurringForecastResponse, error)
 	GeneratePendingTransactionsForDueRules() error
 }
 
@@ -66,6 +67,30 @@ type UpdateRecurringRulePayload struct {
 
 type RecurringRulesResponse struct {
 	RecurringRules []*RecurringRule `json:"recurring_rules"`
+}
+
+type RecurringForecastItem struct {
+	RecurringRuleID          int     `json:"recurring_rule_id"`
+	AccountToken             string  `json:"account_token"`
+	CategoryID               int     `json:"category_id"`
+	TransactionTypeID        int     `json:"transaction_type_id"`
+	RecurringTransferGroupID *string `json:"recurring_transfer_group_id,omitempty"`
+	Amount                   float64 `json:"amount"`
+	Description              string  `json:"description"`
+	Date                     string  `json:"date"`
+}
+
+type RecurringForecastSummary struct {
+	Credit     float64 `json:"credit"`
+	Debit      float64 `json:"debit"`
+	Difference float64 `json:"difference"`
+}
+
+type RecurringForecastResponse struct {
+	AccountToken string                    `json:"account_token"`
+	Days         int                       `json:"days"`
+	Items        []*RecurringForecastItem  `json:"items"`
+	Summary      *RecurringForecastSummary `json:"summary"`
 }
 
 type CreateRecurringTransferPayload struct {

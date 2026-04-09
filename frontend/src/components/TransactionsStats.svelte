@@ -6,14 +6,18 @@
 
 	let {
 		transactions = [],
-		recurringRules = []
+		recurringRules = [],
+		summaryItems = []
 	}: {
 		transactions?: TransactionDto[];
 		recurringRules?: RecurringRule[];
+		summaryItems?: { amount: number; typeId: number }[];
 	} = $props();
 
-	let summaryItems = $derived(
-		recurringRules.length > 0
+	let normalizedSummaryItems = $derived(
+		summaryItems.length > 0
+			? summaryItems
+			: recurringRules.length > 0
 			? recurringRules.map((rule) => ({
 					amount: rule.amount,
 					typeId: rule.transaction_type_id
@@ -31,7 +35,7 @@
 			difference: 0
 		};
 
-		summaryItems.forEach((item) => {
+		normalizedSummaryItems.forEach((item) => {
 			switch (item.typeId) {
 				case TransactionTypeId.Credit:
 					result.credit += item.amount;

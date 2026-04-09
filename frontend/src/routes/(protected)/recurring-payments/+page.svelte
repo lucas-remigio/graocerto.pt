@@ -1,11 +1,18 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import { dataService } from '$lib/services/dataService';
-	import type { Account, CategoryDto, RecurringRule } from '$lib/types';
+	import type {
+		Account,
+		CategoryDto,
+		RecurringForecastItem,
+		RecurringForecastRangeDays,
+		RecurringRule
+	} from '$lib/types';
 	import { t } from '$lib/i18n';
-	import { ArrowRightLeft, Plus, Repeat } from 'lucide-svelte';
+	import { ArrowRightLeft, BarChart3, List, Plus, Repeat } from 'lucide-svelte';
 	import RecurringRuleModal from '$components/RecurringRuleModal.svelte';
 	import RecurringTransferModal from '$components/RecurringTransferModal.svelte';
+	import RecurringForecastTable from '$components/RecurringForecastTable.svelte';
 	import RecurringRulesTable from '$components/RecurringRulesTable.svelte';
 	import TransactionsStats from '$components/TransactionsStats.svelte';
 	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
@@ -28,11 +35,31 @@
 	let accountsLoading = $state(false);
 	let selectedAccount: Account | null = $state(null);
 	let isLargeScreen: boolean = $state(false);
+	let recurringViewMode = $state<'rules' | 'forecast'>('rules');
+	let forecastDays: RecurringForecastRangeDays = $state(30);
+	let forecastItems: RecurringForecastItem[] = $state([]);
+	let forecastLoading = $state(false);
 
 	let filteredRecurringRules = $derived(
 		selectedAccount
 			? recurringRules.filter((rule) => rule.account_token === selectedAccount!.token)
 			: []
+	);
+
+	let forecastSummaryItems = $derived(
+		forecastItems.map((item) => ({
+			amount: item.amount,
+			typeId: item.transaction_type_id
+		}))
+	);
+
+	let selectedSummaryItems = $derived(
+		recurringViewMode === 'forecast'
+			? forecastSummaryItems
+			: filteredRecurringRules.map((rule) => ({
+					amount: rule.amount,
+					typeId: rule.transaction_type_id
+				}))
 	);
 
 	function updateScreenSize() {
@@ -58,6 +85,37 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	async function loadForecast() {
+		if (!selectedAccount) {
+			forecastItems = [];
+			return;
+		}
+		forecastLoading = true;
+		try {
+			const forecast = await dataService.fetchRecurringForecast(
+				selectedAccount.token,
+				forecastDays
+			);
+			forecastItems = forecast.items;
+		} catch (err) {
+			console.error(err);
+			error = $t('errors.failed-load-data');
+		} finally {
+			forecastLoading = false;
+		}
+	}
+
+	async function syncForecastIfNeeded() {
+		if (recurringViewMode === 'forecast') {
+			await loadForecast();
+		}
+	}
+
+	async function refreshRulesAndForecast() {
+		await loadData();
+		await syncForecastIfNeeded();
 	}
 
 	async function fetchAccounts(showLoading: boolean) {
@@ -107,20 +165,21 @@
 		await deleteRule(pendingDeleteRuleId);
 		showDeleteRecurringModal = false;
 		pendingDeleteRuleId = null;
+		await syncForecastIfNeeded();
 	}
 
 	async function handleNewRecurringRule(event: CustomEvent<RecurringRule>) {
 		showCreateRecurringModal = false;
 		const created = event.detail;
 		recurringRules = [created, ...recurringRules];
-		await loadData();
+		await refreshRulesAndForecast();
 	}
 
 	async function handleNewRecurringTransfer(event: CustomEvent<{ rules: RecurringRule[] }>) {
 		showCreateRecurringTransferModal = false;
 		const createdRules = event.detail.rules;
 		recurringRules = [...createdRules, ...recurringRules];
-		await loadData();
+		await refreshRulesAndForecast();
 	}
 
 	async function handleUpdateRecurringTransfer(event: CustomEvent<{ rules: RecurringRule[] }>) {
@@ -132,7 +191,7 @@
 		const updatedIds = new Set(updatedRules.map((rule) => rule.id));
 		const withoutUpdated = recurringRules.filter((rule) => !updatedIds.has(rule.id));
 		recurringRules = [...updatedRules, ...withoutUpdated];
-		await loadData();
+		await refreshRulesAndForecast();
 	}
 
 	async function handleUpdateRecurringRule(event: CustomEvent<RecurringRule>) {
@@ -140,7 +199,7 @@
 		selectedRule = null;
 		const updated = event.detail;
 		recurringRules = recurringRules.map((rule) => (rule.id === updated.id ? updated : rule));
-		await loadData();
+		await refreshRulesAndForecast();
 	}
 
 	function handleEditRule(rule: RecurringRule) {
@@ -161,6 +220,21 @@
 	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
 		localStorage.setItem('selectedAccount', selectedAccount.token);
+		syncForecastIfNeeded();
+	}
+
+	function setRecurringViewMode(mode: 'rules' | 'forecast') {
+		recurringViewMode = mode;
+		if (mode === 'forecast') {
+			loadForecast();
+		}
+	}
+
+	function setForecastDays(days: RecurringForecastRangeDays) {
+		forecastDays = days;
+		if (recurringViewMode === 'forecast') {
+			loadForecast();
+		}
 	}
 
 	onMount(async () => {
@@ -183,10 +257,33 @@
 		{accounts}
 		{selectedAccount}
 		{isLargeScreen}
-		accountsLoading={accountsLoading}
+		{accountsLoading}
 		showRightPanel={!!selectedAccount}
 		on:select={handleSelectAccount}
 	>
+		<div class="mb-2 flex justify-center">
+			<div class="btn-group">
+				<button
+					class="btn btn-sm {recurringViewMode === 'rules' ? 'btn-primary text-base-100' : 'btn-ghost'}"
+					onclick={() => setRecurringViewMode('rules')}
+				>
+					<List size={16} class="mr-1" />
+					<span>{$t('recurring.view-rules')}</span>
+				</button>
+				<button
+					class="btn btn-sm {recurringViewMode === 'forecast'
+						? 'btn-primary text-base-100'
+						: 'btn-ghost'}"
+					onclick={() => setRecurringViewMode('forecast')}
+				>
+					<BarChart3 size={16} class="mr-1" />
+					<span>{$t('recurring.view-forecast')}</span>
+				</button>
+			</div>
+		</div>
+
+		<div class="divider my-0"></div>
+
 		<div class="my-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 			<div
 				class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
@@ -210,13 +307,46 @@
 							values: { count: filteredRecurringRules.length }
 						})}
 					</span>
-					<TransactionsStats recurringRules={filteredRecurringRules} />
+					<TransactionsStats summaryItems={selectedSummaryItems} />
 				</div>
 			</div>
 		</div>
 
+
 		{#if loading}
 			<div class="loading loading-spinner loading-lg"></div>
+		{:else if recurringViewMode === 'forecast'}
+			<div class="mb-3 mt-1 flex justify-center">
+				<div class="btn-group">
+					<button
+						class="btn btn-sm {forecastDays === 30 ? 'btn-primary text-base-100' : 'btn-ghost'}"
+						onclick={() => setForecastDays(30)}
+					>
+						30d
+					</button>
+					<button
+						class="btn btn-sm {forecastDays === 60 ? 'btn-primary text-base-100' : 'btn-ghost'}"
+						onclick={() => setForecastDays(60)}
+					>
+						60d
+					</button>
+					<button
+						class="btn btn-sm {forecastDays === 90 ? 'btn-primary text-base-100' : 'btn-ghost'}"
+						onclick={() => setForecastDays(90)}
+					>
+						90d
+					</button>
+				</div>
+			</div>
+			{#if forecastLoading}
+				<div class="loading loading-spinner loading-lg"></div>
+			{:else if forecastItems.length === 0}
+				<div class="flex h-40 flex-col items-center justify-center">
+					<p class="text-base-content/70">{$t('recurring.no-forecast-items')}</p>
+				</div>
+			{:else}
+				<RecurringForecastTable items={forecastItems} {categories} />
+			{/if}
 		{:else if filteredRecurringRules.length === 0}
 			<div class="flex h-64 flex-col items-center justify-center">
 				<p class="text-base-content/70">{$t('recurring.no-templates-yet')}</p>

@@ -241,6 +241,32 @@ export interface RecurringRulesResponse {
 	recurring_rules: RecurringRule[];
 }
 
+export type RecurringForecastRangeDays = 30 | 60 | 90;
+
+export interface RecurringForecastItem {
+	recurring_rule_id: number;
+	account_token: string;
+	category_id: number;
+	transaction_type_id: number;
+	recurring_transfer_group_id?: string;
+	amount: number;
+	description: string;
+	date: string;
+}
+
+export interface RecurringForecastSummary {
+	credit: number;
+	debit: number;
+	difference: number;
+}
+
+export interface RecurringForecastResponse {
+	account_token: string;
+	days: RecurringForecastRangeDays;
+	items: RecurringForecastItem[];
+	summary: RecurringForecastSummary;
+}
+
 export interface CreateRecurringRulePayload {
 	account_token: string;
 	category_id: number;
