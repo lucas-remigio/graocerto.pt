@@ -1,11 +1,11 @@
 meta {
-  name: Healthz
+  name: HealthzProd
   type: http
-  seq: 9
+  seq: 2
 }
 
 get {
-  url: http://localhost:3001/api/v1/readyz
+  url: https://graocerto.pt/api/v1/readyz
   body: none
   auth: inherit
 }

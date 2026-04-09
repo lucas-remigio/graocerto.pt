@@ -13,6 +13,7 @@
 	import { cookieConsent } from '$lib/stores/cookieConsent';
 	import CookieBanner from '$components/CookieBanner.svelte';
 	import { sidebarCollapsed } from '$lib/stores/uiPreferences';
+	import { refreshUnreadNotificationCount } from '$lib/stores/notifications';
 
 	let { children } = $props();
 
@@ -58,6 +59,7 @@
 			await axios.get('/verify-token');
 
 			isAuthenticated.set(true); // Token is valid
+			refreshUnreadNotificationCount();
 		} catch (error: unknown) {
 			// Only redirect for actual authentication failures (401, invalid token, etc.)
 			if (

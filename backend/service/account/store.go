@@ -33,13 +33,37 @@ func (s *Store) SetTransactionStore(transactionsStore types.TransactionStore) {
 }
 
 const accountColumns = `
-    id, token, user_id, account_name, balance, created_at, order_index, is_favorite
+    a.id, a.token, a.user_id, a.account_name, a.balance,
+	(a.balance + COALESCE(p.pending_delta, 0)) AS pending_balance,
+	a.created_at, a.order_index, a.is_favorite
+`
+
+const accountPendingBalanceJoin = `
+	LEFT JOIN (
+		SELECT
+			t.account_token,
+			SUM(
+				CASE
+					WHEN t.transaction_type_id = 1 THEN t.amount
+					WHEN t.transaction_type_id = 2 THEN -t.amount
+					ELSE 0
+				END
+			) AS pending_delta
+		FROM transactions t
+		WHERE t.is_pending = true
+		GROUP BY t.account_token
+	) p ON p.account_token = a.token
 `
 
 func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 	query := fmt.Sprintf(
-		`SELECT %s FROM accounts WHERE user_id = $1 ORDER BY order_index`,
+		`SELECT %s
+		 FROM accounts a
+		 %s
+		 WHERE a.user_id = $1
+		 ORDER BY a.order_index`,
 		accountColumns,
+		accountPendingBalanceJoin,
 	)
 	return db.QueryList(
 		s.db,
@@ -51,8 +75,12 @@ func (s *Store) GetAccountsByUserId(userId int) ([]*types.Account, error) {
 
 func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, error) {
 	query := fmt.Sprintf(
-		`SELECT %s FROM accounts WHERE token = $1 AND user_id = $2`,
+		`SELECT %s
+		 FROM accounts a
+		 %s
+		 WHERE a.token = $1 AND a.user_id = $2`,
 		accountColumns,
+		accountPendingBalanceJoin,
 	)
 	return db.QuerySingle(
 		s.db,
@@ -64,8 +92,12 @@ func (s *Store) GetAccountByToken(token string, userId int) (*types.Account, err
 
 func (s *Store) GetAccountById(id int, userId int) (*types.Account, error) {
 	query := fmt.Sprintf(
-		`SELECT %s FROM accounts WHERE id = $1 AND user_id = $2`,
+		`SELECT %s
+		 FROM accounts a
+		 %s
+		 WHERE a.id = $1 AND a.user_id = $2`,
 		accountColumns,
+		accountPendingBalanceJoin,
 	)
 	return db.QuerySingle(
 		s.db,
@@ -229,6 +261,7 @@ func scanRowIntoAccount(row *sql.Row) (*types.Account, error) {
 		&a.UserID,
 		&a.AccountName,
 		&a.Balance,
+		&a.PendingBalance,
 		&a.CreatedAt,
 		&a.OrderIndex,
 		&a.IsFavorite,
@@ -247,6 +280,7 @@ func scanRowsIntoAccount(rows *sql.Rows) (*types.Account, error) {
 		&a.UserID,
 		&a.AccountName,
 		&a.Balance,
+		&a.PendingBalance,
 		&a.CreatedAt,
 		&a.OrderIndex,
 		&a.IsFavorite,

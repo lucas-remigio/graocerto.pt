@@ -12,7 +12,21 @@ import type {
 	TransactionTypesResponse,
 	TransactionsResponse,
 	TransactionChangeResponse,
-	CategoryChangeResponse
+	CategoryChangeResponse,
+	RecurringRule,
+	RecurringForecastResponse,
+	RecurringForecastRangeDays,
+	RecurringRulesResponse,
+	NotificationItem,
+	NotificationsResponse,
+	UnreadNotificationCountResponse,
+	NotificationPreferences,
+	NotificationPreferencesResponse,
+	UpdateNotificationPreferencesPayload,
+	CreateRecurringTransferPayload,
+	CreateRecurringRulePayload,
+	UpdateRecurringTransferPayload,
+	UpdateRecurringRulePayload
 } from '$lib/types';
 
 // Cache types
@@ -34,6 +48,9 @@ class DataService {
 	private availableMonthsCache = new Map<string, TimedValue<MonthYear[]>>();
 	private categoriesCache: TimedValue<CategoryDto[]> | null = null;
 	private transactionTypesCache: TimedValue<TransactionType[]> | null = null;
+	private recurringRulesCache: TimedValue<RecurringRule[]> | null = null;
+	private notificationsCache: TimedValue<NotificationItem[]> | null = null;
+	private notificationPreferencesCache: TimedValue<NotificationPreferences> | null = null;
 
 	private now() {
 		return Date.now();
@@ -65,6 +82,9 @@ class DataService {
 		this.availableMonthsCache.clear();
 		this.categoriesCache = null;
 		this.transactionTypesCache = null;
+		this.recurringRulesCache = null;
+		this.notificationsCache = null;
+		this.notificationPreferencesCache = null;
 	}
 
 	clearTransactionCaches(): void {
@@ -93,6 +113,14 @@ class DataService {
 	clearCategoryCaches(): void {
 		this.categoriesCache = null;
 		this.transactionTypesCache = null;
+	}
+
+	clearRecurringRulesCache(): void {
+		this.recurringRulesCache = null;
+	}
+
+	clearNotificationsCache(): void {
+		this.notificationsCache = null;
 	}
 
 	// Fetch accounts
@@ -325,6 +353,151 @@ class DataService {
 		// Clear caches only for the account this transaction belongs to
 		this.clearAccountCaches(transaction.account_token);
 		return response.data;
+	}
+
+	async approvePendingTransaction(transaction: TransactionDto): Promise<TransactionChangeResponse> {
+		const response = await api_axios.post(`transactions/approve/${transaction.id}`);
+		if (response.status !== 200) {
+			throw new Error(`Failed to approve transaction: ${response.status}`);
+		}
+		this.clearAccountCaches(transaction.account_token);
+		return response.data;
+	}
+
+	async fetchRecurringRules(): Promise<RecurringRule[]> {
+		if (this.isValid(this.recurringRulesCache)) return this.recurringRulesCache.data;
+		const res = await api_axios.get('recurring-rules');
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch recurring rules: ${res.status}`);
+		}
+		const data: RecurringRulesResponse = res.data;
+		this.recurringRulesCache = this.wrap(data.recurring_rules);
+		return data.recurring_rules;
+	}
+
+	async fetchRecurringForecast(
+		accountToken: string,
+		days: RecurringForecastRangeDays
+	): Promise<RecurringForecastResponse> {
+		const res = await api_axios.get('recurring-rules/forecast', {
+			params: {
+				account_token: accountToken,
+				days
+			}
+		});
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch recurring forecast: ${res.status}`);
+		}
+		return res.data as RecurringForecastResponse;
+	}
+
+	async createRecurringRule(payload: CreateRecurringRulePayload): Promise<RecurringRule> {
+		const res = await api_axios.post('recurring-rules', payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to create recurring rule: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rule as RecurringRule;
+	}
+
+	async createRecurringTransfer(payload: CreateRecurringTransferPayload): Promise<RecurringRule[]> {
+		const res = await api_axios.post('recurring-transfers', payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to create recurring transfer: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rules as RecurringRule[];
+	}
+
+	async updateRecurringTransfer(
+		groupId: string,
+		payload: UpdateRecurringTransferPayload
+	): Promise<RecurringRule[]> {
+		const res = await api_axios.put(`recurring-transfers/${groupId}`, payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to update recurring transfer: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rules as RecurringRule[];
+	}
+
+	async updateRecurringRule(
+		id: number,
+		payload: UpdateRecurringRulePayload
+	): Promise<RecurringRule> {
+		const res = await api_axios.put(`recurring-rules/${id}`, payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to update recurring rule: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rule as RecurringRule;
+	}
+
+	async deleteRecurringRule(id: number): Promise<void> {
+		const res = await api_axios.delete(`recurring-rules/${id}`);
+		if (res.status !== 200) {
+			throw new Error(`Failed to delete recurring rule: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+	}
+
+	async fetchNotifications(): Promise<NotificationItem[]> {
+		if (this.isValid(this.notificationsCache)) return this.notificationsCache.data;
+		const res = await api_axios.get('notifications');
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch notifications: ${res.status}`);
+		}
+		const data: NotificationsResponse = res.data;
+		this.notificationsCache = this.wrap(data.notifications);
+		return data.notifications;
+	}
+
+	async markNotificationAsRead(notificationId: number): Promise<void> {
+		const res = await api_axios.patch(`notifications/${notificationId}/read`);
+		if (res.status !== 200) {
+			throw new Error(`Failed to mark notification as read: ${res.status}`);
+		}
+		this.clearNotificationsCache();
+	}
+
+	async fetchUnreadNotificationCount(): Promise<number> {
+		if (this.isValid(this.notificationsCache)) {
+			return this.notificationsCache.data.filter((n) => !n.is_read).length;
+		}
+		try {
+			const res = await api_axios.get('notifications/unread-count');
+			if (res.status === 200) {
+				const data: UnreadNotificationCountResponse = res.data;
+				return data.count;
+			}
+		} catch (err) {
+			console.error('Failed to fetch unread notification count:', err);
+		}
+		return 0;
+	}
+
+	async fetchNotificationPreferences(): Promise<NotificationPreferences> {
+		if (this.isValid(this.notificationPreferencesCache))
+			return this.notificationPreferencesCache.data;
+		const res = await api_axios.get('notifications/preferences');
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch notification preferences: ${res.status}`);
+		}
+		const data: NotificationPreferencesResponse = res.data;
+		this.notificationPreferencesCache = this.wrap(data.preferences);
+		return data.preferences;
+	}
+
+	async updateNotificationPreferences(
+		payload: UpdateNotificationPreferencesPayload
+	): Promise<NotificationPreferences> {
+		const res = await api_axios.put('notifications/preferences', payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to update notification preferences: ${res.status}`);
+		}
+		const data: NotificationPreferencesResponse = res.data;
+		this.notificationPreferencesCache = this.wrap(data.preferences);
+		return data.preferences;
 	}
 }
 

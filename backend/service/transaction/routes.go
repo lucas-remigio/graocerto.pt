@@ -29,6 +29,10 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 			http.MethodPut:    h.UpdateTransaction,
 			http.MethodDelete: h.DeleteTransaction,
 		})))
+	router.HandleFunc("/transactions/approve/{id}", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.ApprovePendingTransaction,
+		})))
 	router.HandleFunc("/transactions/months/{accountToken}", middleware.AuthMiddleware(h.GetTransactionsMonthsAndYears))
 }
 
@@ -240,6 +244,26 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, err := h.store.DeleteTransactionAndReturn(transactionIdInt, userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteDataResponse(w, response)
+}
+
+func (h *Handler) ApprovePendingTransaction(w http.ResponseWriter, r *http.Request) {
+	transactionID, ok := middleware.ExtractPathParamAsIntAndRespond(w, r, 2)
+	if !ok {
+		return
+	}
+
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	response, err := h.store.ApprovePendingTransactionAndReturn(transactionID, userID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

@@ -1,10 +1,32 @@
 <script lang="ts">
-	import type { TransactionDto } from '$lib/types';
+	import type { RecurringRule, TransactionDto } from '$lib/types';
 	import { t } from '$lib/i18n';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { formatCurrency } from '$lib/utils/currency';
 
-	let { transactions = [] }: { transactions: TransactionDto[] } = $props();
+	let {
+		transactions = [],
+		recurringRules = [],
+		summaryItems = []
+	}: {
+		transactions?: TransactionDto[];
+		recurringRules?: RecurringRule[];
+		summaryItems?: { amount: number; typeId: number }[];
+	} = $props();
+
+	let normalizedSummaryItems = $derived(
+		summaryItems.length > 0
+			? summaryItems
+			: recurringRules.length > 0
+			? recurringRules.map((rule) => ({
+					amount: rule.amount,
+					typeId: rule.transaction_type_id
+				}))
+			: transactions.map((transaction) => ({
+					amount: transaction.amount,
+					typeId: transaction.transaction_type.id
+				}))
+	);
 
 	let totals = $derived(() => {
 		const result = {
@@ -13,15 +35,15 @@
 			difference: 0
 		};
 
-		transactions.forEach((transaction) => {
-			switch (transaction.transaction_type.id) {
+		normalizedSummaryItems.forEach((item) => {
+			switch (item.typeId) {
 				case TransactionTypeId.Credit:
-					result.credit += transaction.amount;
-					result.difference += transaction.amount;
+					result.credit += item.amount;
+					result.difference += item.amount;
 					break;
 				case TransactionTypeId.Debit:
-					result.debit += transaction.amount;
-					result.difference -= transaction.amount;
+					result.debit += item.amount;
+					result.difference -= item.amount;
 					break;
 			}
 		});

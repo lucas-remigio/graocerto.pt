@@ -1,0 +1,5 @@
+ALTER TABLE notification_preferences
+ADD COLUMN IF NOT EXISTS notify_days_ahead INTEGER NOT NULL DEFAULT 1;
+
+ALTER TABLE notifications
+ADD COLUMN IF NOT EXISTS notify_days_ahead INTEGER NOT NULL DEFAULT 1;

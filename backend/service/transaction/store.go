@@ -25,6 +25,15 @@ func NewStore(db *sql.DB, accountStore types.AccountStore) *Store {
 	}
 }
 
+func (s *Store) getAccountBalances(accountToken string, userID int) (balance float64, pendingBalance float64, err error) {
+	account, err := s.accountStore.GetAccountByToken(accountToken, userID)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return account.Balance, account.PendingBalance, nil
+}
+
 // Scanner functions for use with db utilities
 func scanTransaction(rows *sql.Rows) (*types.Transaction, error) {
 	t := new(types.Transaction)
@@ -37,6 +46,7 @@ func scanTransaction(rows *sql.Rows) (*types.Transaction, error) {
 		&t.Description,
 		&t.Date,
 		&t.Balance,
+		&t.IsPending,
 		&t.TransferGroupId,
 		&t.CreatedAt,
 	)
@@ -57,6 +67,7 @@ func scanTransactionRow(row *sql.Row) (*types.Transaction, error) {
 		&t.Description,
 		&t.Date,
 		&t.Balance,
+		&t.IsPending,
 		&t.TransferGroupId,
 		&t.CreatedAt,
 	)
@@ -88,6 +99,7 @@ func scanTransactionDTOFromScanner(s scanner) (*types.TransactionDTO, error) {
 		&t.Description,
 		&t.Date,
 		&t.Balance,
+		&t.IsPending,
 		&t.TransferGroupId,
 		&t.CreatedAt,
 		&t.Category.ID,
@@ -169,8 +181,8 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 	var insertedId int
 	err = s.db.QueryRow(
 		`INSERT INTO transactions 
-        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, is_pending) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false) RETURNING id`,
 		transaction.AccountToken,
 		transaction.TransactionTypeId,
 		transaction.CategoryId,
@@ -214,9 +226,10 @@ func (s *Store) CreateTransactionAndReturn(transaction *types.Transaction, userI
 	}
 
 	return &types.TransactionChangeResponse{
-		Transaction:    createdDTO,
-		AccountBalance: &createdDTO.Balance,
-		Months:         availableMonths,
+		Transaction:           createdDTO,
+		AccountBalance:        &createdDTO.Balance,
+		AccountPendingBalance: &createdDTO.Balance,
+		Months:                availableMonths,
 	}, nil
 }
 
@@ -278,8 +291,8 @@ func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int)
 	var debitTxId int
 	err = tx.QueryRow(
 		`INSERT INTO transactions 
-        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, is_pending) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false) RETURNING id`,
 		payload.SourceAccountToken,
 		int(types.DebitTransactionType),
 		payload.DebitCategoryID, // Use debit category
@@ -304,8 +317,8 @@ func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int)
 	var creditTxId int
 	err = tx.QueryRow(
 		`INSERT INTO transactions 
-        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        (account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, is_pending) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false) RETURNING id`,
 		payload.DestinationAccountToken,
 		int(types.CreditTransactionType),
 		payload.CreditCategoryID, // Use credit category
@@ -369,7 +382,7 @@ func (s *Store) GetTransactionsByAccountToken(accountToken string, month, year *
 	var args []interface{}
 
 	baseQuery := `
-        SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, created_at 
+        SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, is_pending, transfer_group_id, created_at 
         FROM transactions 
         WHERE account_token = $1`
 
@@ -391,7 +404,7 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 	var args []interface{}
 
 	baseQuery := "SELECT " +
-		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at, " +
+		"t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.is_pending, t.transfer_group_id, t.created_at, " +
 		"c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.budget, " +
 		"c_tt.id, c_tt.type_name, c_tt.type_slug, " +
 		"tt.id, tt.type_name, tt.type_slug, " +
@@ -419,7 +432,7 @@ func (s *Store) GetTransactionsDTOByAccountToken(accountToken string, month, yea
 func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 	query := `
         SELECT 
-            t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.transfer_group_id, t.created_at,
+            t.id, t.account_token, t.amount, t.description, t.date, t.balance, t.is_pending, t.transfer_group_id, t.created_at,
             c.id, c.parent_category_id, c.category_name, c.color, c.created_at, c.updated_at, c.budget,
             c_tt.id, c_tt.type_name, c_tt.type_slug,
             tt.id, tt.type_name, tt.type_slug,
@@ -435,7 +448,7 @@ func (s *Store) GetTransactionDTOById(id int) (*types.TransactionDTO, error) {
 }
 
 func (s *Store) GetTransactionById(id int) (*types.Transaction, error) {
-	query := "SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, created_at FROM transactions WHERE id = $1"
+	query := "SELECT id, account_token, transaction_type_id, category_id, amount, description, date, balance, is_pending, transfer_group_id, created_at FROM transactions WHERE id = $1"
 	return db.QuerySingle(s.db, query, scanTransactionRow, id)
 }
 
@@ -455,6 +468,10 @@ func (s *Store) UpdateTransaction(transaction *types.UpdateTransactionPayload, u
 	// check if the user is the owner of the account
 	if err := db.ValidateOwnership(account.UserID, userId, "account"); err != nil {
 		return nil, err
+	}
+
+	if tx.IsPending {
+		return nil, fmt.Errorf("cannot edit a pending transaction")
 	}
 
 	// there are a lot of things that can happen here
@@ -562,9 +579,10 @@ func (s *Store) UpdateTransactionAndReturn(payload *types.UpdateTransactionPaylo
 	}
 
 	return &types.TransactionChangeResponse{
-		Transaction:    transactionDTO,
-		AccountBalance: &transactionDTO.Balance,
-		Months:         availableMonths,
+		Transaction:           transactionDTO,
+		AccountBalance:        &transactionDTO.Balance,
+		AccountPendingBalance: &transactionDTO.Balance,
+		Months:                availableMonths,
 	}, nil
 }
 
@@ -584,6 +602,14 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 	// check if the user is the owner of the account
 	if err := db.ValidateOwnership(userId, account.UserID, "transaction"); err != nil {
 		return nil, err
+	}
+
+	if tx.IsPending {
+		_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = $1", tx.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete pending transaction: %w", err)
+		}
+		return &account.Balance, nil
 	}
 
 	// Check if this is a transfer transaction
@@ -645,7 +671,7 @@ func (s *Store) deleteTransferPair(transferGroupID string, userId int) (*deleteT
 	// Get both transactions in the transfer
 	query := `
         SELECT t.id, t.account_token, t.transaction_type_id, t.category_id, t.amount, t.description, 
-               t.date, t.balance, t.transfer_group_id, t.created_at
+               t.date, t.balance, t.is_pending, t.transfer_group_id, t.created_at
         FROM transactions t
         INNER JOIN accounts a ON t.account_token = a.token
         WHERE t.transfer_group_id = $1 AND a.user_id = $2
@@ -759,26 +785,47 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 		// Determine which is the paired account (not the one being deleted)
 		var pairedToken string
 		var pairedBalance float64
+		var pairedPendingBalance float64
 		var pairedMonths []*types.MonthYear
+		var currentBalance float64
+		var currentPendingBalance float64
+		var currentMonths []*types.MonthYear
 
 		if transactionDTO.AccountToken == result.primaryAccountToken {
 			pairedToken = result.secondaryAccountToken
 			pairedBalance = result.secondaryBalance
 			pairedMonths = secondaryMonths
+
+			currentBalance = result.primaryBalance
+			currentMonths = primaryMonths
 		} else {
 			pairedToken = result.primaryAccountToken
 			pairedBalance = result.primaryBalance
 			pairedMonths = primaryMonths
+
+			currentBalance = result.secondaryBalance
+			currentMonths = secondaryMonths
+		}
+
+		_, currentPendingBalance, err = s.getAccountBalances(transactionDTO.AccountToken, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current account pending balance: %w", err)
+		}
+		_, pairedPendingBalance, err = s.getAccountBalances(pairedToken, userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get paired account pending balance: %w", err)
 		}
 
 		return &types.TransactionChangeResponse{
-			Transaction:          transactionDTO,
-			AccountBalance:       &result.primaryBalance,
-			Months:               primaryMonths,
-			IsTransfer:           true,
-			PairedAccountToken:   &pairedToken,
-			PairedAccountBalance: &pairedBalance,
-			PairedAccountMonths:  pairedMonths,
+			Transaction:                 transactionDTO,
+			AccountBalance:              &currentBalance,
+			AccountPendingBalance:       &currentPendingBalance,
+			Months:                      currentMonths,
+			IsTransfer:                  true,
+			PairedAccountToken:          &pairedToken,
+			PairedAccountBalance:        &pairedBalance,
+			PairedAccountPendingBalance: &pairedPendingBalance,
+			PairedAccountMonths:         pairedMonths,
 		}, nil
 	}
 
@@ -793,11 +840,123 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 		return nil, fmt.Errorf("failed to get available months: %w", err)
 	}
 
+	_, pendingBalance, err := s.getAccountBalances(transactionDTO.AccountToken, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account pending balance: %w", err)
+	}
+
 	return &types.TransactionChangeResponse{
-		Transaction:    transactionDTO,
-		AccountBalance: balance,
-		Months:         availableMonths,
-		IsTransfer:     false,
+		Transaction:           transactionDTO,
+		AccountBalance:        balance,
+		AccountPendingBalance: &pendingBalance,
+		Months:                availableMonths,
+		IsTransfer:            false,
+	}, nil
+}
+
+func (s *Store) ApprovePendingTransactionAndReturn(transactionID int, userID int) (*types.TransactionChangeResponse, error) {
+	txData, err := s.GetTransactionById(transactionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+	if !txData.IsPending {
+		return nil, fmt.Errorf("transaction is not pending")
+	}
+
+	account, err := s.accountStore.GetAccountByToken(txData.AccountToken, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account: %w", err)
+	}
+	if err := db.ValidateOwnership(account.UserID, userID, "transaction"); err != nil {
+		return nil, err
+	}
+
+	catStore := category.NewStore(s.db)
+	txCategory, err := catStore.GetCategoryById(txData.CategoryId, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction category: %w", err)
+	}
+
+	amount := txData.Amount
+	if txCategory.TransactionTypeId == int(types.DebitTransactionType) {
+		amount *= -1
+	}
+
+	newBalance := account.Balance + amount
+
+	dbTx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin approval transaction: %w", err)
+	}
+	defer dbTx.Rollback()
+
+	result, err := dbTx.Exec(
+		"UPDATE transactions SET is_pending = false, balance = $1 WHERE id = $2 AND is_pending = true",
+		newBalance, txData.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to approve pending transaction: %w", err)
+	}
+	affected, _ := result.RowsAffected()
+	if affected == 0 {
+		return nil, fmt.Errorf("transaction is no longer pending")
+	}
+
+	_, err = dbTx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", newBalance, txData.AccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update account balance: %w", err)
+	}
+
+	if err := dbTx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit pending approval: %w", err)
+	}
+
+	dto, err := s.GetTransactionDTOById(txData.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch approved transaction: %w", err)
+	}
+	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(txData.AccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get available months: %w", err)
+	}
+
+	return &types.TransactionChangeResponse{
+		Transaction:           dto,
+		AccountBalance:        &newBalance,
+		AccountPendingBalance: &newBalance,
+		Months:                availableMonths,
+	}, nil
+}
+
+func (s *Store) RejectPendingTransactionAndReturn(transactionID int, userID int) (*types.TransactionChangeResponse, error) {
+	dto, err := s.GetTransactionDTOById(transactionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction DTO: %w", err)
+	}
+	if !dto.IsPending {
+		return nil, fmt.Errorf("transaction is not pending")
+	}
+
+	balance, err := s.DeleteTransaction(transactionID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reject pending transaction: %w", err)
+	}
+
+	availableMonths, err := s.GetAvailableTransactionMonthsByAccountToken(dto.AccountToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get available months: %w", err)
+	}
+
+	_, pendingBalance, err := s.getAccountBalances(dto.AccountToken, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account pending balance: %w", err)
+	}
+
+	return &types.TransactionChangeResponse{
+		Transaction:           dto,
+		AccountBalance:        balance,
+		AccountPendingBalance: &pendingBalance,
+		Months:                availableMonths,
 	}, nil
 }
 
@@ -850,7 +1009,7 @@ func (s *Store) CalculateTransactionTotals(transactions []*types.TransactionDTO)
 
 	for _, tx := range transactions {
 		// Skip transactions without category info
-		if tx.Category == nil || tx.Category.TransactionType == nil {
+		if tx.IsPending || tx.Category == nil || tx.Category.TransactionType == nil {
 			continue
 		}
 
@@ -884,7 +1043,7 @@ func (s *Store) calculateLargestAmountsAndDailyTotals(
 	dailyTotals = make(map[string]*types.DailyTotal)
 
 	for _, tx := range transactions {
-		if tx.Category == nil {
+		if tx.IsPending || tx.Category == nil {
 			continue
 		}
 
@@ -937,7 +1096,7 @@ func (s *Store) buildCategoryBreakdowns(transactions []*types.TransactionDTO) (
 	debitCategoryMap = make(map[int]*types.CategoryStatistic)
 
 	for _, tx := range transactions {
-		if tx.Category == nil {
+		if tx.IsPending || tx.Category == nil {
 			continue
 		}
 
@@ -1136,8 +1295,15 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	}
 
 	// Initialize statistics with early return for empty transactions
+	confirmedCount := 0
+	for _, tx := range transactions {
+		if !tx.IsPending {
+			confirmedCount++
+		}
+	}
+
 	stats := &types.TransactionStatistics{
-		TotalTransactions:       len(transactions),
+		TotalTransactions:       confirmedCount,
 		LargestDebit:            0,
 		LargestCredit:           0,
 		CreditCategoryBreakdown: []*types.CategoryStatistic{},

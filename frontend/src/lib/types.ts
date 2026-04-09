@@ -4,6 +4,7 @@ export interface Account {
 	user_id: number;
 	account_name: string;
 	balance: number;
+	pending_balance: number;
 	created_at: string;
 	order_index: number;
 	is_favorite: boolean;
@@ -27,6 +28,7 @@ export interface TransactionDto {
 	description: string;
 	date: string;
 	balance: number;
+	is_pending: boolean;
 	created_at: string;
 	category: CategoryDto;
 	transaction_type: TransactionType;
@@ -51,10 +53,12 @@ export interface TransactionsResponse {
 export interface TransactionChangeResponse {
 	transaction: TransactionDto;
 	account_balance: number;
+	account_pending_balance?: number;
 	months: MonthYear[];
 	is_transfer: boolean;
 	paired_account_token?: string;
 	paired_account_balance?: number;
+	paired_account_pending_balance?: number;
 	paired_account_months?: MonthYear[];
 }
 
@@ -212,4 +216,131 @@ export interface TransactionStatistics {
 	daily_totals: DailyTotals[];
 	start_date: string; // Format: YYYY-MM-DD
 	end_date: string; // Format: YYYY-MM-DD
+}
+
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'every_x_days';
+
+export interface RecurringRule {
+	id: number;
+	user_id: number;
+	account_token: string;
+	category_id: number;
+	transaction_type_id: number;
+	recurring_transfer_group_id?: string;
+	amount: number;
+	description: string;
+	frequency: RecurringFrequency;
+	interval_value: number;
+	next_run_date: string;
+	active: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface RecurringRulesResponse {
+	recurring_rules: RecurringRule[];
+}
+
+export type RecurringForecastRangeDays = 30 | 60 | 90;
+
+export interface RecurringForecastItem {
+	recurring_rule_id: number;
+	account_token: string;
+	category_id: number;
+	transaction_type_id: number;
+	recurring_transfer_group_id?: string;
+	amount: number;
+	description: string;
+	date: string;
+}
+
+export interface RecurringForecastSummary {
+	credit: number;
+	debit: number;
+	difference: number;
+}
+
+export interface RecurringForecastResponse {
+	account_token: string;
+	days: RecurringForecastRangeDays;
+	items: RecurringForecastItem[];
+	summary: RecurringForecastSummary;
+}
+
+export interface NotificationItem {
+	id: number;
+	user_id: number;
+	type: string;
+	account_token?: string;
+	target_date?: string;
+	notify_days_ahead: number;
+	debit_count: number;
+	total_debit: number;
+	credit_count: number;
+	total_credit: number;
+	is_read: boolean;
+	created_at: string;
+}
+
+export interface NotificationsResponse {
+	notifications: NotificationItem[];
+}
+
+export interface NotificationPreferences {
+	user_id: number;
+	enabled: boolean;
+	notify_days_ahead: number;
+	min_total_debit?: number | null;
+	updated_at: string;
+}
+
+export interface NotificationPreferencesResponse {
+	preferences: NotificationPreferences;
+}
+
+export interface UnreadNotificationCountResponse {
+	count: number;
+}
+
+export interface UpdateNotificationPreferencesPayload {
+	enabled: boolean;
+	notify_days_ahead: number;
+	min_total_debit?: number | null;
+}
+
+export interface CreateRecurringRulePayload {
+	account_token: string;
+	category_id: number;
+	transaction_type_id: number;
+	amount: number;
+	description: string;
+	frequency: RecurringFrequency;
+	interval_value: number;
+	execution_day?: number;
+	execution_weekday?: number;
+	active?: boolean;
+}
+
+export interface UpdateRecurringRulePayload extends CreateRecurringRulePayload {
+	next_run_date?: string;
+	active: boolean;
+}
+
+export interface CreateRecurringTransferPayload {
+	source_account_token: string;
+	destination_account_token: string;
+	debit_category_id: number;
+	credit_category_id: number;
+	amount: number;
+	description: string;
+	frequency: RecurringFrequency;
+	interval_value: number;
+	execution_day?: number;
+	execution_weekday?: number;
+	active?: boolean;
+}
+
+export interface UpdateRecurringTransferPayload extends CreateRecurringTransferPayload {
+	next_run_date?: string;
+	active: boolean;
 }

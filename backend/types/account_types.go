@@ -35,12 +35,13 @@ type FavoriteAccountPayload struct {
 }
 
 type Account struct {
-	ID          int     `json:"id"`
-	Token       string  `json:"token"`
-	UserID      int     `json:"user_id"`
-	AccountName string  `json:"account_name"`
-	Balance     float64 `json:"balance"`
-	CreatedAt   string  `json:"created_at"`
-	OrderIndex  int     `json:"order_index"`
-	IsFavorite  bool    `json:"is_favorite"`
+	ID             int     `json:"id"`
+	Token          string  `json:"token"`
+	UserID         int     `json:"user_id"`
+	AccountName    string  `json:"account_name"`
+	Balance        float64 `json:"balance"`
+	PendingBalance float64 `json:"pending_balance"`
+	CreatedAt      string  `json:"created_at"`
+	OrderIndex     int     `json:"order_index"`
+	IsFavorite     bool    `json:"is_favorite"`
 }
