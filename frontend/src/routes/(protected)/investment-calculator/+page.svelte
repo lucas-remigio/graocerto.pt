@@ -6,18 +6,18 @@
 	import InvestmentCalculatorResults from '$components/InvestmentCalculatorResults.svelte';
 	import type { InvestmentCalculatorInput, InvestmentCalculatorResponse } from '$lib/types';
 
-	// Loading and error states
-	let isLoading = false;
-	let error = '';
+	import { toastStore } from '$lib/stores/toast';
+
+	let loading = false;
 
 	// Results
 	let results: InvestmentCalculatorResponse | null = null;
+	let isLoading = false;
 
 	async function handleCalculate(event: CustomEvent<InvestmentCalculatorInput>) {
 		const inputData = event.detail;
 
 		isLoading = true;
-		error = '';
 		results = null;
 
 		try {
@@ -44,9 +44,11 @@
 				typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error ===
 					'string'
 			) {
-				error = (err as { response?: { data?: { error?: string } } }).response!.data!.error!;
+				toastStore.error(
+					(err as { response?: { data?: { error?: string } } }).response!.data!.error!
+				);
 			} else {
-				error = $t('investment-calculator.errors.calculation-failed');
+				toastStore.error($t('investment-calculator.errors.calculation-failed'));
 			}
 		} finally {
 			isLoading = false;
@@ -55,7 +57,6 @@
 
 	function handleReset() {
 		results = null;
-		error = '';
 	}
 </script>
 
@@ -66,12 +67,7 @@
 	<div class="flex flex-col lg:flex-row lg:items-start lg:gap-6">
 		<!-- Left Column: Form (full width on small/medium, fixed width on large) -->
 		<div class="w-full lg:w-96 lg:flex-shrink-0">
-			<InvestmentCalculatorForm
-				{isLoading}
-				{error}
-				on:calculate={handleCalculate}
-				on:reset={handleReset}
-			/>
+			<InvestmentCalculatorForm {isLoading} on:calculate={handleCalculate} on:reset={handleReset} />
 		</div>
 
 		<!-- Right Column: Results (full width on small/medium, remaining space on large) -->

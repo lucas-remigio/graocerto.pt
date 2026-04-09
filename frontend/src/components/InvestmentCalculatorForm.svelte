@@ -26,7 +26,6 @@
 
 	// Loading and error states
 	export let isLoading = false;
-	export let error = '';
 
 	// Validation errors
 	let initialInvestmentError = '';
@@ -125,12 +124,6 @@
 		dispatch('reset');
 	}
 </script>
-
-{#if error}
-	<div class="alert alert-error mb-6">
-		<span>{error}</span>
-	</div>
-{/if}
 
 <!-- Input Form -->
 <div class="card mb-2 bg-base-100 shadow-lg">
