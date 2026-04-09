@@ -105,6 +105,30 @@
 		selectedAccount = foundAccount;
 	}
 
+	function applyUrlSelection() {
+		const params = new URLSearchParams(window.location.search);
+		const accountToken = params.get('account');
+		const monthParam = params.get('month');
+		const yearParam = params.get('year');
+
+		if (accountToken) {
+			const accountFromQuery = accounts.find((account) => account.token === accountToken);
+			if (accountFromQuery) {
+				selectedAccount = accountFromQuery;
+				localStorage.setItem('selectedAccount', accountFromQuery.token);
+			}
+		}
+
+		if (monthParam && yearParam) {
+			const month = Number.parseInt(monthParam, 10);
+			const year = Number.parseInt(yearParam, 10);
+			if (!Number.isNaN(month) && !Number.isNaN(year) && month >= 1 && month <= 12) {
+				selectedMonth = month;
+				selectedYear = year;
+			}
+		}
+	}
+
 	// Function to fetch accounts and then fetch transactions for the first account
 	async function fetchAccounts(showLoading: boolean) {
 		accountsLoading = showLoading;
@@ -502,6 +526,10 @@
 
 	onMount(async () => {
 		await fetchAccounts(true);
+		applyUrlSelection();
+		if (selectedAccount) {
+			await fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
+		}
 		initialDataLoaded = true;
 
 		// Set up screen size tracking

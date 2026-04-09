@@ -17,6 +17,12 @@ import type {
 	RecurringForecastResponse,
 	RecurringForecastRangeDays,
 	RecurringRulesResponse,
+	NotificationItem,
+	NotificationsResponse,
+	UnreadNotificationCountResponse,
+	NotificationPreferences,
+	NotificationPreferencesResponse,
+	UpdateNotificationPreferencesPayload,
 	CreateRecurringTransferPayload,
 	CreateRecurringRulePayload,
 	UpdateRecurringTransferPayload,
@@ -43,6 +49,8 @@ class DataService {
 	private categoriesCache: TimedValue<CategoryDto[]> | null = null;
 	private transactionTypesCache: TimedValue<TransactionType[]> | null = null;
 	private recurringRulesCache: TimedValue<RecurringRule[]> | null = null;
+	private notificationsCache: TimedValue<NotificationItem[]> | null = null;
+	private notificationPreferencesCache: TimedValue<NotificationPreferences> | null = null;
 
 	private now() {
 		return Date.now();
@@ -75,6 +83,8 @@ class DataService {
 		this.categoriesCache = null;
 		this.transactionTypesCache = null;
 		this.recurringRulesCache = null;
+		this.notificationsCache = null;
+		this.notificationPreferencesCache = null;
 	}
 
 	clearTransactionCaches(): void {
@@ -107,6 +117,10 @@ class DataService {
 
 	clearRecurringRulesCache(): void {
 		this.recurringRulesCache = null;
+	}
+
+	clearNotificationsCache(): void {
+		this.notificationsCache = null;
 	}
 
 	// Fetch accounts
@@ -407,7 +421,10 @@ class DataService {
 		return res.data.recurring_rules as RecurringRule[];
 	}
 
-	async updateRecurringRule(id: number, payload: UpdateRecurringRulePayload): Promise<RecurringRule> {
+	async updateRecurringRule(
+		id: number,
+		payload: UpdateRecurringRulePayload
+	): Promise<RecurringRule> {
 		const res = await api_axios.put(`recurring-rules/${id}`, payload);
 		if (res.status !== 200) {
 			throw new Error(`Failed to update recurring rule: ${res.status}`);
@@ -422,6 +439,65 @@ class DataService {
 			throw new Error(`Failed to delete recurring rule: ${res.status}`);
 		}
 		this.clearRecurringRulesCache();
+	}
+
+	async fetchNotifications(): Promise<NotificationItem[]> {
+		if (this.isValid(this.notificationsCache)) return this.notificationsCache.data;
+		const res = await api_axios.get('notifications');
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch notifications: ${res.status}`);
+		}
+		const data: NotificationsResponse = res.data;
+		this.notificationsCache = this.wrap(data.notifications);
+		return data.notifications;
+	}
+
+	async markNotificationAsRead(notificationId: number): Promise<void> {
+		const res = await api_axios.patch(`notifications/${notificationId}/read`);
+		if (res.status !== 200) {
+			throw new Error(`Failed to mark notification as read: ${res.status}`);
+		}
+		this.clearNotificationsCache();
+	}
+
+	async fetchUnreadNotificationCount(): Promise<number> {
+		if (this.isValid(this.notificationsCache)) {
+			return this.notificationsCache.data.filter((n) => !n.is_read).length;
+		}
+		try {
+			const res = await api_axios.get('notifications/unread-count');
+			if (res.status === 200) {
+				const data: UnreadNotificationCountResponse = res.data;
+				return data.count;
+			}
+		} catch (err) {
+			console.error('Failed to fetch unread notification count:', err);
+		}
+		return 0;
+	}
+
+	async fetchNotificationPreferences(): Promise<NotificationPreferences> {
+		if (this.isValid(this.notificationPreferencesCache))
+			return this.notificationPreferencesCache.data;
+		const res = await api_axios.get('notifications/preferences');
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch notification preferences: ${res.status}`);
+		}
+		const data: NotificationPreferencesResponse = res.data;
+		this.notificationPreferencesCache = this.wrap(data.preferences);
+		return data.preferences;
+	}
+
+	async updateNotificationPreferences(
+		payload: UpdateNotificationPreferencesPayload
+	): Promise<NotificationPreferences> {
+		const res = await api_axios.put('notifications/preferences', payload);
+		if (res.status !== 200) {
+			throw new Error(`Failed to update notification preferences: ${res.status}`);
+		}
+		const data: NotificationPreferencesResponse = res.data;
+		this.notificationPreferencesCache = this.wrap(data.preferences);
+		return data.preferences;
 	}
 }
 

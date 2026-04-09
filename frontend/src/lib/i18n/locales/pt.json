@@ -211,8 +211,34 @@
 		"show-all-transactions": "Mostrar todas as transações"
 	},
 
+	"notifications": {
+		"title": "Notificações",
+		"unread-count": "{count} notificações por ler",
+		"empty": "Ainda não há notificações.",
+		"new": "Nova",
+		"recurring-due-tomorrow-title": "Encargos recorrentes para amanhã",
+		"recurring-due-tomorrow-debits": "Amanhã tens {count} débitos pendentes num total de {total}.",
+		"recurring-due-tomorrow-credits": "Amanhã tens {count} créditos pendentes num total de {total}.",
+		"recurring-due-tomorrow-both": "Amanhã tens {debitCount} débitos pendentes num total de {debitTotal} e {creditCount} créditos num total de {creditTotal}.",
+		"recurring-due-in-days-title": "Encargos recorrentes em {days} dias",
+		"recurring-due-in-days-debits": "Daqui a {days} dias tens {count} débitos pendentes num total de {total}.",
+		"recurring-due-in-days-credits": "Daqui a {days} dias tens {count} créditos pendentes num total de {total}.",
+		"recurring-due-in-days-both": "Daqui a {days} dias tens {debitCount} débitos pendentes num total de {debitTotal} e {creditCount} créditos num total de {creditTotal}.",
+		"target-date": "Data prevista: {date}",
+		"mark-as-read": "Marcar como lida",
+		"preferences-title": "Preferências de notificação",
+		"notify-days-ahead": "Notificar com dias de antecedência",
+                "notify-days-ahead-desc": "Quantos dias antes da data estipulada queres ser notificado? Padrão é 1 dia.",
+                "min-debit-threshold": "Débito total mínimo para notificar",
+                "min-debit-threshold-desc": "Só serás notificado se o valor diário acumulado dos débitos exceder este valor. Deixe em branco para receber todas as notificações.",
+                "enable-push": "Ativar Notificações Automáticas",
+                "enable-push-desc": "Recebe alertas de previsão de faturas antes da data agendada para não deixares passar em branco nenhum pagamento.",
+                "optional": "(Opcional)",
+                "catch-up-title": "Estás a par de tudo!"
+
 	"recurring": {
 		"templates-active": "{count} modelos ativos",
+		"templates-active-label": "Modelos ativos",
 		"new-recurring-payment": "Novo pagamento recorrente",
 		"new-recurring-transfer": "Nova transferência recorrente",
 		"create-recurring-transfer": "Criar transferência recorrente",

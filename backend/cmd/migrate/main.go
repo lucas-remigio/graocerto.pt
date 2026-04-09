@@ -62,7 +62,7 @@ func main() {
 	}
 
 	if cmd == "down" {
-		if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+		if err := m.Steps(-1); err != nil && err != migrate.ErrNoChange {
 			log.Fatal(err)
 		}
 	}

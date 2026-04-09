@@ -267,6 +267,47 @@ export interface RecurringForecastResponse {
 	summary: RecurringForecastSummary;
 }
 
+export interface NotificationItem {
+	id: number;
+	user_id: number;
+	type: string;
+	account_token?: string;
+	target_date?: string;
+	notify_days_ahead: number;
+	debit_count: number;
+	total_debit: number;
+	credit_count: number;
+	total_credit: number;
+	is_read: boolean;
+	created_at: string;
+}
+
+export interface NotificationsResponse {
+	notifications: NotificationItem[];
+}
+
+export interface NotificationPreferences {
+	user_id: number;
+	enabled: boolean;
+	notify_days_ahead: number;
+	min_total_debit?: number | null;
+	updated_at: string;
+}
+
+export interface NotificationPreferencesResponse {
+	preferences: NotificationPreferences;
+}
+
+export interface UnreadNotificationCountResponse {
+	count: number;
+}
+
+export interface UpdateNotificationPreferencesPayload {
+	enabled: boolean;
+	notify_days_ahead: number;
+	min_total_debit?: number | null;
+}
+
 export interface CreateRecurringRulePayload {
 	account_token: string;
 	category_id: number;

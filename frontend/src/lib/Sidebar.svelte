@@ -8,6 +8,7 @@
 	import ProfileModal from './ProfileModal.svelte';
 	import { theme, sidebarCollapsed, updateSidebarCollapsed } from '$stores/uiPreferences';
 	import { navLinks, toggleTheme, toggleLanguage } from '$lib/nav';
+	import { unreadNotificationCount } from '$stores/notifications';
 
 	let showProfileModal = false;
 
@@ -64,13 +65,17 @@
 						{#if $sidebarCollapsed}
 							<a
 								href={link.href}
-								class="tooltip tooltip-right flex items-center justify-center rounded-lg p-2.5 transition-colors
+								class="tooltip tooltip-right relative flex items-center justify-center rounded-lg p-2.5 transition-colors
 									{active
 									? 'bg-primary/10 text-primary'
 									: 'text-base-content/70 hover:bg-base-200 hover:text-base-content'}"
 								data-tip={$t(link.labelKey)}
 							>
 								<svelte:component this={link.icon} size={20} />
+								{#if link.href === '/notifications' && $unreadNotificationCount > 0}
+									<span class="absolute right-[2px] top-[2px] h-2.5 w-2.5 rounded-full bg-error"
+									></span>
+								{/if}
 							</a>
 						{:else}
 							<a
@@ -80,8 +85,18 @@
 									? 'bg-primary/10 text-primary'
 									: 'text-base-content/70 hover:bg-base-200 hover:text-base-content'}"
 							>
-								<svelte:component this={link.icon} size={18} />
+								<div class="relative">
+									<svelte:component this={link.icon} size={18} />
+									{#if link.href === '/notifications' && $unreadNotificationCount > 0}
+										<span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-error"></span>
+									{/if}
+								</div>
 								{$t(link.labelKey)}
+								{#if link.href === '/notifications' && $unreadNotificationCount > 0}
+									<span class="badge badge-error badge-sm ml-auto text-white"
+										>{$unreadNotificationCount}</span
+									>
+								{/if}
 							</a>
 						{/if}
 					</li>

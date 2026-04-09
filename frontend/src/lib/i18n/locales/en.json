@@ -208,8 +208,34 @@
 		"show-all-transactions": "Show all transactions"
 	},
 
+	"notifications": {
+		"title": "Notifications",
+		"unread-count": "{count} unread notifications",
+		"empty": "No notifications yet.",
+		"new": "New",
+		"recurring-due-tomorrow-title": "Recurring charges due tomorrow",
+		"recurring-due-tomorrow-debits": "Tomorrow you have {count} pending debits totaling {total}.",
+		"recurring-due-tomorrow-credits": "Tomorrow you have {count} pending credits totaling {total}.",
+		"recurring-due-tomorrow-both": "Tomorrow you have {debitCount} pending debits totaling {debitTotal} and {creditCount} pending credits totaling {creditTotal}.",
+		"recurring-due-in-days-title": "Recurring charges due in {days} days",
+		"recurring-due-in-days-debits": "In {days} days you have {count} pending debits totaling {total}.",
+		"recurring-due-in-days-credits": "In {days} days you have {count} pending credits totaling {total}.",
+		"recurring-due-in-days-both": "In {days} days you have {debitCount} pending debits totaling {debitTotal} and {creditCount} pending credits totaling {creditTotal}.",
+		"target-date": "Target date: {date}",
+		"mark-as-read": "Mark as read",
+		"preferences-title": "Notification preferences",
+		"notify-days-ahead": "Notify days ahead",
+                "notify-days-ahead-desc": "How many days before the scheduled date should the assistant notify you? Default is 1 day.",
+                "min-debit-threshold": "Minimum total debit to notify",
+                "min-debit-threshold-desc": "We will only notify you if the total cumulative debit amount exceeds this value for a given day. Leave it empty to always receive notifications.",
+                "enable-push": "Enable Push Notifications",
+                "enable-push-desc": "Receive automatic alerts ahead of your scheduled recurring transactions so you never miss an upcoming payment.",
+                "optional": "(Optional)",
+                "catch-up-title": "You're all caught up!"
+
 	"recurring": {
 		"templates-active": "{count} active templates",
+		"templates-active-label": "Active templates",
 		"new-recurring-payment": "New recurring payment",
 		"new-recurring-transfer": "New recurring transfer",
 		"create-recurring-transfer": "Create recurring transfer",

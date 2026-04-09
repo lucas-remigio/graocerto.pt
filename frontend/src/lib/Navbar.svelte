@@ -7,6 +7,7 @@
 	import NavActions from './NavActions.svelte';
 	import { theme } from '$stores/uiPreferences';
 	import { isLargeScreen } from '$stores/screen';
+	import { unreadNotificationCount } from '$stores/notifications';
 	import { navLinks, toggleTheme, toggleLanguage } from '$lib/nav';
 
 	let isDropdownOpen = false;
@@ -54,7 +55,12 @@
 					}}
 					aria-label="Open menu"
 				>
-					<Menu size={20} class="h-5 w-5" />
+					<div class="indicator relative flex items-center justify-center">
+						<Menu size={20} class="h-5 w-5" />
+						{#if $unreadNotificationCount > 0}
+							<span class="badge indicator-item badge-error badge-xs"></span>
+						{/if}
+					</div>
 				</button>
 				{#if isDropdownOpen}
 					<ul
@@ -68,8 +74,18 @@
 									class="text-lg"
 									aria-label={$t(link.labelKey)}
 								>
-									<svelte:component this={link.icon} size={18} class="mr-2" />
+									<div class="relative flex items-center justify-center">
+										<svelte:component this={link.icon} size={18} class="mr-2" />
+										{#if link.href === '/notifications' && $unreadNotificationCount > 0}
+											<span class="absolute -top-1 right-1 h-2 w-2 rounded-full bg-error"></span>
+										{/if}
+									</div>
 									{$t(link.labelKey)}
+									{#if link.href === '/notifications' && $unreadNotificationCount > 0}
+										<span class="badge badge-error ml-auto text-xs text-white"
+											>{$unreadNotificationCount}</span
+										>
+									{/if}
 								</button>
 							</li>
 						{/each}

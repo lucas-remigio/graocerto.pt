@@ -14,6 +14,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/service/investment_calculator"
+	"github.com/lucas-remigio/wallet-tracker/service/notification"
 	"github.com/lucas-remigio/wallet-tracker/service/openai"
 	"github.com/lucas-remigio/wallet-tracker/service/recurring_rule"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
@@ -46,6 +47,7 @@ func (s *APIServer) Run() error {
 	transactionTypesStore := transaction_types.NewStore(s.db)
 	categoryStore := category.NewStore(s.db)
 	recurringRuleStore := recurring_rule.NewStore(s.db)
+	notificationStore := notification.NewStore(s.db)
 	openAiStore := openai.NewClient()
 	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
 	transactionStore := transaction.NewStore(s.db, accountStore)
@@ -69,13 +71,16 @@ func (s *APIServer) Run() error {
 	recurringRuleHandler := recurring_rule.NewHandler(recurringRuleStore)
 	recurringRuleHandler.RegisterRoutes(apiV1Router)
 
+	notificationHandler := notification.NewHandler(notificationStore)
+	notificationHandler.RegisterRoutes(apiV1Router)
+
 	accountStore.SetTransactionStore(transactionStore)
 
 	investmentCalculatorStore := investment_calculator.NewStore()
 	investmentCalculatorHandler := investment_calculator.NewHandler(investmentCalculatorStore)
 	investmentCalculatorHandler.RegisterRoutes(apiV1Router)
 
-	go s.runRecurringRuleScheduler(recurringRuleStore)
+	go s.runRecurringRuleScheduler(recurringRuleStore, notificationStore)
 
 	// Set up rate limiting middleware
 	// Allow 2 requests per second, with a burst of 10 requests, and a
@@ -172,13 +177,16 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule.Store) {
+func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule.Store, notificationStore *notification.Store) {
 	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
 
 	run := func() {
 		if err := recurringRuleStore.GeneratePendingTransactionsForDueRules(); err != nil {
 			log.Printf("recurring rule scheduler error: %v", err)
+		}
+		if err := notificationStore.GenerateRecurringDueTomorrowNotifications(); err != nil {
+			log.Printf("notification scheduler error: %v", err)
 		}
 	}
 

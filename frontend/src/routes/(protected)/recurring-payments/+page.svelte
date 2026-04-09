@@ -284,10 +284,23 @@
 
 		<div class="divider my-0"></div>
 
-		<div class="my-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-			<div
-				class="order-1 flex items-center justify-center gap-4 md:order-2 md:ml-auto md:justify-end"
-			>
+		<div class="my-2 flex flex-col items-center gap-3 md:flex-row md:items-center">
+			<div class="order-1 flex w-full justify-center md:flex-1 md:justify-start">
+				<TransactionsStats summaryItems={selectedSummaryItems} />
+			</div>
+
+			<div class="order-2 flex justify-center md:px-4">
+				<div class="inline-flex items-center gap-2 rounded-full bg-base-200/60 px-3 py-1 shadow-sm">
+					<span class="text-xs font-medium uppercase tracking-wide text-base-content/60">
+						{$t('recurring.templates-active-label')}
+					</span>
+					<span class="badge badge-primary badge-md font-bold text-base-100">
+						{filteredRecurringRules.length}
+					</span>
+				</div>
+			</div>
+
+			<div class="order-3 flex w-full items-center justify-center gap-4 md:flex-1 md:justify-end">
 				<button
 					class="btn btn-secondary shadow-lg"
 					aria-label={$t('recurring.new-recurring-transfer')}
@@ -299,16 +312,6 @@
 					<Plus size={20} class="text-base-100" />
 					<Repeat size={20} class="text-base-100" />
 				</button>
-			</div>
-			<div class="order-2 flex justify-center md:order-1 md:justify-start">
-				<div class="flex flex-col items-center gap-2 md:items-start">
-					<span class="badge badge-outline badge-lg">
-						{$t('recurring.templates-active', {
-							values: { count: filteredRecurringRules.length }
-						})}
-					</span>
-					<TransactionsStats summaryItems={selectedSummaryItems} />
-				</div>
 			</div>
 		</div>
 
