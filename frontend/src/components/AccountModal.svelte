@@ -61,7 +61,9 @@
 			}
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			toastStore.error(isEditMode ? $t('errors.failed-update-account') : $t('errors.failed-create-account'));
+			toastStore.error(
+				isEditMode ? $t('errors.failed-update-account') : $t('errors.failed-create-account')
+			);
 		}
 	}
 </script>

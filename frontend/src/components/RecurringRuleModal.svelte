@@ -10,8 +10,13 @@
 		RecurringRule,
 		UpdateRecurringRulePayload
 	} from '$lib/types';
-	import { TransactionTypeId, TransactionTypeSlug, TransactionTypes } from '$lib/transaction_types_types';
+	import {
+		TransactionTypeId,
+		TransactionTypeSlug,
+		TransactionTypes
+	} from '$lib/transaction_types_types';
 	import { buildCategoryGroups } from '$lib/utils/categoryUtils';
+	import { toastStore } from '$lib/stores/toast';
 
 	const dispatch = createEventDispatcher();
 	let {
@@ -19,7 +24,6 @@
 		recurringRule = null
 	}: { account: Account; recurringRule?: RecurringRule | null } = $props();
 
-	let error = $state('');
 	let isLoading = $state(true);
 	let categories: CategoryDto[] = $state([]);
 	let transaction_type_id: number = $state(TransactionTypeId.Debit);
@@ -43,7 +47,10 @@
 	);
 	$effect(() => {
 		form.transaction_type_id = transaction_type_id;
-		if (!filteredCategories.find((c) => c.id === form.category_id) && filteredCategories.length > 0) {
+		if (
+			!filteredCategories.find((c) => c.id === form.category_id) &&
+			filteredCategories.length > 0
+		) {
 			form.category_id = filteredCategories[0].id;
 		}
 		if (form.frequency === 'weekly' && form.execution_weekday === undefined) {
@@ -69,19 +76,22 @@
 
 	function isFormValid(): boolean {
 		if (!form.category_id) {
-			error = $t('transactions.category-required');
+			toastStore.error($t('transactions.category-required'));
 			return false;
 		}
 		if (!form.amount || form.amount <= 0) {
-			error = $t('transactions.amount-greater-zero');
+			toastStore.error($t('transactions.amount-greater-zero'));
 			return false;
 		}
 		if (!form.interval_value || form.interval_value < 1) {
-			error = $t('common.invalid');
+			toastStore.error($t('common.invalid'));
 			return false;
 		}
-		if (form.frequency === 'monthly' && (!form.execution_day || form.execution_day < 1 || form.execution_day > 31)) {
-			error = $t('recurring.execution-day-help');
+		if (
+			form.frequency === 'monthly' &&
+			(!form.execution_day || form.execution_day < 1 || form.execution_day > 31)
+		) {
+			toastStore.error($t('recurring.execution-day-help'));
 			return false;
 		}
 		if (
@@ -90,14 +100,13 @@
 				form.execution_weekday < 0 ||
 				form.execution_weekday > 6)
 		) {
-			error = $t('recurring.execution-weekday-help');
+			toastStore.error($t('recurring.execution-weekday-help'));
 			return false;
 		}
 		return true;
 	}
 
 	async function handleSubmit() {
-		error = '';
 		if (!isFormValid()) return;
 
 		try {
@@ -122,21 +131,22 @@
 				}
 
 				const updatedRule = await dataService.updateRecurringRule(recurringRule.id, payload);
+				toastStore.success($t('common.success'));
 				dispatch('updateRecurringRule', updatedRule as RecurringRule);
 				return;
 			}
 
 			const createdRule = await dataService.createRecurringRule(form);
+			toastStore.success($t('common.success'));
 			dispatch('newRecurringRule', createdRule as RecurringRule);
 		} catch (err) {
 			console.error('Error saving recurring rule:', err);
-			error = $t('errors.server-error');
+			toastStore.error($t('errors.server-error'));
 		}
 	}
 
 	async function fetchData() {
 		isLoading = true;
-		error = '';
 		try {
 			const categoriesData = await dataService.fetchCategories();
 			categories = categoriesData;
@@ -164,10 +174,11 @@
 					active: recurringRule.active
 				};
 			}
-			if (!form.category_id && filteredCategories.length > 0) form.category_id = filteredCategories[0].id;
+			if (!form.category_id && filteredCategories.length > 0)
+				form.category_id = filteredCategories[0].id;
 		} catch (err) {
 			console.error('Error loading recurring modal data:', err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		} finally {
 			isLoading = false;
 		}
@@ -185,12 +196,6 @@
 		<h3 class="mb-4 text-lg font-bold">
 			{isEditMode ? $t('recurring.edit-recurring-payment') : $t('recurring.new-recurring-payment')}
 		</h3>
-
-		{#if error}
-			<div class="alert alert-error mb-4">
-				<p class="text-gray-100">{error}</p>
-			</div>
-		{/if}
 
 		{#if isLoading}
 			<div class="py-12 text-center">
@@ -218,7 +223,11 @@
 						<label class="label" for="transaction-type">
 							<span class="label-text">{$t('transactions.transaction-type')}</span>
 						</label>
-						<select id="transaction-type" class="select select-bordered w-full" bind:value={transaction_type_id}>
+						<select
+							id="transaction-type"
+							class="select select-bordered w-full"
+							bind:value={transaction_type_id}
+						>
 							{#each TransactionTypes.filter((tt) => tt.type_slug !== TransactionTypeSlug.Transfer) as type}
 								<option value={type.id}>{$t('transaction-types.' + type.type_slug)}</option>
 							{/each}
@@ -298,7 +307,11 @@
 						<label class="label" for="frequency">
 							<span class="label-text">{$t('recurring.frequency')}</span>
 						</label>
-						<select id="frequency" class="select select-bordered w-full" bind:value={form.frequency}>
+						<select
+							id="frequency"
+							class="select select-bordered w-full"
+							bind:value={form.frequency}
+						>
 							<option value="daily">{$t('recurring.frequency-daily')}</option>
 							<option value="weekly">{$t('recurring.frequency-weekly')}</option>
 							<option value="monthly">{$t('recurring.frequency-monthly')}</option>
@@ -310,7 +323,14 @@
 						<label class="label" for="interval">
 							<span class="label-text">{$t('recurring.interval')}</span>
 						</label>
-						<input id="interval" type="number" min="1" step="1" class="input input-bordered w-full" bind:value={form.interval_value} />
+						<input
+							id="interval"
+							type="number"
+							min="1"
+							step="1"
+							class="input input-bordered w-full"
+							bind:value={form.interval_value}
+						/>
 					</div>
 				</div>
 
@@ -374,7 +394,8 @@
 				</div>
 
 				<div class="modal-action mt-6">
-					<button type="button" class="btn" onclick={handleCloseModal}>{$t('common.cancel')}</button>
+					<button type="button" class="btn" onclick={handleCloseModal}>{$t('common.cancel')}</button
+					>
 					<button type="submit" class="btn btn-primary text-base-100">
 						{isEditMode ? $t('transactions.update-transaction') : $t('common.create')}
 					</button>
@@ -383,4 +404,3 @@
 		{/if}
 	</div>
 </div>
-

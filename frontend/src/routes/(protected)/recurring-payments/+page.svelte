@@ -17,9 +17,9 @@
 	import TransactionsStats from '$components/TransactionsStats.svelte';
 	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
 	import ConfirmAction from '$components/ConfirmAction.svelte';
+	import { toastStore } from '$lib/stores/toast';
 
 	let loading = $state(true);
-	let error = $state('');
 	let recurringRules: RecurringRule[] = $state([]);
 	let showCreateRecurringModal = $state(false);
 	let showCreateRecurringTransferModal = $state(false);
@@ -75,13 +75,12 @@
 
 	async function loadData() {
 		loading = true;
-		error = '';
 		try {
 			const rules = await dataService.fetchRecurringRules();
 			recurringRules = rules;
 		} catch (err) {
 			console.error(err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		} finally {
 			loading = false;
 		}
@@ -101,7 +100,7 @@
 			forecastItems = forecast.items;
 		} catch (err) {
 			console.error(err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		} finally {
 			forecastLoading = false;
 		}
@@ -125,7 +124,7 @@
 			getSelectedAccount();
 		} catch (err) {
 			console.error('Error in fetchAccounts:', err);
-			error = $t('errors.failed-load-accounts');
+			toastStore.error($t('errors.failed-load-accounts'));
 		} finally {
 			accountsLoading = false;
 		}
@@ -136,7 +135,7 @@
 			categories = await dataService.fetchCategories();
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		}
 	}
 
@@ -144,9 +143,10 @@
 		try {
 			await dataService.deleteRecurringRule(ruleId);
 			recurringRules = recurringRules.filter((r) => r.id !== ruleId);
+			toastStore.success($t('common.success'));
 		} catch (err) {
 			console.error(err);
-			error = $t('errors.server-error');
+			toastStore.error($t('errors.server-error'));
 		}
 	}
 
@@ -249,10 +249,6 @@
 </script>
 
 <div class="container mx-auto p-4">
-	{#if error}
-		<div class="alert alert-error mb-4">{error}</div>
-	{/if}
-
 	<AccountsSplitLayout
 		{accounts}
 		{selectedAccount}
@@ -264,7 +260,9 @@
 		<div class="mb-2 flex justify-center">
 			<div class="btn-group">
 				<button
-					class="btn btn-sm {recurringViewMode === 'rules' ? 'btn-primary text-base-100' : 'btn-ghost'}"
+					class="btn btn-sm {recurringViewMode === 'rules'
+						? 'btn-primary text-base-100'
+						: 'btn-ghost'}"
 					onclick={() => setRecurringViewMode('rules')}
 				>
 					<List size={16} class="mr-1" />
@@ -314,7 +312,6 @@
 				</button>
 			</div>
 		</div>
-
 
 		{#if loading}
 			<div class="loading loading-spinner loading-lg"></div>

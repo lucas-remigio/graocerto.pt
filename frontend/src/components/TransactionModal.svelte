@@ -166,9 +166,7 @@
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
 			toastStore.error(
-				isEditMode
-					? $t('errors.failed-update-transaction')
-					: $t('errors.failed-create-transaction')
+				isEditMode ? $t('errors.failed-update-transaction') : $t('errors.failed-create-transaction')
 			);
 		}
 	}
