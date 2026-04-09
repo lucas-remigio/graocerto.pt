@@ -9,13 +9,13 @@
 	import HierarchicalPieChart from './HierarchicalPieChart.svelte';
 	import DetailedCategoriesChart from './DetailedCategoriesChart.svelte';
 	import HierarchicalBudgetCard from './HierarchicalBudgetCard.svelte';
+	import { toastStore } from '$lib/stores/toast';
 
 	export let selectedMonth: number | null;
 	export let selectedYear: number | null;
 	export let statistics: TransactionStatistics | null = null;
 	export let account: Account;
 	export let loading: boolean = false;
-	export let error: string = '';
 
 	let statsView: 'transactions' | 'categories' | 'overview' = 'transactions';
 
@@ -28,10 +28,9 @@
 
 	function openAiFeedbackModal() {
 		if (!statistics || statistics.total_transactions === 0) {
-			error = $t('transactions.no-transactions-ai');
+			toastStore.error($t('transactions.no-transactions-ai'));
 			return;
 		}
-		error = '';
 		showAiFeedbackModal = true;
 	}
 
@@ -45,11 +44,6 @@
 	<div class="py-12 text-center">
 		<div class="loading loading-spinner loading-lg mx-auto mb-4"></div>
 		<p class="text-base-content/70">{$t('common.loading')}</p>
-	</div>
-{:else if error}
-	<!-- Error State -->
-	<div class="alert alert-error">
-		<p>{error}</p>
 	</div>
 {:else if !statistics || statistics.total_transactions === 0}
 	<!-- Empty State -->
