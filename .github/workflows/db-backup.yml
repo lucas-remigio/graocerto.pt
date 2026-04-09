@@ -29,8 +29,8 @@ jobs:
 
           echo "Starting pg_dump..."
           # Supabase is PostgreSQL, so we can use your existing REMOTE_DB_URL secret
-          # It is recommended to use the direct connection URI (port 5432) for pg_dump
-          pg_dump "${{ secrets.REMOTE_DB_URL }}" > "$DUMP_FILE"
+          # We explicitly call the newly installed pg_dump for version 17
+          /usr/lib/postgresql/17/bin/pg_dump "${{ secrets.REMOTE_DB_URL }}" > "$DUMP_FILE"
 
           # Compress the file to save space
           gzip "$DUMP_FILE"
