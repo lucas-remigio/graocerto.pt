@@ -11,13 +11,12 @@
 	} from '$lib/transaction_types_types';
 	import CategoryModal from '$components/CategoryModal.svelte';
 	import { t } from '$lib/i18n';
+	import { toastStore } from '$lib/stores/toast';
 
 	let showCreateCategoryModal = $state(false);
 	let selectedTransactionType: TransactionType | undefined = $state(undefined);
 
 	let categories: CategoryDto[] = $state([]);
-	let error: string = $state('');
-	let deleteError: string = $state('');
 	let loading: boolean = $state(true);
 
 	// Derived lists for credit and debit categories
@@ -35,7 +34,7 @@
 			categories = fetched;
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
-			error = $t('errors.failed-load-categories');
+			toastStore.error($t('errors.failed-load-categories'));
 		} finally {
 			loading = false;
 		}
@@ -45,10 +44,11 @@
 		try {
 			await dataService.deleteCategory(categoryId);
 			categories = categories.filter((c) => c.id !== categoryId);
+			toastStore.success($t('common.success'));
 		} catch (err: unknown) {
 			console.error('Error in deleteCategory:', err);
-			const error = err instanceof Error ? err.message : 'Unknown error';
-			showErrorMessage(error);
+			const errMessage = err instanceof Error ? err.message : 'Unknown error';
+			toastStore.error(errMessage);
 		}
 	}
 
@@ -64,10 +64,11 @@
 		try {
 			const response = await dataService.editCategory(categoryId, categoryData);
 			updateCategory(response.category);
+			toastStore.success($t('common.success'));
 		} catch (err: unknown) {
 			console.error('Error in editCategory:', err);
-			const error = err instanceof Error ? err.message : 'Unknown error';
-			showErrorMessage(error);
+			const errMessage = err instanceof Error ? err.message : 'Unknown error';
+			toastStore.error(errMessage);
 		}
 	}
 
@@ -76,13 +77,6 @@
 		if (idx !== -1) {
 			categories[idx] = category;
 		}
-	}
-
-	function showErrorMessage(error: string) {
-		deleteError = `Failed to process category: ${error}`;
-		setTimeout(() => {
-			deleteError = '';
-		}, 5000);
 	}
 
 	function openCreateCategoryModal(transactionType: TransactionTypeId) {
@@ -151,9 +145,7 @@
 	});
 </script>
 
-{#if error}
-	<p class="text-red-500">{error}</p>
-{:else if loading}
+{#if loading}
 	<div class="container mx-auto p-4">
 		<h1 class="mb-6 text-3xl font-bold">{$t('navbar.categories')}</h1>
 		<div class="flex min-h-64 items-center justify-center">
@@ -162,9 +154,6 @@
 	</div>
 {:else}
 	<div class="container mx-auto p-4">
-		{#if deleteError}
-			<p class="text-red-500">{deleteError}</p>
-		{/if}
 		<h1 class="mb-6 text-3xl font-bold">{$t('navbar.categories')}</h1>
 		<div class="flex flex-col lg:flex-row lg:space-x-4">
 			<!-- Credit Categories Table (Left) -->

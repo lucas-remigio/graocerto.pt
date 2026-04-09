@@ -90,7 +90,6 @@
 	let showEditTransactionModal = false;
 	let showDeleteTransactionModal = false;
 	let showTransferModal = false;
-	let error: string = '';
 	let showFilters = false; // Add this state
 
 	let selectedTransaction: TransactionDto | null = null;
@@ -298,11 +297,6 @@
 	<div class="py-12 text-center">
 		<div class="loading loading-spinner loading-lg mx-auto mb-4"></div>
 		<p class="text-base-content/70">{$t('common.loading')}</p>
-	</div>
-{:else if error}
-	<!-- Error State -->
-	<div class="alert alert-error">
-		<p>{error}</p>
 	</div>
 {:else if transactions && transactions.length > 0}
 	<div class="my-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

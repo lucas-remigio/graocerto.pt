@@ -5,6 +5,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { validateAccountForm } from '$lib/accountValidation';
+	import { toastStore } from '$lib/stores/toast';
 
 	// Props
 	export let account: Account | null = null; // if provided => edit mode
@@ -12,9 +13,6 @@
 	// Mode
 	let isEditMode: boolean = !!account;
 	$: isEditMode = !!account;
-
-	// State
-	let error: string = '';
 
 	// Form fields
 	let account_name: string = isEditMode ? account!.account_name : '';
@@ -29,7 +27,7 @@
 	function isFormValid(): boolean {
 		const result = validateAccountForm(balance, account_name, $t);
 		if (result.error) {
-			error = result.error;
+			toastStore.error(result.error);
 			return false;
 		}
 		balance = result.balance;
@@ -37,7 +35,6 @@
 	}
 
 	async function handleSubmit() {
-		error = '';
 		if (!isFormValid()) return;
 
 		try {
@@ -46,23 +43,25 @@
 				const response = await api_axios.put(`accounts/${account!.id}`, payload);
 				if (response.status !== 200) {
 					console.error('Non-200 response status:', response.status);
-					error = `Error: ${response.status}`;
+					toastStore.error(`Error: ${response.status}`);
 					return;
 				}
+				toastStore.success($t('common.success'));
 				dispatch('updatedAccount', response.data as AccountChangeResponse);
 			} else {
 				const payload = { balance, account_name };
 				const response = await api_axios.post('accounts', payload);
 				if (response.status !== 200) {
 					console.error('Non-200 response status:', response.status);
-					error = `Error: ${response.status}`;
+					toastStore.error(`Error: ${response.status}`);
 					return;
 				}
+				toastStore.success($t('common.success'));
 				dispatch('newAccount', response.data as AccountChangeResponse);
 			}
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = isEditMode ? $t('errors.failed-update-account') : $t('errors.failed-create-account');
+			toastStore.error(isEditMode ? $t('errors.failed-update-account') : $t('errors.failed-create-account'));
 		}
 	}
 </script>
@@ -80,12 +79,6 @@
 				{$t('accounts.create-account')}
 			{/if}
 		</h3>
-
-		{#if error}
-			<div class="alert alert-error">
-				<p class="text-gray-100">{error}</p>
-			</div>
-		{/if}
 
 		<form on:submit|preventDefault={handleSubmit}>
 			<div class="form-control mt-4">

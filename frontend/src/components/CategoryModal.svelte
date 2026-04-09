@@ -5,6 +5,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { formatCurrency } from '$lib/utils/currency';
+	import { toastStore } from '$lib/stores/toast';
 
 	// Unified inputs
 	export let category: CategoryDto | null = null; // edit mode if provided
@@ -16,7 +17,6 @@
 	$: isSubcategoryMode = !!parentCategory;
 
 	// Local state
-	let error: string = '';
 	let category_name: string = category ? category.category_name : '';
 	let color: string = category ? category.color : parentCategory?.color || '#ffffff';
 	let budget: number | null = category ? (category.budget ?? null) : null;
@@ -81,41 +81,41 @@
 
 	function validateForm(): boolean {
 		if (!category_name) {
-			error = $t('categories.category-name-required');
+			toastStore.error($t('categories.category-name-required'));
 			return false;
 		}
 
 		category_name = category_name.trim();
 
 		if (category_name.length > 50) {
-			error = $t('categories.category-name-too-long');
+			toastStore.error($t('categories.category-name-too-long'));
 			return false;
 		}
 
 		if (category_name.length < 3) {
-			error = $t('categories.category-name-too-short');
+			toastStore.error($t('categories.category-name-too-short'));
 			return false;
 		}
 
 		if (!color) {
-			error = $t('categories.color-required');
+			toastStore.error($t('categories.color-required'));
 			return false;
 		}
 
 		color = color.trim();
 
 		if (color[0] !== '#') {
-			error = $t('categories.color-invalid');
+			toastStore.error($t('categories.color-invalid'));
 			return false;
 		}
 
 		if (color.length !== 7) {
-			error = $t('categories.color-invalid');
+			toastStore.error($t('categories.color-invalid'));
 			return false;
 		}
 
 		if (budget != null && (budget < 1 || isNaN(budget) || budget > 99999)) {
-			error = $t('categories.budget-invalid');
+			toastStore.error($t('categories.budget-invalid'));
 			return false;
 		}
 
@@ -136,7 +136,6 @@
 	$: modalBorderClass = typeSlug ? borderClasses[typeSlug] : 'bg-gray-50';
 
 	async function handleSubmit() {
-		error = '';
 		if (!validateForm()) return;
 
 		if (isEditMode) {
@@ -160,7 +159,7 @@
 		} else if (transactionType) {
 			transaction_type_id = transactionType.id;
 		} else {
-			error = $t('errors.failed-create-category');
+			toastStore.error($t('errors.failed-create-category'));
 			return;
 		}
 
@@ -174,10 +173,11 @@
 
 		try {
 			const response: CategoryChangeResponse = await dataService.createCategory(categoryData);
+			toastStore.success($t('common.success'));
 			dispatch('newCategory', response);
 		} catch (err: unknown) {
 			console.error('Error in handleSubmit:', err);
-			error = err instanceof Error ? err.message : $t('errors.failed-create-category');
+			toastStore.error($t('errors.failed-create-category'));
 		}
 	}
 </script>
@@ -200,12 +200,6 @@
 				{$t('transaction-types.' + (transactionType ? transactionType.type_slug : ''))}
 			{/if}
 		</h3>
-
-		{#if error}
-			<div class="alert alert-error mb-4">
-				<p class="text-gray-100">{error}</p>
-			</div>
-		{/if}
 
 		<form on:submit|preventDefault={handleSubmit}>
 			<!-- Parent Category Selector (only if NOT in subcategory mode from table) -->

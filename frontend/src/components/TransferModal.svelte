@@ -6,12 +6,12 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { buildCategoryGroups } from '$lib/utils/categoryUtils';
+	import { toastStore } from '$lib/stores/toast';
 
 	export let account: Account;
 
 	const dispatch = createEventDispatcher();
 
-	let error: string = '';
 	let isLoading: boolean = true;
 	let accounts: Account[] = [];
 	let debitCategories: CategoryDto[] = [];
@@ -38,31 +38,29 @@
 	}
 
 	async function handleSubmit() {
-		error = '';
-
 		// Validation
 		if (!destinationAccountToken) {
-			error = $t('transfers.select-destination-account');
+			toastStore.error($t('transfers.select-destination-account'));
 			return;
 		}
 
 		if (sourceAccountToken === destinationAccountToken) {
-			error = $t('transfers.same-account-error');
+			toastStore.error($t('transfers.same-account-error'));
 			return;
 		}
 
 		if (!debitCategoryId) {
-			error = $t('transfers.select-debit-category');
+			toastStore.error($t('transfers.select-debit-category'));
 			return;
 		}
 
 		if (!creditCategoryId) {
-			error = $t('transfers.select-credit-category');
+			toastStore.error($t('transfers.select-credit-category'));
 			return;
 		}
 
 		if (amount <= 0) {
-			error = $t('transfers.amount-must-be-positive');
+			toastStore.error($t('transfers.amount-must-be-positive'));
 			return;
 		}
 
@@ -83,20 +81,20 @@
 			});
 
 			if (response.status !== 200) {
-				error = `Error: ${response.status}`;
+				toastStore.error(`Error: ${response.status}`);
 				return;
 			}
 
+			toastStore.success($t('common.success'));
 			dispatch('newTransfer', response.data as TransferResponse);
 		} catch (err) {
 			console.error('Error creating transfer:', err);
-			error = $t('errors.failed-create-transfer');
+			toastStore.error($t('errors.failed-create-transfer'));
 		}
 	}
 
 	async function fetchData() {
 		isLoading = true;
-		error = '';
 
 		try {
 			// Fetch all accounts for the user
@@ -116,7 +114,7 @@
 			}
 		} catch (err) {
 			console.error('Error fetching data:', err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		} finally {
 			isLoading = false;
 		}
@@ -136,12 +134,6 @@
 		<h3 class="mb-4 text-lg font-bold">
 			{$t('transfers.create-transfer')}
 		</h3>
-
-		{#if error}
-			<div class="alert alert-error mb-4">
-				<p class="text-gray-100">{error}</p>
-			</div>
-		{/if}
 
 		{#if isLoading}
 			<div class="py-12 text-center">

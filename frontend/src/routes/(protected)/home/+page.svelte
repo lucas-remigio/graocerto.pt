@@ -18,6 +18,7 @@
 	import { userEmail } from '$lib/stores/auth';
 	import { t } from '$lib/i18n';
 	import { selectedView, updateSelectedView } from '$lib/stores/uiPreferences';
+	import { toastStore } from '$lib/stores/toast';
 
 	// WebSocket state
 	let hasJoinedRoom = $state(false);
@@ -60,8 +61,6 @@
 	let transactionsLoading = $state(false);
 	let statistics: TransactionStatistics | null = $state(null);
 	let statisticsLoading = $state(false);
-	let statisticsError: string = $state('');
-	let error: string = $state('');
 
 	let selectedAccount: Account | null = $state(null);
 
@@ -147,7 +146,7 @@
 			}
 		} catch (err) {
 			console.error('Error in fetchAccounts:', err);
-			error = $t('errors.failed-load-accounts');
+			toastStore.error($t('errors.failed-load-accounts'));
 		} finally {
 			accountsLoading = false;
 		}
@@ -173,7 +172,7 @@
 			await Promise.all(promises);
 		} catch (err) {
 			console.error('Error in fetchAccountTransactions:', err);
-			error = $t('errors.failed-load-transactions');
+			toastStore.error($t('errors.failed-load-transactions'));
 		}
 	}
 
@@ -189,7 +188,7 @@
 			transactions = result.transactions;
 		} catch (err) {
 			console.error('Error fetching transactions:', err);
-			error = $t('errors.failed-load-transactions');
+			toastStore.error($t('errors.failed-load-transactions'));
 		} finally {
 			transactionsLoading = false;
 		}
@@ -209,7 +208,7 @@
 			}
 		} catch (err) {
 			console.error('Error in fetchAvailableMonths:', err);
-			error = $t('errors.failed-load-months');
+			toastStore.error($t('errors.failed-load-months'));
 		}
 	}
 
@@ -221,13 +220,12 @@
 		showLoading: boolean
 	) {
 		statisticsLoading = showLoading;
-		statisticsError = '';
 
 		try {
 			statistics = await dataService.fetchStatistics(accountToken, month, year);
 		} catch (err) {
 			console.error('Error fetching statistics:', err);
-			statisticsError = $t('errors.failed-load-transactions');
+			toastStore.error($t('errors.failed-load-transactions'));
 		} finally {
 			statisticsLoading = false;
 		}
@@ -348,9 +346,10 @@
 			updateAccountAndMonths(response);
 			upsertTransaction(response.transaction);
 			refreshCachesAndNotify();
+			toastStore.success($t('common.success'));
 		} catch (err) {
 			console.error('Error approving pending transaction:', err);
-			error = $t('errors.failed-update-transaction');
+			toastStore.error($t('errors.failed-update-transaction'));
 		}
 	}
 
@@ -368,9 +367,10 @@
 			if (response.is_transfer) {
 				handleTransferDeletion(transaction, response);
 			}
+			toastStore.success($t('common.success'));
 		} catch (err) {
 			console.error('Error deleting transaction:', err);
-			error = $t('errors.failed-delete-transaction');
+			toastStore.error($t('errors.failed-delete-transaction'));
 		}
 	}
 
@@ -496,9 +496,10 @@
 			accounts = accounts.filter((acc) => acc.token !== account.token);
 			selectedAccount = null; // Clear selected account
 			getSelectedAccount(); // Update selected account if needed
+			toastStore.success($t('common.success'));
 		} catch (err) {
 			console.error('Error deleting account:', err);
-			error = $t('errors.failed-create-account');
+			toastStore.error($t('errors.failed-create-account'));
 		}
 	}
 
@@ -546,16 +547,11 @@
 </script>
 
 <div class="container mx-auto flex flex-col p-4">
-	{#if error}
-		<div class="alert alert-error">
-			<p>{error}</p>
-		</div>
-	{:else}
-		<AccountsSplitLayout
-			{accounts}
-			{selectedAccount}
-			{isLargeScreen}
-			accountsLoading={accountsLoading}
+	<AccountsSplitLayout
+		{accounts}
+		{selectedAccount}
+		{isLargeScreen}
+		accountsLoading={accountsLoading}
 			showRightPanel={accounts.length > 0}
 			on:select={handleSelectAccount}
 			on:updatedAccount={({ detail: { account } }) => handleUpdateAccount(account)}
@@ -607,10 +603,8 @@
 						{statistics}
 						account={selectedAccount!}
 						loading={statisticsLoading}
-						error={statisticsError}
 					/>
 				{/if}
 			</div>
 		</AccountsSplitLayout>
-	{/if}
 </div>

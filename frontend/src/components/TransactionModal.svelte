@@ -18,6 +18,7 @@
 	import { validateTransactionForm } from '$lib/transactionValidation';
 	import CategoryModal from './CategoryModal.svelte';
 	import { buildCategoryGroups } from '$lib/utils/categoryUtils';
+	import { toastStore } from '$lib/stores/toast';
 
 	// Inputs
 	export let account: Account;
@@ -28,7 +29,6 @@
 	$: isEditMode = !!transaction;
 
 	// State
-	let error: string = '';
 	let transactionTypes: TransactionType[] = [];
 	let categories: CategoryDto[] = [];
 	let categoriesMappedById: Map<number, CategoryDto> = new Map();
@@ -114,7 +114,7 @@
 		);
 
 		if (result.error) {
-			error = result.error;
+			toastStore.error(result.error);
 			return false;
 		}
 
@@ -124,7 +124,6 @@
 	}
 
 	async function handleSubmit() {
-		error = '';
 		if (!isFormValid()) return;
 
 		try {
@@ -142,9 +141,10 @@
 				});
 				if (response.status !== 200) {
 					console.error('Non-200 response status:', response.status);
-					error = `Error: ${response.status}`;
+					toastStore.error(`Error: ${response.status}`);
 					return;
 				}
+				toastStore.success($t('common.success'));
 				dispatch('updateTransaction', response.data as TransactionChangeResponse);
 			} else {
 				const newTx = {
@@ -157,16 +157,19 @@
 				const response = await api_axios('transactions', { method: 'POST', data: newTx });
 				if (response.status !== 200) {
 					console.error('Non-200 response status:', response.status);
-					error = `Error: ${response.status}`;
+					toastStore.error(`Error: ${response.status}`);
 					return;
 				}
+				toastStore.success($t('common.success'));
 				dispatch('newTransaction', response.data as TransactionChangeResponse);
 			}
 		} catch (err) {
 			console.error('Error in handleSubmit:', err);
-			error = isEditMode
-				? $t('errors.failed-update-transaction')
-				: $t('errors.failed-create-transaction');
+			toastStore.error(
+				isEditMode
+					? $t('errors.failed-update-transaction')
+					: $t('errors.failed-create-transaction')
+			);
 		}
 	}
 
@@ -176,7 +179,7 @@
 			transactionTypes = transactionTypes.filter((type) => type.type_slug !== 'transfer');
 		} catch (err) {
 			console.error('Error in fetchTransactionTypes:', err);
-			error = $t('transactions.failed-load-types');
+			toastStore.error($t('transactions.failed-load-types'));
 		}
 	}
 
@@ -186,18 +189,17 @@
 			categoriesMappedById = new Map(categories.map((cat) => [cat.id, cat]));
 		} catch (err) {
 			console.error('Error in fetchCategories:', err);
-			error = $t('errors.failed-load-categories');
+			toastStore.error($t('errors.failed-load-categories'));
 		}
 	}
 
 	async function fetchData() {
 		isLoading = true;
-		error = '';
 		try {
 			await Promise.all([fetchTransactionTypes(), fetchCategories()]);
 		} catch (err) {
 			console.error('Error in fetchData:', err);
-			error = $t('errors.failed-load-data');
+			toastStore.error($t('errors.failed-load-data'));
 		} finally {
 			isLoading = false;
 		}
@@ -254,12 +256,6 @@
 				{$t('transactions.new-transaction-for')} <strong>{account.account_name}</strong>
 			{/if}
 		</h3>
-
-		{#if error}
-			<div class="alert alert-error">
-				<p class="text-gray-100">{error}</p>
-			</div>
-		{/if}
 
 		{#if isLoading}
 			<div class="py-12 text-center">
