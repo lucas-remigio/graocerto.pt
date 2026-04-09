@@ -52,3 +52,7 @@ jobs:
 
           # Change `gdrive:/GraoCerto_Backups/` to match your remote name and folder path
           rclone copy ${{ env.COMPRESSED_FILE }} gdrive:/GraoCerto_Backups/
+
+          # Keep only the last x days of backups to save space
+          echo "Deleting backups older than 60 days..."
+          rclone delete gdrive:/GraoCerto_Backups/ --min-age 60d
