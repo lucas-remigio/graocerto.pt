@@ -3,37 +3,39 @@ name: Auto Backup PostgreSQL Database
 on:
   schedule:
     # Runs at 3:00 AM UTC every day
-    - cron: '0 3 * * *'
+    - cron: "0 3 * * *"
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install PostgreSQL Client
         run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
           sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-client-17
 
       - name: Run pg_dump
         run: |
           DATE=$(date +'%Y-%m-%d_%H-%M-%S')
           DUMP_FILE="graocerto_backup_${DATE}.sql"
-          
+
           echo "Starting pg_dump..."
           # Supabase is PostgreSQL, so we can use your existing REMOTE_DB_URL secret
           # It is recommended to use the direct connection URI (port 5432) for pg_dump
           pg_dump "${{ secrets.REMOTE_DB_URL }}" > "$DUMP_FILE"
-          
+
           # Compress the file to save space
           gzip "$DUMP_FILE"
           COMPRESSED_FILE="${DUMP_FILE}.gz"
-          
+
           echo "Backup completed successfully."
           echo "COMPRESSED_FILE=$COMPRESSED_FILE" >> $GITHUB_ENV
 
@@ -47,6 +49,6 @@ jobs:
         run: |
           mkdir -p ~/.config/rclone
           echo "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
-          
+
           # Change `gdrive:/GraoCerto_Backups/` to match your remote name and folder path
           rclone copy ${{ env.COMPRESSED_FILE }} gdrive:/GraoCerto_Backups/
