@@ -5,15 +5,14 @@
 	import { t } from '$lib/i18n';
 	import type { AxiosError } from 'axios';
 	import { validateEmail, isPasswordLengthValid } from '$lib/authValidation';
-	import { XIcon } from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import { toastStore } from '$lib/stores/toast';
 
 	// Vite will replace this at build time, failing gracefully if undefined
 	const googleClientId = import.meta.env.VITE_PUBLIC_GOOGLE_CLIENT_ID || '';
 
 	let email = '';
 	let password = '';
-	let errorMessage = '';
 	let isLoading = false;
 	let isGoogleLoading = false;
 
@@ -50,7 +49,6 @@
 
 	const handleGoogleLogin = async (response: any) => {
 		try {
-			errorMessage = '';
 			isGoogleLoading = true;
 			const res = await axios.post('auth/google', { token: response.credential });
 			const { token: authToken, email, created_at } = res.data;
@@ -62,7 +60,7 @@
 		} catch (error) {
 			const axiosError = error as AxiosError;
 			const apiResponse = axiosError.response?.data as APIErrorResponse;
-			errorMessage = apiResponse?.error || $t('auth.error-occurred');
+			toastStore.error(apiResponse?.error || $t('auth.error-occurred'));
 			localStorage.removeItem('token');
 			token.set(null);
 		} finally {
@@ -72,22 +70,19 @@
 
 	const validateForm = (): boolean => {
 		if (!email || !validateEmail(email)) {
-			errorMessage = $t('auth.email') + ' ' + $t('common.invalid');
+			toastStore.error($t('auth.email') + ' ' + $t('common.invalid'));
 			return false;
 		}
 
 		if (!password || !isPasswordLengthValid(password)) {
-			errorMessage = $t('auth.password-length-invalid');
+			toastStore.error($t('auth.password-length-invalid'));
 			return false;
 		}
 
-		errorMessage = '';
 		return true;
 	};
 
 	const handleLogin = async () => {
-		errorMessage = '';
-
 		const isValid = validateForm();
 		if (!isValid) {
 			return;
@@ -110,9 +105,9 @@
 			const axiosError = error as AxiosError;
 			const apiResponse = axiosError.response?.data as APIErrorResponse;
 			if (axiosError.response?.status === 404) {
-				errorMessage = $t('auth.user-not-found');
+				toastStore.error($t('auth.user-not-found'));
 			} else {
-				errorMessage = apiResponse?.error || $t('auth.error-occurred');
+				toastStore.error(apiResponse?.error || $t('auth.error-occurred'));
 			}
 
 			// Clear any existing tokens on error
@@ -169,13 +164,6 @@
 					placeholder={$t('auth.enter-password')}
 				/>
 			</div>
-
-			{#if errorMessage}
-				<div class="alert alert-error shadow-sm">
-					<XIcon class="h-6 w-6 text-base-100" />
-					<span class="text-sm text-base-100">{errorMessage}</span>
-				</div>
-			{/if}
 
 			<div class="form-control mt-8">
 				<button

@@ -3,16 +3,14 @@
 	import axios from '$lib/axios';
 	import { t } from '$lib/i18n';
 	import type { AxiosError } from 'axios';
-	import { CheckCircle, XIcon } from 'lucide-svelte';
 	import { validateEmail, isPasswordValid } from '$lib/authValidation';
+	import { toastStore } from '$lib/stores/toast';
 
 	let first_name = '';
 	let last_name = '';
 	let email = '';
 	let password = '';
 	let confirmPassword = '';
-	let errorMessage = '';
-	let successMessage = '';
 
 	interface APIErrorResponse {
 		message: string; // Main error message
@@ -41,18 +39,18 @@
 
 		for (const { valid, error } of checks) {
 			if (!valid) {
-				errorMessage = error;
+				toastStore.error(error);
 				return false;
 			}
 		}
 
 		if (!isPasswordValid(password)) {
-			errorMessage = $t('auth.password-invalid');
+			toastStore.error($t('auth.password-invalid'));
 			return false;
 		}
 
 		if (password !== confirmPassword) {
-			errorMessage = $t('auth.passwords-no-match');
+			toastStore.error($t('auth.passwords-no-match'));
 			return false;
 		}
 
@@ -60,9 +58,6 @@
 	};
 
 	const handleRegister = async () => {
-		errorMessage = '';
-		successMessage = '';
-
 		const isValid = validateForm();
 		if (!isValid) {
 			return; // Stop if validation fails
@@ -77,15 +72,15 @@
 				password
 			});
 
-			successMessage = $t('auth.registration-successful');
+			toastStore.success($t('auth.registration-successful'));
 			setTimeout(() => {
 				goto('/login');
-			}, 2000);
+			}, 1000);
 		} catch (error) {
 			// Handle errors and display error messages
 			const axiosError = error as AxiosError;
 			const apiResponse = axiosError.response?.data as APIErrorResponse;
-			errorMessage = apiResponse?.error || $t('auth.registration-failed');
+			toastStore.error(apiResponse?.error || $t('auth.registration-failed'));
 		}
 	};
 </script>
@@ -173,20 +168,6 @@
 					/>
 				</div>
 			</div>
-
-			{#if errorMessage}
-				<div class="alert alert-error shadow-sm">
-					<XIcon class="h-6 w-6 text-base-100" />
-					<span class="text-sm text-base-100">{errorMessage}</span>
-				</div>
-			{/if}
-
-			{#if successMessage}
-				<div class="alert alert-success shadow-sm">
-					<CheckCircle class="h-6 w-6 text-base-100" />
-					<span class="text-sm text-base-100">{successMessage}</span>
-				</div>
-			{/if}
 
 			<div class="form-control mt-4">
 				<button type="submit" class="btn btn-primary w-full text-lg font-semibold">
