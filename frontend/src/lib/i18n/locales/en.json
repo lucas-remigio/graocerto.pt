@@ -225,13 +225,14 @@
 		"mark-as-read": "Mark as read",
 		"preferences-title": "Notification preferences",
 		"notify-days-ahead": "Notify days ahead",
-                "notify-days-ahead-desc": "How many days before the scheduled date should the assistant notify you? Default is 1 day.",
-                "min-debit-threshold": "Minimum total debit to notify",
-                "min-debit-threshold-desc": "We will only notify you if the total cumulative debit amount exceeds this value for a given day. Leave it empty to always receive notifications.",
-                "enable-push": "Enable Push Notifications",
-                "enable-push-desc": "Receive automatic alerts ahead of your scheduled recurring transactions so you never miss an upcoming payment.",
-                "optional": "(Optional)",
-                "catch-up-title": "You're all caught up!"
+		"notify-days-ahead-desc": "How many days before the scheduled date should the assistant notify you? Default is 1 day.",
+		"min-debit-threshold": "Minimum total debit to notify",
+		"min-debit-threshold-desc": "We will only notify you if the total cumulative debit amount exceeds this value for a given day. Leave it empty to always receive notifications.",
+		"enable-push": "Enable Push Notifications",
+		"enable-push-desc": "Receive automatic alerts ahead of your scheduled recurring transactions so you never miss an upcoming payment.",
+		"optional": "(Optional)",
+		"catch-up-title": "You're all caught up!"
+	},
 
 	"recurring": {
 		"templates-active": "{count} active templates",
