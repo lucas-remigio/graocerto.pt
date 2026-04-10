@@ -27,8 +27,16 @@ services:
     container_name: graocerto-websockets
     profiles:
       - websockets
-    ports:
-      - "${SOCKETS_PORT}:${SOCKETS_PORT}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.websockets.rule=Host(`ws.${FRONTEND_DOMAIN}`)"
+      - "traefik.http.routers.websockets.entrypoints=websecure"
+      - "traefik.http.routers.websockets.tls.certresolver=myresolver"
+      - "traefik.http.services.websockets.loadbalancer.server.port=${SOCKETS_PORT}"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+      - default
     environment:
       - PORT=${SOCKETS_PORT}
       - FRONTEND_URL=${FRONTEND_URL}
@@ -36,8 +44,16 @@ services:
   app:
     image: lucasremigio/app:${TAG}
     container_name: graocerto-server
-    ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`api.${FRONTEND_DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=myresolver"
+      - "traefik.http.services.app.loadbalancer.server.port=${BACKEND_PORT}"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+      - default
     environment:
       - IS_PRODUCTION=true
       - PORT=${BACKEND_PORT}
