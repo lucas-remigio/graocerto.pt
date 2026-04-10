@@ -2,7 +2,7 @@
 export PATH="/opt/homebrew/bin:$PATH"
 
 # Remote PostgreSQL credentials
-REMOTE_HOST="graocerto.pt"  
+REMOTE_HOST="graocerto.lucasr.dev"  
 REMOTE_PORT=""                 
 REMOTE_USER=""
 REMOTE_PASS=""
