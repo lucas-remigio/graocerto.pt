@@ -15,6 +15,12 @@
 	let password = '';
 	let isLoading = false;
 	let isGoogleLoading = false;
+	const loginOtpStateKey = 'wallet-tracker-login-otp-state';
+
+	interface LoginOtpState {
+		challengeId: string;
+		email: string;
+	}
 
 	interface APIErrorResponse {
 		token?: string; // The main error message
@@ -93,9 +99,12 @@
 			const response = await axios.post('login', { email, password });
 			const data = response.data;
 			if (response.status === 202 && data.challenge_id) {
-				goto(
-					`/login-otp?challenge_id=${encodeURIComponent(data.challenge_id)}&email=${encodeURIComponent(email)}`
-				);
+				const challengeState: LoginOtpState = {
+					challengeId: data.challenge_id,
+					email
+				};
+				sessionStorage.setItem(loginOtpStateKey, JSON.stringify(challengeState));
+				goto('/login-otp');
 				return;
 			}
 
@@ -115,6 +124,7 @@
 
 			// Clear any existing tokens on error
 			localStorage.removeItem('token');
+			sessionStorage.removeItem(loginOtpStateKey);
 			token.set(null);
 		} finally {
 			isLoading = false;

@@ -262,24 +262,14 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// check if the user exists
 	existingUser, err := h.store.GetUserByEmail(payload.Email)
 	if err == nil {
-		if h.authTokenStore == nil || h.mailer == nil {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user with email %s already exists", payload.Email))
-			return
-		}
-
-		if existingUser.EmailVerified {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user with email %s already exists", payload.Email))
-			return
-		}
-
-		if h.authTokenStore != nil && h.mailer != nil {
+		if !existingUser.EmailVerified && h.authTokenStore != nil && h.mailer != nil {
 			if err := h.sendVerificationEmail(existingUser); err != nil {
 				utils.WriteError(w, http.StatusInternalServerError, err)
 				return
 			}
 		}
 
-		utils.WriteJson(w, http.StatusAccepted, types.MessageResponse{Message: "registration pending, check your email to verify your account"})
+		utils.WriteJson(w, http.StatusAccepted, types.MessageResponse{Message: genericAuthResponse})
 		return
 	}
 
@@ -324,7 +314,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	utils.WriteJson(w, http.StatusCreated, types.MessageResponse{Message: "registration successful, check your email to verify your account"})
+	utils.WriteJson(w, http.StatusAccepted, types.MessageResponse{Message: genericAuthResponse})
 }
 
 func (h *Handler) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {

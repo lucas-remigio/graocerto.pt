@@ -49,7 +49,7 @@ func TestRegisterHandler(t *testing.T) {
 			payload: types.RegisterUserPayload{
 				FirstName: "John", LastName: "Doe", Email: "existing@mail.pt", Password: "password123",
 			},
-			wantStatus: http.StatusBadRequest,
+			wantStatus: http.StatusAccepted,
 		},
 		{
 			name:  "internal server error",
@@ -65,7 +65,7 @@ func TestRegisterHandler(t *testing.T) {
 			payload: types.RegisterUserPayload{
 				FirstName: "John", LastName: "Doe", Email: "lucas@mail.pt", Password: "Password1!",
 			},
-			wantStatus: http.StatusCreated,
+			wantStatus: http.StatusAccepted,
 		},
 		{
 			name:  "password too short",
@@ -213,7 +213,9 @@ func (m *mockUserStoreDuplicate) GetUserById(id int) (*types.User, error) {
 	return &types.User{}, nil
 }
 
-func (m *mockUserStoreDuplicate) ValidatePassword(password string) error { return validatePasswordForTest(password) }
+func (m *mockUserStoreDuplicate) ValidatePassword(password string) error {
+	return validatePasswordForTest(password)
+}
 
 func (m *mockUserStoreDuplicate) DeleteUser(userId int) error {
 	return nil
@@ -245,7 +247,9 @@ func (m *mockUserStoreError) GetUserById(id int) (*types.User, error) {
 	return nil, fmt.Errorf("internal server error")
 }
 
-func (m *mockUserStoreError) ValidatePassword(password string) error { return validatePasswordForTest(password) }
+func (m *mockUserStoreError) ValidatePassword(password string) error {
+	return validatePasswordForTest(password)
+}
 
 func (m *mockUserStoreError) DeleteUser(userId int) error {
 	return fmt.Errorf("internal server error")
@@ -276,7 +280,9 @@ func (m *mockUserStoreLogin) GetUserByEmail(email string) (*types.User, error) {
 
 func (m *mockUserStoreLogin) CreateUser(*types.User) error            { return nil }
 func (m *mockUserStoreLogin) GetUserById(id int) (*types.User, error) { return &types.User{}, nil }
-func (m *mockUserStoreLogin) ValidatePassword(password string) error  { return validatePasswordForTest(password) }
+func (m *mockUserStoreLogin) ValidatePassword(password string) error {
+	return validatePasswordForTest(password)
+}
 
 func (m *mockUserStoreLogin) DeleteUser(userId int) error {
 	return nil
@@ -310,7 +316,9 @@ func (m *mockUserStoreSuccess) GetUserById(id int) (*types.User, error) {
 	return &types.User{}, nil
 }
 
-func (m *mockUserStoreSuccess) ValidatePassword(password string) error { return validatePasswordForTest(password) }
+func (m *mockUserStoreSuccess) ValidatePassword(password string) error {
+	return validatePasswordForTest(password)
+}
 
 func validatePasswordForTest(password string) error {
 	if password == "" {

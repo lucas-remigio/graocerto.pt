@@ -75,6 +75,21 @@ func (s *Store) GetAuthTokenByPurposeAndSecret(purpose types.AuthTokenPurpose, s
 	return token, nil
 }
 
+func (s *Store) GetLatestAuthTokenByUserAndPurpose(userID int, purpose types.AuthTokenPurpose) (*types.AuthToken, error) {
+	token, err := db.QueryFirstFromRows(s.db,
+		`SELECT id, user_id, purpose, secret_hash, expires_at, consumed_at, attempts, max_attempts, created_at
+		 FROM auth_tokens WHERE user_id = $1 AND purpose = $2 ORDER BY created_at DESC LIMIT 1`,
+		scanRowIntoAuthToken, userID, string(purpose),
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("auth token not found")
+		}
+		return nil, err
+	}
+	return token, nil
+}
+
 func (s *Store) ConsumeAuthToken(id string) error {
 	_, err := db.ExecWithValidation(s.db,
 		"UPDATE auth_tokens SET consumed_at = CURRENT_TIMESTAMP WHERE id = $1",

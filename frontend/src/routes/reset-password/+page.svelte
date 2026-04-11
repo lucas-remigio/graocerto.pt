@@ -17,6 +17,7 @@
 
 	onMount(() => {
 		token = new URLSearchParams(window.location.search).get('token') || '';
+		window.history.replaceState({}, '', window.location.pathname);
 	});
 
 	const handleSubmit = async () => {

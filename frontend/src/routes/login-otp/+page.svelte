@@ -17,11 +17,32 @@
 	let isLoading = false;
 	let isReady = false;
 	let status = '';
+	const loginOtpStateKey = 'wallet-tracker-login-otp-state';
+
+	interface LoginOtpState {
+		challengeId: string;
+		email: string;
+	}
 
 	onMount(() => {
-		const params = new URLSearchParams(window.location.search);
-		email = params.get('email') || '';
-		challengeId = params.get('challenge_id') || '';
+		const storedState = window.sessionStorage.getItem(loginOtpStateKey);
+		if (!storedState) {
+			status = $t('auth.missing-login-challenge');
+			isReady = false;
+			return;
+		}
+
+		try {
+			const parsedState = JSON.parse(storedState) as Partial<LoginOtpState>;
+			email = parsedState.email || '';
+			challengeId = parsedState.challengeId || '';
+		} catch {
+			window.sessionStorage.removeItem(loginOtpStateKey);
+			status = $t('auth.missing-login-challenge');
+			isReady = false;
+			return;
+		}
+
 		isReady = Boolean(email && challengeId);
 		status = isReady
 			? $t('auth.login-code-sent', { values: { email } })
@@ -48,6 +69,7 @@
 
 			const { token: authToken, created_at } = response.data;
 			if (authToken) {
+				window.sessionStorage.removeItem(loginOtpStateKey);
 				login(authToken, email, created_at ?? null);
 				goto('/home');
 			}

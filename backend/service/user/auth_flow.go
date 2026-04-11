@@ -15,10 +15,13 @@ import (
 )
 
 const (
-	emailVerificationTTL = 24 * time.Hour
-	loginOTPTTL          = 10 * time.Minute
-	passwordResetTTL     = 30 * time.Minute
-	loginOTPAttempts     = 5
+	emailVerificationTTL      = 24 * time.Hour
+	loginOTPTTL               = 10 * time.Minute
+	passwordResetTTL          = 30 * time.Minute
+	emailVerificationCooldown = 5 * time.Minute
+	passwordResetCooldown     = 5 * time.Minute
+	loginOTPAttempts          = 5
+	genericAuthResponse       = "If the request is valid, check your email for next steps."
 )
 
 func (h *Handler) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +72,7 @@ func (h *Handler) handleResendVerification(w http.ResponseWriter, r *http.Reques
 
 	user, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil || user.EmailVerified {
-		utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: "if the account exists, a verification email will be sent"})
+		utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: genericAuthResponse})
 		return
 	}
 
@@ -78,7 +81,7 @@ func (h *Handler) handleResendVerification(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: "verification email sent"})
+	utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: genericAuthResponse})
 }
 
 func (h *Handler) handleVerifyLoginOTP(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +139,7 @@ func (h *Handler) handleForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil {
-		utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: "if the account exists, a reset email will be sent"})
+		utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: genericAuthResponse})
 		return
 	}
 
@@ -145,7 +148,7 @@ func (h *Handler) handleForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: "if the account exists, a reset email will be sent"})
+	utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: genericAuthResponse})
 }
 
 func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
@@ -243,8 +246,21 @@ func (h *Handler) createLoginOTPChallenge(user *types.User) (*types.AuthChalleng
 }
 
 func (h *Handler) sendVerificationEmail(user *types.User) error {
+	return h.sendVerificationEmailWithCooldown(user, emailVerificationCooldown)
+}
+
+func (h *Handler) sendVerificationEmailWithCooldown(user *types.User, cooldown time.Duration) error {
 	if h.authTokenStore == nil || h.mailer == nil {
 		return fmt.Errorf("email verification is not configured")
+	}
+
+	shouldSkipSend, err := h.shouldSkipAuthEmail(user.ID, types.AuthTokenPurposeEmailVerification, cooldown)
+	if err != nil {
+		return err
+	}
+
+	if shouldSkipSend {
+		return nil
 	}
 
 	if err := h.authTokenStore.DeleteAuthTokensByUserAndPurpose(user.ID, types.AuthTokenPurposeEmailVerification); err != nil {
@@ -282,8 +298,21 @@ func (h *Handler) sendVerificationEmail(user *types.User) error {
 }
 
 func (h *Handler) sendPasswordResetEmail(user *types.User) error {
+	return h.sendPasswordResetEmailWithCooldown(user, passwordResetCooldown)
+}
+
+func (h *Handler) sendPasswordResetEmailWithCooldown(user *types.User, cooldown time.Duration) error {
 	if h.authTokenStore == nil || h.mailer == nil {
 		return fmt.Errorf("password reset is not configured")
+	}
+
+	shouldSkipSend, err := h.shouldSkipAuthEmail(user.ID, types.AuthTokenPurposePasswordReset, cooldown)
+	if err != nil {
+		return err
+	}
+
+	if shouldSkipSend {
+		return nil
 	}
 
 	if err := h.authTokenStore.DeleteAuthTokensByUserAndPurpose(user.ID, types.AuthTokenPurposePasswordReset); err != nil {
@@ -318,6 +347,22 @@ func (h *Handler) sendPasswordResetEmail(user *types.User) error {
 			rawToken,
 		),
 	})
+}
+
+func (h *Handler) shouldSkipAuthEmail(userID int, purpose types.AuthTokenPurpose, cooldown time.Duration) (bool, error) {
+	if h.authTokenStore == nil {
+		return false, nil
+	}
+
+	token, err := h.authTokenStore.GetLatestAuthTokenByUserAndPurpose(userID, purpose)
+	if err != nil {
+		if strings.Contains(err.Error(), "auth token not found") {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return time.Since(token.CreatedAt) < cooldown, nil
 }
 
 func (h *Handler) validateAuthToken(token *types.AuthToken, expectedPurpose types.AuthTokenPurpose) error {

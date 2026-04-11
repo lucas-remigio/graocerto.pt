@@ -14,29 +14,30 @@ type AuthTokenPurpose string
 
 const (
 	AuthTokenPurposeEmailVerification AuthTokenPurpose = "email_verification"
-	AuthTokenPurposeLoginOTP           AuthTokenPurpose = "login_otp"
-	AuthTokenPurposePasswordReset      AuthTokenPurpose = "password_reset"
+	AuthTokenPurposeLoginOTP          AuthTokenPurpose = "login_otp"
+	AuthTokenPurposePasswordReset     AuthTokenPurpose = "password_reset"
 )
 
 type AuthTokenStore interface {
 	CreateAuthToken(token *AuthToken) error
 	GetAuthTokenByID(id string) (*AuthToken, error)
 	GetAuthTokenByPurposeAndSecret(purpose AuthTokenPurpose, secret string) (*AuthToken, error)
+	GetLatestAuthTokenByUserAndPurpose(userID int, purpose AuthTokenPurpose) (*AuthToken, error)
 	ConsumeAuthToken(id string) error
 	IncrementAuthTokenAttempts(id string) error
 	DeleteAuthTokensByUserAndPurpose(userID int, purpose AuthTokenPurpose) error
 }
 
 type AuthToken struct {
-	ID         string           `json:"id"`
-	UserID     int              `json:"user_id"`
-	Purpose    AuthTokenPurpose `json:"purpose"`
-	SecretHash string           `json:"-"`
-	ExpiresAt  time.Time        `json:"expires_at"`
-	ConsumedAt *time.Time       `json:"consumed_at,omitempty"`
-	Attempts   int              `json:"attempts"`
-	MaxAttempts int             `json:"max_attempts"`
-	CreatedAt  time.Time        `json:"created_at"`
+	ID          string           `json:"id"`
+	UserID      int              `json:"user_id"`
+	Purpose     AuthTokenPurpose `json:"purpose"`
+	SecretHash  string           `json:"-"`
+	ExpiresAt   time.Time        `json:"expires_at"`
+	ConsumedAt  *time.Time       `json:"consumed_at,omitempty"`
+	Attempts    int              `json:"attempts"`
+	MaxAttempts int              `json:"max_attempts"`
+	CreatedAt   time.Time        `json:"created_at"`
 }
 
 type RegisterUserPayload struct {
