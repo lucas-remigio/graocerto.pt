@@ -15,6 +15,12 @@
 	let password = '';
 	let isLoading = false;
 	let isGoogleLoading = false;
+	const loginOtpStateKey = 'wallet-tracker-login-otp-state';
+
+	interface LoginOtpState {
+		challengeId: string;
+		email: string;
+	}
 
 	interface APIErrorResponse {
 		token?: string; // The main error message
@@ -92,14 +98,20 @@
 			isLoading = true;
 			const response = await axios.post('login', { email, password });
 			const data = response.data;
-			const authToken = data.token;
-
-			if (authToken) {
-				// Store in both localStorage and Svelte store
-				login(authToken, email, data.created_at ?? null);
+			if (response.status === 202 && data.challenge_id) {
+				const challengeState: LoginOtpState = {
+					challengeId: data.challenge_id,
+					email
+				};
+				sessionStorage.setItem(loginOtpStateKey, JSON.stringify(challengeState));
+				goto('/login-otp');
+				return;
 			}
 
-			goto('/home');
+			if (data.token) {
+				login(data.token, email, data.created_at ?? null);
+				goto('/home');
+			}
 		} catch (error) {
 			// Type the error as AxiosError
 			const axiosError = error as AxiosError;
@@ -112,11 +124,13 @@
 
 			// Clear any existing tokens on error
 			localStorage.removeItem('token');
+			sessionStorage.removeItem(loginOtpStateKey);
 			token.set(null);
 		} finally {
 			isLoading = false;
 		}
 	};
+
 </script>
 
 <svelte:head>
@@ -163,6 +177,10 @@
 					class="input input-bordered w-full focus:input-primary"
 					placeholder={$t('auth.enter-password')}
 				/>
+			</div>
+
+			<div class="flex items-center justify-between text-sm">
+				<a href="/forgot-password" class="link link-primary">{$t('auth.forgot-password')}</a>
 			</div>
 
 			<div class="form-control mt-8">

@@ -20,7 +20,7 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 	user, err := db.QueryFirstFromRows(s.db,
-		"SELECT * FROM users WHERE email = $1",
+		"SELECT id, first_name, last_name, email, password, email_verified, mfa_method, created_at FROM users WHERE email = $1",
 		scanRowIntoUser, email)
 
 	if err != nil {
@@ -39,15 +39,15 @@ func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 
 func (s *Store) CreateUser(user *types.User) error {
 	_, err := db.ExecWithValidation(s.db,
-		"INSERT INTO users (first_name, last_name, email, password) VALUES ($1, $2, $3, $4)",
-		user.FirstName, user.LastName, user.Email, user.Password)
+		"INSERT INTO users (first_name, last_name, email, password, email_verified, mfa_method) VALUES ($1, $2, $3, $4, $5, $6)",
+		user.FirstName, user.LastName, user.Email, user.Password, user.EmailVerified, string(user.MfaMethod))
 
 	return err
 }
 
 func (s *Store) GetUserById(id int) (*types.User, error) {
 	user, err := db.QueryFirstFromRows(s.db,
-		"SELECT * FROM users WHERE id = $1",
+		"SELECT id, first_name, last_name, email, password, email_verified, mfa_method, created_at FROM users WHERE id = $1",
 		scanRowIntoUser, id)
 
 	if err != nil {
@@ -90,7 +90,7 @@ func (s *Store) DeleteUser(userId int) error {
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	user := new(types.User)
 
-	err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.CreatedAt)
+	err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.EmailVerified, &user.MfaMethod, &user.CreatedAt)
 
 	if err != nil {
 		return nil, err
