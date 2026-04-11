@@ -14,6 +14,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/account"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/service/investment_calculator"
+	"github.com/lucas-remigio/wallet-tracker/service/mailer"
 	"github.com/lucas-remigio/wallet-tracker/service/notification"
 	"github.com/lucas-remigio/wallet-tracker/service/openai"
 	"github.com/lucas-remigio/wallet-tracker/service/recurring_rule"
@@ -44,6 +45,7 @@ func (s *APIServer) Run() error {
 
 	// Initialize all stores first
 	userStore := user.NewStore(s.db)
+	authTokenStore := userStore
 	transactionTypesStore := transaction_types.NewStore(s.db)
 	categoryStore := category.NewStore(s.db)
 	recurringRuleStore := recurring_rule.NewStore(s.db)
@@ -51,9 +53,20 @@ func (s *APIServer) Run() error {
 	openAiStore := openai.NewClient()
 	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
 	transactionStore := transaction.NewStore(s.db, accountStore)
+	var authMailer mailer.Mailer = mailer.NoopMailer{}
+	if config.Envs.SMTPHost != "" && config.Envs.SMTPFromEmail != "" {
+		authMailer = mailer.NewSMTPMailer(
+			config.Envs.SMTPHost,
+			config.Envs.SMTPPort,
+			config.Envs.SMTPUsername,
+			config.Envs.SMTPPassword,
+			config.Envs.SMTPFromEmail,
+			config.Envs.SMTPFromName,
+		)
+	}
 
 	// Now initialize handlers with the stores they need
-	userHandler := user.NewHandler(userStore, accountStore, categoryStore, transactionStore) // Updated this line
+	userHandler := user.NewHandler(userStore, authTokenStore, authMailer, accountStore, categoryStore, transactionStore)
 	userHandler.RegisterRoutes(apiV1Router)
 
 	transactionTypesHandler := transaction_types.NewHandler(transactionTypesStore)

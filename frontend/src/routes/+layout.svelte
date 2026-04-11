@@ -18,7 +18,7 @@
 
 	let { children } = $props();
 
-	const publicRoutes = ['/login', '/register', '/'];
+	const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/'];
 
 	// add app-wide loading state - using $state() for Svelte 5 reactivity
 	let appReady = $state(false);

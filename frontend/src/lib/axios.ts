@@ -19,6 +19,17 @@ const api_axios = axios.create({
 	headers: { 'Content-Type': 'application/json' }
 });
 
+const publicAuthEndpoints = [
+	'login',
+	'register',
+	'auth/google',
+	'auth/verify-email',
+	'auth/resend-verification',
+	'auth/verify-login-otp',
+	'auth/forgot-password',
+	'auth/reset-password'
+];
+
 // Request Interceptor: Attach token to headers
 api_axios.interceptors.request.use((config) => {
 	const authToken = get(token);
@@ -32,7 +43,10 @@ api_axios.interceptors.request.use((config) => {
 api_axios.interceptors.response.use(
 	(response) => response, // Pass through successful responses
 	async (error) => {
-		if (error.response?.status === 401) {
+		const requestUrl = String(error.config?.url || '');
+		const isPublicAuthEndpoint = publicAuthEndpoints.some((endpoint) => requestUrl.includes(endpoint));
+
+		if (error.response?.status === 401 && !isPublicAuthEndpoint) {
 			token.set(null);
 			window.location.href = '/login';
 		}

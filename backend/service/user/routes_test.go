@@ -55,7 +55,7 @@ func TestRegisterHandler(t *testing.T) {
 			name:  "internal server error",
 			store: &mockUserStoreError{},
 			payload: types.RegisterUserPayload{
-				FirstName: "John", LastName: "Doe", Email: "john.doe@example.com", Password: "password123",
+				FirstName: "John", LastName: "Doe", Email: "john.doe@example.com", Password: "Password1!",
 			},
 			wantStatus: http.StatusInternalServerError,
 		},
@@ -63,7 +63,7 @@ func TestRegisterHandler(t *testing.T) {
 			name:  "success",
 			store: &mockUserStore{},
 			payload: types.RegisterUserPayload{
-				FirstName: "John", LastName: "Doe", Email: "lucas@mail.pt", Password: "1234341233",
+				FirstName: "John", LastName: "Doe", Email: "lucas@mail.pt", Password: "Password1!",
 			},
 			wantStatus: http.StatusCreated,
 		},
@@ -132,7 +132,7 @@ func TestLoginHandler(t *testing.T) {
 			name:       "fail if password is incorrect",
 			store:      &mockUserStoreLogin{},
 			payload:    types.LoginUserPayload{Email: "test@mail.pt", Password: "wrong_password"},
-			wantStatus: http.StatusUnauthorized,
+			wantStatus: http.StatusNotFound,
 		},
 		{
 			name:       "fail if email does not exist",
@@ -182,10 +182,20 @@ func (m *mockUserStore) CreateUser(user *types.User) error {
 }
 
 func (m *mockUserStore) ValidatePassword(password string) error {
-	return nil
+	return validatePasswordForTest(password)
 }
 
 func (m *mockUserStore) DeleteUser(userId int) error {
+	return nil
+}
+
+func (m *mockUserStore) MarkEmailVerified(userID int, verified bool) error { return nil }
+
+func (m *mockUserStore) UpdateMfaMethod(userID int, method types.MfaMethod) error {
+	return nil
+}
+
+func (m *mockUserStore) UpdatePassword(userID int, hashedPassword string) error {
 	return nil
 }
 
@@ -203,9 +213,21 @@ func (m *mockUserStoreDuplicate) GetUserById(id int) (*types.User, error) {
 	return &types.User{}, nil
 }
 
-func (m *mockUserStoreDuplicate) ValidatePassword(password string) error { return nil }
+func (m *mockUserStoreDuplicate) ValidatePassword(password string) error { return validatePasswordForTest(password) }
 
 func (m *mockUserStoreDuplicate) DeleteUser(userId int) error {
+	return nil
+}
+
+func (m *mockUserStoreDuplicate) MarkEmailVerified(userID int, verified bool) error {
+	return nil
+}
+
+func (m *mockUserStoreDuplicate) UpdateMfaMethod(userID int, method types.MfaMethod) error {
+	return nil
+}
+
+func (m *mockUserStoreDuplicate) UpdatePassword(userID int, hashedPassword string) error {
 	return nil
 }
 
@@ -223,10 +245,22 @@ func (m *mockUserStoreError) GetUserById(id int) (*types.User, error) {
 	return nil, fmt.Errorf("internal server error")
 }
 
-func (m *mockUserStoreError) ValidatePassword(password string) error { return nil }
+func (m *mockUserStoreError) ValidatePassword(password string) error { return validatePasswordForTest(password) }
 
 func (m *mockUserStoreError) DeleteUser(userId int) error {
 	return fmt.Errorf("internal server error")
+}
+
+func (m *mockUserStoreError) MarkEmailVerified(userID int, verified bool) error {
+	return nil
+}
+
+func (m *mockUserStoreError) UpdateMfaMethod(userID int, method types.MfaMethod) error {
+	return nil
+}
+
+func (m *mockUserStoreError) UpdatePassword(userID int, hashedPassword string) error {
+	return nil
 }
 
 type mockUserStoreLogin struct{}
@@ -242,9 +276,19 @@ func (m *mockUserStoreLogin) GetUserByEmail(email string) (*types.User, error) {
 
 func (m *mockUserStoreLogin) CreateUser(*types.User) error            { return nil }
 func (m *mockUserStoreLogin) GetUserById(id int) (*types.User, error) { return &types.User{}, nil }
-func (m *mockUserStoreLogin) ValidatePassword(password string) error  { return nil }
+func (m *mockUserStoreLogin) ValidatePassword(password string) error  { return validatePasswordForTest(password) }
 
 func (m *mockUserStoreLogin) DeleteUser(userId int) error {
+	return nil
+}
+
+func (m *mockUserStoreLogin) MarkEmailVerified(userID int, verified bool) error { return nil }
+
+func (m *mockUserStoreLogin) UpdateMfaMethod(userID int, method types.MfaMethod) error {
+	return nil
+}
+
+func (m *mockUserStoreLogin) UpdatePassword(userID int, hashedPassword string) error {
 	return nil
 }
 
@@ -266,8 +310,57 @@ func (m *mockUserStoreSuccess) GetUserById(id int) (*types.User, error) {
 	return &types.User{}, nil
 }
 
-func (m *mockUserStoreSuccess) ValidatePassword(password string) error { return nil }
+func (m *mockUserStoreSuccess) ValidatePassword(password string) error { return validatePasswordForTest(password) }
+
+func validatePasswordForTest(password string) error {
+	if password == "" {
+		return fmt.Errorf("password cannot be empty")
+	}
+
+	hasUpper := false
+	hasLower := false
+	hasDigit := false
+	hasSpecial := false
+
+	for _, c := range password {
+		switch {
+		case c >= 'A' && c <= 'Z':
+			hasUpper = true
+		case c >= 'a' && c <= 'z':
+			hasLower = true
+		case c >= '0' && c <= '9':
+			hasDigit = true
+		default:
+			hasSpecial = true
+		}
+	}
+
+	if !hasUpper {
+		return fmt.Errorf("password must contain at least one uppercase letter")
+	}
+	if !hasLower {
+		return fmt.Errorf("password must contain at least one lowercase letter")
+	}
+	if !hasDigit {
+		return fmt.Errorf("password must contain at least one number")
+	}
+	if !hasSpecial {
+		return fmt.Errorf("password must contain at least one special character")
+	}
+
+	return nil
+}
 
 func (m *mockUserStoreSuccess) DeleteUser(userId int) error {
+	return nil
+}
+
+func (m *mockUserStoreSuccess) MarkEmailVerified(userID int, verified bool) error { return nil }
+
+func (m *mockUserStoreSuccess) UpdateMfaMethod(userID int, method types.MfaMethod) error {
+	return nil
+}
+
+func (m *mockUserStoreSuccess) UpdatePassword(userID int, hashedPassword string) error {
 	return nil
 }

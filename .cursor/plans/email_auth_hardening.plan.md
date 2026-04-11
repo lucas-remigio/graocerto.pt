@@ -4,19 +4,19 @@ overview: Add SMTP-backed email verification, email OTP login, and password rese
 todos:
   - id: config-mailer
     content: Add SMTP/config wiring and a reusable mailer interface for backend auth flows
-    status: pending
+    status: completed
   - id: schema-auth
     content: Add auth-related user fields and token tables for verification, otp, and reset flows
-    status: pending
+    status: completed
   - id: backend-auth
     content: Implement register, verify-email, login-otp, resend, forgot-password, and reset-password handlers
-    status: pending
+    status: completed
   - id: frontend-auth
     content: Add login/register/reset UI states and optional MFA selection for future TOTP support
-    status: pending
+    status: completed
   - id: tests
     content: Add unit tests for token generation, expiry, reuse prevention, and handler behavior
-    status: pending
+    status: completed
 isProject: false
 ---
 

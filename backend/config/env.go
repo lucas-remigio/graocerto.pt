@@ -14,6 +14,12 @@ type Config struct {
 	JWTSecret              string
 	OpenAIKey              string
 	GoogleClientID         string
+	SMTPHost               string
+	SMTPPort               string
+	SMTPUsername           string
+	SMTPPassword           string
+	SMTPFromEmail          string
+	SMTPFromName           string
 	DatabaseUrl            string
 	RemoteDBUrl            string
 	FrontendUrl            string
@@ -32,6 +38,12 @@ func initConfig() Config {
 		JWTSecret:              getEnv("JWT_SECRET", "not-so-secret"),
 		OpenAIKey:              getEnv("OPENAI_API_KEY", "not-so-secret"),
 		GoogleClientID:         getEnv("GOOGLE_CLIENT_ID", ""),
+		SMTPHost:               getEnv("SMTP_HOST", ""),
+		SMTPPort:               getEnv("SMTP_PORT", "587"),
+		SMTPUsername:           getEnv("SMTP_USERNAME", ""),
+		SMTPPassword:           getEnv("SMTP_PASSWORD", ""),
+		SMTPFromEmail:          getEnv("SMTP_FROM_EMAIL", ""),
+		SMTPFromName:           getEnv("SMTP_FROM_NAME", "Grão Certo"),
 		DatabaseUrl:            getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/wallet_tracker"),
 		RemoteDBUrl:            getEnv("REMOTE_DB_URL", ""),
 		FrontendUrl:            getEnv("FRONTEND_URL", "http://localhost:3000"),

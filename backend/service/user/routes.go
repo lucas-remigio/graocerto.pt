@@ -10,6 +10,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/middleware"
 	"github.com/lucas-remigio/wallet-tracker/service/auth"
+	"github.com/lucas-remigio/wallet-tracker/service/mailer"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
 )
@@ -18,6 +19,8 @@ import (
 func NewHandlerForTesting(userStore types.UserStore) *Handler {
 	return &Handler{
 		store:            userStore,
+		authTokenStore:   nil,
+		mailer:           nil,
 		accountStore:     nil, // Not needed for basic user tests
 		categoryStore:    nil,
 		transactionStore: nil,
@@ -26,14 +29,18 @@ func NewHandlerForTesting(userStore types.UserStore) *Handler {
 
 type Handler struct {
 	store            types.UserStore
+	authTokenStore   types.AuthTokenStore
+	mailer           mailer.Mailer
 	accountStore     types.AccountStore
 	categoryStore    types.CategoryStore
 	transactionStore types.TransactionStore
 }
 
-func NewHandler(store types.UserStore, accountStore types.AccountStore, categoryStore types.CategoryStore, transactionStore types.TransactionStore) *Handler {
+func NewHandler(store types.UserStore, authTokenStore types.AuthTokenStore, mailer mailer.Mailer, accountStore types.AccountStore, categoryStore types.CategoryStore, transactionStore types.TransactionStore) *Handler {
 	return &Handler{
 		store:            store,
+		authTokenStore:   authTokenStore,
+		mailer:           mailer,
 		accountStore:     accountStore,
 		categoryStore:    categoryStore,
 		transactionStore: transactionStore,
@@ -44,6 +51,11 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/login", h.handleLogin)
 	router.HandleFunc("/auth/google", h.handleGoogleLogin)
 	router.HandleFunc("/register", h.handleRegister)
+	router.HandleFunc("/auth/verify-email", h.handleVerifyEmail)
+	router.HandleFunc("/auth/resend-verification", h.handleResendVerification)
+	router.HandleFunc("/auth/verify-login-otp", h.handleVerifyLoginOTP)
+	router.HandleFunc("/auth/forgot-password", h.handleForgotPassword)
+	router.HandleFunc("/auth/reset-password", h.handleResetPassword)
 	router.HandleFunc("/verify-token", middleware.AuthMiddleware(h.verifyToken))
 	router.HandleFunc("/auth/delete-account", middleware.AuthMiddleware(h.handleDeleteAccount))
 	router.HandleFunc("/auth/export-data", middleware.AuthMiddleware(h.handleExportData))
@@ -80,7 +92,28 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.issueAuthToken(w, r, user)
+	if h.authTokenStore == nil || h.mailer == nil || user.MfaMethod == types.MfaMethodOff {
+		h.issueAuthToken(w, r, user)
+		return
+	}
+
+	if !user.EmailVerified {
+		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("email verification required"))
+		return
+	}
+
+	if user.MfaMethod == types.MfaMethodTOTP {
+		utils.WriteError(w, http.StatusNotImplemented, fmt.Errorf("totp mfa is not implemented yet"))
+		return
+	}
+
+	challenge, err := h.createLoginOTPChallenge(user)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusAccepted, challenge)
 }
 
 func (h *Handler) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
@@ -153,6 +186,12 @@ func (h *Handler) getOrCreateGoogleUser(claims *googleClaims) (*types.User, erro
 	// 3. Find User in DB or Create if missing
 	user, err := h.store.GetUserByEmail(claims.Email)
 	if err == nil {
+		if !user.EmailVerified {
+			_ = h.store.MarkEmailVerified(user.ID, true)
+		}
+		if user.MfaMethod == "" {
+			_ = h.store.UpdateMfaMethod(user.ID, types.MfaMethodEmailOTP)
+		}
 		return user, nil
 	}
 
@@ -168,10 +207,12 @@ func (h *Handler) getOrCreateGoogleUser(claims *googleClaims) (*types.User, erro
 	}
 
 	err = h.store.CreateUser(&types.User{
-		FirstName: firstName,
-		LastName:  lastName,
-		Email:     claims.Email,
-		Password:  hashedPassword,
+		FirstName:     firstName,
+		LastName:      lastName,
+		Email:         claims.Email,
+		Password:      hashedPassword,
+		EmailVerified: true,
+		MfaMethod:     types.MfaMethodEmailOTP,
 	})
 	if err != nil {
 		return nil, err
@@ -219,9 +260,26 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user exists
-	_, err := h.store.GetUserByEmail(payload.Email)
+	existingUser, err := h.store.GetUserByEmail(payload.Email)
 	if err == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user with email %s already exists", payload.Email))
+		if h.authTokenStore == nil || h.mailer == nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user with email %s already exists", payload.Email))
+			return
+		}
+
+		if existingUser.EmailVerified {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user with email %s already exists", payload.Email))
+			return
+		}
+
+		if h.authTokenStore != nil && h.mailer != nil {
+			if err := h.sendVerificationEmail(existingUser); err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
+		utils.WriteJson(w, http.StatusAccepted, types.MessageResponse{Message: "registration pending, check your email to verify your account"})
 		return
 	}
 
@@ -239,10 +297,12 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	// create a new user
 	err = h.store.CreateUser(&types.User{
-		FirstName: payload.FirstName,
-		LastName:  payload.LastName,
-		Email:     payload.Email,
-		Password:  hashedPassword,
+		FirstName:     payload.FirstName,
+		LastName:      payload.LastName,
+		Email:         payload.Email,
+		Password:      hashedPassword,
+		EmailVerified: false,
+		MfaMethod:     types.MfaMethodEmailOTP,
 	})
 
 	if err != nil {
@@ -251,7 +311,20 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	middleware.WriteCreatedResponse(w)
+	if h.authTokenStore != nil && h.mailer != nil {
+		createdUser, err := h.store.GetUserByEmail(payload.Email)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := h.sendVerificationEmail(createdUser); err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	utils.WriteJson(w, http.StatusCreated, types.MessageResponse{Message: "registration successful, check your email to verify your account"})
 }
 
 func (h *Handler) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {

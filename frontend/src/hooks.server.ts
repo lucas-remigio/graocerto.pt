@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 
-const publicRoutes = ['/login', '/register'];
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Skip route guard during the build
