@@ -13,18 +13,12 @@
 
 	let email = '';
 	let password = '';
-	let otpCode = '';
-	let challengeId = '';
 	let isLoading = false;
-	let isOtpLoading = false;
 	let isGoogleLoading = false;
-	let isOtpStep = false;
 
 	interface APIErrorResponse {
 		token?: string; // The main error message
 		error?: string; // Optional error code or additional details
-		challenge_id?: string;
-		message?: string;
 	}
 
 	const initGoogle = () => {
@@ -99,11 +93,8 @@
 			const response = await axios.post('login', { email, password });
 			const data = response.data;
 			if (response.status === 202 && data.challenge_id) {
-				challengeId = data.challenge_id;
-				isOtpStep = true;
-				otpCode = '';
-				toastStore.success(
-					data.message || $t('auth.login-code-sent', { values: { email } })
+				goto(
+					`/login-otp?challenge_id=${encodeURIComponent(data.challenge_id)}&email=${encodeURIComponent(email)}`
 				);
 				return;
 			}
@@ -130,32 +121,6 @@
 		}
 	};
 
-	const handleOtpVerify = async () => {
-		if (!challengeId || !otpCode) {
-			toastStore.error($t('auth.enter-otp-code'));
-			return;
-		}
-
-		try {
-			isOtpLoading = true;
-			const response = await axios.post('auth/verify-login-otp', {
-				challenge_id: challengeId,
-				code: otpCode
-			});
-
-			const { token: authToken, created_at } = response.data;
-			if (authToken) {
-				login(authToken, email, created_at ?? null);
-				goto('/home');
-			}
-		} catch (error) {
-			const axiosError = error as AxiosError;
-			const apiResponse = axiosError.response?.data as APIErrorResponse;
-			toastStore.error(apiResponse?.error || $t('auth.error-occurred'));
-		} finally {
-			isOtpLoading = false;
-		}
-	};
 </script>
 
 <svelte:head>
@@ -206,26 +171,13 @@
 
 			<div class="flex items-center justify-between text-sm">
 				<a href="/forgot-password" class="link link-primary">{$t('auth.forgot-password')}</a>
-				{#if isOtpStep}
-					<button
-						type="button"
-						class="link link-primary"
-						on:click={() => {
-							isOtpStep = false;
-							challengeId = '';
-							otpCode = '';
-						}}
-					>
-						{$t('auth.use-different-email')}
-					</button>
-				{/if}
 			</div>
 
 			<div class="form-control mt-8">
 				<button
 					type="submit"
 					class="btn btn-primary w-full text-lg font-semibold"
-					disabled={isLoading || isGoogleLoading || isOtpLoading}
+					disabled={isLoading || isGoogleLoading}
 				>
 					{#if isLoading}
 						<span class="loading loading-spinner"></span>
@@ -234,36 +186,6 @@
 				</button>
 			</div>
 		</form>
-
-		{#if isOtpStep}
-			<div class="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4">
-				<p class="mb-3 text-sm font-medium">
-					{$t('auth.login-code-sent', { values: { email } })}
-				</p>
-				<div class="form-control">
-					<label for="otpCode" class="label">
-						<span class="label-text font-medium">{$t('auth.email-code')}</span>
-					</label>
-					<input
-						id="otpCode"
-						type="text"
-						inputmode="numeric"
-						maxlength="6"
-						bind:value={otpCode}
-						class="input input-bordered w-full focus:input-primary"
-						placeholder={$t('auth.otp-placeholder')}
-					/>
-				</div>
-				<div class="mt-4">
-					<button class="btn btn-secondary w-full text-base-100" disabled={isOtpLoading} on:click={handleOtpVerify}>
-						{#if isOtpLoading}
-							<span class="loading loading-spinner"></span>
-						{/if}
-						<span>{$t('auth.verify-code')}</span>
-					</button>
-				</div>
-			</div>
-		{/if}
 
 		<div class="divider text-base-content/50">{$t('auth.or')}</div>
 
