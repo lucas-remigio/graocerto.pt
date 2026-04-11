@@ -274,7 +274,7 @@ func (h *Handler) sendVerificationEmail(user *types.User) error {
 		To:      user.Email,
 		Subject: "Verify your Grão Certo email",
 		Body: fmt.Sprintf(
-			"Please verify your email by opening this link:\n%s/auth/verify-email?token=%s\n\nIf you did not create this account, you can ignore this email.",
+			"Please verify your email by opening this link:\n%s/verify-email?token=%s\n\nIf you did not create this account, you can ignore this email.",
 			strings.TrimRight(config.Envs.FrontendUrl, "/"),
 			rawToken,
 		),

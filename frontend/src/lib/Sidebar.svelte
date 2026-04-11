@@ -166,13 +166,13 @@
 		{:else if $sidebarCollapsed}
 			<a
 				href="/login"
-				class="btn btn-primary btn-sm tooltip tooltip-right flex w-full items-center justify-center"
+				class="btn btn-primary text-base-100 btn-sm tooltip tooltip-right flex w-full items-center justify-center"
 				data-tip={$t('auth.login', { default: 'Login' })}
 			>
 				<LogIn size={16} />
 			</a>
 		{:else}
-			<a href="/login" class="btn btn-primary btn-sm w-full">
+			<a href="/login" class="btn btn-primary btn-sm w-full text-base-100">
 				<LogIn size={16} />
 				{$t('auth.login', { default: 'Login' })}
 			</a>

@@ -47,10 +47,10 @@
 
 		<form class="mt-6 space-y-4" on:submit|preventDefault={handleSubmit}>
 			<div class="form-control">
-				<label for="email" class="label"><span class="label-text">Email</span></label>
+				<label for="email" class="label"><span class="label-text">{$t('auth.email')}</span></label>
 				<input id="email" type="email" bind:value={email} class="input input-bordered w-full" />
 			</div>
-			<button class="btn btn-primary w-full" disabled={isLoading}>
+			<button class="btn btn-primary w-full text-base-100" disabled={isLoading}>
 				{#if isLoading}
 					<span class="loading loading-spinner"></span>
 				{/if}

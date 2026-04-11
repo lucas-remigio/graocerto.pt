@@ -170,7 +170,7 @@
 			</div>
 
 			<div class="form-control mt-4">
-				<button type="submit" class="btn btn-primary w-full text-lg font-semibold">
+				<button type="submit" class="btn btn-primary w-full text-lg font-semibold text-base-100">
 					<span class="text-base-100">{$t('auth.register')}</span>
 				</button>
 			</div>

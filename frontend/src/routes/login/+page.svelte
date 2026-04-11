@@ -132,7 +132,7 @@
 
 	const handleOtpVerify = async () => {
 		if (!challengeId || !otpCode) {
-			toastStore.error('Enter the 6-digit code sent to your email.');
+			toastStore.error($t('auth.enter-otp-code'));
 			return;
 		}
 
@@ -251,11 +251,11 @@
 						maxlength="6"
 						bind:value={otpCode}
 						class="input input-bordered w-full focus:input-primary"
-						placeholder="123456"
+						placeholder={$t('auth.otp-placeholder')}
 					/>
 				</div>
 				<div class="mt-4">
-					<button class="btn btn-secondary w-full" disabled={isOtpLoading} on:click={handleOtpVerify}>
+					<button class="btn btn-secondary w-full text-base-100" disabled={isOtpLoading} on:click={handleOtpVerify}>
 						{#if isOtpLoading}
 							<span class="loading loading-spinner"></span>
 						{/if}

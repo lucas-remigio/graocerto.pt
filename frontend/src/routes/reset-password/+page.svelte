@@ -52,11 +52,11 @@
 
 		<form class="mt-6 space-y-4" on:submit|preventDefault={handleSubmit}>
 			<div class="form-control">
-				<label for="password" class="label"><span class="label-text">Password</span></label>
+				<label for="password" class="label"><span class="label-text">{$t('auth.password')}</span></label>
 				<input id="password" type="password" bind:value={password} class="input input-bordered w-full" />
 			</div>
 			<div class="form-control">
-				<label for="confirmPassword" class="label"><span class="label-text">Confirm password</span></label>
+				<label for="confirmPassword" class="label"><span class="label-text">{$t('auth.confirm-password')}</span></label>
 				<input
 					id="confirmPassword"
 					type="password"
@@ -64,11 +64,11 @@
 					class="input input-bordered w-full"
 				/>
 			</div>
-			<button class="btn btn-primary w-full" disabled={isLoading}>
+			<button class="btn btn-primary w-full text-base-100" disabled={isLoading}>
 				{#if isLoading}
 					<span class="loading loading-spinner"></span>
 				{/if}
-				<span>{$t('auth.reset-password-button')}</span>
+				<span>{$t('auth.confirm-reset-password-button')}</span>
 			</button>
 		</form>
 	</div>

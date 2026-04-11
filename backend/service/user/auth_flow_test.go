@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/service/auth"
 	"github.com/lucas-remigio/wallet-tracker/service/mailer"
 	"github.com/lucas-remigio/wallet-tracker/types"
@@ -281,3 +283,39 @@ func TestHandleResetPasswordUpdatesPassword(t *testing.T) {
 	}
 }
 
+func TestHandleRegisterSendsVerificationEmailWithFrontendRoute(t *testing.T) {
+	userStore := newMemoryUserStore()
+	authStore := newMemoryAuthTokenStore()
+	mailer := &memoryMailer{}
+	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+
+	prevFrontendURL := config.Envs.FrontendUrl
+	config.Envs.FrontendUrl = "https://example.com/"
+	t.Cleanup(func() {
+		config.Envs.FrontendUrl = prevFrontendURL
+	})
+
+	rr := performJSONRequest(handler.handleRegister, http.MethodPost, "/register", types.RegisterUserPayload{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john@example.com",
+		Password:  "Password1!",
+	})
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", rr.Code)
+	}
+
+	if len(mailer.messages) != 1 {
+		t.Fatalf("expected 1 email, got %d", len(mailer.messages))
+	}
+
+	body := mailer.messages[0].Body
+	if !strings.Contains(body, "https://example.com/verify-email?token=") {
+		t.Fatalf("expected verification link to use /verify-email, got %q", body)
+	}
+
+	if strings.Contains(body, "/auth/verify-email?token=") {
+		t.Fatalf("expected verification link not to use /auth/verify-email, got %q", body)
+	}
+}
