@@ -79,11 +79,16 @@ jobs:
             echo "TAG=${{ github.sha }}" > .env
 
             export TAG=${{ github.sha }}
+
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             export DB_USER=${{ secrets.DB_USER }}
             export REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
 
+            # External API Keys
             export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            export GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+
+            # JWT vars
             export JWT_SECRET=${{ secrets.JWT_SECRET }}
             export JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
 
@@ -94,7 +99,14 @@ jobs:
             export BACKEND_PORT=${{ vars.BACKEND_PORT }}
             export SOCKETS_URL=${{ vars.SOCKETS_URL }}
             export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
-            export GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+
+            # SMTP vars
+            export SMTP_HOST=${{ secrets.SMTP_HOST }}
+            export SMTP_PORT=${{ secrets.SMTP_PORT }}
+            export SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+            export SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+            export SMTP_FROM_EMAIL=${{ secrets.SMTP_FROM_EMAIL }}
+            export SMTP_FROM_NAME=${{ secrets.SMTP_FROM_NAME }}
 
             # Setup COMPOSE_PROFILES based on ENABLE_WEBSOCKETS
             ENABLE_WEBSOCKETS="${{ vars.ENABLE_WEBSOCKETS }}"
