@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math"
 	"net/http"
 	"os"
@@ -32,6 +33,8 @@ func WriteJson(w http.ResponseWriter, status int, v any) error {
 }
 
 func WriteError(w http.ResponseWriter, status int, err error) {
+	requestID := w.Header().Get("X-Request-ID")
+	slog.Error("HTTP Error", "status", status, "error", err, "request_id", requestID)
 	WriteJson(w, status, map[string]string{"error": err.Error()})
 }
 
