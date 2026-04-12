@@ -3,6 +3,7 @@ package notification
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
@@ -132,8 +133,14 @@ func (s *Store) GenerateRecurringDueTomorrowNotifications() error {
 		  END
 	`
 
-	if _, err := s.db.Exec(query, recurringDueTomorrowType); err != nil {
+	if res, err := s.db.Exec(query, recurringDueTomorrowType); err != nil {
+		slog.Error("failed to generate recurring notifications", "error", err)
 		return fmt.Errorf("failed to generate recurring due tomorrow notifications: %w", err)
+	} else {
+		rows, _ := res.RowsAffected()
+		if rows > 0 {
+			slog.Info("recurring notifications generated/updated", "count", rows)
+		}
 	}
 
 	return nil

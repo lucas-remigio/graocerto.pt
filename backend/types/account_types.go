@@ -1,14 +1,19 @@
 package types
 
+import (
+	"context"
+)
+
 type AccountStore interface {
 	GetAccountsByUserId(userId int) ([]*Account, error)
 	GetAccountByToken(token string, userId int) (*Account, error)
-	CreateAccount(account *Account) (*Account, error)
-	UpdateAccount(account *Account, userId int) (*Account, error)
-	DeleteAccount(token string, userId int) error
+	CreateAccount(ctx context.Context, account *Account) (*Account, error)
+	UpdateAccount(ctx context.Context, account *Account, userId int) (*Account, error)
+	DeleteAccount(ctx context.Context, token string, userId int) error
 	GetAccountFeedbackMonthly(userId int, accountToken, language string, month, year int) (*MonthlyFeedback, error)
 	ReorderAccounts(userId int, accounts []ReorderAccount) error
-	FavoriteAccount(token string, userId int, isFavorite bool) error
+	FavoriteAccount(ctx context.Context, token string, userId int, isFavorite bool) error
+	SetTransactionStore(transactionsStore TransactionStore)
 }
 
 type CreateAccountPayload struct {

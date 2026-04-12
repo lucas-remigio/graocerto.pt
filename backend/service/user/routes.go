@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
 
 	"fmt"
@@ -206,7 +207,7 @@ func (h *Handler) getOrCreateGoogleUser(claims *googleClaims) (*types.User, erro
 		return nil, err
 	}
 
-	err = h.store.CreateUser(&types.User{
+	err = h.store.CreateUser(context.Background(), &types.User{
 		FirstName:     firstName,
 		LastName:      lastName,
 		Email:         claims.Email,
@@ -286,7 +287,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a new user
-	err = h.store.CreateUser(&types.User{
+	err = h.store.CreateUser(r.Context(), &types.User{
 		FirstName:     payload.FirstName,
 		LastName:      payload.LastName,
 		Email:         payload.Email,
@@ -296,7 +297,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		fmt.Println("Error during user creation:", err) // Debugging
+		utils.LogWithContext(r.Context()).Error("Error during user creation", "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}

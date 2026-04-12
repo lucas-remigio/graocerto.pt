@@ -1,10 +1,11 @@
 package account
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -107,7 +108,7 @@ func (s *Store) GetAccountById(id int, userId int) (*types.Account, error) {
 	)
 }
 
-func (s *Store) CreateAccount(account *types.Account) (*types.Account, error) {
+func (s *Store) CreateAccount(ctx context.Context, account *types.Account) (*types.Account, error) {
 	token, err := utils.GenerateToken(16)
 	if err != nil {
 		return nil, err
@@ -127,8 +128,11 @@ func (s *Store) CreateAccount(account *types.Account) (*types.Account, error) {
 	)
 
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to create account", "user_id", account.UserID, "name", account.AccountName, "error", err)
 		return nil, err
 	}
+
+	utils.LogWithContext(ctx).Info("account created", "user_id", account.UserID, "token", account.Token)
 
 	// Fetch the newly created account to return it
 	newAccount, err := s.GetAccountByToken(account.Token, account.UserID)
@@ -139,7 +143,7 @@ func (s *Store) CreateAccount(account *types.Account) (*types.Account, error) {
 	return newAccount, nil
 }
 
-func (s *Store) UpdateAccount(account *types.Account, userId int) (*types.Account, error) {
+func (s *Store) UpdateAccount(ctx context.Context, account *types.Account, userId int) (*types.Account, error) {
 	// first get the current account so that we can check if the user is the owner of the account
 	currentAccount, err := s.GetAccountById(account.ID, userId)
 	if err != nil {
@@ -155,8 +159,11 @@ func (s *Store) UpdateAccount(account *types.Account, userId int) (*types.Accoun
 		account.AccountName, account.Balance, account.ID)
 
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to update account", "account_id", account.ID, "error", err)
 		return nil, err
 	}
+
+	utils.LogWithContext(ctx).Info("account updated", "account_id", account.ID, "user_id", userId)
 
 	// Fetch the updated account to return it
 	updatedAccount, err := s.GetAccountById(account.ID, userId)
@@ -167,7 +174,7 @@ func (s *Store) UpdateAccount(account *types.Account, userId int) (*types.Accoun
 	return updatedAccount, nil
 }
 
-func (s *Store) DeleteAccount(token string, userId int) error {
+func (s *Store) DeleteAccount(ctx context.Context, token string, userId int) error {
 	// first get the account so that we can check if the user is the owner of the account
 	account, err := s.GetAccountByToken(token, userId)
 	if err != nil {
@@ -187,9 +194,11 @@ func (s *Store) DeleteAccount(token string, userId int) error {
 	// delete the account
 	_, err = db.ExecWithValidation(s.db, "DELETE FROM accounts WHERE token = $1 AND user_id = $2", token, userId)
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to delete account", "token", token, "error", err)
 		return err
 	}
 
+	utils.LogWithContext(ctx).Info("account deleted", "token", token, "user_id", userId)
 	return nil
 }
 
@@ -235,7 +244,7 @@ func (s *Store) ReorderAccounts(userId int, accounts []types.ReorderAccount) err
 	return nil
 }
 
-func (s *Store) FavoriteAccount(token string, userId int, isFavorite bool) error {
+func (s *Store) FavoriteAccount(ctx context.Context, token string, userId int, isFavorite bool) error {
 	// first get the account so that we can check if the user is the owner of the account
 	account, err := s.GetAccountByToken(token, userId)
 	if err != nil {
@@ -249,6 +258,13 @@ func (s *Store) FavoriteAccount(token string, userId int, isFavorite bool) error
 	_, err = db.ExecWithValidation(s.db,
 		"UPDATE accounts SET is_favorite = $1 WHERE token = $2 AND user_id = $3",
 		isFavorite, token, userId)
+
+	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to favorite account", "token", token, "error", err)
+		return err
+	}
+
+	utils.LogWithContext(ctx).Info("account favorite status updated", "token", token, "is_favorite", isFavorite)
 
 	return err
 }
@@ -362,7 +378,7 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language str
 	feedbackLanguage := fmt.Sprintf("\n\n\n Give the feedback in the following language: %s", language)
 	fullPrompt := string(promptTemplate) + "\n" + transactionsData.String() + feedbackLanguage
 
-	log.Println("Full prompt:", fullPrompt)
+	slog.Info("Full prompt", "prompt", fullPrompt)
 
 	// Call the OpenAI API to get the feedback
 	message, err := s.openAiStore.GenerateGPT4Response(fullPrompt)
@@ -370,7 +386,7 @@ func (s *Store) GetAccountFeedbackMonthly(userId int, accountToken, language str
 		return nil, fmt.Errorf("error generating feedback: %v", err)
 	}
 
-	log.Println("Generated message:", message)
+	slog.Info("Generated message", "message", message)
 
 	// unmarshal the message to get the feedback
 	feedback := new(types.MonthlyFeedback)

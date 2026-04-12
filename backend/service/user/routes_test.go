@@ -2,6 +2,7 @@ package user
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -177,7 +178,7 @@ func (m *mockUserStore) GetUserById(id int) (*types.User, error) {
 	return &types.User{}, nil
 }
 
-func (m *mockUserStore) CreateUser(user *types.User) error {
+func (m *mockUserStore) CreateUser(ctx context.Context, user *types.User) error {
 	return nil
 }
 
@@ -205,7 +206,7 @@ func (m *mockUserStoreDuplicate) GetUserByEmail(email string) (*types.User, erro
 	return &types.User{Email: email}, nil // Simulate existing user
 }
 
-func (m *mockUserStoreDuplicate) CreateUser(user *types.User) error {
+func (m *mockUserStoreDuplicate) CreateUser(ctx context.Context, user *types.User) error {
 	return nil
 }
 
@@ -239,7 +240,7 @@ func (m *mockUserStoreError) GetUserByEmail(email string) (*types.User, error) {
 	return nil, fmt.Errorf("user already exists")
 }
 
-func (m *mockUserStoreError) CreateUser(user *types.User) error {
+func (m *mockUserStoreError) CreateUser(ctx context.Context, user *types.User) error {
 	return fmt.Errorf("internal server error")
 }
 
@@ -278,7 +279,7 @@ func (m *mockUserStoreLogin) GetUserByEmail(email string) (*types.User, error) {
 	}, nil
 }
 
-func (m *mockUserStoreLogin) CreateUser(*types.User) error            { return nil }
+func (m *mockUserStoreLogin) CreateUser(ctx context.Context, user *types.User) error            { return nil }
 func (m *mockUserStoreLogin) GetUserById(id int) (*types.User, error) { return &types.User{}, nil }
 func (m *mockUserStoreLogin) ValidatePassword(password string) error {
 	return validatePasswordForTest(password)
@@ -308,7 +309,7 @@ func (m *mockUserStoreSuccess) GetUserByEmail(email string) (*types.User, error)
 		Password: hashedPassword,
 	}, nil
 }
-func (m *mockUserStoreSuccess) CreateUser(*types.User) error {
+func (m *mockUserStoreSuccess) CreateUser(ctx context.Context, user *types.User) error {
 	return nil
 }
 

@@ -1,11 +1,13 @@
 package user
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
+	"github.com/lucas-remigio/wallet-tracker/utils"
 )
 
 type Store struct {
@@ -37,12 +39,18 @@ func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 	return user, nil
 }
 
-func (s *Store) CreateUser(user *types.User) error {
+func (s *Store) CreateUser(ctx context.Context, user *types.User) error {
 	_, err := db.ExecWithValidation(s.db,
 		"INSERT INTO users (first_name, last_name, email, password, email_verified, mfa_method) VALUES ($1, $2, $3, $4, $5, $6)",
 		user.FirstName, user.LastName, user.Email, user.Password, user.EmailVerified, string(user.MfaMethod))
 
-	return err
+	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to create user", "email", user.Email, "error", err)
+		return err
+	}
+
+	utils.LogWithContext(ctx).Info("new user created", "email", user.Email, "first_name", user.FirstName)
+	return nil
 }
 
 func (s *Store) GetUserById(id int) (*types.User, error) {

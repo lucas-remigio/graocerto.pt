@@ -1,13 +1,14 @@
 package types
 
 import (
+	"context"
 	"time"
 )
 
 type UserStore interface {
 	GetUserByEmail(email string) (*User, error)
 	GetUserById(id int) (*User, error)
-	CreateUser(user *User) error
+	CreateUser(ctx context.Context, user *User) error
 	ValidatePassword(password string) error
 	DeleteUser(userId int) error
 	MarkEmailVerified(userID int, verified bool) error

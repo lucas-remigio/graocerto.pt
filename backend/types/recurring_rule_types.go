@@ -1,5 +1,9 @@
 package types
 
+import (
+	"context"
+)
+
 type RecurringFrequency string
 
 const (
@@ -10,11 +14,11 @@ const (
 )
 
 type RecurringRuleStore interface {
-	CreateRecurringRule(rule *RecurringRule) (*RecurringRule, error)
-	CreateRecurringTransfer(payload *CreateRecurringTransferPayload, userID int) ([]*RecurringRule, error)
-	UpdateRecurringRule(rule *RecurringRule, userID int) (*RecurringRule, error)
-	UpdateRecurringTransfer(groupID string, payload *UpdateRecurringTransferPayload, userID int) ([]*RecurringRule, error)
-	DeleteRecurringRule(id int, userID int) error
+	CreateRecurringRule(ctx context.Context, rule *RecurringRule) (*RecurringRule, error)
+	CreateRecurringTransfer(ctx context.Context, payload *CreateRecurringTransferPayload, userID int) ([]*RecurringRule, error)
+	UpdateRecurringRule(ctx context.Context, rule *RecurringRule, userID int) (*RecurringRule, error)
+	UpdateRecurringTransfer(ctx context.Context, groupID string, payload *UpdateRecurringTransferPayload, userID int) ([]*RecurringRule, error)
+	DeleteRecurringRule(ctx context.Context, id int, userID int) error
 	GetRecurringRuleByID(id int, userID int) (*RecurringRule, error)
 	GetRecurringRulesByUserID(userID int) ([]*RecurringRule, error)
 	GetRecurringForecast(userID int, accountToken string, days int) (*RecurringForecastResponse, error)

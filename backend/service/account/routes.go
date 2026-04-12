@@ -56,7 +56,7 @@ func (h *Handler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a new account
-	account, err := h.store.CreateAccount(&types.Account{
+	account, err := h.store.CreateAccount(r.Context(), &types.Account{
 		UserID:      userId,
 		AccountName: payload.AccountName,
 		Balance:     *payload.Balance,
@@ -115,7 +115,7 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// update the account
-	account, err := h.store.UpdateAccount(&types.Account{
+	account, err := h.store.UpdateAccount(r.Context(), &types.Account{
 		ID:          accountIdInt,
 		UserID:      userId,
 		AccountName: payload.AccountName,
@@ -147,7 +147,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// delete the account
-	err := h.store.DeleteAccount(accountToken, userId)
+	err := h.store.DeleteAccount(r.Context(), accountToken, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -239,7 +239,7 @@ func (h *Handler) FavoriteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// call store to update favorite status
-	err := h.store.FavoriteAccount(accountToken, userId, payload.IsFavorite)
+	err := h.store.FavoriteAccount(r.Context(), accountToken, userId, payload.IsFavorite)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

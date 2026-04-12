@@ -3,6 +3,7 @@ package transaction
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"time"
@@ -202,6 +203,8 @@ func (s *Store) CreateTransaction(transaction *types.Transaction, userId int) (*
 		return nil, fmt.Errorf("failed to update account balance: %w", err)
 	}
 
+	slog.Info("transaction created", "id", insertedId, "account_token", transaction.AccountToken, "amount", transaction.Amount)
+
 	transaction.ID = insertedId
 	transaction.Balance = newBalance
 
@@ -342,6 +345,8 @@ func (s *Store) CreateTransfer(payload *types.CreateTransferPayload, userId int)
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit transfer: %w", err)
 	}
+
+	slog.Info("transfer completed", "group_id", transferGroupID, "source", payload.SourceAccountToken, "dest", payload.DestinationAccountToken, "amount", payload.Amount)
 
 	// Get the created transaction DTOs
 	debitTxDTO, err := s.GetTransactionDTOById(debitTxId)

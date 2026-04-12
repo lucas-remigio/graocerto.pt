@@ -108,6 +108,9 @@ jobs:
             export SMTP_FROM_EMAIL=${{ secrets.SMTP_FROM_EMAIL }}
             export SMTP_FROM_NAME=${{ secrets.SMTP_FROM_NAME }}
 
+            # Observability
+            export GRAPHANA_PASSWORD=${{ secrets.GRAPHANA_PASSWORD }}
+
             # Setup COMPOSE_PROFILES based on ENABLE_WEBSOCKETS
             ENABLE_WEBSOCKETS="${{ vars.ENABLE_WEBSOCKETS }}"
             if [ "$ENABLE_WEBSOCKETS" = "true" ]; then
