@@ -19,6 +19,7 @@ services:
       - PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
   app:
+    container_name: graocerto-server
     build:
       context: ./backend
       dockerfile: Dockerfile
