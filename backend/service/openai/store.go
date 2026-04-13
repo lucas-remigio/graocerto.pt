@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/lucas-remigio/wallet-tracker/config"
@@ -54,8 +55,10 @@ func (c *Client) GenerateGPT4Response(prompt string) (string, error) {
 
 	// Send the request
 	client := &http.Client{}
+	slog.Info("sending request to OpenAI", "model", request.Model)
 	resp, err := client.Do(req)
 	if err != nil {
+		slog.Error("failed to send request to OpenAI", "error", err)
 		return "", fmt.Errorf("failed to send HTTP request: %w", err)
 	}
 	defer resp.Body.Close()
@@ -65,6 +68,7 @@ func (c *Client) GenerateGPT4Response(prompt string) (string, error) {
 		// Read the response body for debugging
 		body := new(bytes.Buffer)
 		body.ReadFrom(resp.Body)
+		slog.Error("OpenAI API error", "status", resp.StatusCode, "body", body.String())
 		return "", fmt.Errorf("OpenAI API returned status %d: %s", resp.StatusCode, body.String())
 	}
 
@@ -72,9 +76,11 @@ func (c *Client) GenerateGPT4Response(prompt string) (string, error) {
 	var gptResponse types.GPTResponse
 	err = json.NewDecoder(resp.Body).Decode(&gptResponse)
 	if err != nil {
+		slog.Error("failed to parse OpenAI response", "error", err)
 		return "", fmt.Errorf("failed to parse OpenAI response: %w", err)
 	}
 
+	slog.Info("OpenAI request successful", "tokens", gptResponse.Usage.TotalTokens)
 	// Extract and return the response text
 	if len(gptResponse.Choices) == 0 {
 		return "", fmt.Errorf("no choices returned in OpenAI response")

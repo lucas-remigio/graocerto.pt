@@ -3,6 +3,7 @@ package user
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
@@ -15,6 +16,9 @@ func (s *Store) MarkEmailVerified(userID int, verified bool) error {
 		"UPDATE users SET email_verified = $1 WHERE id = $2",
 		verified, userID,
 	)
+	if err == nil {
+		slog.Info("user email verification status updated", "userID", userID, "verified", verified)
+	}
 	return err
 }
 
@@ -23,6 +27,9 @@ func (s *Store) UpdateMfaMethod(userID int, method types.MfaMethod) error {
 		"UPDATE users SET mfa_method = $1 WHERE id = $2",
 		string(method), userID,
 	)
+	if err == nil {
+		slog.Info("user mfa method updated", "userID", userID, "method", method)
+	}
 	return err
 }
 
@@ -31,6 +38,9 @@ func (s *Store) UpdatePassword(userID int, hashedPassword string) error {
 		"UPDATE users SET password = $1 WHERE id = $2",
 		hashedPassword, userID,
 	)
+	if err == nil {
+		slog.Info("user password updated", "userID", userID)
+	}
 	return err
 }
 

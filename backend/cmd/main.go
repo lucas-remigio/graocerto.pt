@@ -2,28 +2,33 @@ package main
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
+	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucas-remigio/wallet-tracker/cmd/api"
 	"github.com/lucas-remigio/wallet-tracker/config"
+	"github.com/lucas-remigio/wallet-tracker/utils"
 )
 
 func main() {
+	utils.InitLogger()
+
 	var dbURL string
 
 	if config.Envs.IsProduction {
 		dbURL = config.Envs.RemoteDBUrl + "?sslmode=verify-ca&sslrootcert=db/prod-ca-2021.crt"
-		log.Println("Using remote database connection")
+		slog.Info("Using remote database connection")
 	} else {
 		dbURL = config.Envs.DatabaseUrl + "?sslmode=disable"
-		log.Println("Using local database connection")
+		slog.Info("Using local database connection")
 	}
 
 	// Open the Postgres database connection
 	pgdb, err := sql.Open("pgx", dbURL)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to open database", "error", err)
+		os.Exit(1)
 	}
 	defer pgdb.Close()
 
@@ -32,7 +37,7 @@ func main() {
 	port := config.Envs.Port
 	if port == "" {
 		port = "8080"
-		log.Println("No port specified, using default port 8080")
+		slog.Warn("No port specified, using default port 8080")
 	}
 	addr := ":" + port
 
@@ -40,23 +45,25 @@ func main() {
 
 	// Use the server's Run method which will handle HTTP/HTTPS internally
 	if err := server.Run(); err != nil {
-		log.Fatal(err)
+		slog.Error("Server failed to run", "error", err)
+		os.Exit(1)
 	}
 }
 
 func initStorage(db *sql.DB) {
 	if err := db.Ping(); err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to ping database", "error", err)
+		os.Exit(1)
 	}
 
 	// Check if SSL is being used
 	var sslStatus string
 	err := db.QueryRow("SHOW ssl").Scan(&sslStatus)
 	if err != nil {
-		log.Printf("Could not check SSL status: %v", err)
+		slog.Warn("Could not check SSL status", "error", err)
 	} else {
-		log.Printf("SSL Status: %s", sslStatus)
+		slog.Info("Database SSL Status", "status", sslStatus)
 	}
 
-	log.Println("DB: Successfully connected")
+	slog.Info("DB: Successfully connected")
 }

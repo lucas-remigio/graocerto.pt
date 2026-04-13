@@ -19,6 +19,7 @@ services:
       - PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
   app:
+    container_name: graocerto-server
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -75,6 +76,47 @@ services:
       timeout: 5s
       retries: 20
 
+  prometheus:
+    profiles:
+      - observability
+    image: prom/prometheus:latest
+    container_name: prometheus-container
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    ports:
+      - "9090:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    restart: unless-stopped
+
+  grafana:
+    profiles:
+      - observability
+    image: grafana/grafana-oss:latest
+    container_name: grafana-container
+    ports:
+      - "3004:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./ops/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   mysql_data:
+  prometheus_data:
+  grafana_data:

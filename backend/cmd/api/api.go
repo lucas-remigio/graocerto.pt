@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -21,6 +21,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type APIServer struct {
@@ -42,6 +43,8 @@ func (s *APIServer) Run() error {
 	apiV1Router := http.NewServeMux()
 	apiV1Router.HandleFunc("/healthz", s.handleHealthz)
 	apiV1Router.HandleFunc("/readyz", s.handleReadyz)
+
+	router.Handle("/metrics", promhttp.Handler())
 
 	// Initialize all stores first
 	userStore := user.NewStore(s.db)
@@ -103,11 +106,13 @@ func (s *APIServer) Run() error {
 	apiHandlerChain := chainMiddleware(
 		http.StripPrefix("/api/v1", apiV1Router),
 		middlewares.RateLimitMiddleware(rateLimiter),
+		middlewares.PrometheusMetricsMiddleware,
+		middlewares.StructuredLoggerMiddleware,
+		middlewares.RequestIDMiddleware,
 	)
 	router.Handle("/api/v1/", apiHandlerChain)
 
-	log.Println("Server is running on", s.addr)
-	log.Printf("Starting HTTP server on %s", s.addr)
+	slog.Info("Server is running", "addr", s.addr)
 	return http.ListenAndServe(s.addr, corsMiddleware(router))
 }
 
@@ -196,10 +201,10 @@ func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule
 
 	run := func() {
 		if err := recurringRuleStore.GeneratePendingTransactionsForDueRules(); err != nil {
-			log.Printf("recurring rule scheduler error: %v", err)
+			slog.Error("recurring rule scheduler error", "error", err)
 		}
 		if err := notificationStore.GenerateRecurringDueTomorrowNotifications(); err != nil {
-			log.Printf("notification scheduler error: %v", err)
+			slog.Error("notification scheduler error", "error", err)
 		}
 	}
 

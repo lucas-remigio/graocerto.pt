@@ -1,17 +1,21 @@
 package types
 
+import (
+	"context"
+)
+
 type CategoryStore interface {
-	CreateCategory(category *Category) (*Category, error)
-	CreateCategoryAndReturn(category *Category) (*CategoryDTO, error)
-	UpdateCategory(category *Category, userId int) (*Category, error)
-	UpdateCategoryAndReturn(category *Category, userId int) (*CategoryDTO, error)
+	CreateCategory(ctx context.Context, category *Category) (*Category, error)
+	CreateCategoryAndReturn(ctx context.Context, category *Category) (*CategoryDTO, error)
+	UpdateCategory(ctx context.Context, category *Category, userId int) (*Category, error)
+	UpdateCategoryAndReturn(ctx context.Context, category *Category, userId int) (*CategoryDTO, error)
 	GetCategoryById(id int, userId int) (*Category, error)
 	GetCategoriesByUserId(userId int) ([]*Category, error)
 	GetCategoryDtoById(id int, userId int) (*CategoryDTO, error)
 	GetCategoriesDtoByUserId(userId int) ([]*CategoryDTO, error)
-	DeleteCategory(id int, userId int) error
-	SoftDeleteCategory(id int, userId int) error
-	ReorderCategories(userId int, categories []ReorderCategory) error
+	DeleteCategory(ctx context.Context, id int, userId int) error
+	SoftDeleteCategory(ctx context.Context, id int, userId int) error
+	ReorderCategories(ctx context.Context, userId int, categories []ReorderCategory) error
 }
 
 type ReorderCategoriesPayload struct {

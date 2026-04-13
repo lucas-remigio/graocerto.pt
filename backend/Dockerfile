@@ -25,8 +25,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 # Runtime stage
 FROM alpine:latest
 
-# Install only necessary packages
 RUN apk add --no-cache ca-certificates bash
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
@@ -34,7 +35,7 @@ WORKDIR /app
 COPY --from=builder /app/wallet-tracker ./
 COPY --from=builder /app/migrate-tool ./
 
-# Copy migration files to a simple path
+# Copy migration files from the correct path in builder stage
 COPY --from=builder /app/cmd/migrate/migrations ./migrations/
 
 # Copy prompts folder
@@ -46,6 +47,12 @@ COPY --from=builder /app/db/prod-ca-2021.crt ./db/prod-ca-2021.crt
 # Set environment variable for migrations path
 ENV MIGRATIONS_PATH=file://migrations
 
+# Secure permissions
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
 EXPOSE 8080
 
+# Use a shell script to run migrations then the app
 CMD ["sh", "-c", "./migrate-tool up && ./wallet-tracker"]

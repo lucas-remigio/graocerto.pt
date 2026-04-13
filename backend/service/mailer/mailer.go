@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"fmt"
+	"log/slog"
 	"net/smtp"
 	"strings"
 )
@@ -23,12 +24,12 @@ func (NoopMailer) Send(Message) error {
 }
 
 type SMTPMailer struct {
-	host       string
-	port       string
-	username   string
-	password   string
-	fromEmail  string
-	fromName   string
+	host      string
+	port      string
+	username  string
+	password  string
+	fromEmail string
+	fromName  string
 }
 
 func NewSMTPMailer(host, port, username, password, fromEmail, fromName string) *SMTPMailer {
@@ -51,7 +52,14 @@ func (m *SMTPMailer) Send(message Message) error {
 	auth := smtp.PlainAuth("", m.username, m.password, m.host)
 	raw := buildMessage(m.fromAddress(), message)
 
-	return smtp.SendMail(addr, auth, m.fromEmail, []string{message.To}, []byte(raw))
+	err := smtp.SendMail(addr, auth, m.fromEmail, []string{message.To}, []byte(raw))
+	if err != nil {
+		slog.Error("failed to send email", "to", message.To, "subject", message.Subject, "error", err)
+		return err
+	}
+
+	slog.Info("email sent successfully", "to", message.To, "subject", message.Subject)
+	return nil
 }
 
 func (m *SMTPMailer) fromAddress() string {

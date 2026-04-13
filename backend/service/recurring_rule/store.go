@@ -1,6 +1,7 @@
 package recurring_rule
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
@@ -11,6 +12,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/service/category"
 	"github.com/lucas-remigio/wallet-tracker/types"
+	"github.com/lucas-remigio/wallet-tracker/utils"
 )
 
 type Store struct {
@@ -26,7 +28,7 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
-func (s *Store) CreateRecurringRule(rule *types.RecurringRule) (*types.RecurringRule, error) {
+func (s *Store) CreateRecurringRule(ctx context.Context, rule *types.RecurringRule) (*types.RecurringRule, error) {
 	if err := s.validateOwnership(rule.UserID, rule.AccountToken, rule.CategoryID); err != nil {
 		return nil, err
 	}
@@ -52,9 +54,13 @@ func (s *Store) CreateRecurringRule(rule *types.RecurringRule) (*types.Recurring
 		rule.NextRunDate,
 		rule.Active,
 	).Scan(&id)
+
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to create recurring rule", "user_id", rule.UserID, "error", err)
 		return nil, fmt.Errorf("failed to create recurring rule: %w", err)
 	}
+
+	utils.LogWithContext(ctx).Info("recurring rule created", "user_id", rule.UserID, "id", id)
 
 	return s.GetRecurringRuleByID(id, rule.UserID)
 }
@@ -158,7 +164,7 @@ func (s *Store) GetRecurringRuleByID(id int, userID int) (*types.RecurringRule, 
 	return db.QuerySingle(s.db, query, scanRecurringRuleRow, id, userID)
 }
 
-func (s *Store) UpdateRecurringRule(rule *types.RecurringRule, userID int) (*types.RecurringRule, error) {
+func (s *Store) UpdateRecurringRule(ctx context.Context, rule *types.RecurringRule, userID int) (*types.RecurringRule, error) {
 	current, err := s.GetRecurringRuleByID(rule.ID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recurring rule: %w", err)
@@ -192,13 +198,16 @@ func (s *Store) UpdateRecurringRule(rule *types.RecurringRule, userID int) (*typ
 		rule.ID,
 	)
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to update recurring rule", "id", rule.ID, "error", err)
 		return nil, fmt.Errorf("failed to update recurring rule: %w", err)
 	}
+
+	utils.LogWithContext(ctx).Info("recurring rule updated", "id", rule.ID, "user_id", userID)
 
 	return s.GetRecurringRuleByID(rule.ID, userID)
 }
 
-func (s *Store) CreateRecurringTransfer(payload *types.CreateRecurringTransferPayload, userID int) ([]*types.RecurringRule, error) {
+func (s *Store) CreateRecurringTransfer(ctx context.Context, payload *types.CreateRecurringTransferPayload, userID int) ([]*types.RecurringRule, error) {
 	if payload.SourceAccountToken == payload.DestinationAccountToken {
 		return nil, fmt.Errorf("source and destination accounts must be different")
 	}
@@ -220,7 +229,7 @@ func (s *Store) CreateRecurringTransfer(payload *types.CreateRecurringTransferPa
 	}
 	defer tx.Rollback()
 
-	debitRule, err := s.createRecurringTransferSide(tx, &types.RecurringRule{
+	debitRule, err := s.createRecurringTransferSide(ctx, tx, &types.RecurringRule{
 		UserID:                   userID,
 		AccountToken:             payload.SourceAccountToken,
 		CategoryID:               payload.DebitCategoryID,
@@ -237,7 +246,7 @@ func (s *Store) CreateRecurringTransfer(payload *types.CreateRecurringTransferPa
 		return nil, err
 	}
 
-	creditRule, err := s.createRecurringTransferSide(tx, &types.RecurringRule{
+	creditRule, err := s.createRecurringTransferSide(ctx, tx, &types.RecurringRule{
 		UserID:                   userID,
 		AccountToken:             payload.DestinationAccountToken,
 		CategoryID:               payload.CreditCategoryID,
@@ -255,13 +264,16 @@ func (s *Store) CreateRecurringTransfer(payload *types.CreateRecurringTransferPa
 	}
 
 	if err := tx.Commit(); err != nil {
+		utils.LogWithContext(ctx).Error("failed to commit recurring transfer", "error", err)
 		return nil, fmt.Errorf("failed to commit recurring transfer creation: %w", err)
 	}
+
+	utils.LogWithContext(ctx).Info("recurring transfer created", "user_id", userID, "group_id", groupID)
 
 	return []*types.RecurringRule{debitRule, creditRule}, nil
 }
 
-func (s *Store) UpdateRecurringTransfer(groupID string, payload *types.UpdateRecurringTransferPayload, userID int) ([]*types.RecurringRule, error) {
+func (s *Store) UpdateRecurringTransfer(ctx context.Context, groupID string, payload *types.UpdateRecurringTransferPayload, userID int) ([]*types.RecurringRule, error) {
 	if groupID == "" {
 		return nil, fmt.Errorf("group id is required")
 	}
@@ -337,6 +349,7 @@ func (s *Store) UpdateRecurringTransfer(groupID string, payload *types.UpdateRec
 		transactionTypeDebit,
 	)
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to update debit side of recurring transfer", "group_id", groupID, "error", err)
 		return nil, fmt.Errorf("failed to update debit recurring transfer rule: %w", err)
 	}
 
@@ -369,6 +382,7 @@ func (s *Store) UpdateRecurringTransfer(groupID string, payload *types.UpdateRec
 		transactionTypeCredit,
 	)
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to update credit side of recurring transfer", "group_id", groupID, "error", err)
 		return nil, fmt.Errorf("failed to update credit recurring transfer rule: %w", err)
 	}
 
@@ -398,13 +412,16 @@ func (s *Store) UpdateRecurringTransfer(groupID string, payload *types.UpdateRec
 	}
 
 	if err := tx.Commit(); err != nil {
+		utils.LogWithContext(ctx).Error("failed to commit recurring transfer update", "group_id", groupID, "error", err)
 		return nil, fmt.Errorf("failed to commit recurring transfer update: %w", err)
 	}
+
+	utils.LogWithContext(ctx).Info("recurring transfer updated", "user_id", userID, "group_id", groupID)
 
 	return updatedRules, nil
 }
 
-func (s *Store) DeleteRecurringRule(id int, userID int) error {
+func (s *Store) DeleteRecurringRule(ctx context.Context, id int, userID int) error {
 	current, err := s.GetRecurringRuleByID(id, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get recurring rule: %w", err)
@@ -423,9 +440,13 @@ func (s *Store) DeleteRecurringRule(id int, userID int) error {
 	} else {
 		_, err = db.ExecWithValidation(s.db, "DELETE FROM recurring_rules WHERE id = $1", id)
 	}
+
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to delete recurring rule", "id", id, "error", err)
 		return fmt.Errorf("failed to delete recurring rule: %w", err)
 	}
+
+	utils.LogWithContext(ctx).Info("recurring rule deleted", "id", id, "user_id", userID)
 	return nil
 }
 
@@ -720,7 +741,7 @@ func scanRecurringRuleRow(row *sql.Row) (*types.RecurringRule, error) {
 	return r, nil
 }
 
-func (s *Store) createRecurringTransferSide(tx *sql.Tx, rule *types.RecurringRule) (*types.RecurringRule, error) {
+func (s *Store) createRecurringTransferSide(ctx context.Context, tx *sql.Tx, rule *types.RecurringRule) (*types.RecurringRule, error) {
 	if err := s.validateOwnership(rule.UserID, rule.AccountToken, rule.CategoryID); err != nil {
 		return nil, err
 	}
@@ -767,6 +788,7 @@ func (s *Store) createRecurringTransferSide(tx *sql.Tx, rule *types.RecurringRul
 		&updatedAt,
 	)
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to insert recurring transfer rule side", "user_id", rule.UserID, "type_id", rule.TransactionTypeID, "error", err)
 		return nil, fmt.Errorf("failed to insert recurring transfer rule: %w", err)
 	}
 

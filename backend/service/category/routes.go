@@ -51,7 +51,7 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a new category
-	dto, err := h.store.CreateCategoryAndReturn(&types.Category{
+	dto, err := h.store.CreateCategoryAndReturn(r.Context(), &types.Category{
 		UserID:            userId,
 		TransactionTypeId: payload.TransactionTypeId,
 		ParentCategoryId:  payload.ParentCategoryId,
@@ -133,7 +133,7 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dto, err := h.store.UpdateCategoryAndReturn(&types.Category{
+	dto, err := h.store.UpdateCategoryAndReturn(r.Context(), &types.Category{
 		ID:               categoryIdInt,
 		UserID:           userId,
 		CategoryName:     payload.CategoryName,
@@ -167,7 +167,7 @@ func (h *Handler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.store.DeleteCategory(categoryIdInt, userId)
+	err := h.store.DeleteCategory(r.Context(), categoryIdInt, userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -190,7 +190,7 @@ func (h *Handler) ReorderCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// call store to update order indexes
-	err := h.store.ReorderCategories(userId, payload.Categories)
+	err := h.store.ReorderCategories(r.Context(), userId, payload.Categories)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

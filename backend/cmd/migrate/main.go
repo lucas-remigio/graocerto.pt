@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 
 	"database/sql"
@@ -14,28 +14,30 @@ import (
 )
 
 func main() {
-	log.Println("Starting migration")
+	slog.Info("Starting migration")
 	// Choose the correct database URL
 	var dbURL string
 	if config.Envs.IsProduction {
 		dbURL = config.Envs.RemoteDBUrl + "?sslmode=verify-ca&sslrootcert=db/prod-ca-2021.crt"
-		log.Println("Using remote database connection")
+		slog.Info("Using remote database connection")
 	} else {
 		dbURL = config.Envs.DatabaseUrl + "?sslmode=disable"
-		log.Println("Using local database connection")
+		slog.Info("Using local database connection")
 	}
 
 	// Open the database connection
 	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to open database", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
 	// Create the migration driver
 	driver, err := pgxv5.WithInstance(db, &pgxv5.Config{})
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to create migration driver", "error", err)
+		os.Exit(1)
 	}
 
 	// Get migrations path from environment variable or use default
@@ -50,20 +52,25 @@ func main() {
 		driver,
 	)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to create migration instance", "error", err)
+		os.Exit(1)
 	}
 
 	cmd := os.Args[(len(os.Args) - 1)]
 
 	if cmd == "up" {
 		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-			log.Fatal(err)
+			slog.Error("failed to run migration up", "error", err)
+			os.Exit(1)
 		}
 	}
 
 	if cmd == "down" {
 		if err := m.Steps(-1); err != nil && err != migrate.ErrNoChange {
-			log.Fatal(err)
+			slog.Error("failed to run migration down", "error", err)
+			os.Exit(1)
 		}
 	}
+
+	slog.Info("migration completed successfully", "command", cmd)
 }

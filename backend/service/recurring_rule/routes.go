@@ -116,7 +116,7 @@ func (h *Handler) CreateRecurringRule(w http.ResponseWriter, r *http.Request) {
 		active = *payload.Active
 	}
 
-	created, err := h.store.CreateRecurringRule(&types.RecurringRule{
+	created, err := h.store.CreateRecurringRule(r.Context(), &types.RecurringRule{
 		UserID:            userID,
 		AccountToken:      payload.AccountToken,
 		CategoryID:        payload.CategoryID,
@@ -171,7 +171,7 @@ func (h *Handler) UpdateRecurringRule(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	updated, err := h.store.UpdateRecurringRule(&types.RecurringRule{
+	updated, err := h.store.UpdateRecurringRule(r.Context(), &types.RecurringRule{
 		ID:                ruleID,
 		UserID:            userID,
 		AccountToken:      payload.AccountToken,
@@ -205,7 +205,7 @@ func (h *Handler) DeleteRecurringRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.DeleteRecurringRule(ruleID, userID); err != nil {
+	if err := h.store.DeleteRecurringRule(r.Context(), ruleID, userID); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -224,7 +224,7 @@ func (h *Handler) CreateRecurringTransfer(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	createdRules, err := h.store.CreateRecurringTransfer(&payload, userID)
+	createdRules, err := h.store.CreateRecurringTransfer(r.Context(), &payload, userID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -251,7 +251,7 @@ func (h *Handler) UpdateRecurringTransfer(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	updatedRules, err := h.store.UpdateRecurringTransfer(groupID, &payload, userID)
+	updatedRules, err := h.store.UpdateRecurringTransfer(r.Context(), groupID, &payload, userID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

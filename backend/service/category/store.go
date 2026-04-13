@@ -1,12 +1,14 @@
 package category
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/lucas-remigio/wallet-tracker/db"
 	"github.com/lucas-remigio/wallet-tracker/types"
+	"github.com/lucas-remigio/wallet-tracker/utils"
 )
 
 type Store struct {
@@ -54,7 +56,7 @@ func (s *Store) GetCategoryDtoById(id int, userId int) (*types.CategoryDTO, erro
 	return db.QuerySingle(s.db, query, scanRowIntoCategoryDto, id, userId)
 }
 
-func (s *Store) CreateCategory(category *types.Category) (*types.Category, error) {
+func (s *Store) CreateCategory(ctx context.Context, category *types.Category) (*types.Category, error) {
 	// Validate parent category if provided
 	if category.ParentCategoryId != nil {
 		if err := s.validateParentCategory(*category.ParentCategoryId, category.UserID, category.TransactionTypeId); err != nil {
@@ -66,9 +68,13 @@ func (s *Store) CreateCategory(category *types.Category) (*types.Category, error
 	err := s.db.QueryRow(
 		"INSERT INTO categories (user_id, transaction_type_id, parent_category_id, category_name, color, budget) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
 		category.UserID, category.TransactionTypeId, category.ParentCategoryId, category.CategoryName, category.Color, category.Budget).Scan(&id)
+
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to create category", "user_id", category.UserID, "name", category.CategoryName, "error", err)
 		return nil, err
 	}
+
+	utils.LogWithContext(ctx).Info("category created", "user_id", category.UserID, "id", id, "name", category.CategoryName)
 
 	// Return the created category with its ID
 	category.ID = id
@@ -76,8 +82,8 @@ func (s *Store) CreateCategory(category *types.Category) (*types.Category, error
 	return category, nil
 }
 
-func (s *Store) CreateCategoryAndReturn(category *types.Category) (*types.CategoryDTO, error) {
-	updatedCategory, err := s.CreateCategory(category)
+func (s *Store) CreateCategoryAndReturn(ctx context.Context, category *types.Category) (*types.CategoryDTO, error) {
+	updatedCategory, err := s.CreateCategory(ctx, category)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +97,7 @@ func (s *Store) CreateCategoryAndReturn(category *types.Category) (*types.Catego
 	return dto, nil
 }
 
-func (s *Store) UpdateCategory(editCategory *types.Category, userId int) (*types.Category, error) {
+func (s *Store) UpdateCategory(ctx context.Context, editCategory *types.Category, userId int) (*types.Category, error) {
 	// get current category to check if incoming user is the same
 	currentCategory, err := s.GetCategoryById(editCategory.ID, userId)
 	if err != nil {
@@ -124,8 +130,11 @@ func (s *Store) UpdateCategory(editCategory *types.Category, userId int) (*types
 		editCategory.ParentCategoryId, editCategory.CategoryName, editCategory.Color, editCategory.Budget, editCategory.ID)
 
 	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to update category", "id", editCategory.ID, "error", err)
 		return nil, err
 	}
+
+	utils.LogWithContext(ctx).Info("category updated", "id", editCategory.ID, "user_id", userId)
 
 	currentCategory.ParentCategoryId = editCategory.ParentCategoryId
 	currentCategory.CategoryName = editCategory.CategoryName
@@ -180,8 +189,8 @@ func (s *Store) preventCircularReference(categoryId int, parentId int) error {
 	return nil
 }
 
-func (s *Store) UpdateCategoryAndReturn(editCategory *types.Category, userId int) (*types.CategoryDTO, error) {
-	updatedCategory, err := s.UpdateCategory(editCategory, userId)
+func (s *Store) UpdateCategoryAndReturn(ctx context.Context, editCategory *types.Category, userId int) (*types.CategoryDTO, error) {
+	updatedCategory, err := s.UpdateCategory(ctx, editCategory, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +204,7 @@ func (s *Store) UpdateCategoryAndReturn(editCategory *types.Category, userId int
 	return dto, nil
 }
 
-func (s *Store) DeleteCategory(id int, userId int) error {
+func (s *Store) DeleteCategory(ctx context.Context, id int, userId int) error {
 	// get current category to check if incoming user is the same
 	currentCategory, err := s.GetCategoryById(id, userId)
 	if err != nil {
@@ -226,28 +235,37 @@ func (s *Store) DeleteCategory(id int, userId int) error {
 
 	if exists {
 		// Soft delete if used in transactions
-		_, err := s.db.Exec(
-			`UPDATE categories SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`,
-			id, userId,
-		)
+		err := s.SoftDeleteCategory(ctx, id, userId)
 		return err
 	}
 
 	// Hard delete if not used
 	_, err = db.ExecWithValidation(s.db, "DELETE FROM categories WHERE id = $1", id)
 
+	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to delete category", "id", id, "error", err)
+		return err
+	}
+
+	utils.LogWithContext(ctx).Info("category hard deleted", "id", id, "user_id", userId)
 	return err
 }
 
-func (s *Store) SoftDeleteCategory(id int, userId int) error {
+func (s *Store) SoftDeleteCategory(ctx context.Context, id int, userId int) error {
 	_, err := s.db.Exec(
 		`UPDATE categories SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`,
 		id, userId,
 	)
+	if err != nil {
+		utils.LogWithContext(ctx).Error("failed to soft delete category", "id", id, "error", err)
+		return err
+	}
+
+	utils.LogWithContext(ctx).Info("category soft deleted", "id", id, "user_id", userId)
 	return err
 }
 
-func (s *Store) ReorderCategories(userId int, categories []types.ReorderCategory) error {
+func (s *Store) ReorderCategories(ctx context.Context, userId int, categories []types.ReorderCategory) error {
 	// Verify all IDs belong to the user
 	ids := make([]any, len(categories))
 	placeholders := make([]string, len(categories))
@@ -286,6 +304,8 @@ func (s *Store) ReorderCategories(userId int, categories []types.ReorderCategory
 			return err
 		}
 	}
+
+	utils.LogWithContext(ctx).Info("categories reordered", "user_id", userId, "count", len(categories))
 	return nil
 }
 

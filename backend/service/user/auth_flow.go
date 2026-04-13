@@ -47,9 +47,12 @@ func (h *Handler) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.MarkEmailVerified(token.UserID, true); err != nil {
+		utils.LogWithContext(r.Context()).Error("failed to mark email as verified", "userID", token.UserID, "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	utils.LogWithContext(r.Context()).Info("email verified successfully", "userID", token.UserID)
 
 	if err := h.authTokenStore.ConsumeAuthToken(token.ID); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -119,10 +122,12 @@ func (h *Handler) handleVerifyLoginOTP(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserById(token.UserID)
 	if err != nil {
+		utils.LogWithContext(r.Context()).Error("failed to get user after OTP verification", "userID", token.UserID, "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	utils.LogWithContext(r.Context()).Info("user logged in via OTP", "userID", user.ID, "email", user.Email)
 	h.issueAuthToken(w, r, user)
 }
 
@@ -185,9 +190,12 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.UpdatePassword(token.UserID, hashedPassword); err != nil {
+		utils.LogWithContext(r.Context()).Error("failed to update password", "userID", token.UserID, "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	utils.LogWithContext(r.Context()).Info("password reset successfully", "userID", token.UserID)
 
 	if err := h.authTokenStore.ConsumeAuthToken(token.ID); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
