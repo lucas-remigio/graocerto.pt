@@ -57,6 +57,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_PATH: ~/wallet-tracker
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -70,13 +72,13 @@ jobs:
 
       - name: Copy docker-compose file to VPS
         run: |
-          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ~/wallet-tracker"
-          scp -o StrictHostKeyChecking=no docker-compose.prod.yaml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/wallet-tracker/docker-compose.prod.yml
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
+          scp -o StrictHostKeyChecking=no docker-compose.prod.yaml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.DEPLOY_PATH }}/docker-compose.prod.yml
 
       - name: Deploy to VPS
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd ~/wallet-tracker
+            cd ${{ env.DEPLOY_PATH }}
             
             # On the server, only save the tag, in case we need to restart manually
             echo "TAG=${{ github.sha }}" > .env
