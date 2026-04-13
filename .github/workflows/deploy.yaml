@@ -69,47 +69,47 @@ jobs:
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy docker-compose file to VPS
-        run: scp -o StrictHostKeyChecking=no docker-compose.prod.yaml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/docker-compose.prod.yaml
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ~/wallet-tracker"
+          scp -o StrictHostKeyChecking=no docker-compose.prod.yaml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/wallet-tracker/docker-compose.prod.yml
 
       - name: Deploy to VPS
         run: |
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-
+            cd ~/wallet-tracker
+            
             # On the server, only save the tag, in case we need to restart manually
             echo "TAG=${{ github.sha }}" > .env
 
-            export TAG=${{ github.sha }}
+            export TAG='${{ github.sha }}'
 
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            export DB_USER=${{ secrets.DB_USER }}
-            export REMOTE_DB_URL=${{ secrets.REMOTE_DB_URL }}
+            export DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            export DB_USER='${{ secrets.DB_USER }}'
+            export REMOTE_DB_URL='${{ secrets.REMOTE_DB_URL }}'
 
             # External API Keys
-            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            export GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            export OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}'
+            export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
 
             # JWT vars
-            export JWT_SECRET=${{ secrets.JWT_SECRET }}
-            export JWT_EXPIRATION_IN_SECONDS=${{ secrets.JWT_EXPIRATION_IN_SECONDS }}
+            export JWT_SECRET='${{ secrets.JWT_SECRET }}'
+            export JWT_EXPIRATION_IN_SECONDS='${{ secrets.JWT_EXPIRATION_IN_SECONDS }}'
 
             # Use the repository variable
-            export FRONTEND_URL=${{ vars.FRONTEND_URL }}
-            export FRONTEND_DOMAIN=${{ vars.FRONTEND_DOMAIN }}
-            export BACKEND_URL=${{ vars.BACKEND_URL }}
-            export BACKEND_PORT=${{ vars.BACKEND_PORT }}
-            export SOCKETS_URL=${{ vars.SOCKETS_URL }}
-            export SOCKETS_PORT=${{ vars.SOCKETS_PORT }}
+            export FRONTEND_URL='${{ vars.FRONTEND_URL }}'
+            export FRONTEND_DOMAIN='${{ vars.FRONTEND_DOMAIN }}'
+            export BACKEND_URL='${{ vars.BACKEND_URL }}'
+            export BACKEND_PORT='${{ vars.BACKEND_PORT }}'
+            export SOCKETS_URL='${{ vars.SOCKETS_URL }}'
+            export SOCKETS_PORT='${{ vars.SOCKETS_PORT }}'
 
             # SMTP vars
-            export SMTP_HOST=${{ secrets.SMTP_HOST }}
-            export SMTP_PORT=${{ secrets.SMTP_PORT }}
-            export SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
-            export SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-            export SMTP_FROM_EMAIL=${{ secrets.SMTP_FROM_EMAIL }}
-            export SMTP_FROM_NAME=${{ secrets.SMTP_FROM_NAME }}
-
-            # Observability
-            export GRAPHANA_PASSWORD=${{ secrets.GRAPHANA_PASSWORD }}
+            export SMTP_HOST='${{ secrets.SMTP_HOST }}'
+            export SMTP_PORT='${{ secrets.SMTP_PORT }}'
+            export SMTP_USERNAME='${{ secrets.SMTP_USERNAME }}'
+            export SMTP_PASSWORD='${{ secrets.SMTP_PASSWORD }}'
+            export SMTP_FROM_EMAIL='${{ secrets.SMTP_FROM_EMAIL }}'
+            export SMTP_FROM_NAME='${{ secrets.SMTP_FROM_NAME }}'
 
             # Setup COMPOSE_PROFILES based on ENABLE_WEBSOCKETS
             ENABLE_WEBSOCKETS="${{ vars.ENABLE_WEBSOCKETS }}"
@@ -128,7 +128,7 @@ jobs:
             wait
 
             # Deploy with minimal downtime and remove orphans
-            docker compose -f docker-compose.prod.yaml up -d --force-recreate --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
             
             # Clean up old images (keep last 3 versions)
             docker image prune -a -f
