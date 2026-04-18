@@ -109,6 +109,40 @@
 		"settings": "Settings"
 	},
 
+	"notifications": {
+		"title": "Notifications",
+		"unread-count": "{count} unread",
+		"empty": "No notifications yet.",
+		"catch-up-title": "You're all caught up!",
+		"new": "New",
+		"mark-as-read": "Mark as read",
+		"preferences-title": "Notification Settings",
+		"preferences-saved": "Settings saved successfully",
+		"enable-push": "Enable Notifications",
+		"enable-push-desc": "Get notified on the platform when bills are due.",
+		"notify-days-ahead": "Notify days ahead",
+		"notify-days-ahead-desc": "How many days before the due date you want to be notified.",
+		"min-debit-threshold": "Min value threshold",
+		"min-debit-threshold-desc": "Only notify if the total value of expenses due tomorrow is above this amount.",
+		"optional": "(optional)",
+		"device-push": "Device Push Notifications",
+		"device-push-desc": "Receive notifications directly on your device when there are pending recurring transactions.",
+		"enable-on-device": "Enable on this device",
+		"push-enabled": "Push Enabled",
+		"push-not-supported": "Not supported on this browser",
+		"push-permission-denied": "Notification permission was denied. Please enable it in your browser settings.",
+		"push-enabled-success": "Push notifications enabled successfully on this device!",
+		"target-date": "Scheduled for {date}",
+		"recurring-due-tomorrow-title": "Bills Due Tomorrow",
+		"recurring-due-in-days-title": "Bills Due in {days} Days",
+		"recurring-due-tomorrow-both": "You have {debitCount} expenses ({debitTotal}) and {creditCount} incomes ({creditTotal}) due tomorrow.",
+		"recurring-due-tomorrow-credits": "You have {count} incomes ({total}) due tomorrow.",
+		"recurring-due-tomorrow-debits": "You have {count} expenses ({total}) due tomorrow.",
+		"recurring-due-in-days-both": "You have {debitCount} expenses ({debitTotal}) and {creditCount} incomes ({creditTotal}) due in {days} days.",
+		"recurring-due-in-days-credits": "You have {count} incomes ({total}) due in {days} days.",
+		"recurring-due-in-days-debits": "You have {count} expenses ({total}) due in {days} days."
+	},
+
 	"page": {
 		"my-accounts": "My Accounts",
 		"no-accounts": "No accounts found",
@@ -207,33 +241,6 @@
 
 	"months": {
 		"show-all-transactions": "Show all transactions"
-	},
-
-	"notifications": {
-		"title": "Notifications",
-		"unread-count": "{count} unread notifications",
-		"empty": "No notifications yet.",
-		"new": "New",
-		"recurring-due-tomorrow-title": "Recurring charges due tomorrow",
-		"recurring-due-tomorrow-debits": "Tomorrow you have {count} pending debits totaling {total}.",
-		"recurring-due-tomorrow-credits": "Tomorrow you have {count} pending credits totaling {total}.",
-		"recurring-due-tomorrow-both": "Tomorrow you have {debitCount} pending debits totaling {debitTotal} and {creditCount} pending credits totaling {creditTotal}.",
-		"recurring-due-in-days-title": "Recurring charges due in {days} days",
-		"recurring-due-in-days-debits": "In {days} days you have {count} pending debits totaling {total}.",
-		"recurring-due-in-days-credits": "In {days} days you have {count} pending credits totaling {total}.",
-		"recurring-due-in-days-both": "In {days} days you have {debitCount} pending debits totaling {debitTotal} and {creditCount} pending credits totaling {creditTotal}.",
-		"target-date": "Target date: {date}",
-		"mark-as-read": "Mark as read",
-		"preferences-saved": "Preferences updated successfully",
-		"preferences-title": "Notification preferences",
-		"notify-days-ahead": "Notify days ahead",
-		"notify-days-ahead-desc": "How many days before the scheduled date should the assistant notify you? Default is 1 day.",
-		"min-debit-threshold": "Minimum total debit to notify",
-		"min-debit-threshold-desc": "We will only notify you if the total cumulative debit amount exceeds this value for a given day. Leave it empty to always receive notifications.",
-		"enable-push": "Enable Push Notifications",
-		"enable-push-desc": "Receive automatic alerts ahead of your scheduled recurring transactions so you never miss an upcoming payment.",
-		"optional": "(Optional)",
-		"catch-up-title": "You're all caught up!"
 	},
 
 	"recurring": {

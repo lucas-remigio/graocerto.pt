@@ -21,12 +21,29 @@ func NewStore(dbConn *sql.DB) *Store {
 }
 
 func (s *Store) GetNotificationsByUserID(userID int) ([]*types.Notification, error) {
-	query := `SELECT id, user_id, type, account_token, target_date, notify_days_ahead, debit_count, total_debit, credit_count, total_credit, is_read, created_at
+	query := `SELECT id, user_id, type, account_token, target_date, notify_days_ahead, debit_count, total_debit, credit_count, total_credit, is_read, pushed, created_at
 		FROM notifications
 		WHERE user_id = $1
 		ORDER BY is_read ASC, created_at DESC
 		LIMIT 100`
 	return db.QueryList(s.db, query, scanNotificationsRows, userID)
+}
+
+func (s *Store) GetUnpushedNotifications() ([]*types.Notification, error) {
+	query := `SELECT id, user_id, type, account_token, target_date, notify_days_ahead, debit_count, total_debit, credit_count, total_credit, is_read, pushed, created_at
+		FROM notifications
+		WHERE pushed = false AND is_read = false
+		LIMIT 100`
+	return db.QueryList(s.db, query, scanNotificationsRows)
+}
+
+func (s *Store) MarkNotificationAsPushed(notificationID int) error {
+	_, err := db.ExecWithValidation(
+		s.db,
+		`UPDATE notifications SET pushed = true WHERE id = $1`,
+		notificationID,
+	)
+	return err
 }
 
 func (s *Store) GetUnreadNotificationCount(userID int) (int, error) {
@@ -90,6 +107,43 @@ func (s *Store) UpdateNotificationPreferences(userID int, payload *types.UpdateN
 	}
 
 	return s.GetNotificationPreferences(userID)
+}
+
+func (s *Store) CreatePushSubscription(userID int, sub *types.PushSubscription) error {
+	_, err := db.ExecWithValidation(
+		s.db,
+		`INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (user_id, endpoint) DO UPDATE SET
+		   p256dh = EXCLUDED.p256dh,
+		   auth = EXCLUDED.auth`,
+		userID,
+		sub.Endpoint,
+		sub.P256dh,
+		sub.Auth,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create push subscription: %w", err)
+	}
+	return nil
+}
+
+func (s *Store) DeletePushSubscription(userID int, endpoint string) error {
+	_, err := db.ExecWithValidation(
+		s.db,
+		`DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2`,
+		userID,
+		endpoint,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to delete push subscription: %w", err)
+	}
+	return nil
+}
+
+func (s *Store) GetPushSubscriptionsByUserID(userID int) ([]*types.PushSubscription, error) {
+	query := `SELECT id, user_id, endpoint, p256dh, auth, created_at FROM push_subscriptions WHERE user_id = $1`
+	return db.QueryList(s.db, query, scanPushSubscriptionRows, userID)
 }
 
 func (s *Store) GenerateRecurringDueTomorrowNotifications() error {
@@ -163,6 +217,7 @@ func scanNotificationsRows(rows *sql.Rows) (*types.Notification, error) {
 		&n.CreditCount,
 		&n.TotalCredit,
 		&n.IsRead,
+		&n.Pushed,
 		&createdAt,
 	); err != nil {
 		return nil, err
@@ -187,4 +242,21 @@ func scanNotificationPreferencesRow(row *sql.Row) (*types.NotificationPreference
 	}
 	p.UpdatedAt = updatedAt.Format(time.RFC3339)
 	return p, nil
+}
+
+func scanPushSubscriptionRows(rows *sql.Rows) (*types.PushSubscription, error) {
+	s := new(types.PushSubscription)
+	var createdAt time.Time
+	if err := rows.Scan(
+		&s.ID,
+		&s.UserID,
+		&s.Endpoint,
+		&s.P256dh,
+		&s.Auth,
+		&createdAt,
+	); err != nil {
+		return nil, err
+	}
+	s.CreatedAt = createdAt.Format(time.RFC3339)
+	return s, nil
 }

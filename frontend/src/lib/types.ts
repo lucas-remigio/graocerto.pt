@@ -302,6 +302,12 @@ export interface UnreadNotificationCountResponse {
 	count: number;
 }
 
+export interface PushSubscription {
+	endpoint: string;
+	p256dh: string;
+	auth: string;
+}
+
 export interface UpdateNotificationPreferencesPayload {
 	enabled: boolean;
 	notify_days_ahead: number;

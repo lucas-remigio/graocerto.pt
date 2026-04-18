@@ -19,8 +19,68 @@
 	let preferences: NotificationPreferences | null = $state(null);
 	let minDebitInput = $state('');
 	let notifyDaysAheadInput = $state('1');
+	let pushSupported = $state(false);
+	let pushPermission = $state('default');
+	let isRegisteringPush = $state(false);
+
+	const vapidKey = import.meta.env.VITE_PUBLIC_VAPID_KEY;
 
 	let currentView: 'list' | 'settings' = $state('list');
+
+	function urlBase64ToUint8Array(base64String: string) {
+		const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+		const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+		const rawData = window.atob(base64);
+		const outputArray = new Uint8Array(rawData.length);
+		for (let i = 0; i < rawData.length; ++i) {
+			outputArray[i] = rawData.charCodeAt(i);
+		}
+		return outputArray;
+	}
+
+	async function handleRegisterPush() {
+		if (!pushSupported || !vapidKey) {
+			if (!vapidKey) console.error('VITE_PUBLIC_VAPID_KEY is missing');
+			return;
+		}
+		isRegisteringPush = true;
+		try {
+			const permission = await Notification.requestPermission();
+			pushPermission = permission;
+			if (permission !== 'granted') {
+				toastStore.error($t('notifications.push-permission-denied'));
+				return;
+			}
+
+			const registration = await navigator.serviceWorker.ready;
+			const subscription = await registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: urlBase64ToUint8Array(vapidKey)
+			});
+
+			const subData = subscription.toJSON();
+			if (subData.endpoint && subData.keys?.p256dh && subData.keys?.auth) {
+				await dataService.registerPushSubscription({
+					endpoint: subData.endpoint,
+					p256dh: subData.keys.p256dh,
+					auth: subData.keys.auth
+				});
+				toastStore.success($t('notifications.push-enabled-success'));
+			}
+		} catch (err) {
+			console.error('Failed to register push:', err);
+			toastStore.error($t('errors.server-error'));
+		} finally {
+			isRegisteringPush = false;
+		}
+	}
+
+	function checkPushSupport() {
+		pushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+		if (typeof Notification !== 'undefined') {
+			pushPermission = Notification.permission;
+		}
+	}
 
 	let unreadCount = $derived(notifications.filter((n) => !n.is_read).length);
 
@@ -202,7 +262,10 @@
 		}
 	}
 
-	onMount(loadData);
+	onMount(() => {
+		loadData();
+		checkPushSupport();
+	});
 </script>
 
 <div class="container mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
@@ -268,6 +331,42 @@
 							onchange={handleToggleEnabled}
 						/>
 					</label>
+				</div>
+			</div>
+
+			<div class="border-b border-base-300 bg-base-200/10 p-5 sm:px-8">
+				<div class="flex items-center justify-between">
+					<div class="pr-4">
+						<h3 class="text-lg font-semibold text-base-content">
+							{$t('notifications.device-push')}
+						</h3>
+						<p class="mt-1 text-sm leading-relaxed text-base-content/60">
+							{$t('notifications.device-push-desc')}
+						</p>
+					</div>
+					<div class="flex items-center gap-2">
+						{#if pushPermission === 'granted'}
+							<div class="badge badge-success gap-2 text-white">
+								<span class="h-2 w-2 rounded-full bg-white animate-pulse"></span>
+								{$t('notifications.push-enabled')}
+							</div>
+						{:else if !pushSupported}
+							<div class="badge badge-ghost text-xs opacity-50">
+								{$t('notifications.push-not-supported')}
+							</div>
+						{:else}
+							<button
+								class="btn btn-primary btn-sm text-base-100"
+								onclick={handleRegisterPush}
+								disabled={isRegisteringPush}
+							>
+								{#if isRegisteringPush}
+									<span class="loading loading-spinner loading-xs"></span>
+								{/if}
+								{$t('notifications.enable-on-device')}
+							</button>
+						{/if}
+					</div>
 				</div>
 			</div>
 

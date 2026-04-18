@@ -108,6 +108,40 @@
 		"settings": "Configurações"
 	},
 
+	"notifications": {
+		"title": "Notificações",
+		"unread-count": "{count} não lidas",
+		"empty": "Nenhuma notificação por enquanto.",
+		"catch-up-title": "Você está em dia!",
+		"new": "Novo",
+		"mark-as-read": "Marcar como lida",
+		"preferences-title": "Configurações de Notificação",
+		"preferences-saved": "Configurações salvas com sucesso",
+		"enable-push": "Ativar Notificações",
+		"enable-push-desc": "Receba avisos na plataforma quando houver contas vencendo.",
+		"notify-days-ahead": "Dias de antecedência",
+		"notify-days-ahead-desc": "Quantos dias antes do vencimento você deseja ser notificado.",
+		"min-debit-threshold": "Valor mínimo para aviso",
+		"min-debit-threshold-desc": "Apenas notificar se o valor total das despesas para amanhã for superior a este valor.",
+		"optional": "(opcional)",
+		"device-push": "Notificações no Dispositivo",
+		"device-push-desc": "Receba notificações diretamente no seu dispositivo quando houver transações recorrentes pendentes.",
+		"enable-on-device": "Ativar neste dispositivo",
+		"push-enabled": "Push Ativado",
+		"push-not-supported": "Não suportado neste navegador",
+		"push-permission-denied": "A permissão de notificação foi negada. Por favor, ative nas configurações do seu navegador.",
+		"push-enabled-success": "Notificações push ativadas com sucesso neste dispositivo!",
+		"target-date": "Agendado para {date}",
+		"recurring-due-tomorrow-title": "Contas para Amanhã",
+		"recurring-due-in-days-title": "Contas em {days} Dias",
+		"recurring-due-tomorrow-both": "Você tem {debitCount} despesas ({debitTotal}) e {creditCount} receitas ({creditTotal}) para amanhã.",
+		"recurring-due-tomorrow-credits": "Você tem {count} receitas ({total}) para amanhã.",
+		"recurring-due-tomorrow-debits": "Você tem {count} despesas ({total}) para amanhã.",
+		"recurring-due-in-days-both": "Você tem {debitCount} despesas ({debitTotal}) e {creditCount} receitas ({creditTotal}) em {days} dias.",
+		"recurring-due-in-days-credits": "Você tem {count} receitas ({total}) em {days} dias.",
+		"recurring-due-in-days-debits": "Você tem {count} despesas ({total}) em {days} dias."
+	},
+
 	"page": {
 		"my-accounts": "Minhas contas",
 		"no-accounts": "Nenhuma conta encontrada",
@@ -210,33 +244,6 @@
 
 	"months": {
 		"show-all-transactions": "Mostrar todas as transações"
-	},
-
-	"notifications": {
-		"title": "Notificações",
-		"unread-count": "{count} notificações por ler",
-		"empty": "Ainda não há notificações.",
-		"new": "Nova",
-		"recurring-due-tomorrow-title": "Encargos recorrentes para amanhã",
-		"recurring-due-tomorrow-debits": "Amanhã tens {count} débitos pendentes num total de {total}.",
-		"recurring-due-tomorrow-credits": "Amanhã tens {count} créditos pendentes num total de {total}.",
-		"recurring-due-tomorrow-both": "Amanhã tens {debitCount} débitos pendentes num total de {debitTotal} e {creditCount} créditos num total de {creditTotal}.",
-		"recurring-due-in-days-title": "Encargos recorrentes em {days} dias",
-		"recurring-due-in-days-debits": "Daqui a {days} dias tens {count} débitos pendentes num total de {total}.",
-		"recurring-due-in-days-credits": "Daqui a {days} dias tens {count} créditos pendentes num total de {total}.",
-		"recurring-due-in-days-both": "Daqui a {days} dias tens {debitCount} débitos pendentes num total de {debitTotal} e {creditCount} créditos num total de {creditTotal}.",
-		"target-date": "Data prevista: {date}",
-		"mark-as-read": "Marcar como lida",
-		"preferences-saved": "Preferências atualizadas com sucesso",
-		"preferences-title": "Preferências de notificação",
-		"notify-days-ahead": "Notificar com dias de antecedência",
-		"notify-days-ahead-desc": "Quantos dias antes da data estipulada queres ser notificado? Padrão é 1 dia.",
-		"min-debit-threshold": "Débito total mínimo para notificar",
-		"min-debit-threshold-desc": "Só serás notificado se o valor diário acumulado dos débitos exceder este valor. Deixe em branco para receber todas as notificações.",
-		"enable-push": "Ativar Notificações Automáticas",
-		"enable-push-desc": "Recebe alertas de previsão de faturas antes da data agendada para não deixares passar em branco nenhum pagamento.",
-		"optional": "(Opcional)",
-		"catch-up-title": "Estás a par de tudo!"
 	},
 
 	"recurring": {

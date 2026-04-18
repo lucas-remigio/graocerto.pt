@@ -23,6 +23,8 @@ type Config struct {
 	DatabaseUrl            string
 	RemoteDBUrl            string
 	FrontendUrl            string
+	VAPIDPublicKey         string
+	VAPIDPrivateKey        string
 	IsProduction           bool
 }
 
@@ -47,6 +49,8 @@ func initConfig() Config {
 		DatabaseUrl:            getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/wallet_tracker"),
 		RemoteDBUrl:            getEnv("REMOTE_DB_URL", ""),
 		FrontendUrl:            getEnv("FRONTEND_URL", "http://localhost:3000"),
+		VAPIDPublicKey:         getEnv("VAPID_PUBLIC_KEY", ""),
+		VAPIDPrivateKey:        getEnv("VAPID_PRIVATE_KEY", ""),
 		IsProduction:           getEnvAsBool("IS_PRODUCTION", false),
 	}
 }

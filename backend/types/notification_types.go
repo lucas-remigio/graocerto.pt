@@ -7,6 +7,22 @@ type NotificationStore interface {
 	GetNotificationPreferences(userID int) (*NotificationPreferences, error)
 	UpdateNotificationPreferences(userID int, payload *UpdateNotificationPreferencesPayload) (*NotificationPreferences, error)
 	GenerateRecurringDueTomorrowNotifications() error
+
+	// Push Subscriptions
+	CreatePushSubscription(userID int, sub *PushSubscription) error
+	DeletePushSubscription(userID int, endpoint string) error
+	GetPushSubscriptionsByUserID(userID int) ([]*PushSubscription, error)
+	GetUnpushedNotifications() ([]*Notification, error)
+	MarkNotificationAsPushed(notificationID int) error
+}
+
+type PushSubscription struct {
+	ID        int    `json:"id"`
+	UserID    int    `json:"user_id"`
+	Endpoint  string `json:"endpoint"`
+	P256dh    string `json:"p256dh"`
+	Auth      string `json:"auth"`
+	CreatedAt string `json:"created_at"`
 }
 
 type Notification struct {
@@ -21,6 +37,7 @@ type Notification struct {
 	CreditCount     int     `json:"credit_count"`
 	TotalCredit     float64 `json:"total_credit"`
 	IsRead          bool    `json:"is_read"`
+	Pushed          bool    `json:"pushed"`
 	CreatedAt       string  `json:"created_at"`
 }
 
