@@ -169,6 +169,7 @@
 		"over-budget": "Over budget",
 		"over-target": "Over target",
 		"within-budget": "Within budget",
+		"remaining": "Remaining",
 		"heatmap": {
 			"title": "Daily Activity Heatmap",
 			"description": "Visual overview of your financial activity by day",
