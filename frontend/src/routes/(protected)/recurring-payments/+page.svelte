@@ -112,11 +112,6 @@
 		}
 	}
 
-	async function refreshRulesAndForecast() {
-		await loadData();
-		await syncForecastIfNeeded();
-	}
-
 	async function fetchAccounts(showLoading: boolean) {
 		accountsLoading = showLoading;
 		try {
@@ -172,14 +167,14 @@
 		showCreateRecurringModal = false;
 		const created = event.detail;
 		recurringRules = [created, ...recurringRules];
-		await refreshRulesAndForecast();
+		await syncForecastIfNeeded();
 	}
 
 	async function handleNewRecurringTransfer(event: CustomEvent<{ rules: RecurringRule[] }>) {
 		showCreateRecurringTransferModal = false;
 		const createdRules = event.detail.rules;
 		recurringRules = [...createdRules, ...recurringRules];
-		await refreshRulesAndForecast();
+		await syncForecastIfNeeded();
 	}
 
 	async function handleUpdateRecurringTransfer(event: CustomEvent<{ rules: RecurringRule[] }>) {
@@ -191,7 +186,7 @@
 		const updatedIds = new Set(updatedRules.map((rule) => rule.id));
 		const withoutUpdated = recurringRules.filter((rule) => !updatedIds.has(rule.id));
 		recurringRules = [...updatedRules, ...withoutUpdated];
-		await refreshRulesAndForecast();
+		await syncForecastIfNeeded();
 	}
 
 	async function handleUpdateRecurringRule(event: CustomEvent<RecurringRule>) {
@@ -199,7 +194,7 @@
 		selectedRule = null;
 		const updated = event.detail;
 		recurringRules = recurringRules.map((rule) => (rule.id === updated.id ? updated : rule));
-		await refreshRulesAndForecast();
+		await syncForecastIfNeeded();
 	}
 
 	function handleEditRule(rule: RecurringRule) {
