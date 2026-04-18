@@ -34,6 +34,8 @@ func (s *PushService) SendPush(sub *types.PushSubscription, payload PushNotifica
 		return fmt.Errorf("VAPID keys not configured")
 	}
 
+	slog.Info("sending push notification", "endpoint", sub.Endpoint)
+
 	// Decode subscription info
 	sSub := &webpush.Subscription{
 		Endpoint: sub.Endpoint,
@@ -60,6 +62,8 @@ func (s *PushService) SendPush(sub *types.PushSubscription, payload PushNotifica
 	}
 	defer resp.Body.Close()
 
+	slog.Info("push notification response", "status", resp.StatusCode)
+
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("push notification failed with status: %d", resp.StatusCode)
 	}
@@ -74,10 +78,11 @@ func (s *PushService) NotifyUser(userID int, store types.NotificationStore, payl
 		return
 	}
 
+	slog.Info("notifying user via push", "userID", userID, "subsCount", len(subs))
+
 	for _, sub := range subs {
 		if err := s.SendPush(sub, payload); err != nil {
 			slog.Error("failed to send push notification to subscription", "userID", userID, "endpoint", sub.Endpoint, "error", err)
-			// Optional: Delete subscription if it's expired/invalid (404, 410)
 		}
 	}
 }

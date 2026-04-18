@@ -3,6 +3,7 @@ package notification
 import (
 	"net/http"
 
+	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/middleware"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
@@ -48,6 +49,36 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 			http.MethodDelete: h.DeletePushSubscription,
 		}),
 	))
+
+	router.HandleFunc("/notifications/test-push", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.TestPush,
+		}),
+	))
+}
+
+func (h *Handler) TestPush(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	// We need a PushService instance here. In a real refactor, we might want to 
+	// pass it to the handler, but for testing we can create one or use a shared one.
+	// Since PushService is lightweight, we'll create a temporary one using envs.
+	pushService := NewPushService(config.Envs.VAPIDPublicKey, config.Envs.VAPIDPrivateKey)
+
+	payload := PushNotificationPayload{
+		Title: "Teste de Notificação 🚀",
+		Body:  "Se você está vendo isso, o Grão Certo está pronto para te avisar!",
+		Icon:  "/logo.png",
+		Data: map[string]any{
+			"url": "/notifications",
+		},
+	}
+
+	pushService.NotifyUser(userID, h.store, payload)
+	middleware.WriteSuccessResponse(w)
 }
 
 func (h *Handler) CreatePushSubscription(w http.ResponseWriter, r *http.Request) {

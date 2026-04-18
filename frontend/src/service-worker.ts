@@ -15,6 +15,7 @@ self.addEventListener('install', (event) => {
 	}
 
 	event.waitUntil(addAssetsToCache());
+	self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -25,6 +26,7 @@ self.addEventListener('activate', (event) => {
 	}
 
 	event.waitUntil(deleteOldCaches());
+	self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
