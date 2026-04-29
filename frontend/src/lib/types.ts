@@ -303,7 +303,7 @@ export interface UnreadNotificationCountResponse {
 	count: number;
 }
 
-export interface PushSubscription {
+export interface PushSubscriptionPayload {
 	endpoint: string;
 	p256dh: string;
 	auth: string;

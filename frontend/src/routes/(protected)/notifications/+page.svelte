@@ -8,7 +8,8 @@
 	import type {
 		NotificationItem,
 		NotificationPreferences,
-		UpdateNotificationPreferencesPayload
+		UpdateNotificationPreferencesPayload,
+		PushSubscriptionPayload
 	} from '$lib/types';
 	import { formatCurrency } from '$lib/utils/currency';
 	import { refreshUnreadNotificationCount } from '$lib/stores/notifications';
@@ -69,39 +70,53 @@
 			return;
 		}
 		isRegisteringPush = true;
+
+		// Safety timeout to prevent infinite loading spinner
+		const timeoutPromise = new Promise((_, reject) =>
+			setTimeout(() => reject(new Error('Push registration timeout')), 15000)
+		);
+
 		try {
-			const permission = await Notification.requestPermission();
-			pushPermission = permission;
-			if (permission !== 'granted') {
-				toastStore.error($t('notifications.push-permission-denied'));
-				return;
-			}
+			await Promise.race([
+				(async () => {
+					const permission = await Notification.requestPermission();
+					pushPermission = permission;
+					if (permission !== 'granted') {
+						toastStore.error($t('notifications.push-permission-denied'));
+						return;
+					}
 
-			const registration = await navigator.serviceWorker.ready;
-			const subscription = await registration.pushManager.subscribe({
-				userVisibleOnly: true,
-				applicationServerKey: urlBase64ToUint8Array(vapidKey)
-			});
+					const registration = await navigator.serviceWorker.ready;
+					const subscription = await registration.pushManager.subscribe({
+						userVisibleOnly: true,
+						applicationServerKey: urlBase64ToUint8Array(vapidKey)
+					});
 
-			const subData = subscription.toJSON();
-			if (subData.endpoint && subData.keys?.p256dh && subData.keys?.auth) {
-				await dataService.registerPushSubscription({
-					endpoint: subData.endpoint,
-					p256dh: subData.keys.p256dh,
-					auth: subData.keys.auth
-				});
-				currentEndpoint = subData.endpoint;
-				// Refresh preferences to get updated push_endpoints list
-				preferences = await dataService.fetchNotificationPreferences();
-				toastStore.success($t('notifications.push-enabled-success'));
-			}
+					const subData = subscription.toJSON();
+					if (subData.endpoint && subData.keys?.p256dh && subData.keys?.auth) {
+						await dataService.registerPushSubscription({
+							endpoint: subData.endpoint,
+							p256dh: subData.keys.p256dh,
+							auth: subData.keys.auth
+						});
+						currentEndpoint = subData.endpoint;
+						preferences = await dataService.fetchNotificationPreferences();
+						toastStore.success($t('notifications.push-enabled-success'));
+					}
+				})(),
+				timeoutPromise
+			]);
 		} catch (err: any) {
 			console.error('Failed to register push:', err);
 
-			// Specific check for Brave browser privacy setting
 			const isBrave = (navigator as any).brave !== undefined;
-			if (isBrave && (err.name === 'AbortError' || err.message?.includes('push service error'))) {
-				toastStore.error($t('notifications.push-brave-error'), { timeout: 10000 });
+			if (err.message === 'Push registration timeout') {
+				toastStore.error($t('notifications.push-general-error'));
+			} else if (
+				isBrave &&
+				(err.name === 'AbortError' || err.message?.includes('push service error'))
+			) {
+				toastStore.error($t('notifications.push-brave-error'), 10000);
 			} else {
 				toastStore.error($t('notifications.push-general-error'));
 			}
@@ -391,7 +406,7 @@
 					<div class="flex items-center sm:shrink-0">
 						{#if pushPermission === 'granted' && isActuallyRegistered}
 							<div
-								class="flex items-center gap-2.5 rounded-full bg-success/10 px-4 py-2 text-success ring-1 ring-inset ring-success/20 shadow-sm"
+								class="flex items-center gap-2.5 rounded-full bg-success/10 px-4 py-2 text-success shadow-sm ring-1 ring-inset ring-success/20"
 							>
 								<span class="relative flex h-2.5 w-2.5">
 									<span
@@ -435,7 +450,10 @@
 
 				{#if pushPermission === 'granted'}
 					<div class="mt-4 flex justify-end border-t border-base-300/50 pt-4">
-						<button class="btn btn-ghost btn-sm gap-2 text-base-content/60" onclick={handleTestPush}>
+						<button
+							class="btn btn-ghost btn-sm gap-2 text-base-content/60"
+							onclick={handleTestPush}
+						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="16"

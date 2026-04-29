@@ -23,6 +23,7 @@ import type {
 	NotificationPreferences,
 	NotificationPreferencesResponse,
 	UpdateNotificationPreferencesPayload,
+	PushSubscriptionPayload,
 	CreateRecurringTransferPayload,
 	CreateRecurringRulePayload,
 	UpdateRecurringTransferPayload,
@@ -500,7 +501,7 @@ class DataService {
 		return data.preferences;
 	}
 
-	async registerPushSubscription(sub: PushSubscription): Promise<void> {
+	async registerPushSubscription(sub: PushSubscriptionPayload): Promise<void> {
 		const res = await api_axios.post('notifications/push-subscriptions', sub);
 		if (res.status !== 200) {
 			throw new Error(`Failed to register push subscription: ${res.status}`);
