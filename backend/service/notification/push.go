@@ -2,6 +2,7 @@ package notification
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -34,8 +35,6 @@ func (s *PushService) SendPush(sub *types.PushSubscription, payload PushNotifica
 		return fmt.Errorf("VAPID keys not configured")
 	}
 
-	slog.Info("sending push notification", "endpoint", sub.Endpoint)
-
 	// Decode subscription info
 	sSub := &webpush.Subscription{
 		Endpoint: sub.Endpoint,
@@ -52,7 +51,7 @@ func (s *PushService) SendPush(sub *types.PushSubscription, payload PushNotifica
 
 	// Send notification
 	resp, err := webpush.SendNotification(payloadBytes, sSub, &webpush.Options{
-		Subscriber:      config.Envs.SMTPFromEmail,
+		Subscriber:      "mailto:" + config.Envs.SMTPFromEmail,
 		VAPIDPublicKey:  s.publicKey,
 		VAPIDPrivateKey: s.privateKey,
 		TTL:             86400, // 24 hours
@@ -62,7 +61,9 @@ func (s *PushService) SendPush(sub *types.PushSubscription, payload PushNotifica
 	}
 	defer resp.Body.Close()
 
-	slog.Info("push notification response", "status", resp.StatusCode)
+	if resp.StatusCode == 410 || resp.StatusCode == 404 {
+		return fmt.Errorf("subscription is no longer valid (status %d): %w", resp.StatusCode, types.ErrInvalidSubscription)
+	}
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("push notification failed with status: %d", resp.StatusCode)
@@ -78,10 +79,21 @@ func (s *PushService) NotifyUser(userID int, store types.NotificationStore, payl
 		return
 	}
 
+	if len(subs) == 0 {
+		return
+	}
+
 	slog.Info("notifying user via push", "userID", userID, "subsCount", len(subs))
 
 	for _, sub := range subs {
 		if err := s.SendPush(sub, payload); err != nil {
+			if errors.Is(err, types.ErrInvalidSubscription) {
+				slog.Warn("deleting invalid push subscription", "userID", userID, "endpoint", sub.Endpoint)
+				if delErr := store.DeletePushSubscription(userID, sub.Endpoint); delErr != nil {
+					slog.Error("failed to delete invalid push subscription", "userID", userID, "endpoint", sub.Endpoint, "error", delErr)
+				}
+				continue
+			}
 			slog.Error("failed to send push notification to subscription", "userID", userID, "endpoint", sub.Endpoint, "error", err)
 		}
 	}

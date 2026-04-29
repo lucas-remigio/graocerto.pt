@@ -88,7 +88,11 @@ func (s *APIServer) Run() error {
 	recurringRuleHandler := recurring_rule.NewHandler(recurringRuleStore)
 	recurringRuleHandler.RegisterRoutes(apiV1Router)
 
-	notificationHandler := notification.NewHandler(notificationStore)
+	pushService := notification.NewPushService(config.Envs.VAPIDPublicKey, config.Envs.VAPIDPrivateKey)
+	if config.Envs.VAPIDPublicKey == "" || config.Envs.VAPIDPrivateKey == "" {
+		slog.Warn("VAPID keys not configured, push notifications will not work")
+	}
+	notificationHandler := notification.NewHandler(notificationStore, pushService)
 	notificationHandler.RegisterRoutes(apiV1Router)
 
 	accountStore.SetTransactionStore(transactionStore)
@@ -97,7 +101,6 @@ func (s *APIServer) Run() error {
 	investmentCalculatorHandler := investment_calculator.NewHandler(investmentCalculatorStore)
 	investmentCalculatorHandler.RegisterRoutes(apiV1Router)
 
-	pushService := notification.NewPushService(config.Envs.VAPIDPublicKey, config.Envs.VAPIDPrivateKey)
 	go s.runRecurringRuleScheduler(recurringRuleStore, notificationStore, pushService)
 
 	// Set up rate limiting middleware

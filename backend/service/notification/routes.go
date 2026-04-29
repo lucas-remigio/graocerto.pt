@@ -3,18 +3,21 @@ package notification
 import (
 	"net/http"
 
-	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/middleware"
 	"github.com/lucas-remigio/wallet-tracker/types"
 	"github.com/lucas-remigio/wallet-tracker/utils"
 )
 
 type Handler struct {
-	store types.NotificationStore
+	store       types.NotificationStore
+	pushService *PushService
 }
 
-func NewHandler(store types.NotificationStore) *Handler {
-	return &Handler{store: store}
+func NewHandler(store types.NotificationStore, pushService *PushService) *Handler {
+	return &Handler{
+		store:       store,
+		pushService: pushService,
+	}
 }
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
@@ -63,21 +66,16 @@ func (h *Handler) TestPush(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// We need a PushService instance here. In a real refactor, we might want to 
-	// pass it to the handler, but for testing we can create one or use a shared one.
-	// Since PushService is lightweight, we'll create a temporary one using envs.
-	pushService := NewPushService(config.Envs.VAPIDPublicKey, config.Envs.VAPIDPrivateKey)
-
 	payload := PushNotificationPayload{
 		Title: "Teste de Notificação 🚀",
-		Body:  "Se você está vendo isso, o Grão Certo está pronto para te avisar!",
+		Body:  "Se estás a ver isto, o Grão Certo está pronto para te avisar!",
 		Icon:  "/logo.png",
 		Data: map[string]any{
 			"url": "/notifications",
 		},
 	}
 
-	pushService.NotifyUser(userID, h.store, payload)
+	h.pushService.NotifyUser(userID, h.store, payload)
 	middleware.WriteSuccessResponse(w)
 }
 

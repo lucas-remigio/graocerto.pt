@@ -1,5 +1,9 @@
 package types
 
+import "errors"
+
+var ErrInvalidSubscription = errors.New("invalid push subscription")
+
 type NotificationStore interface {
 	GetNotificationsByUserID(userID int) ([]*Notification, error)
 	GetUnreadNotificationCount(userID int) (int, error)

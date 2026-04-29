@@ -3,97 +3,130 @@
 
 import { build, files, version } from '$service-worker';
 
-const CACHE = `cache-${version}`;
-const ASSETS = [...build, ...files];
+// Configuration
+const CACHE_NAME = `cache-${version}`;
+const STATIC_ASSETS = new Set([...build, ...files]);
+const DEFAULT_ICON = '/logo.png';
+const DEFAULT_BADGE = '/favicon-96x96.png';
 
-const self = globalThis as unknown as ServiceWorkerGlobalScope;
+const sw = globalThis as unknown as ServiceWorkerGlobalScope;
 
-self.addEventListener('install', (event) => {
-	async function addAssetsToCache() {
-		const cache = await caches.open(CACHE);
-		await cache.addAll(ASSETS);
-	}
-
-	event.waitUntil(addAssetsToCache());
-	self.skipWaiting();
+/**
+ * Lifecycle: Install
+ * Caches all static assets provided by SvelteKit.
+ */
+sw.addEventListener('install', (event) => {
+	event.waitUntil(
+		caches.open(CACHE_NAME).then((cache) => cache.addAll(Array.from(STATIC_ASSETS)))
+	);
+	sw.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-	async function deleteOldCaches() {
-		for (const key of await caches.keys()) {
-			if (key !== CACHE) await caches.delete(key);
-		}
-	}
-
-	event.waitUntil(deleteOldCaches());
-	self.clients.claim();
+/**
+ * Lifecycle: Activate
+ * Removes outdated caches from previous versions.
+ */
+sw.addEventListener('activate', (event) => {
+	event.waitUntil(
+		caches.keys().then(async (keys) => {
+			for (const key of keys) {
+				if (key !== CACHE_NAME) {
+					await caches.delete(key);
+				}
+			}
+			await sw.clients.claim();
+		})
+	);
 });
 
-self.addEventListener('fetch', (event) => {
+/**
+ * Fetch Event
+ * Implements different caching strategies based on the request type.
+ */
+sw.addEventListener('fetch', (event) => {
 	if (event.request.method !== 'GET') return;
 
-	async function respond() {
-		const url = new URL(event.request.url);
-		const cache = await caches.open(CACHE);
+	const url = new URL(event.request.url);
+	const isStaticAsset = STATIC_ASSETS.has(url.pathname);
 
-		if (ASSETS.includes(url.pathname)) {
-			const response = await cache.match(url.pathname);
-			if (response) return response;
-		}
-
-		try {
-			const response = await fetch(event.request);
-
-			// Only cache http/https requests to avoid errors with browser extensions
-			if (response.status === 200 && url.protocol.startsWith('http')) {
-				cache.put(event.request, response.clone());
-			}
-
-			return response;
-		} catch {
-			return cache.match(event.request);
-		}
-	}
-
-	event.respondWith(respond() as Promise<Response>);
+	event.respondWith(
+		isStaticAsset ? cacheFirst(event.request) : networkFirst(event.request)
+	);
 });
 
-// Push notification handling
-self.addEventListener('push', (event) => {
+async function cacheFirst(request: Request): Promise<Response> {
+	const cache = await caches.open(CACHE_NAME);
+	const cachedResponse = await cache.match(request);
+	return cachedResponse || fetch(request);
+}
+
+async function networkFirst(request: Request): Promise<Response> {
+	const cache = await caches.open(CACHE_NAME);
+	try {
+		const response = await fetch(request);
+		const url = new URL(request.url);
+
+		// Cache successful responses from http/https (ignoring chrome-extension, etc.)
+		if (response.status === 200 && url.protocol.startsWith('http')) {
+			cache.put(request, response.clone());
+		}
+		return response;
+	} catch (error) {
+		const cachedResponse = await cache.match(request);
+		if (cachedResponse) return cachedResponse;
+		throw error;
+	}
+}
+
+/**
+ * Push Notifications
+ * Displays incoming push notifications using the provided payload.
+ */
+sw.addEventListener('push', (event) => {
 	if (!event.data) return;
 
 	try {
 		const payload = event.data.json();
 		const title = payload.title || 'Grão Certo';
-		const options = {
+		const options: NotificationOptions = {
 			body: payload.body,
-			icon: payload.icon || '/logo.png',
-			badge: '/favicon-96x96.png',
+			icon: payload.icon || DEFAULT_ICON,
+			badge: DEFAULT_BADGE,
 			data: payload.data
 		};
 
-		event.waitUntil(self.registration.showNotification(title, options));
+		event.waitUntil(sw.registration.showNotification(title, options));
 	} catch (err) {
-		console.error('Error handling push event:', err);
+		console.error('[Service Worker] Push event error:', err);
 	}
 });
 
-self.addEventListener('notificationclick', (event) => {
+/**
+ * Notification Click
+ * Handles navigation and window focus when a user clicks a notification.
+ */
+sw.addEventListener('notificationclick', (event) => {
 	event.notification.close();
 
 	const urlToOpen = event.notification.data?.url || '/';
-
-	event.waitUntil(
-		self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-			for (let i = 0; i < windowClients.length; i++) {
-				const client = windowClients[i];
-				if (client.url.includes(urlToOpen) && 'focus' in client) {
-					return client.focus();
-				}
-			}
-			if (self.clients.openWindow) {
-				return self.clients.openWindow(urlToOpen);
-			}
-		})
-	);
+	event.waitUntil(handleNotificationClick(urlToOpen));
 });
+
+async function handleNotificationClick(url: string) {
+	const windowClients = await sw.clients.matchAll({
+		type: 'window',
+		includeUncontrolled: true
+	});
+
+	// Try to focus an existing window with the same URL
+	for (const client of windowClients) {
+		if (client.url.includes(url) && 'focus' in client) {
+			return client.focus();
+		}
+	}
+
+	// Otherwise, open a new window
+	if (sw.clients.openWindow) {
+		return sw.clients.openWindow(url);
+	}
+}
