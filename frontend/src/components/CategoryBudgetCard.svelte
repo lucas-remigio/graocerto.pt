@@ -20,6 +20,7 @@
 	$: fillPct = Math.min(Math.max(pct, 0), 100);
 
 	$: overBudget = budget != null && spent > budget;
+	$: remaining = budget != null ? budget - spent : null;
 
 	// Tailwind classes for bar when over / under
 	$: fillClass = overBudget ? (isCredit ? 'bg-emerald-600' : 'bg-rose-500') : ''; // when not over, we use inline category color via barStyle
@@ -82,8 +83,15 @@
 			{/if}
 
 			<!-- spent aligned to the right -->
-			<div class="ml-auto whitespace-nowrap text-sm font-medium text-base-content/60">
-				{fmt(spent)}
+			<div class="ml-auto flex flex-col items-end whitespace-nowrap text-right text-sm font-medium">
+				<div class="text-base-content/60">
+					{fmt(spent)}
+				</div>
+				{#if remaining !== null && !overBudget}
+					<div class="text-[10px] uppercase tracking-wider text-base-content/40">
+						{$t('statistics.remaining')}: {fmt(remaining)}
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>

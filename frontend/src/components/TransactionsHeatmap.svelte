@@ -111,10 +111,10 @@
 	}
 
 	// Value + max lookup
-	function getValue(day: string): number {
+	function getValue(day: string, mode: HeatmapDisplayMode): number {
 		const data = transactionMap[day];
 		if (!data) return 0;
-		switch ($heatmapDisplayMode) {
+		switch (mode) {
 			case 'credit':
 				return data.credit;
 			case 'debit':
@@ -123,8 +123,8 @@
 				return data.difference;
 		}
 	}
-	function getMax(): number {
-		switch ($heatmapDisplayMode) {
+	function getMax(mode: HeatmapDisplayMode): number {
+		switch (mode) {
 			case 'credit':
 				return max.credit || 1;
 			case 'debit':
@@ -135,20 +135,20 @@
 	}
 
 	// Color class (income green / expense red / net)
-	function getColor(day: string): string {
-		const v = getValue(day);
+	function getColor(day: string, mode: HeatmapDisplayMode): string {
+		const v = getValue(day, mode);
 		if (v === 0) return 'heatmap-neutral';
-		if ($heatmapDisplayMode === 'credit') return 'heatmap-green';
-		if ($heatmapDisplayMode === 'debit') return 'heatmap-red';
+		if (mode === 'credit') return 'heatmap-green';
+		if (mode === 'debit') return 'heatmap-red';
 		// difference
 		return v > 0 ? 'heatmap-green' : 'heatmap-red';
 	}
 
 	// 3 bucket intensity
-	function getIntensity(day: string): number {
-		const v = getValue(day);
+	function getIntensity(day: string, mode: HeatmapDisplayMode): number {
+		const v = getValue(day, mode);
 		if (v === 0) return 0;
-		const pct = (Math.abs(v) / getMax()) * 100;
+		const pct = (Math.abs(v) / getMax(mode)) * 100;
 		if (pct < 25) return 0.35;
 		if (pct < 75) return 0.65;
 		return 0.95;
@@ -162,11 +162,11 @@
 		});
 	}
 
-	function getTooltipText(day: string): string {
+	function getTooltipText(day: string, mode: HeatmapDisplayMode): string {
 		const d = transactionMap[day];
 		if (!d) return `${formatDay(day)} - ${$t('common.no-data', { default: 'No data' })}`;
-		if ($heatmapDisplayMode === 'credit') return `${formatDay(day)} 💰 +${d.credit.toFixed(2)} €`;
-		if ($heatmapDisplayMode === 'debit') return `${formatDay(day)} 💸 -${d.debit.toFixed(2)} €`;
+		if (mode === 'credit') return `${formatDay(day)} 💰 +${d.credit.toFixed(2)} €`;
+		if (mode === 'debit') return `${formatDay(day)} 💸 -${d.debit.toFixed(2)} €`;
 		const emoji = d.difference >= 0 ? '💰' : '💸';
 		return `${formatDay(day)} ${emoji} ${d.difference >= 0 ? '+' : ''}${d.difference.toFixed(2)} €`;
 	}
@@ -250,10 +250,11 @@
 								{#if day}
 									<div
 										class="heatmap-square tooltip mx-auto aspect-square h-6 w-6 rounded {getColor(
-											day
+											day,
+											$heatmapDisplayMode
 										)} {day === today ? 'border-2 border-primary' : ''}"
-										style="--intensity:{getIntensity(day)}"
-										data-tip={getTooltipText(day)}
+										style="--intensity:{getIntensity(day, $heatmapDisplayMode)}"
+										data-tip={getTooltipText(day, $heatmapDisplayMode)}
 									></div>
 								{/if}
 							</td>

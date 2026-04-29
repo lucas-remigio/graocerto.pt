@@ -499,6 +499,27 @@ class DataService {
 		this.notificationPreferencesCache = this.wrap(data.preferences);
 		return data.preferences;
 	}
+
+	async registerPushSubscription(sub: PushSubscription): Promise<void> {
+		const res = await api_axios.post('notifications/push-subscriptions', sub);
+		if (res.status !== 200) {
+			throw new Error(`Failed to register push subscription: ${res.status}`);
+		}
+	}
+
+	async unregisterPushSubscription(endpoint: string): Promise<void> {
+		const res = await api_axios.delete('notifications/push-subscriptions', { data: { endpoint } });
+		if (res.status !== 200) {
+			throw new Error(`Failed to unregister push subscription: ${res.status}`);
+		}
+	}
+
+	async testPushNotification(): Promise<void> {
+		const res = await api_axios.post('notifications/test-push');
+		if (res.status !== 200) {
+			throw new Error(`Failed to send test push notification: ${res.status}`);
+		}
+	}
 }
 
 // Export a singleton instance

@@ -51,6 +51,7 @@ jobs:
             ${{ matrix.service == 'frontend' && format('BACKEND_PORT={0}', vars.BACKEND_PORT) || '' }}
             ${{ matrix.service == 'frontend' && format('SOCKETS_PORT={0}', vars.SOCKETS_PORT) || '' }}
             ${{ matrix.service == 'frontend' && format('PUBLIC_GOOGLE_CLIENT_ID={0}', secrets.GOOGLE_CLIENT_ID) || '' }}
+            ${{ matrix.service == 'frontend' && format('PUBLIC_VAPID_KEY={0}', secrets.VAPID_PUBLIC_KEY) || '' }}
             ${{ matrix.service == 'frontend' && format('ENABLE_WEBSOCKETS={0}', vars.ENABLE_WEBSOCKETS || 'false') || '' }}
             ${{ matrix.service == 'frontend' && 'IS_PRODUCTION=true' || '' }}
 
@@ -92,6 +93,8 @@ jobs:
             # External API Keys
             export OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}'
             export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
+            export VAPID_PUBLIC_KEY='${{ secrets.VAPID_PUBLIC_KEY }}'
+            export VAPID_PRIVATE_KEY='${{ secrets.VAPID_PRIVATE_KEY }}'
 
             # JWT vars
             export JWT_SECRET='${{ secrets.JWT_SECRET }}'

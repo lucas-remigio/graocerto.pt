@@ -19,8 +19,78 @@
 	let preferences: NotificationPreferences | null = $state(null);
 	let minDebitInput = $state('');
 	let notifyDaysAheadInput = $state('1');
+	let pushSupported = $state(false);
+	let pushPermission = $state('default');
+	let isRegisteringPush = $state(false);
+
+	const vapidKey = import.meta.env.VITE_PUBLIC_VAPID_KEY;
 
 	let currentView: 'list' | 'settings' = $state('list');
+
+	function urlBase64ToUint8Array(base64String: string) {
+		const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+		const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+		const rawData = window.atob(base64);
+		const outputArray = new Uint8Array(rawData.length);
+		for (let i = 0; i < rawData.length; ++i) {
+			outputArray[i] = rawData.charCodeAt(i);
+		}
+		return outputArray;
+	}
+
+	async function handleRegisterPush() {
+		if (!pushSupported || !vapidKey) {
+			if (!vapidKey) console.error('VITE_PUBLIC_VAPID_KEY is missing');
+			return;
+		}
+		isRegisteringPush = true;
+		try {
+			const permission = await Notification.requestPermission();
+			pushPermission = permission;
+			if (permission !== 'granted') {
+				toastStore.error($t('notifications.push-permission-denied'));
+				return;
+			}
+
+			const registration = await navigator.serviceWorker.ready;
+			const subscription = await registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: urlBase64ToUint8Array(vapidKey)
+			});
+
+			const subData = subscription.toJSON();
+			if (subData.endpoint && subData.keys?.p256dh && subData.keys?.auth) {
+				await dataService.registerPushSubscription({
+					endpoint: subData.endpoint,
+					p256dh: subData.keys.p256dh,
+					auth: subData.keys.auth
+				});
+				toastStore.success($t('notifications.push-enabled-success'));
+			}
+		} catch (err) {
+			console.error('Failed to register push:', err);
+			toastStore.error($t('errors.server-error'));
+		} finally {
+			isRegisteringPush = false;
+		}
+	}
+
+	async function handleTestPush() {
+		try {
+			await dataService.testPushNotification();
+			toastStore.success('Solicitação de teste enviada!');
+		} catch (err) {
+			console.error(err);
+			toastStore.error($t('errors.server-error'));
+		}
+	}
+
+	function checkPushSupport() {
+		pushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+		if (typeof Notification !== 'undefined') {
+			pushPermission = Notification.permission;
+		}
+	}
 
 	let unreadCount = $derived(notifications.filter((n) => !n.is_read).length);
 
@@ -202,7 +272,10 @@
 		}
 	}
 
-	onMount(loadData);
+	onMount(() => {
+		loadData();
+		checkPushSupport();
+	});
 </script>
 
 <div class="container mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
@@ -269,6 +342,72 @@
 						/>
 					</label>
 				</div>
+			</div>
+
+			<div class="border-b border-base-300 bg-base-200/10 p-5 sm:px-8">
+				<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<div class="flex-1 pr-4">
+						<h3 class="text-lg font-semibold text-base-content">
+							{$t('notifications.device-push')}
+						</h3>
+						<p class="mt-1 text-sm leading-relaxed text-base-content/60">
+							{$t('notifications.device-push-desc')}
+						</p>
+					</div>
+					<div class="flex items-center sm:shrink-0">
+						{#if pushPermission === 'granted'}
+							<div
+								class="flex items-center gap-2.5 rounded-full bg-success/10 px-4 py-2 text-success ring-1 ring-inset ring-success/20 shadow-sm"
+							>
+								<span class="relative flex h-2.5 w-2.5">
+									<span
+										class="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"
+									></span>
+									<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-success"></span>
+								</span>
+								<span class="whitespace-nowrap text-xs font-bold uppercase tracking-widest">
+									{$t('notifications.push-enabled')}
+								</span>
+							</div>
+						{:else if !pushSupported}
+							<div class="badge badge-ghost badge-md px-4 py-3 text-xs opacity-50 shadow-sm">
+								{$t('notifications.push-not-supported')}
+							</div>
+						{:else}
+							<button
+								class="btn btn-primary btn-md w-full text-base-100 shadow-md transition-all hover:shadow-lg sm:w-auto"
+								onclick={handleRegisterPush}
+								disabled={isRegisteringPush}
+							>
+								{#if isRegisteringPush}
+									<span class="loading loading-spinner loading-xs"></span>
+								{/if}
+								{$t('notifications.enable-on-device')}
+							</button>
+						{/if}
+					</div>
+				</div>
+
+				{#if pushPermission === 'granted'}
+					<div class="mt-4 flex justify-end border-t border-base-300/50 pt-4">
+						<button class="btn btn-ghost btn-sm gap-2 text-base-content/60" onclick={handleTestPush}>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="lucide lucide-send"
+								><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg
+							>
+							Enviar Notificação de Teste
+						</button>
+					</div>
+				{/if}
 			</div>
 
 			<div

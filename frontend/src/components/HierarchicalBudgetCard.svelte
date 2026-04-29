@@ -110,7 +110,14 @@
 										: $t('statistics.over-budget')
 									: $t('statistics.within-budget')}
 							</span>
-							<span class="font-medium text-base-content/60">{fmt(sub.total)}</span>
+							<div class="flex flex-col items-end whitespace-nowrap text-right font-medium">
+								<div class="text-base-content/60">{fmt(sub.total)}</div>
+								{#if sub.total <= sub.budget}
+									<div class="text-[9px] uppercase tracking-wider text-base-content/40">
+										{$t('statistics.remaining')}: {fmt(sub.budget - sub.total)}
+									</div>
+								{/if}
+							</div>
 						</div>
 					{:else}
 						<div class="text-xs opacity-60">{fmt(sub.total)}</div>

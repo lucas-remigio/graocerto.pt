@@ -9,11 +9,15 @@ import (
 )
 
 type Handler struct {
-	store types.NotificationStore
+	store       types.NotificationStore
+	pushService *PushService
 }
 
-func NewHandler(store types.NotificationStore) *Handler {
-	return &Handler{store: store}
+func NewHandler(store types.NotificationStore, pushService *PushService) *Handler {
+	return &Handler{
+		store:       store,
+		pushService: pushService,
+	}
 }
 
 func (h *Handler) RegisterRoutes(router *http.ServeMux) {
@@ -41,6 +45,78 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 			http.MethodPut: h.UpdateNotificationPreferences,
 		}),
 	))
+
+	router.HandleFunc("/notifications/push-subscriptions", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.CreatePushSubscription,
+			http.MethodDelete: h.DeletePushSubscription,
+		}),
+	))
+
+	router.HandleFunc("/notifications/test-push", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPost: h.TestPush,
+		}),
+	))
+}
+
+func (h *Handler) TestPush(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	payload := PushNotificationPayload{
+		Title: "Teste de Notificação 🚀",
+		Body:  "Se estás a ver isto, o Grão Certo está pronto para te avisar!",
+		Icon:  "/logo.png",
+		Data: map[string]any{
+			"url": "/notifications",
+		},
+	}
+
+	h.pushService.NotifyUser(userID, h.store, payload)
+	middleware.WriteSuccessResponse(w)
+}
+
+func (h *Handler) CreatePushSubscription(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	var payload types.PushSubscription
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	if err := h.store.CreatePushSubscription(userID, &payload); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteSuccessResponse(w)
+}
+
+func (h *Handler) DeletePushSubscription(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	var payload struct {
+		Endpoint string `json:"endpoint" validate:"required"`
+	}
+	if !middleware.ValidatePayloadAndRespond(w, r, &payload) {
+		return
+	}
+
+	if err := h.store.DeletePushSubscription(userID, payload.Endpoint); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteSuccessResponse(w)
 }
 
 func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {

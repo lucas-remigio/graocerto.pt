@@ -13,6 +13,7 @@
 	$: pct = Math.round(stat.budget_percentage);
 	$: fillPct = Math.min(Math.max(pct, 0), 100);
 	$: overBudget = stat.budget != null && stat.total > stat.budget;
+	$: remaining = stat.budget != null ? stat.budget - stat.total : null;
 	$: fillClass = overBudget ? (isCredit ? 'bg-emerald-600' : 'bg-rose-500') : '';
 	$: barStyle = !overBudget && stat.color ? `background:${stat.color};` : '';
 	$: pctInside = fillPct >= 18;
@@ -49,8 +50,15 @@
 			{:else}
 				<span class="text-base-content/80">{$t('statistics.within-budget')}</span>
 			{/if}
-			<div class="ml-auto whitespace-nowrap font-medium text-base-content/60">
-				{fmt(stat.total)}
+			<div class="ml-auto flex flex-col items-end whitespace-nowrap text-right font-medium">
+				<div class="text-base-content/60">
+					{fmt(stat.total)}
+				</div>
+				{#if remaining !== null && !overBudget}
+					<div class="text-[10px] uppercase tracking-wider text-base-content/40">
+						{$t('statistics.remaining')}: {fmt(remaining)}
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

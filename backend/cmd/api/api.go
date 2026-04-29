@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -87,7 +88,11 @@ func (s *APIServer) Run() error {
 	recurringRuleHandler := recurring_rule.NewHandler(recurringRuleStore)
 	recurringRuleHandler.RegisterRoutes(apiV1Router)
 
-	notificationHandler := notification.NewHandler(notificationStore)
+	pushService := notification.NewPushService(config.Envs.VAPIDPublicKey, config.Envs.VAPIDPrivateKey)
+	if config.Envs.VAPIDPublicKey == "" || config.Envs.VAPIDPrivateKey == "" {
+		slog.Warn("VAPID keys not configured, push notifications will not work")
+	}
+	notificationHandler := notification.NewHandler(notificationStore, pushService)
 	notificationHandler.RegisterRoutes(apiV1Router)
 
 	accountStore.SetTransactionStore(transactionStore)
@@ -96,7 +101,7 @@ func (s *APIServer) Run() error {
 	investmentCalculatorHandler := investment_calculator.NewHandler(investmentCalculatorStore)
 	investmentCalculatorHandler.RegisterRoutes(apiV1Router)
 
-	go s.runRecurringRuleScheduler(recurringRuleStore, notificationStore)
+	go s.runRecurringRuleScheduler(recurringRuleStore, notificationStore, pushService)
 
 	// Set up rate limiting middleware
 	// Allow 2 requests per second, with a burst of 10 requests, and a
@@ -195,7 +200,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule.Store, notificationStore *notification.Store) {
+func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule.Store, notificationStore *notification.Store, pushService *notification.PushService) {
 	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
 
@@ -205,11 +210,44 @@ func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule
 		}
 		if err := notificationStore.GenerateRecurringDueTomorrowNotifications(); err != nil {
 			slog.Error("notification scheduler error", "error", err)
+		} else {
+			// Find newly created notifications to send push
+			// For simplicity, we can notify all users that have unread notifications of type 'recurring_due_tomorrow' created in the last hour
+			// In a more robust implementation, we'd track which notifications have been pushed.
+			// This is a first approximation.
+			s.pushRecurringNotifications(notificationStore, pushService)
 		}
 	}
 
 	run()
 	for range ticker.C {
 		run()
+	}
+}
+
+func (s *APIServer) pushRecurringNotifications(notificationStore *notification.Store, pushService *notification.PushService) {
+	unpushed, err := notificationStore.GetUnpushedNotifications()
+	if err != nil {
+		slog.Error("failed to get unpushed notifications", "error", err)
+		return
+	}
+
+	for _, n := range unpushed {
+		payload := notification.PushNotificationPayload{
+			Title: "Pagamentos Próximos",
+			Body:  fmt.Sprintf("Você tem %d pagamentos previstos para amanhã.", n.DebitCount+n.CreditCount),
+			Icon:  "/logo.png",
+			Data: map[string]any{
+				"url": "/notifications",
+			},
+		}
+
+		pushService.NotifyUser(n.UserID, notificationStore, payload)
+
+		// Mark as pushed regardless of whether a device was actually notified
+		// (if user has no devices registered, it's still 'pushed' from the server's perspective)
+		if err := notificationStore.MarkNotificationAsPushed(n.ID); err != nil {
+			slog.Error("failed to mark notification as pushed", "id", n.ID, "error", err)
+		}
 	}
 }
