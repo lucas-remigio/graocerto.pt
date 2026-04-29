@@ -12,13 +12,56 @@ const DEFAULT_BADGE = '/favicon-96x96.png';
 const sw = globalThis as unknown as ServiceWorkerGlobalScope;
 
 /**
+ * Translations for the Service Worker
+ * Since we don't have access to the i18n runtime here, we bundle the necessary strings.
+ */
+const locales: Record<string, any> = {
+	pt: {
+		notifications: {
+			'push-title-recurring': 'Pagamentos Próximos',
+			'push-body-recurring': 'Tens {count} pagamentos previstos para amanhã.',
+			'test-push-title': 'Teste de Notificação 🚀',
+			'test-push-body': 'Se estás a ver isto, o Grão Certo está pronto para te avisar!'
+		}
+	},
+	en: {
+		notifications: {
+			'push-title-recurring': 'Upcoming Payments',
+			'push-body-recurring': 'You have {count} payments due tomorrow.',
+			'test-push-title': 'Notification Test 🚀',
+			'test-push-body': 'If you are seeing this, Grão Certo is ready to notify you!'
+		}
+	}
+};
+
+/**
+ * Simple translation function for the Service Worker
+ */
+function t(key: string, args: Record<string, any> = {}) {
+	// Detect language from browser (Service Worker doesn't have access to user prefs easily)
+	const lang = sw.navigator.language.startsWith('pt') ? 'pt' : 'en';
+	const dictionary = locales[lang];
+
+	const keys = key.split('.');
+	let value = dictionary;
+	for (const k of keys) {
+		value = value?.[k];
+	}
+
+	if (!value) return key;
+
+	// Simple interpolation
+	return value.replace(/{(\w+)}/g, (_: string, match: string) => {
+		return args[match] !== undefined ? String(args[match]) : `{${match}}`;
+	});
+}
+
+/**
  * Lifecycle: Install
  * Caches all static assets provided by SvelteKit.
  */
 sw.addEventListener('install', (event) => {
-	event.waitUntil(
-		caches.open(CACHE_NAME).then((cache) => cache.addAll(Array.from(STATIC_ASSETS)))
-	);
+	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(Array.from(STATIC_ASSETS))));
 	sw.skipWaiting();
 });
 
@@ -49,9 +92,7 @@ sw.addEventListener('fetch', (event) => {
 	const url = new URL(event.request.url);
 	const isStaticAsset = STATIC_ASSETS.has(url.pathname);
 
-	event.respondWith(
-		isStaticAsset ? cacheFirst(event.request) : networkFirst(event.request)
-	);
+	event.respondWith(isStaticAsset ? cacheFirst(event.request) : networkFirst(event.request));
 });
 
 async function cacheFirst(request: Request): Promise<Response> {
@@ -87,9 +128,13 @@ sw.addEventListener('push', (event) => {
 
 	try {
 		const payload = event.data.json();
-		const title = payload.title || 'Grão Certo';
-		const options: NotificationOptions = {
-			body: payload.body,
+
+		// Use translation keys if available, otherwise fallback to direct title/body
+		const title = payload.title_key ? t(payload.title_key) : payload.title || 'Grão Certo';
+		const body = payload.body_key ? t(payload.body_key, payload.body_args) : payload.body;
+
+		const options: ShowNotificationOptions = {
+			body: body,
 			icon: payload.icon || DEFAULT_ICON,
 			badge: DEFAULT_BADGE,
 			data: payload.data

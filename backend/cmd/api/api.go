@@ -234,9 +234,12 @@ func (s *APIServer) pushRecurringNotifications(notificationStore *notification.S
 
 	for _, n := range unpushed {
 		payload := notification.PushNotificationPayload{
-			Title: "Pagamentos Próximos",
-			Body:  fmt.Sprintf("Você tem %d pagamentos previstos para amanhã.", n.DebitCount+n.CreditCount),
-			Icon:  "/logo.png",
+			TitleKey: "notifications.push-title-recurring",
+			BodyKey:  "notifications.push-body-recurring",
+			BodyArgs: map[string]any{
+				"count": n.DebitCount + n.CreditCount,
+			},
+			Icon: "/logo.png",
 			Data: map[string]any{
 				"url": "/notifications",
 			},

@@ -106,7 +106,7 @@
 	async function handleTestPush() {
 		try {
 			await dataService.testPushNotification();
-			toastStore.success('Solicitação de teste enviada!');
+			toastStore.success($t('notifications.test-push-success'));
 		} catch (err) {
 			console.error(err);
 			toastStore.error($t('errors.server-error'));
@@ -405,7 +405,7 @@
 								{#if isRegisteringPush}
 									<span class="loading loading-spinner loading-xs"></span>
 								{/if}
-								Sincronizar Dispositivo
+								{$t('notifications.sync-device')}
 							</button>
 						{:else if !pushSupported}
 							<div class="badge badge-ghost badge-md px-4 py-3 text-xs opacity-50 shadow-sm">
@@ -442,7 +442,7 @@
 								class="lucide lucide-send"
 								><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg
 							>
-							Enviar Notificação de Teste
+							{$t('notifications.test-push')}
 						</button>
 					</div>
 				{/if}

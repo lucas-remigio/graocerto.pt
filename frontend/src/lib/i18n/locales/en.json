@@ -128,6 +128,9 @@
 		"device-push": "Device Push Notifications",
 		"device-push-desc": "Receive notifications directly on your device when there are pending recurring transactions.",
 		"enable-on-device": "Enable on this device",
+		"sync-device": "Sync Device",
+		"test-push": "Send Test Notification",
+		"test-push-success": "Test request sent!",
 		"push-enabled": "Push Enabled",
 		"push-not-supported": "Not supported on this browser",
 		"push-permission-denied": "Notification permission was denied. Please enable it in your browser settings.",
@@ -140,7 +143,11 @@
 		"recurring-due-tomorrow-debits": "You have {count} expenses ({total}) due tomorrow.",
 		"recurring-due-in-days-both": "You have {debitCount} expenses ({debitTotal}) and {creditCount} incomes ({creditTotal}) due in {days} days.",
 		"recurring-due-in-days-credits": "You have {count} incomes ({total}) due in {days} days.",
-		"recurring-due-in-days-debits": "You have {count} expenses ({total}) due in {days} days."
+		"recurring-due-in-days-debits": "You have {count} expenses ({total}) due in {days} days.",
+		"push-title-recurring": "Upcoming Payments",
+		"push-body-recurring": "You have {count} payments due tomorrow.",
+		"test-push-title": "Notification Test 🚀",
+		"test-push-body": "If you are seeing this, Grão Certo is ready to notify you!"
 	},
 
 	"page": {

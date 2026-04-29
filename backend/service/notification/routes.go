@@ -67,9 +67,9 @@ func (h *Handler) TestPush(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := PushNotificationPayload{
-		Title: "Teste de Notificação 🚀",
-		Body:  "Se estás a ver isto, o Grão Certo está pronto para te avisar!",
-		Icon:  "/logo.png",
+		TitleKey: "notifications.test-push-title",
+		BodyKey:  "notifications.test-push-body",
+		Icon:     "/logo.png",
 		Data: map[string]any{
 			"url": "/notifications",
 		},

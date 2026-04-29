@@ -24,10 +24,13 @@ func NewPushService(publicKey, privateKey string) *PushService {
 }
 
 type PushNotificationPayload struct {
-	Title string `json:"title"`
-	Body  string `json:"body"`
-	Icon  string `json:"icon"`
-	Data  any    `json:"data"`
+	Title    string         `json:"title,omitempty"`
+	Body     string         `json:"body,omitempty"`
+	TitleKey string         `json:"title_key,omitempty"`
+	BodyKey  string         `json:"body_key,omitempty"`
+	BodyArgs map[string]any `json:"body_args,omitempty"`
+	Icon     string         `json:"icon"`
+	Data     any            `json:"data"`
 }
 
 func (s *PushService) SendPush(sub *types.PushSubscription, payload PushNotificationPayload) error {
