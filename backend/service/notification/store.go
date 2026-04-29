@@ -84,7 +84,23 @@ func (s *Store) GetNotificationPreferences(userID int) (*types.NotificationPrefe
 	query := `SELECT user_id, enabled, notify_days_ahead, min_total_debit, updated_at
 		FROM notification_preferences
 		WHERE user_id = $1`
-	return db.QuerySingle(s.db, query, scanNotificationPreferencesRow, userID)
+	prefs, err := db.QuerySingle(s.db, query, scanNotificationPreferencesRow, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate push endpoints
+	subs, err := s.GetPushSubscriptionsByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch push subscriptions for preferences: %w", err)
+	}
+
+	prefs.PushEndpoints = make([]string, len(subs))
+	for i, sub := range subs {
+		prefs.PushEndpoints[i] = sub.Endpoint
+	}
+
+	return prefs, nil
 }
 
 func (s *Store) UpdateNotificationPreferences(userID int, payload *types.UpdateNotificationPreferencesPayload) (*types.NotificationPreferences, error) {

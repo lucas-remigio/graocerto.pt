@@ -505,6 +505,7 @@ class DataService {
 		if (res.status !== 200) {
 			throw new Error(`Failed to register push subscription: ${res.status}`);
 		}
+		this.notificationPreferencesCache = null;
 	}
 
 	async unregisterPushSubscription(endpoint: string): Promise<void> {
@@ -512,6 +513,7 @@ class DataService {
 		if (res.status !== 200) {
 			throw new Error(`Failed to unregister push subscription: ${res.status}`);
 		}
+		this.notificationPreferencesCache = null;
 	}
 
 	async testPushNotification(): Promise<void> {

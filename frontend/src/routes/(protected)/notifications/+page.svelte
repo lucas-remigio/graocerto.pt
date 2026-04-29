@@ -22,10 +22,35 @@
 	let pushSupported = $state(false);
 	let pushPermission = $state('default');
 	let isRegisteringPush = $state(false);
+	let currentEndpoint = $state<string | null>(null);
 
 	const vapidKey = import.meta.env.VITE_PUBLIC_VAPID_KEY;
 
 	let currentView: 'list' | 'settings' = $state('list');
+
+	async function getActiveSubscription() {
+		if (!('serviceWorker' in navigator)) return null;
+		try {
+			const registration = await navigator.serviceWorker.ready;
+			const subscription = await registration.pushManager.getSubscription();
+			return subscription;
+		} catch (err) {
+			console.error('Error getting subscription:', err);
+			return null;
+		}
+	}
+
+	async function checkPushStatus() {
+		pushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+		if (typeof Notification !== 'undefined') {
+			pushPermission = Notification.permission;
+		}
+
+		if (pushSupported) {
+			const sub = await getActiveSubscription();
+			currentEndpoint = sub?.endpoint || null;
+		}
+	}
 
 	function urlBase64ToUint8Array(base64String: string) {
 		const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -65,6 +90,9 @@
 					p256dh: subData.keys.p256dh,
 					auth: subData.keys.auth
 				});
+				currentEndpoint = subData.endpoint;
+				// Refresh preferences to get updated push_endpoints list
+				preferences = await dataService.fetchNotificationPreferences();
 				toastStore.success($t('notifications.push-enabled-success'));
 			}
 		} catch (err) {
@@ -85,14 +113,13 @@
 		}
 	}
 
-	function checkPushSupport() {
-		pushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
-		if (typeof Notification !== 'undefined') {
-			pushPermission = Notification.permission;
-		}
-	}
-
 	let unreadCount = $derived(notifications.filter((n) => !n.is_read).length);
+
+	let isActuallyRegistered = $derived(
+		pushPermission === 'granted' &&
+			currentEndpoint !== null &&
+			(preferences?.push_endpoints || []).includes(currentEndpoint)
+	);
 
 	function buildNotificationMessage(notification: NotificationItem): string {
 		if (notification.type !== 'recurring_due_tomorrow') return '';
@@ -274,7 +301,7 @@
 
 	onMount(() => {
 		loadData();
-		checkPushSupport();
+		checkPushStatus();
 	});
 </script>
 
@@ -355,7 +382,7 @@
 						</p>
 					</div>
 					<div class="flex items-center sm:shrink-0">
-						{#if pushPermission === 'granted'}
+						{#if pushPermission === 'granted' && isActuallyRegistered}
 							<div
 								class="flex items-center gap-2.5 rounded-full bg-success/10 px-4 py-2 text-success ring-1 ring-inset ring-success/20 shadow-sm"
 							>
@@ -369,6 +396,17 @@
 									{$t('notifications.push-enabled')}
 								</span>
 							</div>
+						{:else if pushPermission === 'granted' && !isActuallyRegistered}
+							<button
+								class="btn btn-warning btn-md w-full shadow-md transition-all hover:shadow-lg sm:w-auto"
+								onclick={handleRegisterPush}
+								disabled={isRegisteringPush}
+							>
+								{#if isRegisteringPush}
+									<span class="loading loading-spinner loading-xs"></span>
+								{/if}
+								Sincronizar Dispositivo
+							</button>
 						{:else if !pushSupported}
 							<div class="badge badge-ghost badge-md px-4 py-3 text-xs opacity-50 shadow-sm">
 								{$t('notifications.push-not-supported')}

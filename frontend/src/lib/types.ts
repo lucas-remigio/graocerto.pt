@@ -291,6 +291,7 @@ export interface NotificationPreferences {
 	enabled: boolean;
 	notify_days_ahead: number;
 	min_total_debit?: number | null;
+	push_endpoints: string[];
 	updated_at: string;
 }
 

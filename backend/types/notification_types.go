@@ -58,6 +58,7 @@ type NotificationPreferences struct {
 	Enabled         bool     `json:"enabled"`
 	NotifyDaysAhead int      `json:"notify_days_ahead"`
 	MinTotalDebit   *float64 `json:"min_total_debit,omitempty"`
+	PushEndpoints   []string `json:"push_endpoints"`
 	UpdatedAt       string   `json:"updated_at"`
 }
 
