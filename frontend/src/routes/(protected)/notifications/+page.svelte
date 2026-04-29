@@ -95,9 +95,16 @@
 				preferences = await dataService.fetchNotificationPreferences();
 				toastStore.success($t('notifications.push-enabled-success'));
 			}
-		} catch (err) {
+		} catch (err: any) {
 			console.error('Failed to register push:', err);
-			toastStore.error($t('errors.server-error'));
+
+			// Specific check for Brave browser privacy setting
+			const isBrave = (navigator as any).brave !== undefined;
+			if (isBrave && (err.name === 'AbortError' || err.message?.includes('push service error'))) {
+				toastStore.error($t('notifications.push-brave-error'), { timeout: 10000 });
+			} else {
+				toastStore.error($t('notifications.push-general-error'));
+			}
 		} finally {
 			isRegisteringPush = false;
 		}

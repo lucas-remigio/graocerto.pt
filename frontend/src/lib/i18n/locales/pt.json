@@ -134,6 +134,8 @@
 		"push-not-supported": "Não suportado neste navegador",
 		"push-permission-denied": "A permissão de notificação foi negada. Por favor, ativa nas definições do teu navegador.",
 		"push-enabled-success": "Notificações push ativadas com sucesso neste dispositivo!",
+		"push-brave-error": "No Brave, ativa 'Usar serviços da Google para mensagens push' nas definições de privacidade e reinicia o navegador.",
+		"push-general-error": "Falha ao registar. Verifica se estás em modo Incógnito, se tens um Ad-blocker ativo ou se o teu dispositivo suporta notificações.",
 		"target-date": "Agendado para {date}",
 		"recurring-due-tomorrow-title": "Contas para Amanhã",
 		"recurring-due-in-days-title": "Contas em {days} Dias",

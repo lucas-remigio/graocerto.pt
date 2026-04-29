@@ -135,6 +135,8 @@
 		"push-not-supported": "Not supported on this browser",
 		"push-permission-denied": "Notification permission was denied. Please enable it in your browser settings.",
 		"push-enabled-success": "Push notifications enabled successfully on this device!",
+		"push-brave-error": "In Brave, enable 'Use Google services for push messaging' in privacy settings and restart the browser.",
+		"push-general-error": "Registration failed. Check if you are in Incognito mode, have an Ad-blocker active, or if your device supports notifications.",
 		"target-date": "Scheduled for {date}",
 		"recurring-due-tomorrow-title": "Bills Due Tomorrow",
 		"recurring-due-in-days-title": "Bills Due in {days} Days",
