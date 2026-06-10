@@ -21,7 +21,6 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type APIServer struct {
@@ -43,8 +42,6 @@ func (s *APIServer) Run() error {
 	apiV1Router := http.NewServeMux()
 	apiV1Router.HandleFunc("/healthz", s.handleHealthz)
 	apiV1Router.HandleFunc("/readyz", s.handleReadyz)
-
-	router.Handle("/metrics", promhttp.Handler())
 
 	// Initialize all stores first
 	userStore := user.NewStore(s.db)
@@ -110,7 +107,7 @@ func (s *APIServer) Run() error {
 	apiHandlerChain := chainMiddleware(
 		http.StripPrefix("/api/v1", apiV1Router),
 		middlewares.RateLimitMiddleware(rateLimiter),
-		middlewares.PrometheusMetricsMiddleware,
+		middlewares.OpenTelemetryMiddleware("api-v1"),
 		middlewares.StructuredLoggerMiddleware,
 		middlewares.RequestIDMiddleware,
 	)

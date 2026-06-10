@@ -5,27 +5,11 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/utils"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-)
-
-var (
-	httpRequestsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "http_requests_total",
-		Help: "Total number of HTTP requests",
-	}, []string{"method", "status"})
-
-	httpRequestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "http_request_duration_seconds",
-		Help:    "Duration of HTTP requests",
-		Buckets: prometheus.DefBuckets,
-	}, []string{"method", "status"})
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // responseWriter is a wrapper for http.ResponseWriter to capture the status code
@@ -65,7 +49,7 @@ func RequestIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// StructuredLoggerMiddleware logs each request using slog
+// StructuredLoggerMiddleware logs each request using slog, enriched with OTel context
 func StructuredLoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -74,34 +58,24 @@ func StructuredLoggerMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		duration := time.Since(start)
-		requestID := utils.GetRequestID(r.Context())
+		logger := utils.LogWithContext(r.Context())
 
-		slog.Info("HTTP Request",
+		logger.Info("HTTP Request",
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", rw.status,
 			"duration_ms", duration.Milliseconds(),
 			"ip", r.RemoteAddr,
-			"request_id", requestID,
 			"user_agent", r.UserAgent(),
 		)
 	})
 }
 
-// PrometheusMetricsMiddleware records metrics for each request
-func PrometheusMetricsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-
-		next.ServeHTTP(rw, r)
-
-		duration := time.Since(start).Seconds()
-		status := strconv.Itoa(rw.status)
-
-		httpRequestsTotal.WithLabelValues(r.Method, status).Inc()
-		httpRequestDuration.WithLabelValues(r.Method, status).Observe(duration)
-	})
+// OpenTelemetryMiddleware wraps the handler with OTel instrumentation
+func OpenTelemetryMiddleware(operation string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return otelhttp.NewHandler(next, operation)
+	}
 }
 
 func generateID() string {

@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucas-remigio/wallet-tracker/cmd/api"
@@ -13,6 +17,26 @@ import (
 
 func main() {
 	utils.InitLogger()
+
+	// Handle SIGINT (CTRL+C) and SIGTERM gracefully.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// Initialize OpenTelemetry
+	otelShutdown, err := utils.InitOTel(ctx, "wallet-tracker", config.Envs.OTelCollectorEndpoint)
+	if err != nil {
+		slog.Error("Failed to initialize OpenTelemetry", "error", err)
+		// We continue even if OTel fails, but in production, you might want to exit.
+	} else {
+		defer func() {
+			slog.Info("Shutting down OpenTelemetry")
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := otelShutdown(shutdownCtx); err != nil {
+				slog.Error("Failed to shutdown OpenTelemetry", "error", err)
+			}
+		}()
+	}
 
 	var dbURL string
 

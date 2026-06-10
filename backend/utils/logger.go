@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/lucas-remigio/wallet-tracker/config"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type contextKey string
@@ -40,11 +41,22 @@ func GetRequestID(ctx context.Context) string {
 	return ""
 }
 
-// LogWithContext returns a logger with the request ID from the context
+// LogWithContext returns a logger with the request ID and OTel trace context
 func LogWithContext(ctx context.Context) *slog.Logger {
-	id := GetRequestID(ctx)
-	if id != "" {
-		return slog.With("request_id", id)
+	logger := slog.Default()
+
+	// Add request ID if available
+	if id := GetRequestID(ctx); id != "" {
+		logger = logger.With("request_id", id)
 	}
-	return slog.Default()
+
+	// Add OTel trace context if available
+	if span := trace.SpanContextFromContext(ctx); span.IsValid() {
+		logger = logger.With(
+			"trace_id", span.TraceID().String(),
+			"span_id", span.SpanID().String(),
+		)
+	}
+
+	return logger
 }

@@ -26,6 +26,7 @@ type Config struct {
 	VAPIDPublicKey         string
 	VAPIDPrivateKey        string
 	IsProduction           bool
+	OTelCollectorEndpoint  string
 }
 
 var Envs = initConfig()
@@ -52,6 +53,7 @@ func initConfig() Config {
 		VAPIDPublicKey:         getEnv("VAPID_PUBLIC_KEY", ""),
 		VAPIDPrivateKey:        getEnv("VAPID_PRIVATE_KEY", ""),
 		IsProduction:           getEnvAsBool("IS_PRODUCTION", false),
+		OTelCollectorEndpoint:  getEnv("OTEL_COLLECTOR_ENDPOINT", "localhost:4317"),
 	}
 }
 

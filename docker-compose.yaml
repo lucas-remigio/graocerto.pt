@@ -49,6 +49,7 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME}
+      - OTEL_COLLECTOR_ENDPOINT=vps-otel-collector:4317
 
   websockets:
     profiles:
