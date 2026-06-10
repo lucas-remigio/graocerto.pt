@@ -13,6 +13,8 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/cmd/api"
 	"github.com/lucas-remigio/wallet-tracker/config"
 	"github.com/lucas-remigio/wallet-tracker/utils"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 func main() {
@@ -49,7 +51,10 @@ func main() {
 	}
 
 	// Open the Postgres database connection
-	pgdb, err := sql.Open("pgx", dbURL)
+	pgdb, err := otelsql.Open("pgx", dbURL,
+		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
+		otelsql.WithDBName("wallet_tracker"),
+	)
 	if err != nil {
 		slog.Error("Failed to open database", "error", err)
 		os.Exit(1)
