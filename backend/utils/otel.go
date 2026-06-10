@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -78,6 +81,22 @@ func InitOTel(ctx context.Context, serviceName, collectorEndpoint string) (func(
 	)
 	otel.SetMeterProvider(mp)
 	shutdownFuncs = append(shutdownFuncs, mp.Shutdown)
+
+	// Set up Logger
+	logExporter, err := otlploggrpc.New(ctx,
+		otlploggrpc.WithEndpoint(collectorEndpoint),
+		otlploggrpc.WithInsecure(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create log exporter: %w", err)
+	}
+
+	lp := log.NewLoggerProvider(
+		log.WithProcessor(log.NewBatchProcessor(logExporter)),
+		log.WithResource(res),
+	)
+	global.SetLoggerProvider(lp)
+	shutdownFuncs = append(shutdownFuncs, lp.Shutdown)
 
 	return shutdown, nil
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/lucas-remigio/wallet-tracker/config"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -15,19 +16,65 @@ const RequestIDKey contextKey = "request_id"
 
 // InitLogger initializes the global slog logger based on the environment
 func InitLogger() {
-	var handler slog.Handler
+	var stdoutHandler slog.Handler
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}
 
+	// 1. Stdout Handler (for Docker logs / CLI)
 	if config.Envs.IsProduction {
-		handler = slog.NewJSONHandler(os.Stdout, opts)
+		stdoutHandler = slog.NewJSONHandler(os.Stdout, opts)
 	} else {
-		handler = slog.NewTextHandler(os.Stdout, opts)
+		stdoutHandler = slog.NewTextHandler(os.Stdout, opts)
 	}
 
-	logger := slog.New(handler)
+	// 2. OTel Handler (for Loki)
+	otelHandler := otelslog.NewHandler("wallet-tracker")
+
+	// 3. Combined Multi-Handler
+	logger := slog.New(newMultiHandler(stdoutHandler, otelHandler))
 	slog.SetDefault(logger)
+}
+
+// multiHandler implements slog.Handler and fans out to multiple handlers
+type multiHandler struct {
+	handlers []slog.Handler
+}
+
+func newMultiHandler(handlers ...slog.Handler) slog.Handler {
+	return &multiHandler{handlers: handlers}
+}
+
+func (m *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *multiHandler) Handle(ctx context.Context, record slog.Record) error {
+	for _, h := range m.handlers {
+		_ = h.Handle(ctx, record)
+	}
+	return nil
+}
+
+func (m *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newHandlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		newHandlers[i] = h.WithAttrs(attrs)
+	}
+	return &multiHandler{handlers: newHandlers}
+}
+
+func (m *multiHandler) WithGroup(name string) slog.Handler {
+	newHandlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		newHandlers[i] = h.WithGroup(name)
+	}
+	return &multiHandler{handlers: newHandlers}
 }
 
 // GetRequestID returns the request ID from the context if it exists
