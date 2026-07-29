@@ -433,6 +433,8 @@
 		"delete-transaction": "Delete Transaction",
 		"with-category": "with category",
 		"delete-transaction-confirm": "Are you sure you want to delete this transaction",
+		"reject-transaction": "Reject Transaction",
+		"reject-transaction-confirm": "Are you sure you want to reject this pending transaction",
 		"delete-account-confirm": "Are you sure you want to delete the account"
 	},
 

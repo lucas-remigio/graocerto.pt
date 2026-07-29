@@ -345,6 +345,11 @@
 			const response = await dataService.approvePendingTransaction(transaction);
 			updateAccountAndMonths(response);
 			upsertTransaction(response.transaction);
+
+			// Transfers approve both sides; reflect the paired account too.
+			if (response.is_transfer) {
+				applyPairedAccountBalance(response);
+			}
 			refreshCachesAndNotify();
 			toastStore.success($t('common.success'));
 		} catch (err) {
@@ -374,13 +379,9 @@
 		}
 	}
 
-	function handleTransferDeletion(
-		deletedTransaction: TransactionDto,
-		response: TransactionChangeResponse
-	) {
+	function applyPairedAccountBalance(response: TransactionChangeResponse) {
 		if (!response.paired_account_token) return;
 
-		// Find and update the paired account
 		const pairedAccount = accounts.find((acc) => acc.token === response.paired_account_token);
 		if (pairedAccount && response.paired_account_balance !== undefined) {
 			pairedAccount.balance = response.paired_account_balance;
@@ -388,6 +389,15 @@
 		if (pairedAccount && response.paired_account_pending_balance !== undefined) {
 			pairedAccount.pending_balance = response.paired_account_pending_balance;
 		}
+	}
+
+	function handleTransferDeletion(
+		deletedTransaction: TransactionDto,
+		response: TransactionChangeResponse
+	) {
+		if (!response.paired_account_token) return;
+
+		applyPairedAccountBalance(response);
 
 		// If we're currently viewing the paired account, update its view
 		if (isViewingPairedAccount(response.paired_account_token)) {

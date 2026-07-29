@@ -467,20 +467,15 @@ func (s *Store) GenerateTransactionForRuleNow(ctx context.Context, id int, userI
 
 	rules := []*types.RecurringRule{current}
 	if current.RecurringTransferGroupID != nil && *current.RecurringTransferGroupID != "" {
-		query := `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
-			FROM recurring_rules
-			WHERE user_id = $1 AND recurring_transfer_group_id = $2
-			ORDER BY transaction_type_id DESC`
-		rules, err = db.QueryList(s.db, query, scanRecurringRuleRows, userID, *current.RecurringTransferGroupID)
+		rules, err = s.getRecurringTransferRules(*current.RecurringTransferGroupID, userID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load recurring transfer rules: %w", err)
 		}
-	}
-
-	for _, rule := range rules {
-		if err := s.generatePendingTransactionForRule(rule); err != nil {
+		if err := s.generatePendingTransferForGroup(rules); err != nil {
 			return nil, err
 		}
+	} else if err := s.generatePendingTransactionForRule(current); err != nil {
+		return nil, err
 	}
 
 	refreshed := make([]*types.RecurringRule, 0, len(rules))
@@ -509,13 +504,60 @@ func (s *Store) GeneratePendingTransactionsForDueRules() error {
 		return fmt.Errorf("failed to query due recurring rules: %w", err)
 	}
 
-	for _, rule := range rules {
-		if err := s.generatePendingTransactionForRule(rule); err != nil {
+	for _, unit := range planPendingGeneration(rules) {
+		if unit.Transfer != nil {
+			pair, err := s.getRecurringTransferRules(*unit.Transfer.RecurringTransferGroupID, unit.Transfer.UserID)
+			if err != nil {
+				return fmt.Errorf("failed to load recurring transfer rules: %w", err)
+			}
+			if err := s.generatePendingTransferForGroup(pair); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := s.generatePendingTransactionForRule(unit.Single); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// generationUnit is one thing to generate: either a standalone rule (Single) or
+// a recurring transfer group (Transfer holds a representative rule of the group,
+// carrying its group id and user id).
+type generationUnit struct {
+	Single   *types.RecurringRule
+	Transfer *types.RecurringRule
+}
+
+// planPendingGeneration splits due rules into generation units, collapsing both
+// sides of a recurring transfer into a single unit so the pair is generated
+// once (and as a linked transfer), while standalone rules pass through as-is.
+func planPendingGeneration(rules []*types.RecurringRule) []generationUnit {
+	var units []generationUnit
+	seenGroups := make(map[string]bool)
+	for _, rule := range rules {
+		if rule.RecurringTransferGroupID != nil && *rule.RecurringTransferGroupID != "" {
+			groupID := *rule.RecurringTransferGroupID
+			if seenGroups[groupID] {
+				continue
+			}
+			seenGroups[groupID] = true
+			units = append(units, generationUnit{Transfer: rule})
+			continue
+		}
+		units = append(units, generationUnit{Single: rule})
+	}
+	return units
+}
+
+func (s *Store) getRecurringTransferRules(groupID string, userID int) ([]*types.RecurringRule, error) {
+	query := `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
+		FROM recurring_rules
+		WHERE user_id = $1 AND recurring_transfer_group_id = $2
+		ORDER BY transaction_type_id DESC`
+	return db.QueryList(s.db, query, scanRecurringRuleRows, userID, groupID)
 }
 
 func (s *Store) generatePendingTransactionForRule(rule *types.RecurringRule) error {
@@ -582,6 +624,95 @@ func (s *Store) generatePendingTransactionForRule(rule *types.RecurringRule) err
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit recurring generation: %w", err)
+	}
+	return nil
+}
+
+// generatePendingTransferForGroup generates the pending transactions for both
+// sides of a recurring transfer as a single linked transfer: both rows share a
+// freshly generated transfer_group_id so approving/rejecting one side later acts
+// on both. It is idempotent per due date and advances both rules together.
+func (s *Store) generatePendingTransferForGroup(rules []*types.RecurringRule) error {
+	if len(rules) != 2 {
+		return fmt.Errorf("invalid recurring transfer group: expected 2 rules, found %d", len(rules))
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin recurring transfer generation: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Idempotency: if a pending transfer row for the first side already exists on
+	// its due date, assume the pair was already generated for this occurrence.
+	var existingCount int
+	err = tx.QueryRow(
+		`SELECT COUNT(1)
+		 FROM transactions
+		 WHERE account_token = $1
+		   AND category_id = $2
+		   AND is_pending = true
+		   AND transfer_group_id IS NOT NULL
+		   AND DATE(date) = $3::date
+		   AND description = $4
+		   AND amount = $5`,
+		rules[0].AccountToken,
+		rules[0].CategoryID,
+		rules[0].NextRunDate,
+		rules[0].Description,
+		rules[0].Amount,
+	).Scan(&existingCount)
+	if err != nil {
+		return fmt.Errorf("failed to check pending transfer idempotency: %w", err)
+	}
+
+	if existingCount == 0 {
+		transferGroupID, err := utils.GenerateUUID()
+		if err != nil {
+			return fmt.Errorf("failed to generate transfer group id: %w", err)
+		}
+
+		for _, rule := range rules {
+			_, err = tx.Exec(
+				`INSERT INTO transactions
+				(account_token, transaction_type_id, category_id, amount, description, date, balance, transfer_group_id, is_pending)
+				SELECT $1, c.transaction_type_id, $2, $3, $4, $5::date, 0, $6, true
+				FROM categories c
+				WHERE c.id = $2`,
+				rule.AccountToken,
+				rule.CategoryID,
+				rule.Amount,
+				rule.Description,
+				rule.NextRunDate,
+				transferGroupID,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to insert pending transfer transaction for recurring rule %d: %w", rule.ID, err)
+			}
+		}
+	}
+
+	for _, rule := range rules {
+		nextDate, err := calculateNextRunDate(rule.NextRunDate, rule.Frequency, rule.IntervalValue)
+		if err != nil {
+			return fmt.Errorf("failed to calculate next run date: %w", err)
+		}
+
+		_, err = tx.Exec(
+			`UPDATE recurring_rules
+			SET last_generated_date = $1::date, next_run_date = $2::date, updated_at = CURRENT_TIMESTAMP
+			WHERE id = $3`,
+			rule.NextRunDate,
+			nextDate,
+			rule.ID,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update recurring next run date: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit recurring transfer generation: %w", err)
 	}
 	return nil
 }

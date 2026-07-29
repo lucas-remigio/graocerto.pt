@@ -6,6 +6,57 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/types"
 )
 
+func strPtr(s string) *string { return &s }
+
+func TestPlanPendingGeneration(t *testing.T) {
+	groupA := "group-a"
+
+	rules := []*types.RecurringRule{
+		{ID: 1}, // standalone
+		{ID: 2, UserID: 7, RecurringTransferGroupID: &groupA}, // transfer side A
+		{ID: 3, UserID: 7, RecurringTransferGroupID: &groupA}, // transfer side B (same group)
+		{ID: 4}, // standalone
+		{ID: 5, RecurringTransferGroupID: strPtr("")}, // empty group => standalone
+	}
+
+	units := planPendingGeneration(rules)
+
+	if len(units) != 4 {
+		t.Fatalf("expected 4 units, got %d", len(units))
+	}
+
+	// Transfer group collapses to a single unit carrying a representative rule.
+	transferUnits := 0
+	for _, u := range units {
+		if u.Transfer != nil {
+			transferUnits++
+			if u.Transfer.RecurringTransferGroupID == nil || *u.Transfer.RecurringTransferGroupID != groupA {
+				t.Fatalf("transfer unit has wrong group id: %+v", u.Transfer)
+			}
+			if u.Transfer.UserID != 7 {
+				t.Fatalf("transfer unit lost user id: %+v", u.Transfer)
+			}
+			if u.Single != nil {
+				t.Fatalf("unit should not be both single and transfer")
+			}
+		}
+	}
+	if transferUnits != 1 {
+		t.Fatalf("expected transfer group to collapse into 1 unit, got %d", transferUnits)
+	}
+
+	// The 3 non-transfer rows (ids 1, 4, 5) should each be a standalone unit.
+	singles := 0
+	for _, u := range units {
+		if u.Single != nil {
+			singles++
+		}
+	}
+	if singles != 3 {
+		t.Fatalf("expected 3 standalone units, got %d", singles)
+	}
+}
+
 func TestCalculateNextRunDate(t *testing.T) {
 	tests := []struct {
 		name       string

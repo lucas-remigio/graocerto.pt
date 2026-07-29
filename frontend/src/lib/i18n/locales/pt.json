@@ -436,6 +436,8 @@
 		"delete-transaction": "Eliminar Transação",
 		"with-category": "com categoria",
 		"delete-transaction-confirm": "Tem certeza de que deseja excluir esta transação",
+		"reject-transaction": "Rejeitar Transação",
+		"reject-transaction-confirm": "Tem certeza de que deseja rejeitar esta transação pendente",
 		"delete-account-confirm": "Tem certeza de que deseja excluir a conta"
 	},
 

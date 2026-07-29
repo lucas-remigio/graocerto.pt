@@ -610,6 +610,19 @@ func (s *Store) DeleteTransaction(transactionId int, userId int) (balance *float
 	}
 
 	if tx.IsPending {
+		// Pending transfers are two linked rows; drop both so no orphan side remains.
+		// Pending rows are not yet applied to balances, so no balance adjustment is needed.
+		if tx.TransferGroupId != nil && *tx.TransferGroupId != "" {
+			_, err = db.ExecWithValidation(s.db,
+				`DELETE FROM transactions
+				 WHERE transfer_group_id = $1
+				   AND account_token IN (SELECT token FROM accounts WHERE user_id = $2)`,
+				*tx.TransferGroupId, userId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete pending transfer: %w", err)
+			}
+			return &account.Balance, nil
+		}
 		_, err = db.ExecWithValidation(s.db, "DELETE FROM transactions WHERE id = $1", tx.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to delete pending transaction: %w", err)
@@ -765,6 +778,13 @@ func (s *Store) DeleteTransactionAndReturn(transactionId int, userId int) (*type
 		return nil, fmt.Errorf("failed to get transaction DTO: %w", err)
 	}
 
+	// Pending rows are not yet applied to balances, so deleting one is a rejection:
+	// route it through the pending path, which drops both sides of a transfer
+	// without the confirmed-transfer balance adjustments.
+	if transactionDTO.IsPending {
+		return s.RejectPendingTransactionAndReturn(transactionId, userId)
+	}
+
 	// Check if this is a transfer
 	isTransfer := transactionDTO.TransferGroupId != nil && *transactionDTO.TransferGroupId != ""
 
@@ -876,6 +896,11 @@ func (s *Store) ApprovePendingTransactionAndReturn(transactionID int, userID int
 		return nil, err
 	}
 
+	// Transfers are two linked transactions; approve both sides together.
+	if txData.TransferGroupId != nil && *txData.TransferGroupId != "" {
+		return s.approvePendingTransferAndReturn(txData, userID)
+	}
+
 	catStore := category.NewStore(s.db)
 	txCategory, err := catStore.GetCategoryById(txData.CategoryId, userID)
 	if err != nil {
@@ -933,6 +958,130 @@ func (s *Store) ApprovePendingTransactionAndReturn(transactionID int, userID int
 	}, nil
 }
 
+// approvePendingTransferAndReturn approves both pending sides of a transfer
+// atomically, applying each leg to its account balance, and returns the change
+// for the requested side plus its paired account (mirrors DeleteTransactionAndReturn).
+func (s *Store) approvePendingTransferAndReturn(current *types.Transaction, userID int) (*types.TransactionChangeResponse, error) {
+	transferGroupID := *current.TransferGroupId
+
+	query := `
+        SELECT t.id, t.account_token, t.transaction_type_id, t.category_id, t.amount, t.description,
+               t.date, t.balance, t.is_pending, t.transfer_group_id, t.created_at
+        FROM transactions t
+        INNER JOIN accounts a ON t.account_token = a.token
+        WHERE t.transfer_group_id = $1 AND a.user_id = $2
+    `
+	rows, err := s.db.Query(query, transferGroupID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query transfer transactions: %w", err)
+	}
+	defer rows.Close()
+
+	var transactions []*types.Transaction
+	for rows.Next() {
+		tx, err := scanTransaction(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		transactions = append(transactions, tx)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating transactions: %w", err)
+	}
+	if len(transactions) != 2 {
+		return nil, fmt.Errorf("invalid transfer: expected 2 transactions, found %d", len(transactions))
+	}
+
+	dbTx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin approval transaction: %w", err)
+	}
+	defer dbTx.Rollback()
+
+	var currentToken, pairedToken string
+	var currentBalance, pairedBalance float64
+
+	for _, tx := range transactions {
+		if !tx.IsPending {
+			return nil, fmt.Errorf("transaction is no longer pending")
+		}
+
+		account, err := s.accountStore.GetAccountByToken(tx.AccountToken, userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get account: %w", err)
+		}
+
+		amount := tx.Amount
+		if tx.TransactionTypeId == int(types.DebitTransactionType) {
+			amount *= -1
+		}
+		newBalance := account.Balance + amount
+
+		result, err := dbTx.Exec(
+			"UPDATE transactions SET is_pending = false, balance = $1 WHERE id = $2 AND is_pending = true",
+			newBalance, tx.ID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to approve pending transaction: %w", err)
+		}
+		affected, _ := result.RowsAffected()
+		if affected == 0 {
+			return nil, fmt.Errorf("transaction is no longer pending")
+		}
+
+		_, err = dbTx.Exec("UPDATE accounts SET balance = $1 WHERE token = $2", newBalance, tx.AccountToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update account balance: %w", err)
+		}
+
+		if tx.ID == current.ID {
+			currentToken = tx.AccountToken
+			currentBalance = newBalance
+		} else {
+			pairedToken = tx.AccountToken
+			pairedBalance = newBalance
+		}
+	}
+
+	if err := dbTx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit pending approval: %w", err)
+	}
+
+	dto, err := s.GetTransactionDTOById(current.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch approved transaction: %w", err)
+	}
+	currentMonths, err := s.GetAvailableTransactionMonthsByAccountToken(currentToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get available months: %w", err)
+	}
+	pairedMonths, err := s.GetAvailableTransactionMonthsByAccountToken(pairedToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get paired account months: %w", err)
+	}
+
+	_, currentPendingBalance, err := s.getAccountBalances(currentToken, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current account pending balance: %w", err)
+	}
+	_, pairedPendingBalance, err := s.getAccountBalances(pairedToken, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get paired account pending balance: %w", err)
+	}
+
+	return &types.TransactionChangeResponse{
+		Transaction:                 dto,
+		AccountBalance:              &currentBalance,
+		AccountPendingBalance:       &currentPendingBalance,
+		Months:                      currentMonths,
+		IsTransfer:                  true,
+		PairedAccountToken:          &pairedToken,
+		PairedAccountBalance:        &pairedBalance,
+		PairedAccountPendingBalance: &pairedPendingBalance,
+		PairedAccountMonths:         pairedMonths,
+	}, nil
+}
+
 func (s *Store) RejectPendingTransactionAndReturn(transactionID int, userID int) (*types.TransactionChangeResponse, error) {
 	dto, err := s.GetTransactionDTOById(transactionID)
 	if err != nil {
@@ -940,6 +1089,17 @@ func (s *Store) RejectPendingTransactionAndReturn(transactionID int, userID int)
 	}
 	if !dto.IsPending {
 		return nil, fmt.Errorf("transaction is not pending")
+	}
+
+	// Transfers reject both sides; resolve the paired account before deletion so
+	// the response can update it too (only pending balances change, not balances).
+	var pairedToken string
+	isTransfer := dto.TransferGroupId != nil && *dto.TransferGroupId != ""
+	if isTransfer {
+		pairedToken, err = s.getPairedAccountToken(*dto.TransferGroupId, dto.AccountToken, userID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	balance, err := s.DeleteTransaction(transactionID, userID)
@@ -957,12 +1117,51 @@ func (s *Store) RejectPendingTransactionAndReturn(transactionID int, userID int)
 		return nil, fmt.Errorf("failed to get account pending balance: %w", err)
 	}
 
-	return &types.TransactionChangeResponse{
+	response := &types.TransactionChangeResponse{
 		Transaction:           dto,
 		AccountBalance:        balance,
 		AccountPendingBalance: &pendingBalance,
 		Months:                availableMonths,
-	}, nil
+		IsTransfer:            isTransfer,
+	}
+
+	if isTransfer && pairedToken != "" {
+		pairedBalance, pairedPendingBalance, err := s.getAccountBalances(pairedToken, userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get paired account pending balance: %w", err)
+		}
+		pairedMonths, err := s.GetAvailableTransactionMonthsByAccountToken(pairedToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get paired account months: %w", err)
+		}
+		response.PairedAccountToken = &pairedToken
+		response.PairedAccountBalance = &pairedBalance
+		response.PairedAccountPendingBalance = &pairedPendingBalance
+		response.PairedAccountMonths = pairedMonths
+	}
+
+	return response, nil
+}
+
+// getPairedAccountToken returns the other account token in a transfer group for
+// the given user (the side that is not currentToken).
+func (s *Store) getPairedAccountToken(transferGroupID, currentToken string, userID int) (string, error) {
+	query := `
+        SELECT t.account_token
+        FROM transactions t
+        INNER JOIN accounts a ON t.account_token = a.token
+        WHERE t.transfer_group_id = $1 AND a.user_id = $2 AND t.account_token <> $3
+        LIMIT 1
+    `
+	var pairedToken string
+	err := s.db.QueryRow(query, transferGroupID, userID, currentToken).Scan(&pairedToken)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to resolve paired account token: %w", err)
+	}
+	return pairedToken, nil
 }
 
 // Store implementation

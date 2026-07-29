@@ -93,6 +93,7 @@
 	let showCreateTransactionModal = false;
 	let showEditTransactionModal = false;
 	let showDeleteTransactionModal = false;
+	let confirmAction: 'delete' | 'reject' = 'delete';
 	let showTransferModal = false;
 	let showFilters = false; // Add this state
 
@@ -199,6 +200,7 @@
 	}
 
 	function handleDeleteTransaction(transaction: TransactionDto) {
+		confirmAction = 'delete';
 		showDeleteTransactionModal = true;
 		selectedTransaction = transaction;
 	}
@@ -208,7 +210,9 @@
 	}
 
 	function handleRejectPendingTransaction(transaction: TransactionDto) {
-		dispatch('rejectPendingTransaction', { transaction });
+		confirmAction = 'reject';
+		showDeleteTransactionModal = true;
+		selectedTransaction = transaction;
 	}
 
 	function closeDeleteTransactionModal() {
@@ -221,7 +225,8 @@
 
 	function handleDeleteTransactionConfirm() {
 		closeDeleteTransactionModal();
-		dispatch('deleteTransaction', { transaction: selectedTransaction! });
+		const eventName = confirmAction === 'reject' ? 'rejectPendingTransaction' : 'deleteTransaction';
+		dispatch(eventName, { transaction: selectedTransaction! });
 	}
 
 	const dispatch = createEventDispatcher();
@@ -470,8 +475,12 @@
 
 {#if showDeleteTransactionModal}
 	<ConfirmAction
-		title={`${$t('modals.delete-transaction')}`}
-		message={`${$t('modals.delete-transaction-confirm')} ${getTransactionDetails(selectedTransaction!)}? ${$t('modals.cannot-be-undone')}`}
+		title={confirmAction === 'reject'
+			? `${$t('modals.reject-transaction')}`
+			: `${$t('modals.delete-transaction')}`}
+		message={confirmAction === 'reject'
+			? `${$t('modals.reject-transaction-confirm')} ${getTransactionDetails(selectedTransaction!)}?`
+			: `${$t('modals.delete-transaction-confirm')} ${getTransactionDetails(selectedTransaction!)}? ${$t('modals.cannot-be-undone')}`}
 		type="danger"
 		onConfirm={handleDeleteTransactionConfirm}
 		onCancel={handleDeleteTransactionCancel}
