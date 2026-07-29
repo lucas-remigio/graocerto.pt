@@ -9,14 +9,22 @@
 		RecurringRule
 	} from '$lib/types';
 	import { t } from '$lib/i18n';
-	import { ArrowRightLeft, BarChart3, List, Plus, Repeat } from 'lucide-svelte';
+	import { ArrowRightLeft, BarChart3, CalendarDays, Filter, List, Plus, Repeat } from 'lucide-svelte';
 	import RecurringRuleModal from '$components/RecurringRuleModal.svelte';
 	import RecurringTransferModal from '$components/RecurringTransferModal.svelte';
 	import RecurringForecastTable from '$components/RecurringForecastTable.svelte';
+	import RecurringForecastCalendar from '$components/RecurringForecastCalendar.svelte';
 	import RecurringRulesTable from '$components/RecurringRulesTable.svelte';
+	import TransactionFilters from '$components/TransactionFilters.svelte';
 	import TransactionsStats from '$components/TransactionsStats.svelte';
 	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
 	import ConfirmAction from '$components/ConfirmAction.svelte';
+	import { TransactionTypeId, TransactionTypes, TransactionTypeSlug } from '$lib/transaction_types_types';
+	import {
+		countActiveFilters,
+		emptyTransactionFilters,
+		matchesTransactionFilters
+	} from '$lib/utils/transactionFilters';
 	import { toastStore } from '$lib/stores/toast';
 
 	let loading = $state(true);
@@ -30,6 +38,8 @@
 	let selectedTransferGroupId: string | null = $state(null);
 	let selectedTransferRules: RecurringRule[] = $state([]);
 	let pendingDeleteRuleId: number | null = $state(null);
+	let showGenerateRecurringModal = $state(false);
+	let pendingGenerateRule: RecurringRule | null = $state(null);
 	let accounts: Account[] = $state([]);
 	let categories: CategoryDto[] = $state([]);
 	let accountsLoading = $state(false);
@@ -39,12 +49,37 @@
 	let forecastDays: RecurringForecastRangeDays = $state(30);
 	let forecastItems: RecurringForecastItem[] = $state([]);
 	let forecastLoading = $state(false);
+	let forecastLayout = $state<'calendar' | 'list'>('calendar');
+	let showFilters = $state(false);
+	let filters = $state(emptyTransactionFilters());
+
+	const recurringTypeSlugById: Record<number, string> = {
+		[TransactionTypeId.Credit]: TransactionTypeSlug.Credit,
+		[TransactionTypeId.Debit]: TransactionTypeSlug.Debit
+	};
+	const recurringFilterTypes = TransactionTypes.filter(
+		(type) => type.type_slug !== TransactionTypeSlug.Transfer
+	);
 
 	let filteredRecurringRules = $derived(
 		selectedAccount
 			? recurringRules.filter((rule) => rule.account_token === selectedAccount!.token)
 			: []
 	);
+
+	let displayedRecurringRules = $derived(
+		filteredRecurringRules.filter((rule) =>
+			matchesTransactionFilters(filters, {
+				description: rule.description,
+				categoryId: rule.category_id,
+				typeSlug: recurringTypeSlugById[rule.transaction_type_id] ?? '',
+				date: rule.next_run_date,
+				amount: rule.amount
+			})
+		)
+	);
+
+	let activeFiltersCount = $derived(countActiveFilters(filters));
 
 	let forecastSummaryItems = $derived(
 		forecastItems.map((item) => ({
@@ -56,7 +91,7 @@
 	let selectedSummaryItems = $derived(
 		recurringViewMode === 'forecast'
 			? forecastSummaryItems
-			: filteredRecurringRules.map((rule) => ({
+			: displayedRecurringRules.map((rule) => ({
 					amount: rule.amount,
 					typeId: rule.transaction_type_id
 				}))
@@ -161,6 +196,42 @@
 		showDeleteRecurringModal = false;
 		pendingDeleteRuleId = null;
 		await syncForecastIfNeeded();
+	}
+
+	function handleFilter(event: CustomEvent) {
+		filters = event.detail;
+	}
+
+	function toggleFilters() {
+		showFilters = !showFilters;
+	}
+
+	function handleRequestGenerateRule(rule: RecurringRule) {
+		pendingGenerateRule = rule;
+		showGenerateRecurringModal = true;
+	}
+
+	function handleGenerateRecurringCancel() {
+		showGenerateRecurringModal = false;
+		pendingGenerateRule = null;
+	}
+
+	async function handleGenerateRecurringConfirm() {
+		if (!pendingGenerateRule) return;
+		try {
+			const updatedRules = await dataService.generateRecurringRuleNow(pendingGenerateRule.id);
+			const updatedIds = new Set(updatedRules.map((rule) => rule.id));
+			const withoutUpdated = recurringRules.filter((rule) => !updatedIds.has(rule.id));
+			recurringRules = [...updatedRules, ...withoutUpdated];
+			toastStore.success($t('recurring.generate-recurring-success'));
+			await syncForecastIfNeeded();
+		} catch (err) {
+			console.error(err);
+			toastStore.error($t('errors.server-error'));
+		} finally {
+			showGenerateRecurringModal = false;
+			pendingGenerateRule = null;
+		}
 	}
 
 	async function handleNewRecurringRule(event: CustomEvent<RecurringRule>) {
@@ -288,12 +359,27 @@
 						{$t('recurring.templates-active-label')}
 					</span>
 					<span class="badge badge-primary badge-md font-bold text-base-100">
-						{filteredRecurringRules.length}
+						{recurringViewMode === 'rules'
+							? displayedRecurringRules.length
+							: filteredRecurringRules.length}
 					</span>
 				</div>
 			</div>
 
 			<div class="order-3 flex w-full items-center justify-center gap-4 md:flex-1 md:justify-end">
+				{#if recurringViewMode === 'rules'}
+					<button
+						class="btn btn-outline gap-2"
+						class:btn-active={showFilters}
+						aria-label={$t('transactions.filters')}
+						onclick={toggleFilters}
+					>
+						<Filter size={20} />
+						{#if activeFiltersCount > 0}
+							<span class="badge badge-primary badge-sm">{activeFiltersCount}</span>
+						{/if}
+					</button>
+				{/if}
 				<button
 					class="btn btn-secondary shadow-lg"
 					aria-label={$t('recurring.new-recurring-transfer')}
@@ -311,7 +397,7 @@
 		{#if loading}
 			<div class="loading loading-spinner loading-lg"></div>
 		{:else if recurringViewMode === 'forecast'}
-			<div class="mb-3 mt-1 flex justify-center">
+			<div class="mb-3 mt-1 flex flex-wrap items-center justify-center gap-3">
 				<div class="btn-group">
 					<button
 						class="btn btn-sm {forecastDays === 30 ? 'btn-primary text-base-100' : 'btn-ghost'}"
@@ -332,6 +418,27 @@
 						90d
 					</button>
 				</div>
+
+				<div class="btn-group">
+					<button
+						class="btn btn-sm {forecastLayout === 'calendar'
+							? 'btn-primary text-base-100'
+							: 'btn-ghost'}"
+						onclick={() => (forecastLayout = 'calendar')}
+					>
+						<CalendarDays size={16} class="mr-1" />
+						<span>{$t('recurring.view-calendar')}</span>
+					</button>
+					<button
+						class="btn btn-sm {forecastLayout === 'list'
+							? 'btn-primary text-base-100'
+							: 'btn-ghost'}"
+						onclick={() => (forecastLayout = 'list')}
+					>
+						<List size={16} class="mr-1" />
+						<span>{$t('recurring.view-list')}</span>
+					</button>
+				</div>
 			</div>
 			{#if forecastLoading}
 				<div class="loading loading-spinner loading-lg"></div>
@@ -339,8 +446,14 @@
 				<div class="flex h-40 flex-col items-center justify-center">
 					<p class="text-base-content/70">{$t('recurring.no-forecast-items')}</p>
 				</div>
+			{:else if forecastLayout === 'calendar'}
+				<div class="min-h-0 flex-1 overflow-y-auto pb-4 lg:pr-2">
+					<RecurringForecastCalendar items={forecastItems} {categories} days={forecastDays} />
+				</div>
 			{:else}
-				<RecurringForecastTable items={forecastItems} {categories} />
+				<div class="min-h-0 flex-1 overflow-y-auto pb-4 lg:pr-2">
+					<RecurringForecastTable items={forecastItems} {categories} />
+				</div>
 			{/if}
 		{:else if filteredRecurringRules.length === 0}
 			<div class="flex h-64 flex-col items-center justify-center">
@@ -355,12 +468,28 @@
 				</button>
 			</div>
 		{:else}
-			<RecurringRulesTable
-				recurringRules={filteredRecurringRules}
+			<TransactionFilters
+				show={showFilters}
+				filteredCount={displayedRecurringRules.length}
+				totalCount={filteredRecurringRules.length}
 				{categories}
-				on:editRule={({ detail: { rule } }) => handleEditRule(rule)}
-				on:deleteRule={({ detail: { ruleId } }) => handleRequestDeleteRule(ruleId)}
+				transactionTypes={recurringFilterTypes}
+				on:filter={handleFilter}
 			/>
+
+			{#if displayedRecurringRules.length === 0}
+				<div class="flex h-64 flex-col items-center justify-center">
+					<p class="text-base-content/70">{$t('recurring.no-matching-rules')}</p>
+				</div>
+			{:else}
+				<RecurringRulesTable
+					recurringRules={displayedRecurringRules}
+					{categories}
+					on:editRule={({ detail: { rule } }) => handleEditRule(rule)}
+					on:deleteRule={({ detail: { ruleId } }) => handleRequestDeleteRule(ruleId)}
+					on:generateRule={({ detail: { rule } }) => handleRequestGenerateRule(rule)}
+				/>
+			{/if}
 		{/if}
 	</AccountsSplitLayout>
 </div>
@@ -417,5 +546,15 @@
 		type="danger"
 		onConfirm={handleDeleteRecurringConfirm}
 		onCancel={handleDeleteRecurringCancel}
+	></ConfirmAction>
+{/if}
+
+{#if showGenerateRecurringModal && pendingGenerateRule}
+	<ConfirmAction
+		title={$t('recurring.generate-now')}
+		message={$t('recurring.generate-recurring-confirm')}
+		type="info"
+		onConfirm={handleGenerateRecurringConfirm}
+		onCancel={handleGenerateRecurringCancel}
 	></ConfirmAction>
 {/if}

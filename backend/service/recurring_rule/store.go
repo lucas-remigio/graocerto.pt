@@ -450,6 +450,53 @@ func (s *Store) DeleteRecurringRule(ctx context.Context, id int, userID int) err
 	return nil
 }
 
+// GenerateTransactionForRuleNow creates the pending transaction(s) for a single
+// recurring rule on demand, using the rule's currently configured next_run_date
+// (e.g. the configured monthly execution day of the current month), and advances
+// the rule to its following occurrence. When the rule belongs to a recurring
+// transfer group, both sides of the transfer are generated together so they stay
+// in sync. It returns the affected rules with their refreshed next_run_date.
+func (s *Store) GenerateTransactionForRuleNow(ctx context.Context, id int, userID int) ([]*types.RecurringRule, error) {
+	current, err := s.GetRecurringRuleByID(id, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recurring rule: %w", err)
+	}
+	if err := db.ValidateOwnership(current.UserID, userID, "recurring rule"); err != nil {
+		return nil, err
+	}
+
+	rules := []*types.RecurringRule{current}
+	if current.RecurringTransferGroupID != nil && *current.RecurringTransferGroupID != "" {
+		query := `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
+			FROM recurring_rules
+			WHERE user_id = $1 AND recurring_transfer_group_id = $2
+			ORDER BY transaction_type_id DESC`
+		rules, err = db.QueryList(s.db, query, scanRecurringRuleRows, userID, *current.RecurringTransferGroupID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load recurring transfer rules: %w", err)
+		}
+	}
+
+	for _, rule := range rules {
+		if err := s.generatePendingTransactionForRule(rule); err != nil {
+			return nil, err
+		}
+	}
+
+	refreshed := make([]*types.RecurringRule, 0, len(rules))
+	for _, rule := range rules {
+		updated, err := s.GetRecurringRuleByID(rule.ID, userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reload recurring rule: %w", err)
+		}
+		refreshed = append(refreshed, updated)
+	}
+
+	utils.LogWithContext(ctx).Info("recurring rule generated on demand", "id", id, "user_id", userID)
+
+	return refreshed, nil
+}
+
 func (s *Store) GeneratePendingTransactionsForDueRules() error {
 	const query = `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
 		FROM recurring_rules

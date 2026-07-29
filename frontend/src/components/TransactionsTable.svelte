@@ -30,6 +30,10 @@
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { fade, fly } from 'svelte/transition';
 	import { formatCurrency } from '$lib/utils/currency';
+	import {
+		emptyTransactionFilters,
+		matchesTransactionFilters
+	} from '$lib/utils/transactionFilters';
 	import TransferModal from './TransferModal.svelte';
 	import TransactionFilters from './TransactionFilters.svelte';
 
@@ -160,56 +164,18 @@
 	}
 
 	// Add filter state
-	let filters = {
-		searchTerm: '',
-		categoryId: null as number | null,
-		typeSlug: null as string | null,
-		minAmount: null as number | null,
-		maxAmount: null as number | null,
-		startDate: '',
-		endDate: ''
-	};
+	let filters = emptyTransactionFilters();
 
 	// Filter transactions
-	$: filteredTransactions = transactions.filter((tx) => {
-		// Search term (description)
-		if (
-			filters.searchTerm &&
-			!tx.description?.toLowerCase().includes(filters.searchTerm.toLowerCase())
-		) {
-			return false;
-		}
-
-		// Category filter
-		if (filters.categoryId && tx.category.id !== filters.categoryId) {
-			return false;
-		}
-
-		// Type filter
-		if (filters.typeSlug && tx.transaction_type.type_slug !== filters.typeSlug) {
-			return false;
-		}
-
-		// Amount range
-		if (filters.minAmount !== null && tx.amount < filters.minAmount) {
-			return false;
-		}
-		if (filters.maxAmount !== null && tx.amount > filters.maxAmount) {
-			return false;
-		}
-
-		// Date range - Compare only the date part (YYYY-MM-DD)
-		const txDate = tx.date.split('T')[0]; // Extract "2025-11-04" from "2025-11-04T00:00:00Z"
-
-		if (filters.startDate && txDate < filters.startDate) {
-			return false;
-		}
-		if (filters.endDate && txDate > filters.endDate) {
-			return false;
-		}
-
-		return true;
-	});
+	$: filteredTransactions = transactions.filter((tx) =>
+		matchesTransactionFilters(filters, {
+			description: tx.description,
+			categoryId: tx.category.id,
+			typeSlug: tx.transaction_type.type_slug,
+			date: tx.date,
+			amount: tx.amount
+		})
+	);
 
 	function openCreateTransactionModal() {
 		showCreateTransactionModal = true;

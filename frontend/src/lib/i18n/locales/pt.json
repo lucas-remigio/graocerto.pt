@@ -285,6 +285,8 @@
 		"execution-weekday-help": "Escolhe um dia da semana para recorrência semanal",
 		"view-rules": "Regras",
 		"view-forecast": "Previsão",
+		"view-calendar": "Calendário",
+		"view-list": "Lista",
 		"no-forecast-items": "Sem itens previstos para o intervalo selecionado.",
 		"weekday-sunday": "Domingo",
 		"weekday-monday": "Segunda-feira",
@@ -292,7 +294,11 @@
 		"weekday-wednesday": "Quarta-feira",
 		"weekday-thursday": "Quinta-feira",
 		"weekday-friday": "Sexta-feira",
-		"weekday-saturday": "Sábado"
+		"weekday-saturday": "Sábado",
+		"generate-now": "Criar agora",
+		"generate-recurring-confirm": "Isto vai criar a transação deste ciclo no dia configurado agora mesmo e avançar a regra para a próxima ocorrência.",
+		"generate-recurring-success": "Transação criada com sucesso",
+		"no-matching-rules": "Nenhuma regra recorrente corresponde aos filtros selecionados."
 	},
 
 	"transactions": {

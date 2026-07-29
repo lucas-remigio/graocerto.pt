@@ -282,6 +282,8 @@
 		"execution-weekday-help": "Choose a weekday for weekly recurrence",
 		"view-rules": "Rules",
 		"view-forecast": "Forecast",
+		"view-calendar": "Calendar",
+		"view-list": "List",
 		"no-forecast-items": "No forecasted items for the selected range.",
 		"weekday-sunday": "Sunday",
 		"weekday-monday": "Monday",
@@ -289,7 +291,11 @@
 		"weekday-wednesday": "Wednesday",
 		"weekday-thursday": "Thursday",
 		"weekday-friday": "Friday",
-		"weekday-saturday": "Saturday"
+		"weekday-saturday": "Saturday",
+		"generate-now": "Create now",
+		"generate-recurring-confirm": "This will create the transaction for this cycle on its configured day right now, and move the rule forward to its next occurrence.",
+		"generate-recurring-success": "Transaction created successfully",
+		"no-matching-rules": "No recurring rules match the selected filters."
 	},
 
 	"transactions": {

@@ -3,12 +3,15 @@
 	import { Search, X, Info } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { createEventDispatcher } from 'svelte';
+	import { buildCategoryGroups } from '$lib/utils/categoryUtils';
 
 	export let categories: CategoryDto[] = [];
 	export let transactionTypes: TransactionType[] = [];
 	export let show: boolean = false;
 	export let filteredCount: number = 0;
 	export let totalCount: number = 0;
+
+	$: groupedCategories = buildCategoryGroups(categories);
 
 	let searchTerm = '';
 	let selectedCategory: number | null = null;
@@ -124,10 +127,32 @@
 				<!-- Category -->
 				<select class="select select-bordered" bind:value={selectedCategory}>
 					<option value={null}>{$t('transactions.category')}</option>
-					{#each categories as category}
-						<option value={category.id}>
-							{category.parent_category_id ? '  ↳ ' : ''}{category.category_name}
-						</option>
+					{#each groupedCategories as group}
+						{#if group.parent}
+							{#if group.children.length > 0}
+								<!-- Parent with children -->
+								<option value={group.parent.id} class="font-semibold">
+									{group.parent.category_name}
+								</option>
+								{#each group.children as child}
+									<option value={child.id}>
+										&nbsp;&nbsp;&nbsp;&nbsp;{child.category_name}
+									</option>
+								{/each}
+							{:else}
+								<!-- Parent without children -->
+								<option value={group.parent.id}>
+									{group.parent.category_name}
+								</option>
+							{/if}
+						{:else}
+							<!-- Orphaned children -->
+							{#each group.children as child}
+								<option value={child.id}>
+									{child.category_name}
+								</option>
+							{/each}
+						{/if}
 					{/each}
 				</select>
 
