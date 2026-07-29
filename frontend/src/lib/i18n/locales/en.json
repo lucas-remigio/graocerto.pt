@@ -289,7 +289,10 @@
 		"weekday-wednesday": "Wednesday",
 		"weekday-thursday": "Thursday",
 		"weekday-friday": "Friday",
-		"weekday-saturday": "Saturday"
+		"weekday-saturday": "Saturday",
+		"generate-now": "Create now",
+		"generate-recurring-confirm": "This will create the transaction for this cycle on its configured day right now, and move the rule forward to its next occurrence.",
+		"generate-recurring-success": "Transaction created successfully"
 	},
 
 	"transactions": {

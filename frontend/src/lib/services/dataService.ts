@@ -442,6 +442,15 @@ class DataService {
 		this.clearRecurringRulesCache();
 	}
 
+	async generateRecurringRuleNow(id: number): Promise<RecurringRule[]> {
+		const res = await api_axios.post(`recurring-rules/${id}/generate`);
+		if (res.status !== 200) {
+			throw new Error(`Failed to generate recurring rule: ${res.status}`);
+		}
+		this.clearRecurringRulesCache();
+		return res.data.recurring_rules as RecurringRule[];
+	}
+
 	async fetchNotifications(): Promise<NotificationItem[]> {
 		if (this.isValid(this.notificationsCache)) return this.notificationsCache.data;
 		const res = await api_axios.get('notifications');

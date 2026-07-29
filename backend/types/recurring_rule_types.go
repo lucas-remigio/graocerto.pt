@@ -22,6 +22,7 @@ type RecurringRuleStore interface {
 	GetRecurringRuleByID(id int, userID int) (*RecurringRule, error)
 	GetRecurringRulesByUserID(userID int) ([]*RecurringRule, error)
 	GetRecurringForecast(userID int, accountToken string, days int) (*RecurringForecastResponse, error)
+	GenerateTransactionForRuleNow(ctx context.Context, id int, userID int) ([]*RecurringRule, error)
 	GeneratePendingTransactionsForDueRules() error
 }
 

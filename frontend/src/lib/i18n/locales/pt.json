@@ -292,7 +292,10 @@
 		"weekday-wednesday": "Quarta-feira",
 		"weekday-thursday": "Quinta-feira",
 		"weekday-friday": "Sexta-feira",
-		"weekday-saturday": "Sábado"
+		"weekday-saturday": "Sábado",
+		"generate-now": "Criar agora",
+		"generate-recurring-confirm": "Isto vai criar a transação deste ciclo no dia configurado agora mesmo e avançar a regra para a próxima ocorrência.",
+		"generate-recurring-success": "Transação criada com sucesso"
 	},
 
 	"transactions": {

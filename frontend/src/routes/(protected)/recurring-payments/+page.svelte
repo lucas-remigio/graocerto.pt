@@ -30,6 +30,8 @@
 	let selectedTransferGroupId: string | null = $state(null);
 	let selectedTransferRules: RecurringRule[] = $state([]);
 	let pendingDeleteRuleId: number | null = $state(null);
+	let showGenerateRecurringModal = $state(false);
+	let pendingGenerateRule: RecurringRule | null = $state(null);
 	let accounts: Account[] = $state([]);
 	let categories: CategoryDto[] = $state([]);
 	let accountsLoading = $state(false);
@@ -161,6 +163,34 @@
 		showDeleteRecurringModal = false;
 		pendingDeleteRuleId = null;
 		await syncForecastIfNeeded();
+	}
+
+	function handleRequestGenerateRule(rule: RecurringRule) {
+		pendingGenerateRule = rule;
+		showGenerateRecurringModal = true;
+	}
+
+	function handleGenerateRecurringCancel() {
+		showGenerateRecurringModal = false;
+		pendingGenerateRule = null;
+	}
+
+	async function handleGenerateRecurringConfirm() {
+		if (!pendingGenerateRule) return;
+		try {
+			const updatedRules = await dataService.generateRecurringRuleNow(pendingGenerateRule.id);
+			const updatedIds = new Set(updatedRules.map((rule) => rule.id));
+			const withoutUpdated = recurringRules.filter((rule) => !updatedIds.has(rule.id));
+			recurringRules = [...updatedRules, ...withoutUpdated];
+			toastStore.success($t('recurring.generate-recurring-success'));
+			await syncForecastIfNeeded();
+		} catch (err) {
+			console.error(err);
+			toastStore.error($t('errors.server-error'));
+		} finally {
+			showGenerateRecurringModal = false;
+			pendingGenerateRule = null;
+		}
 	}
 
 	async function handleNewRecurringRule(event: CustomEvent<RecurringRule>) {
@@ -360,6 +390,7 @@
 				{categories}
 				on:editRule={({ detail: { rule } }) => handleEditRule(rule)}
 				on:deleteRule={({ detail: { ruleId } }) => handleRequestDeleteRule(ruleId)}
+				on:generateRule={({ detail: { rule } }) => handleRequestGenerateRule(rule)}
 			/>
 		{/if}
 	</AccountsSplitLayout>
@@ -417,5 +448,15 @@
 		type="danger"
 		onConfirm={handleDeleteRecurringConfirm}
 		onCancel={handleDeleteRecurringCancel}
+	></ConfirmAction>
+{/if}
+
+{#if showGenerateRecurringModal && pendingGenerateRule}
+	<ConfirmAction
+		title={$t('recurring.generate-now')}
+		message={$t('recurring.generate-recurring-confirm')}
+		type="info"
+		onConfirm={handleGenerateRecurringConfirm}
+		onCancel={handleGenerateRecurringCancel}
 	></ConfirmAction>
 {/if}

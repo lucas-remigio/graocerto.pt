@@ -2,7 +2,7 @@
 	import type { CategoryDto, RecurringRule } from '$lib/types';
 	import { t } from '$lib/i18n';
 	import { locale } from 'svelte-i18n';
-	import { ArrowRightLeft, Pencil, Trash2 } from 'lucide-svelte';
+	import { ArrowRightLeft, Pencil, Trash2, Zap } from 'lucide-svelte';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { formatCurrency } from '$lib/utils/currency';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
@@ -16,6 +16,7 @@
 	const dispatch = createEventDispatcher<{
 		editRule: { rule: RecurringRule };
 		deleteRule: { ruleId: number };
+		generateRule: { rule: RecurringRule };
 	}>();
 
 	function getTypeSlug(rule: RecurringRule): 'debit' | 'credit' {
@@ -134,6 +135,14 @@
 					<td class="font-medium text-base-content">{rule.interval_value}</td>
 					<td class="text-base-content">
 						<div class="flex items-center justify-center gap-x-2">
+							<button
+								class="btn btn-circle btn-ghost btn-sm bg-base-100/80 text-primary backdrop-blur-sm hover:bg-primary/20"
+								aria-label={$t('recurring.generate-now')}
+								title={$t('recurring.generate-now')}
+								onclick={() => dispatch('generateRule', { rule })}
+							>
+								<Zap size={18} />
+							</button>
 							<button
 								class="btn btn-circle btn-ghost btn-sm bg-base-100/80 backdrop-blur-sm"
 								onclick={() => dispatch('editRule', { rule })}
