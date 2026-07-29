@@ -295,7 +295,8 @@
 		"weekday-saturday": "Sábado",
 		"generate-now": "Criar agora",
 		"generate-recurring-confirm": "Isto vai criar a transação deste ciclo no dia configurado agora mesmo e avançar a regra para a próxima ocorrência.",
-		"generate-recurring-success": "Transação criada com sucesso"
+		"generate-recurring-success": "Transação criada com sucesso",
+		"no-matching-rules": "Nenhuma regra recorrente corresponde aos filtros selecionados."
 	},
 
 	"transactions": {
