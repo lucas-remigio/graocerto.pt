@@ -280,6 +280,11 @@ export interface NotificationItem {
 	total_credit: number;
 	is_read: boolean;
 	created_at: string;
+	// Budget-threshold notifications only. For this type total_debit is the amount
+	// spent and total_credit is the category budget.
+	category_id?: number;
+	threshold_pct?: number;
+	category_name?: string;
 }
 
 export interface NotificationsResponse {
@@ -291,6 +296,7 @@ export interface NotificationPreferences {
 	enabled: boolean;
 	notify_days_ahead: number;
 	min_total_debit?: number | null;
+	budget_alert_threshold: number;
 	push_endpoints: string[];
 	updated_at: string;
 }
@@ -313,6 +319,7 @@ export interface UpdateNotificationPreferencesPayload {
 	enabled: boolean;
 	notify_days_ahead: number;
 	min_total_debit?: number | null;
+	budget_alert_threshold: number;
 }
 
 export interface CreateRecurringRulePayload {

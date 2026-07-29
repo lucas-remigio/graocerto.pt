@@ -11,6 +11,7 @@ type NotificationStore interface {
 	GetNotificationPreferences(userID int) (*NotificationPreferences, error)
 	UpdateNotificationPreferences(userID int, payload *UpdateNotificationPreferencesPayload) (*NotificationPreferences, error)
 	GenerateRecurringDueTomorrowNotifications() error
+	GenerateBudgetThresholdNotifications() error
 
 	// Push Subscriptions
 	CreatePushSubscription(userID int, sub *PushSubscription) error
@@ -43,6 +44,12 @@ type Notification struct {
 	IsRead          bool    `json:"is_read"`
 	Pushed          bool    `json:"pushed"`
 	CreatedAt       string  `json:"created_at"`
+	// Budget-threshold notifications only. CategoryName is populated on read via
+	// a join; for this type TotalDebit is the amount spent and TotalCredit is the
+	// category budget.
+	CategoryID   *int    `json:"category_id,omitempty"`
+	ThresholdPct *int    `json:"threshold_pct,omitempty"`
+	CategoryName *string `json:"category_name,omitempty"`
 }
 
 type NotificationsResponse struct {
@@ -54,12 +61,13 @@ type UnreadNotificationCountResponse struct {
 }
 
 type NotificationPreferences struct {
-	UserID          int      `json:"user_id"`
-	Enabled         bool     `json:"enabled"`
-	NotifyDaysAhead int      `json:"notify_days_ahead"`
-	MinTotalDebit   *float64 `json:"min_total_debit,omitempty"`
-	PushEndpoints   []string `json:"push_endpoints"`
-	UpdatedAt       string   `json:"updated_at"`
+	UserID               int      `json:"user_id"`
+	Enabled              bool     `json:"enabled"`
+	NotifyDaysAhead      int      `json:"notify_days_ahead"`
+	MinTotalDebit        *float64 `json:"min_total_debit,omitempty"`
+	BudgetAlertThreshold int      `json:"budget_alert_threshold"`
+	PushEndpoints        []string `json:"push_endpoints"`
+	UpdatedAt            string   `json:"updated_at"`
 }
 
 type NotificationPreferencesResponse struct {
@@ -67,7 +75,8 @@ type NotificationPreferencesResponse struct {
 }
 
 type UpdateNotificationPreferencesPayload struct {
-	Enabled         bool     `json:"enabled"`
-	NotifyDaysAhead int      `json:"notify_days_ahead" validate:"required,gte=1,lte=30"`
-	MinTotalDebit   *float64 `json:"min_total_debit" validate:"omitempty,gte=0,lte=999999999"`
+	Enabled              bool     `json:"enabled"`
+	NotifyDaysAhead      int      `json:"notify_days_ahead" validate:"required,gte=1,lte=30"`
+	MinTotalDebit        *float64 `json:"min_total_debit" validate:"omitempty,gte=0,lte=999999999"`
+	BudgetAlertThreshold int      `json:"budget_alert_threshold" validate:"required,gte=1,lte=100"`
 }
