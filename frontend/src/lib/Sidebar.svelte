@@ -1,68 +1,59 @@
-<!-- src/lib/Sidebar.svelte — visible only on lg+ screens -->
+<!-- src/lib/Sidebar.svelte — visible only on lg+ screens; expands on hover (Instagram-style) -->
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { ChevronLeft, ChevronRight, LogOut, LogIn, User } from 'lucide-svelte';
+	import { LogOut, LogIn, User } from 'lucide-svelte';
 	import { t, locale } from '$lib/i18n';
 	import { isAuthenticated, logout, userEmail } from '$stores/auth';
 	import NavActions from './NavActions.svelte';
 	import ProfileModal from './ProfileModal.svelte';
-	import { theme, sidebarCollapsed, updateSidebarCollapsed } from '$stores/uiPreferences';
+	import { theme } from '$stores/uiPreferences';
 	import { navLinks, toggleTheme, toggleLanguage } from '$lib/nav';
 	import { unreadNotificationCount } from '$stores/notifications';
 
 	let showProfileModal = false;
 
-	function toggle() {
-		updateSidebarCollapsed(!$sidebarCollapsed);
+	// The rail is collapsed at rest and expands on hover / keyboard focus,
+	// overlaying the page content instead of pushing it.
+	let hovered = false;
+	$: collapsed = !hovered;
+
+	function handleFocusOut(event: FocusEvent) {
+		const next = event.relatedTarget as Node | null;
+		if (!event.currentTarget || !(event.currentTarget as HTMLElement).contains(next)) {
+			hovered = false;
+		}
 	}
 </script>
 
 <aside
 	class="fixed inset-y-0 left-0 z-40 hidden flex-col overflow-x-clip border-r border-base-300 bg-base-100 transition-[width] duration-200 ease-in-out lg:flex
-		{$sidebarCollapsed ? 'w-16' : 'w-64'}"
+		{collapsed ? 'w-16' : 'w-64 shadow-xl'}"
+	on:mouseenter={() => (hovered = true)}
+	on:mouseleave={() => (hovered = false)}
+	on:focusin={() => (hovered = true)}
+	on:focusout={handleFocusOut}
 >
-	<!-- Logo + collapse toggle -->
-	<div
-		class="flex shrink-0 items-center border-b border-base-300
-		{$sidebarCollapsed ? 'h-auto flex-col gap-1 px-0 py-3' : 'h-16 justify-between px-4'}"
-	>
-		{#if !$sidebarCollapsed}
-			<a
-				href={$isAuthenticated ? '/home' : '/'}
-				class="flex items-center gap-3 text-xl font-semibold"
-			>
-				<img src="/logo.png" alt="Logo" class="h-8 w-8 shrink-0" />
-				Grão Certo
-			</a>
-			<button
-				class="btn btn-square btn-ghost btn-sm shrink-0"
-				on:click={toggle}
-				aria-label="Collapse sidebar"
-			>
-				<ChevronLeft size={18} />
-			</button>
-		{:else}
-			<a
-				href={$isAuthenticated ? '/home' : '/'}
-				class="tooltip tooltip-right flex items-center justify-center"
-				data-tip="Grão Certo"
-			>
-				<img src="/logo.png" alt="Logo" class="h-8 w-8 shrink-0" />
-			</a>
-			<button class="btn btn-square btn-ghost btn-sm" on:click={toggle} aria-label="Expand sidebar">
-				<ChevronRight size={18} />
-			</button>
-		{/if}
+	<!-- Logo -->
+	<div class="flex h-16 shrink-0 items-center border-b border-base-300 {collapsed ? 'justify-center px-0' : 'px-4'}">
+		<a
+			href={$isAuthenticated ? '/home' : '/'}
+			class="flex items-center gap-3 overflow-hidden text-xl font-semibold"
+		>
+			<img src="/logo.png" alt="Logo" class="h-8 w-8 shrink-0" />
+			{#if !collapsed}
+				<span class="whitespace-nowrap">Grão Certo</span>
+			{/if}
+		</a>
 	</div>
 
 	<!-- Navigation links (authenticated only) -->
 	{#if $isAuthenticated}
-		<nav class="flex-1 px-2 py-4 {$sidebarCollapsed ? 'overflow-y-visible' : 'overflow-y-auto'}">
+		<nav class="flex-1 px-2 py-4 {collapsed ? 'overflow-y-visible' : 'overflow-y-auto'}">
 			<ul class="space-y-1">
 				{#each navLinks as link}
 					{@const active = $page.url.pathname === link.href}
 					<li>
-						{#if $sidebarCollapsed}
+						{#if collapsed}
 							<a
 								href={link.href}
 								class="tooltip tooltip-right relative flex items-center justify-center rounded-lg p-2.5 transition-colors
@@ -111,7 +102,7 @@
 	<div class="shrink-0 border-t border-base-300 px-2 py-3">
 		<!-- Theme / Language / Balance icon buttons -->
 		<div
-			class="mb-2 flex {$sidebarCollapsed
+			class="mb-2 flex {collapsed
 				? 'flex-col items-center gap-1'
 				: 'items-center justify-around'}"
 		>
@@ -122,14 +113,14 @@
 				{toggleLanguage}
 				t={$t}
 				isAuthenticated={$isAuthenticated}
-				tooltipDir={$sidebarCollapsed ? 'right' : 'bottom'}
+				tooltipDir={collapsed ? 'right' : 'bottom'}
 			/>
 		</div>
 
 		<!-- User section -->
 		{#if $isAuthenticated}
 			<div class="space-y-1 border-t border-base-300 pt-2">
-				{#if $sidebarCollapsed}
+				{#if collapsed}
 					<button
 						class="tooltip tooltip-right flex w-full items-center justify-center rounded-lg p-2 transition-colors hover:bg-base-200"
 						on:click={() => (showProfileModal = true)}
@@ -163,7 +154,7 @@
 					</button>
 				{/if}
 			</div>
-		{:else if $sidebarCollapsed}
+		{:else if collapsed}
 			<a
 				href="/login"
 				class="btn btn-primary text-base-100 btn-sm tooltip tooltip-right flex w-full items-center justify-center"

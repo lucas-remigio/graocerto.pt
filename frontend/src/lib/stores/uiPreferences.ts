@@ -10,7 +10,6 @@ interface UIPreferences {
 	theme: ThemeOption;
 	showNonFavorites: boolean;
 	heatmapDisplayMode: HeatmapDisplayMode;
-	sidebarCollapsed: boolean;
 }
 
 const LOCAL_STORAGE_KEY = 'ui.preferences';
@@ -21,8 +20,7 @@ const defaultPreferences: UIPreferences = {
 	selectedView: 'transactions',
 	theme: 'system',
 	showNonFavorites: false,
-	heatmapDisplayMode: 'difference',
-	sidebarCollapsed: false
+	heatmapDisplayMode: 'difference'
 };
 
 // Load preferences from localStorage
@@ -70,6 +68,7 @@ export const showNonFavorites = derived(uiPreferences, ($prefs) => $prefs.showNo
 
 export const heatmapDisplayMode = derived(uiPreferences, ($prefs) => $prefs.heatmapDisplayMode);
 
+
 // Helper functions to update individual preferences
 export const updateHideBalances = (value: boolean) => {
 	uiPreferences.update((prefs) => ({ ...prefs, hideBalances: value }));
@@ -89,12 +88,6 @@ export const updateShowNonFavorites = (value: boolean) => {
 
 export const updateHeatmapDisplayMode = (value: HeatmapDisplayMode) => {
 	uiPreferences.update((prefs) => ({ ...prefs, heatmapDisplayMode: value }));
-};
-
-export const sidebarCollapsed = derived(uiPreferences, ($prefs) => $prefs.sidebarCollapsed);
-
-export const updateSidebarCollapsed = (value: boolean) => {
-	uiPreferences.update((prefs) => ({ ...prefs, sidebarCollapsed: value }));
 };
 
 // Applied theme store (derived from theme)

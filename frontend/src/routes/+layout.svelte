@@ -13,7 +13,6 @@
 	import { cookieConsent } from '$lib/stores/cookieConsent';
 	import CookieBanner from '$components/CookieBanner.svelte';
 	import ToastProvider from '$components/ToastProvider.svelte';
-	import { sidebarCollapsed } from '$lib/stores/uiPreferences';
 	import { refreshUnreadNotificationCount } from '$lib/stores/notifications';
 
 	let { children } = $props();
@@ -136,11 +135,8 @@
 {:else}
 	<Navbar />
 	<Sidebar />
-	<div
-		class="{$sidebarCollapsed
-			? 'lg:pl-16'
-			: 'lg:pl-64'} transition-[padding] duration-200 ease-in-out"
-	>
+	<!-- Padding stays at the collapsed rail width; the sidebar expands on hover as an overlay. -->
+	<div class="lg:pl-16">
 		<main class="min-h-screen {$isAuthenticated ? 'lg:pt-4' : ''}">
 			{@render children()}
 		</main>
