@@ -116,6 +116,7 @@
 		"catch-up-title": "You're all caught up!",
 		"new": "New",
 		"mark-as-read": "Mark as read",
+		"mark-all-as-read": "Mark all as read",
 		"preferences-title": "Notification Settings",
 		"preferences-saved": "Settings saved successfully",
 		"enable-push": "Enable Notifications",

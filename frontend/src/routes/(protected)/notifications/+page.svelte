@@ -281,6 +281,17 @@
 		}
 	}
 
+	async function handleMarkAllAsRead() {
+		try {
+			await dataService.markAllNotificationsAsRead();
+			notifications = notifications.map((notification) => ({ ...notification, is_read: true }));
+			refreshUnreadNotificationCount(true);
+		} catch (err) {
+			console.error(err);
+			toastStore.error($t('errors.server-error'));
+		}
+	}
+
 	async function handleOpenNotification(notification: NotificationItem) {
 		if (!notification.account_token || !notification.target_date) {
 			await handleMarkAsRead(notification.id);
@@ -606,6 +617,16 @@
 			</p>
 		</div>
 	{:else}
+		{#if unreadCount > 0}
+			<div class="mb-3 flex justify-end">
+				<button
+					class="btn btn-ghost btn-sm gap-2 text-base-content/70"
+					onclick={handleMarkAllAsRead}
+				>
+					{$t('notifications.mark-all-as-read')}
+				</button>
+			</div>
+		{/if}
 		<div class="flex flex-col gap-3">
 			{#each notifications as notification (notification.id)}
 				<div

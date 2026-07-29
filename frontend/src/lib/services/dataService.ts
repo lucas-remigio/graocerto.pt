@@ -470,6 +470,14 @@ class DataService {
 		this.clearNotificationsCache();
 	}
 
+	async markAllNotificationsAsRead(): Promise<void> {
+		const res = await api_axios.patch('notifications/read-all');
+		if (res.status !== 200) {
+			throw new Error(`Failed to mark all notifications as read: ${res.status}`);
+		}
+		this.clearNotificationsCache();
+	}
+
 	async fetchUnreadNotificationCount(): Promise<number> {
 		if (this.isValid(this.notificationsCache)) {
 			return this.notificationsCache.data.filter((n) => !n.is_read).length;

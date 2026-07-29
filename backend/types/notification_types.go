@@ -8,6 +8,7 @@ type NotificationStore interface {
 	GetNotificationsByUserID(userID int) ([]*Notification, error)
 	GetUnreadNotificationCount(userID int) (int, error)
 	MarkNotificationAsRead(notificationID int, userID int) error
+	MarkAllNotificationsAsRead(userID int) error
 	GetNotificationPreferences(userID int) (*NotificationPreferences, error)
 	UpdateNotificationPreferences(userID int, payload *UpdateNotificationPreferencesPayload) (*NotificationPreferences, error)
 	GenerateRecurringDueTomorrowNotifications() error

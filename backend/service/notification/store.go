@@ -90,6 +90,18 @@ func (s *Store) MarkNotificationAsRead(notificationID int, userID int) error {
 	return nil
 }
 
+func (s *Store) MarkAllNotificationsAsRead(userID int) error {
+	_, err := db.ExecWithValidation(
+		s.db,
+		`UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false`,
+		userID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to mark all notifications as read: %w", err)
+	}
+	return nil
+}
+
 func (s *Store) GetNotificationPreferences(userID int) (*types.NotificationPreferences, error) {
 	if _, err := s.db.Exec(
 		`INSERT INTO notification_preferences (user_id, enabled, notify_days_ahead, min_total_debit)
