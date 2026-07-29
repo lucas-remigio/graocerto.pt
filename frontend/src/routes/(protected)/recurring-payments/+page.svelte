@@ -447,9 +447,13 @@
 					<p class="text-base-content/70">{$t('recurring.no-forecast-items')}</p>
 				</div>
 			{:else if forecastLayout === 'calendar'}
-				<RecurringForecastCalendar items={forecastItems} {categories} days={forecastDays} />
+				<div class="min-h-0 flex-1 overflow-y-auto pb-4 lg:pr-2">
+					<RecurringForecastCalendar items={forecastItems} {categories} days={forecastDays} />
+				</div>
 			{:else}
-				<RecurringForecastTable items={forecastItems} {categories} />
+				<div class="min-h-0 flex-1 overflow-y-auto pb-4 lg:pr-2">
+					<RecurringForecastTable items={forecastItems} {categories} />
+				</div>
 			{/if}
 		{:else if filteredRecurringRules.length === 0}
 			<div class="flex h-64 flex-col items-center justify-center">
