@@ -5,6 +5,7 @@
 	import { ArrowRightLeft, Pencil, Trash2, Zap } from 'lucide-svelte';
 	import { appliedTheme } from '$lib/stores/uiPreferences';
 	import { formatCurrency } from '$lib/utils/currency';
+	import { getContrastTextClass } from '$lib/utils/categoryUtils';
 	import { TransactionTypeId } from '$lib/transaction_types_types';
 	import { createEventDispatcher } from 'svelte';
 
@@ -50,20 +51,6 @@
 
 	function getRuleCategory(rule: RecurringRule): CategoryDto | undefined {
 		return getCategoryById(rule.category_id);
-	}
-
-	function getTextColor(backgroundColor: string): string {
-		const hex = backgroundColor.replace('#', '');
-		const r = parseInt(hex.substring(0, 2), 16);
-		const g = parseInt(hex.substring(2, 4), 16);
-		const b = parseInt(hex.substring(4, 6), 16);
-		const getLuminance = (color: number) => {
-			const c = color / 255;
-			return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-		};
-		const luminance =
-			0.2126 * getLuminance(r) + 0.7152 * getLuminance(g) + 0.0722 * getLuminance(b);
-		return luminance > 0.5 ? 'text-gray-900' : 'text-gray-100';
 	}
 
 	function getRuleRowClass(rule: RecurringRule): string {
@@ -113,7 +100,7 @@
 							{/if}
 							<span
 								class="inline-flex items-center justify-center rounded px-3 py-1 {getRuleCategory(rule)
-									? getTextColor(getRuleCategory(rule)!.color)
+									? getContrastTextClass(getRuleCategory(rule)!.color)
 									: 'text-gray-900'}"
 								style="background-color: {getRuleCategory(rule)?.color || '#d1d5db'}; min-width: 4rem;"
 							>

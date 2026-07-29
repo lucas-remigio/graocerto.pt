@@ -27,3 +27,21 @@ export function buildCategoryGroups(cats: CategoryDto[]): CategoryGroup[] {
 
 	return groups;
 }
+
+/**
+ * Returns a tailwind text-color class ('text-gray-900' | 'text-gray-100') that
+ * contrasts against the given hex background colour, based on relative luminance.
+ */
+export function getContrastTextClass(backgroundColor: string): string {
+	const hex = backgroundColor.replace('#', '');
+	const r = parseInt(hex.substring(0, 2), 16);
+	const g = parseInt(hex.substring(2, 4), 16);
+	const b = parseInt(hex.substring(4, 6), 16);
+	const channelLuminance = (color: number) => {
+		const c = color / 255;
+		return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+	};
+	const luminance =
+		0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+	return luminance > 0.5 ? 'text-gray-900' : 'text-gray-100';
+}

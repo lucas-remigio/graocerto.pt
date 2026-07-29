@@ -282,6 +282,8 @@
 		"execution-weekday-help": "Choose a weekday for weekly recurrence",
 		"view-rules": "Rules",
 		"view-forecast": "Forecast",
+		"view-calendar": "Calendar",
+		"view-list": "List",
 		"no-forecast-items": "No forecasted items for the selected range.",
 		"weekday-sunday": "Sunday",
 		"weekday-monday": "Monday",

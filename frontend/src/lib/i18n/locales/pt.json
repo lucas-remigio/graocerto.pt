@@ -285,6 +285,8 @@
 		"execution-weekday-help": "Escolhe um dia da semana para recorrência semanal",
 		"view-rules": "Regras",
 		"view-forecast": "Previsão",
+		"view-calendar": "Calendário",
+		"view-list": "Lista",
 		"no-forecast-items": "Sem itens previstos para o intervalo selecionado.",
 		"weekday-sunday": "Domingo",
 		"weekday-monday": "Segunda-feira",

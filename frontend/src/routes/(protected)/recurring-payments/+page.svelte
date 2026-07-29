@@ -9,10 +9,11 @@
 		RecurringRule
 	} from '$lib/types';
 	import { t } from '$lib/i18n';
-	import { ArrowRightLeft, BarChart3, Filter, List, Plus, Repeat } from 'lucide-svelte';
+	import { ArrowRightLeft, BarChart3, CalendarDays, Filter, List, Plus, Repeat } from 'lucide-svelte';
 	import RecurringRuleModal from '$components/RecurringRuleModal.svelte';
 	import RecurringTransferModal from '$components/RecurringTransferModal.svelte';
 	import RecurringForecastTable from '$components/RecurringForecastTable.svelte';
+	import RecurringForecastCalendar from '$components/RecurringForecastCalendar.svelte';
 	import RecurringRulesTable from '$components/RecurringRulesTable.svelte';
 	import TransactionFilters from '$components/TransactionFilters.svelte';
 	import TransactionsStats from '$components/TransactionsStats.svelte';
@@ -48,6 +49,7 @@
 	let forecastDays: RecurringForecastRangeDays = $state(30);
 	let forecastItems: RecurringForecastItem[] = $state([]);
 	let forecastLoading = $state(false);
+	let forecastLayout = $state<'calendar' | 'list'>('calendar');
 	let showFilters = $state(false);
 	let filters = $state(emptyTransactionFilters());
 
@@ -395,7 +397,7 @@
 		{#if loading}
 			<div class="loading loading-spinner loading-lg"></div>
 		{:else if recurringViewMode === 'forecast'}
-			<div class="mb-3 mt-1 flex justify-center">
+			<div class="mb-3 mt-1 flex flex-wrap items-center justify-center gap-3">
 				<div class="btn-group">
 					<button
 						class="btn btn-sm {forecastDays === 30 ? 'btn-primary text-base-100' : 'btn-ghost'}"
@@ -416,6 +418,27 @@
 						90d
 					</button>
 				</div>
+
+				<div class="btn-group">
+					<button
+						class="btn btn-sm {forecastLayout === 'calendar'
+							? 'btn-primary text-base-100'
+							: 'btn-ghost'}"
+						onclick={() => (forecastLayout = 'calendar')}
+					>
+						<CalendarDays size={16} class="mr-1" />
+						<span>{$t('recurring.view-calendar')}</span>
+					</button>
+					<button
+						class="btn btn-sm {forecastLayout === 'list'
+							? 'btn-primary text-base-100'
+							: 'btn-ghost'}"
+						onclick={() => (forecastLayout = 'list')}
+					>
+						<List size={16} class="mr-1" />
+						<span>{$t('recurring.view-list')}</span>
+					</button>
+				</div>
 			</div>
 			{#if forecastLoading}
 				<div class="loading loading-spinner loading-lg"></div>
@@ -423,6 +446,8 @@
 				<div class="flex h-40 flex-col items-center justify-center">
 					<p class="text-base-content/70">{$t('recurring.no-forecast-items')}</p>
 				</div>
+			{:else if forecastLayout === 'calendar'}
+				<RecurringForecastCalendar items={forecastItems} {categories} days={forecastDays} />
 			{:else}
 				<RecurringForecastTable items={forecastItems} {categories} />
 			{/if}
