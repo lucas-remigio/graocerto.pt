@@ -18,6 +18,39 @@ type TransactionStore interface {
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
+	GetStatisticsComparison(accountToken string, month, year int) (*StatisticsComparison, error)
+}
+
+// CategoryDelta is one category's month-over-month change. PercentageDelta is
+// nil when it can't be expressed honestly (no prior spend, or the category is
+// new/removed) — the frontend renders those as "new"/"—" instead of a
+// misleading ±100%.
+type CategoryDelta struct {
+	ID              int      `json:"id"`
+	ParentID        *int     `json:"parent_id,omitempty"`
+	Name            string   `json:"name"`
+	Color           string   `json:"color"`
+	CurrentTotal    float64  `json:"current_total"`
+	PreviousTotal   float64  `json:"previous_total"`
+	AbsoluteDelta   float64  `json:"absolute_delta"`
+	PercentageDelta *float64 `json:"percentage_delta"`
+	// Status is one of: "new", "removed", "increased", "decreased", "unchanged".
+	Status string `json:"status"`
+}
+
+// StatisticsComparison diffs a month against the previous one (with year
+// rollover for January → previous December).
+type StatisticsComparison struct {
+	AccountToken         string             `json:"account_token"`
+	CurrentMonth         int                `json:"current_month"`
+	CurrentYear          int                `json:"current_year"`
+	PreviousMonth        int                `json:"previous_month"`
+	PreviousYear         int                `json:"previous_year"`
+	CurrentTotals        *TransactionTotals `json:"current_totals"`
+	PreviousTotals       *TransactionTotals `json:"previous_totals"`
+	TotalsDelta          *TransactionTotals `json:"totals_delta"`
+	DebitCategoryDeltas  []*CategoryDelta   `json:"debit_category_deltas"`
+	CreditCategoryDeltas []*CategoryDelta   `json:"credit_category_deltas"`
 }
 
 type CreateTransactionPayload struct {

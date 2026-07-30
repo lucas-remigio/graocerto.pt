@@ -306,8 +306,10 @@
 	},
 
 	"projection": {
-		"eom-label": "End of month",
-		"eom-tooltip": "Projected balance at month end: current balance plus upcoming recurring income and expenses."
+		"expected-income": "Expected income",
+		"expected-expenses": "Expected expenses",
+		"projected-net": "Projected net balance",
+		"expected-until-month-end": "Expected until month end"
 	},
 
 	"transactions": {

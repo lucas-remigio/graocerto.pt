@@ -309,8 +309,10 @@
 	},
 
 	"projection": {
-		"eom-label": "Fim do mês",
-		"eom-tooltip": "Saldo previsto no fim do mês: saldo atual mais receitas e despesas recorrentes por vir."
+		"expected-income": "Entradas previstas",
+		"expected-expenses": "Saídas previstas",
+		"projected-net": "Saldo Líquido previsto",
+		"expected-until-month-end": "Previsto até ao fim do mês"
 	},
 
 	"transactions": {

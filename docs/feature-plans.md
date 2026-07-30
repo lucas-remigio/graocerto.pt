@@ -93,10 +93,14 @@ the UI copy.
 > helper with the projection (unit-tested, no DB), which also avoids the `days <= 0 → 30` default
 > misfiring on the last day of the month.
 >
-> **Frontend placement:** not a standalone dashboard card (rejected as too heavy) — instead a single
-> compact "End of month" stat appended to the statistics-page summary row
-> (`TransactionStatistics.svelte`), styled like the existing credit/debit/net cells and shown **only
-> when viewing the current month** (a projection for a past month is meaningless).
+> **Frontend placement:** not a standalone dashboard card (rejected as too heavy). Final form is a
+> row below the statistics-page summary grid (`TransactionStatistics.svelte`), current-month only.
+> It **always shows `Saldo atual`** (the account's real/pending balance — the number the user cares
+> about most) so it never disappears; when recurring movements are still expected it extends into a
+> muted `→ −€X até ao fim do mês` (net, with an income/expenses tooltip) and a bold `Previsto`
+> end-of-month figure. NB: the existing "Net Balance" stat is already labelled **Saldo Líquido** (the
+> month's credit−debit), so the account balance is deliberately labelled **Saldo atual** to avoid the
+> name clash.
 
 **Value: high · Effort: low.**
 
