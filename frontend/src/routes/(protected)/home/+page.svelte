@@ -19,6 +19,8 @@
 	import { t } from '$lib/i18n';
 	import { selectedView, updateSelectedView } from '$lib/stores/uiPreferences';
 	import { toastStore } from '$lib/stores/toast';
+	import { pickInitialAccount, rememberSelectedAccount, upsertAccount } from '$lib/utils/accounts';
+	import { useIsLargeScreen } from '$lib/utils/screenSize.svelte';
 
 	// WebSocket state
 	let hasJoinedRoom = $state(false);
@@ -72,36 +74,11 @@
 	let selectedYear: number | null = $state(currentYear);
 
 	// Track screen size for responsive layout
-	let isLargeScreen: boolean = $state(false);
+	const screen = useIsLargeScreen();
 	let initialDataLoaded = $state(false);
-	// Update screen size tracking
-	function updateScreenSize() {
-		isLargeScreen = window.innerWidth >= 1024; // lg breakpoint in Tailwind
-	}
 
 	function getSelectedAccount() {
-		// if there is already a selected account, use it
-		if (selectedAccount) {
-			return;
-		}
-
-		if (accounts.length === 0) {
-			return;
-		}
-
-		const storedAccountToken = localStorage.getItem('selectedAccount');
-		if (!storedAccountToken) {
-			selectedAccount = accounts[0];
-			return;
-		}
-
-		const foundAccount = accounts.find((account) => account.token === storedAccountToken);
-		if (!foundAccount) {
-			selectedAccount = accounts[0];
-			return;
-		}
-
-		selectedAccount = foundAccount;
+		selectedAccount = pickInitialAccount(accounts, selectedAccount);
 	}
 
 	function applyUrlSelection() {
@@ -114,7 +91,7 @@
 			const accountFromQuery = accounts.find((account) => account.token === accountToken);
 			if (accountFromQuery) {
 				selectedAccount = accountFromQuery;
-				localStorage.setItem('selectedAccount', accountFromQuery.token);
+				rememberSelectedAccount(accountFromQuery.token);
 			}
 		}
 
@@ -243,7 +220,7 @@
 
 	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
-		localStorage.setItem('selectedAccount', selectedAccount.token);
+		rememberSelectedAccount(selectedAccount.token);
 		selectedMonth = currentMonth;
 		selectedYear = currentYear;
 		// by triggering the selected view, we ensure that the transactions are fetched
@@ -471,25 +448,15 @@
 	 * ========================================================
 	 */
 
-	function upsertAccount(account: Account) {
-		const idx = accounts.findIndex((acc) => acc.token === account.token);
-		if (idx !== -1) {
-			accounts[idx] = account; // update existing account
-		} else {
-			accounts.push(account); // add new account
-		}
-		accounts.sort((a, b) => a.order_index - b.order_index);
-	}
-
 	function handleNewAccount(account: Account) {
-		upsertAccount(account);
+		accounts = upsertAccount(accounts, account);
 		selectedAccount = null; // Clear selected account
 		getSelectedAccount(); // Update selected account if needed
 		wsUpdateScreen();
 	}
 
 	function handleUpdateAccount(account: Account) {
-		upsertAccount(account);
+		accounts = upsertAccount(accounts, account);
 		wsUpdateScreen();
 	}
 
@@ -542,17 +509,12 @@
 			await fetchAccountTransactions(selectedAccount.token, selectedMonth, selectedYear, true);
 		}
 		initialDataLoaded = true;
-
-		// Set up screen size tracking
-		updateScreenSize();
-		window.addEventListener('resize', updateScreenSize);
 	});
 
 	// Clean up subscription when component is destroyed
 	onDestroy(() => {
 		unsubConnected();
 		unsubMessages();
-		window.removeEventListener('resize', updateScreenSize);
 	});
 </script>
 
@@ -560,7 +522,7 @@
 	<AccountsSplitLayout
 		{accounts}
 		{selectedAccount}
-		{isLargeScreen}
+		isLargeScreen={screen.value}
 		{accountsLoading}
 		showRightPanel={accounts.length > 0}
 		on:select={handleSelectAccount}

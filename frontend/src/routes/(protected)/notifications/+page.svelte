@@ -20,6 +20,7 @@
 	let preferences: NotificationPreferences | null = $state(null);
 	let minDebitInput = $state('');
 	let notifyDaysAheadInput = $state('1');
+	let budgetThresholdInput = $state('80');
 	let pushSupported = $state(false);
 	let pushPermission = $state('default');
 	let isRegisteringPush = $state(false);
@@ -144,6 +145,17 @@
 	);
 
 	function buildNotificationMessage(notification: NotificationItem): string {
+		if (notification.type === 'budget_threshold') {
+			return $t('notifications.budget-threshold-body', {
+				values: {
+					percent: notification.threshold_pct ?? 0,
+					category: notification.category_name ?? '',
+					spent: formatCurrency(notification.total_debit),
+					budget: formatCurrency(notification.total_credit)
+				}
+			});
+		}
+
 		if (notification.type !== 'recurring_due_tomorrow') return '';
 
 		const hasDebits = notification.debit_count > 0;
@@ -206,6 +218,9 @@
 	}
 
 	function buildNotificationTitle(notification: NotificationItem): string {
+		if (notification.type === 'budget_threshold') {
+			return $t('notifications.budget-threshold-title');
+		}
 		if (notification.notify_days_ahead <= 1) {
 			return $t('notifications.recurring-due-tomorrow-title');
 		}
@@ -239,6 +254,7 @@
 			notifications = fetchedNotifications;
 			preferences = fetchedPreferences;
 			notifyDaysAheadInput = String(fetchedPreferences.notify_days_ahead || 1);
+			budgetThresholdInput = String(fetchedPreferences.budget_alert_threshold || 80);
 			minDebitInput =
 				fetchedPreferences.min_total_debit !== null &&
 				fetchedPreferences.min_total_debit !== undefined
@@ -265,6 +281,17 @@
 		}
 	}
 
+	async function handleMarkAllAsRead() {
+		try {
+			await dataService.markAllNotificationsAsRead();
+			notifications = notifications.map((notification) => ({ ...notification, is_read: true }));
+			refreshUnreadNotificationCount(true);
+		} catch (err) {
+			console.error(err);
+			toastStore.error($t('errors.server-error'));
+		}
+	}
+
 	async function handleOpenNotification(notification: NotificationItem) {
 		if (!notification.account_token || !notification.target_date) {
 			await handleMarkAsRead(notification.id);
@@ -282,6 +309,12 @@
 		);
 	}
 
+	function clampBudgetThreshold(value: string): number {
+		const parsed = Number.parseInt(value, 10);
+		if (Number.isNaN(parsed)) return 80;
+		return Math.min(100, Math.max(1, parsed));
+	}
+
 	async function handleSavePreferences() {
 		if (!preferences) return;
 		savingPreferences = true;
@@ -291,10 +324,12 @@
 			const payload: UpdateNotificationPreferencesPayload = {
 				enabled: preferences.enabled,
 				notify_days_ahead: Number.parseInt(notifyDaysAheadInput, 10) || 1,
-				min_total_debit: Number.isNaN(minTotalDebit as number) ? null : minTotalDebit
+				min_total_debit: Number.isNaN(minTotalDebit as number) ? null : minTotalDebit,
+				budget_alert_threshold: clampBudgetThreshold(budgetThresholdInput)
 			};
 			preferences = await dataService.updateNotificationPreferences(payload);
 			notifyDaysAheadInput = String(preferences.notify_days_ahead || 1);
+			budgetThresholdInput = String(preferences.budget_alert_threshold || 80);
 
 			// Show global success toast
 			toastStore.success($t('notifications.preferences-saved'));
@@ -312,7 +347,8 @@
 			const payload: UpdateNotificationPreferencesPayload = {
 				enabled: !preferences.enabled,
 				notify_days_ahead: preferences.notify_days_ahead || 1,
-				min_total_debit: preferences.min_total_debit ?? null
+				min_total_debit: preferences.min_total_debit ?? null,
+				budget_alert_threshold: preferences.budget_alert_threshold || 80
 			};
 			preferences = await dataService.updateNotificationPreferences(payload);
 		} catch (err) {
@@ -504,6 +540,32 @@
 				<label class="form-control w-full space-y-1">
 					<div class="label px-0">
 						<span class="label-text text-base font-medium"
+							>{$t('notifications.budget-alert-threshold')}</span
+						>
+					</div>
+					<div class="relative flex max-w-sm items-center">
+						<input
+							type="number"
+							min="1"
+							max="100"
+							step="1"
+							class="input input-bordered w-full pr-10 shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+							bind:value={budgetThresholdInput}
+						/>
+						<span class="absolute right-4 font-medium text-base-content/50">%</span>
+					</div>
+					<div class="label px-0">
+						<span class="label-text-alt max-w-lg text-xs leading-relaxed text-base-content/60"
+							>{$t('notifications.budget-alert-threshold-desc')}</span
+						>
+					</div>
+				</label>
+
+				<div class="divider"></div>
+
+				<label class="form-control w-full space-y-1">
+					<div class="label px-0">
+						<span class="label-text text-base font-medium"
 							>{$t('notifications.min-debit-threshold')} {$t('notifications.optional')}</span
 						>
 					</div>
@@ -555,6 +617,16 @@
 			</p>
 		</div>
 	{:else}
+		{#if unreadCount > 0}
+			<div class="mb-3 flex justify-end">
+				<button
+					class="btn btn-ghost btn-sm gap-2 text-base-content/70"
+					onclick={handleMarkAllAsRead}
+				>
+					{$t('notifications.mark-all-as-read')}
+				</button>
+			</div>
+		{/if}
 		<div class="flex flex-col gap-3">
 			{#each notifications as notification (notification.id)}
 				<div
@@ -582,7 +654,7 @@
 							<p class="max-w-xl text-sm font-medium leading-relaxed text-base-content/70">
 								{buildNotificationMessage(notification)}
 							</p>
-							{#if notification.target_date}
+							{#if notification.target_date && notification.type !== 'budget_threshold'}
 								<p
 									class="mt-3 flex items-center gap-1.5 text-[0.8rem] font-semibold uppercase tracking-wide text-base-content/50"
 								>

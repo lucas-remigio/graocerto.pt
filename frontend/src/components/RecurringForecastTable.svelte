@@ -68,7 +68,8 @@
 								)
 									? getContrastTextClass(getCategoryById(item.category_id)!.color)
 									: 'text-gray-900'}"
-								style="background-color: {getCategoryById(item.category_id)?.color || '#d1d5db'}; min-width: 4rem;"
+								style="background-color: {getCategoryById(item.category_id)?.color ||
+									'#d1d5db'}; min-width: 4rem;"
 							>
 								{getCategoryById(item.category_id)?.category_name || 'N/A'}
 							</span>

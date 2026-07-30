@@ -64,7 +64,7 @@
 </script>
 
 <main class="flex min-h-screen items-center justify-center bg-base-200 p-4">
-	<div class="w-full max-w-md rounded-xl bg-base-100 p-8 shadow-lg text-center">
+	<div class="w-full max-w-md rounded-xl bg-base-100 p-8 text-center shadow-lg">
 		<h1 class="text-3xl font-bold text-primary">{$t('auth.verify-email-title')}</h1>
 		<p class="mt-4 text-sm text-base-content/70">{status}</p>
 		{#if isLoading}
@@ -74,7 +74,9 @@
 		{/if}
 
 		<div class="mt-8 text-left">
-			<h2 class="text-lg font-semibold text-base-content">{$t('auth.resend-verification-title')}</h2>
+			<h2 class="text-lg font-semibold text-base-content">
+				{$t('auth.resend-verification-title')}
+			</h2>
 			<p class="mt-1 text-sm text-base-content/70">{$t('auth.resend-verification-desc')}</p>
 
 			<form class="mt-4 space-y-3" on:submit|preventDefault={handleResendVerification}>

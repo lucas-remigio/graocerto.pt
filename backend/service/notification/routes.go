@@ -33,6 +33,12 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 		}),
 	))
 
+	router.HandleFunc("/notifications/read-all", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodPatch: h.MarkAllNotificationsAsRead,
+		}),
+	))
+
 	router.HandleFunc("/notifications/{id}/read", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
 			http.MethodPatch: h.MarkNotificationAsRead,
@@ -48,7 +54,7 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 
 	router.HandleFunc("/notifications/push-subscriptions", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
-			http.MethodPost: h.CreatePushSubscription,
+			http.MethodPost:   h.CreatePushSubscription,
 			http.MethodDelete: h.DeletePushSubscription,
 		}),
 	))
@@ -165,6 +171,20 @@ func (h *Handler) MarkNotificationAsRead(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := h.store.MarkNotificationAsRead(notificationID, userID); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteSuccessResponse(w)
+}
+
+func (h *Handler) MarkAllNotificationsAsRead(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	if err := h.store.MarkAllNotificationsAsRead(userID); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}

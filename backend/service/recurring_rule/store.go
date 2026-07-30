@@ -16,7 +16,8 @@ import (
 )
 
 type Store struct {
-	db *sql.DB
+	db           *sql.DB
+	accountStore types.AccountStore
 }
 
 const (
@@ -24,8 +25,8 @@ const (
 	transactionTypeDebit  = 2
 )
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{db: db}
+func NewStore(db *sql.DB, accountStore types.AccountStore) *Store {
+	return &Store{db: db, accountStore: accountStore}
 }
 
 func (s *Store) CreateRecurringRule(ctx context.Context, rule *types.RecurringRule) (*types.RecurringRule, error) {
@@ -82,6 +83,66 @@ func (s *Store) GetRecurringForecast(userID int, accountToken string, days int) 
 		return nil, err
 	}
 
+	rules, err := s.loadActiveForecastRules(userID, accountToken)
+	if err != nil {
+		return nil, err
+	}
+
+	windowStart := time.Now().UTC().Truncate(24 * time.Hour)
+	windowEnd := windowStart.AddDate(0, 0, days)
+
+	items, summary, err := expandRuleOccurrences(rules, windowStart, windowEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.RecurringForecastResponse{
+		AccountToken: accountToken,
+		Days:         days,
+		Items:        items,
+		Summary:      summary,
+	}, nil
+}
+
+// GetCashflowProjection answers "will I make it to payday?" for one account:
+// the projected balance at the end of the current month = current balance plus
+// the remaining recurring credits minus the remaining recurring debits due
+// before month end. The base is the account's pending balance so that
+// already-generated (pending) recurring transactions are counted once — the
+// forecast window only covers occurrences whose next run date is still ahead.
+func (s *Store) GetCashflowProjection(userID int, accountToken string) (*types.CashflowProjectionResponse, error) {
+	// GetAccountByToken scopes by user id, so it doubles as the ownership check.
+	account, err := s.accountStore.GetAccountByToken(accountToken, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load account for projection: %w", err)
+	}
+
+	rules, err := s.loadActiveForecastRules(userID, accountToken)
+	if err != nil {
+		return nil, err
+	}
+
+	windowStart, windowEnd := endOfMonthWindow(time.Now().UTC())
+
+	_, summary, err := expandRuleOccurrences(rules, windowStart, windowEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.CashflowProjectionResponse{
+		AccountToken:     accountToken,
+		CurrentBalance:   account.PendingBalance,
+		UpcomingCredits:  summary.Credit,
+		UpcomingDebits:   summary.Debit,
+		ProjectedBalance: account.PendingBalance + summary.Difference,
+		DaysRemaining:    int(windowEnd.Sub(windowStart).Hours() / 24),
+		PeriodEnd:        windowEnd.Format("2006-01-02"),
+	}, nil
+}
+
+// loadActiveForecastRules returns the account's active recurring rules, the
+// input for both the forecast and the cashflow projection.
+func (s *Store) loadActiveForecastRules(userID int, accountToken string) ([]*types.RecurringRule, error) {
 	query := `SELECT id, user_id, account_token, category_id, transaction_type_id, recurring_transfer_group_id, amount, description, frequency, interval_value, next_run_date, active, created_at, updated_at
 		FROM recurring_rules
 		WHERE user_id = $1 AND account_token = $2 AND active = true
@@ -90,17 +151,31 @@ func (s *Store) GetRecurringForecast(userID int, accountToken string, days int) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to load recurring rules for forecast: %w", err)
 	}
+	return rules, nil
+}
 
-	windowStart := time.Now().UTC().Truncate(24 * time.Hour)
-	windowEnd := windowStart.AddDate(0, 0, days)
+// endOfMonthWindow returns the inclusive [today, last day of month] window (both
+// at UTC midnight) used for the cashflow projection.
+func endOfMonthWindow(now time.Time) (time.Time, time.Time) {
+	year, month, day := now.Date()
+	start := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+	firstOfNextMonth := time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+	end := firstOfNextMonth.AddDate(0, 0, -1)
+	return start, end
+}
 
+// expandRuleOccurrences walks each rule forward from its next run date and
+// collects every occurrence that lands inside [windowStart, windowEnd], summing
+// credits/debits. It is pure (no DB, no clock) so the forecast and projection
+// share one deterministic, testable implementation.
+func expandRuleOccurrences(rules []*types.RecurringRule, windowStart, windowEnd time.Time) ([]*types.RecurringForecastItem, *types.RecurringForecastSummary, error) {
 	items := make([]*types.RecurringForecastItem, 0)
 	summary := &types.RecurringForecastSummary{}
 
 	for _, rule := range rules {
 		nextDate, err := time.Parse("2006-01-02", rule.NextRunDate)
 		if err != nil {
-			return nil, fmt.Errorf("invalid next run date for rule %d: %w", rule.ID, err)
+			return nil, nil, fmt.Errorf("invalid next run date for rule %d: %w", rule.ID, err)
 		}
 
 		// Protect against malformed loops in case of unexpected frequency/date issues.
@@ -133,11 +208,11 @@ func (s *Store) GetRecurringForecast(userID int, accountToken string, days int) 
 
 			nextDateStr, err := calculateNextRunDate(nextDate.Format("2006-01-02"), rule.Frequency, rule.IntervalValue)
 			if err != nil {
-				return nil, fmt.Errorf("failed to calculate forecast next run date for rule %d: %w", rule.ID, err)
+				return nil, nil, fmt.Errorf("failed to calculate forecast next run date for rule %d: %w", rule.ID, err)
 			}
 			nextDate, err = time.Parse("2006-01-02", nextDateStr)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse forecast next run date for rule %d: %w", rule.ID, err)
+				return nil, nil, fmt.Errorf("failed to parse forecast next run date for rule %d: %w", rule.ID, err)
 			}
 		}
 	}
@@ -149,12 +224,7 @@ func (s *Store) GetRecurringForecast(userID int, accountToken string, days int) 
 		return items[i].RecurringRuleID < items[j].RecurringRuleID
 	})
 
-	return &types.RecurringForecastResponse{
-		AccountToken: accountToken,
-		Days:         days,
-		Items:        items,
-		Summary:      summary,
-	}, nil
+	return items, summary, nil
 }
 
 func (s *Store) GetRecurringRuleByID(id int, userID int) (*types.RecurringRule, error) {

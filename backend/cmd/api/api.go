@@ -21,6 +21,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
+	"github.com/lucas-remigio/wallet-tracker/types"
 )
 
 type APIServer struct {
@@ -48,10 +49,10 @@ func (s *APIServer) Run() error {
 	authTokenStore := userStore
 	transactionTypesStore := transaction_types.NewStore(s.db)
 	categoryStore := category.NewStore(s.db)
-	recurringRuleStore := recurring_rule.NewStore(s.db)
 	notificationStore := notification.NewStore(s.db)
 	openAiStore := openai.NewClient()
 	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
+	recurringRuleStore := recurring_rule.NewStore(s.db, accountStore)
 	transactionStore := transaction.NewStore(s.db, accountStore)
 	var authMailer mailer.Mailer = mailer.NoopMailer{}
 	if config.Envs.SMTPHost != "" && config.Envs.SMTPFromEmail != "" {
@@ -204,14 +205,17 @@ func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule
 		if err := recurringRuleStore.GeneratePendingTransactionsForDueRules(); err != nil {
 			slog.Error("recurring rule scheduler error", "error", err)
 		}
-		if err := notificationStore.GenerateRecurringDueTomorrowNotifications(); err != nil {
-			slog.Error("notification scheduler error", "error", err)
-		} else {
-			// Find newly created notifications to send push
-			// For simplicity, we can notify all users that have unread notifications of type 'recurring_due_tomorrow' created in the last hour
-			// In a more robust implementation, we'd track which notifications have been pushed.
-			// This is a first approximation.
-			s.pushRecurringNotifications(notificationStore, pushService)
+		notificationErr := notificationStore.GenerateRecurringDueTomorrowNotifications()
+		if notificationErr != nil {
+			slog.Error("notification scheduler error", "error", notificationErr)
+		}
+		if err := notificationStore.GenerateBudgetThresholdNotifications(); err != nil {
+			slog.Error("budget notification scheduler error", "error", err)
+			notificationErr = err
+		}
+		if notificationErr == nil {
+			// Push whatever notifications are still unpushed (recurring or budget).
+			s.pushPendingNotifications(notificationStore, pushService)
 		}
 	}
 
@@ -221,7 +225,7 @@ func (s *APIServer) runRecurringRuleScheduler(recurringRuleStore *recurring_rule
 	}
 }
 
-func (s *APIServer) pushRecurringNotifications(notificationStore *notification.Store, pushService *notification.PushService) {
+func (s *APIServer) pushPendingNotifications(notificationStore *notification.Store, pushService *notification.PushService) {
 	unpushed, err := notificationStore.GetUnpushedNotifications()
 	if err != nil {
 		slog.Error("failed to get unpushed notifications", "error", err)
@@ -229,24 +233,48 @@ func (s *APIServer) pushRecurringNotifications(notificationStore *notification.S
 	}
 
 	for _, n := range unpushed {
-		payload := notification.PushNotificationPayload{
-			TitleKey: "notifications.push-title-recurring",
-			BodyKey:  "notifications.push-body-recurring",
-			BodyArgs: map[string]any{
-				"count": n.DebitCount + n.CreditCount,
-			},
-			Icon: "/logo.png",
-			Data: map[string]any{
-				"url": "/notifications",
-			},
-		}
-
-		pushService.NotifyUser(n.UserID, notificationStore, payload)
+		pushService.NotifyUser(n.UserID, notificationStore, buildPushPayload(n))
 
 		// Mark as pushed regardless of whether a device was actually notified
 		// (if user has no devices registered, it's still 'pushed' from the server's perspective)
 		if err := notificationStore.MarkNotificationAsPushed(n.ID); err != nil {
 			slog.Error("failed to mark notification as pushed", "id", n.ID, "error", err)
 		}
+	}
+}
+
+// buildPushPayload renders the device-push body for a notification based on its type.
+func buildPushPayload(n *types.Notification) notification.PushNotificationPayload {
+	data := map[string]any{"url": "/notifications"}
+
+	if n.Type == notification.BudgetThresholdType {
+		category := ""
+		if n.CategoryName != nil {
+			category = *n.CategoryName
+		}
+		percent := 0
+		if n.ThresholdPct != nil {
+			percent = *n.ThresholdPct
+		}
+		return notification.PushNotificationPayload{
+			TitleKey: "notifications.push-title-budget",
+			BodyKey:  "notifications.push-body-budget",
+			BodyArgs: map[string]any{
+				"percent":  percent,
+				"category": category,
+			},
+			Icon: "/logo.png",
+			Data: data,
+		}
+	}
+
+	return notification.PushNotificationPayload{
+		TitleKey: "notifications.push-title-recurring",
+		BodyKey:  "notifications.push-body-recurring",
+		BodyArgs: map[string]any{
+			"count": n.DebitCount + n.CreditCount,
+		},
+		Icon: "/logo.png",
+		Data: data,
 	}
 }

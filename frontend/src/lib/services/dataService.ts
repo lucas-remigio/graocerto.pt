@@ -8,6 +8,7 @@ import type {
 	CategoriesDtoResponse,
 	MonthYear,
 	TransactionStatistics,
+	CategoryTrendsResponse,
 	TransactionType,
 	TransactionTypesResponse,
 	TransactionsResponse,
@@ -16,6 +17,7 @@ import type {
 	RecurringRule,
 	RecurringForecastResponse,
 	RecurringForecastRangeDays,
+	CashflowProjectionResponse,
 	RecurringRulesResponse,
 	NotificationItem,
 	NotificationsResponse,
@@ -195,6 +197,21 @@ class DataService {
 		if (statistics) this.statisticsCache.set(cacheKey, this.wrap(statistics));
 
 		return statistics;
+	}
+
+	// Fetch per-category monthly trends (view-triggered, not cached)
+	async fetchCategoryTrends(
+		accountToken: string,
+		months: number,
+		type: 'debit' | 'credit'
+	): Promise<CategoryTrendsResponse> {
+		const response = await api_axios.get(`transactions/trends/${accountToken}`, {
+			params: { months, type }
+		});
+		if (response.status !== 200) {
+			throw new Error(`Failed to fetch trends: ${response.status}`);
+		}
+		return response.data as CategoryTrendsResponse;
 	}
 
 	// Fetch available months with caching
@@ -392,6 +409,18 @@ class DataService {
 		return res.data as RecurringForecastResponse;
 	}
 
+	async fetchCashflowProjection(accountToken: string): Promise<CashflowProjectionResponse> {
+		const res = await api_axios.get('recurring-rules/projection', {
+			params: {
+				account_token: accountToken
+			}
+		});
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch cashflow projection: ${res.status}`);
+		}
+		return res.data as CashflowProjectionResponse;
+	}
+
 	async createRecurringRule(payload: CreateRecurringRulePayload): Promise<RecurringRule> {
 		const res = await api_axios.post('recurring-rules', payload);
 		if (res.status !== 200) {
@@ -466,6 +495,14 @@ class DataService {
 		const res = await api_axios.patch(`notifications/${notificationId}/read`);
 		if (res.status !== 200) {
 			throw new Error(`Failed to mark notification as read: ${res.status}`);
+		}
+		this.clearNotificationsCache();
+	}
+
+	async markAllNotificationsAsRead(): Promise<void> {
+		const res = await api_axios.patch('notifications/read-all');
+		if (res.status !== 200) {
+			throw new Error(`Failed to mark all notifications as read: ${res.status}`);
 		}
 		this.clearNotificationsCache();
 	}

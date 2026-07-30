@@ -218,6 +218,45 @@ export interface TransactionStatistics {
 	end_date: string; // Format: YYYY-MM-DD
 }
 
+export interface TrendMonth {
+	month: number;
+	year: number;
+}
+
+export interface CategoryTrend {
+	id: number;
+	name: string;
+	color: string;
+	totals: number[]; // aligned to CategoryTrendsResponse.months
+	total: number; // sum over the window
+	subcategories?: CategoryTrend[]; // only on root categories; parent totals include these
+}
+
+export interface CategoryMover {
+	id: number;
+	name: string;
+	color: string;
+	totals: number[];
+	pct: number | null; // null for "new"
+	direction: 'up' | 'down' | 'new';
+}
+
+export interface CategoryTrendsResponse {
+	account_token: string;
+	transaction_type: number;
+	months: TrendMonth[];
+	totals: number[]; // grand total per month, aligned to months
+	income: number[]; // credit total per month (transfers-in excluded), aligned to months
+	window_total: number;
+	window_income: number; // sum of income[] over the window
+	monthly_average: number;
+	categories: CategoryTrend[];
+	movers: CategoryMover[];
+}
+
+export type TrendsRangeMonths = 6 | 12 | 24;
+export type TrendsType = 'debit' | 'credit';
+
 export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'every_x_days';
 
 export interface RecurringRule {
@@ -267,6 +306,16 @@ export interface RecurringForecastResponse {
 	summary: RecurringForecastSummary;
 }
 
+export interface CashflowProjectionResponse {
+	account_token: string;
+	current_balance: number;
+	upcoming_credits: number;
+	upcoming_debits: number;
+	projected_balance: number;
+	days_remaining: number;
+	period_end: string;
+}
+
 export interface NotificationItem {
 	id: number;
 	user_id: number;
@@ -280,6 +329,11 @@ export interface NotificationItem {
 	total_credit: number;
 	is_read: boolean;
 	created_at: string;
+	// Budget-threshold notifications only. For this type total_debit is the amount
+	// spent and total_credit is the category budget.
+	category_id?: number;
+	threshold_pct?: number;
+	category_name?: string;
 }
 
 export interface NotificationsResponse {
@@ -291,6 +345,7 @@ export interface NotificationPreferences {
 	enabled: boolean;
 	notify_days_ahead: number;
 	min_total_debit?: number | null;
+	budget_alert_threshold: number;
 	push_endpoints: string[];
 	updated_at: string;
 }
@@ -313,6 +368,7 @@ export interface UpdateNotificationPreferencesPayload {
 	enabled: boolean;
 	notify_days_ahead: number;
 	min_total_debit?: number | null;
+	budget_alert_threshold: number;
 }
 
 export interface CreateRecurringRulePayload {

@@ -1555,6 +1555,284 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	return stats, nil
 }
 
+// GetCategoryMonthlyTrends returns a per-category monthly time series over the
+// last `months` months for one transaction type (spending or income). Everything
+// is aligned to a shared month axis so the frontend can plot it directly.
+func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID int) (*types.CategoryTrendsResponse, error) {
+	if months < 1 {
+		months = 12
+	}
+	if months > 24 {
+		months = 24
+	}
+
+	axis := buildMonthAxis(time.Now().UTC(), months)
+	// index by year*100+month for O(1) row placement onto the axis.
+	indexByKey := make(map[int]int, len(axis))
+	for i, tm := range axis {
+		indexByKey[tm.Year*100+tm.Month] = i
+	}
+	startDate := fmt.Sprintf("%04d-%02d-01", axis[0].Year, axis[0].Month)
+
+	// Group by the actual (leaf) category but also carry its root, so we can build
+	// both the rolled-up parent series and each subcategory's own series in one pass.
+	// Root = the parent (or the category itself when it has no parent), matching the
+	// statistics breakdown.
+	const query = `
+		SELECT
+			EXTRACT(YEAR FROM t.date)::int  AS yr,
+			EXTRACT(MONTH FROM t.date)::int AS mo,
+			c.id, c.category_name, c.color,
+			root.id, root.category_name, root.color,
+			SUM(ABS(t.amount)) AS total
+		FROM transactions t
+		JOIN categories c    ON c.id = t.category_id
+		JOIN categories root ON root.id = COALESCE(c.parent_category_id, c.id)
+		WHERE t.account_token = $1
+		  AND t.is_pending = false
+		  AND t.transaction_type_id = $2
+		  AND t.date >= $3::date
+		GROUP BY yr, mo, c.id, c.category_name, c.color, root.id, root.category_name, root.color`
+
+	rows, err := s.db.Query(query, accountToken, transactionTypeID, startDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query category trends: %w", err)
+	}
+	defer rows.Close()
+
+	totals := make([]float64, len(axis))
+	roots := make(map[int]*types.CategoryTrend)
+	subs := make(map[int]*types.CategoryTrend) // leaf id -> subcategory series
+	subParent := make(map[int]int)             // leaf id -> root id
+
+	for rows.Next() {
+		var yr, mo, catID, rootID int
+		var catName, catColor, rootName, rootColor string
+		var total float64
+		if err := rows.Scan(&yr, &mo, &catID, &catName, &catColor, &rootID, &rootName, &rootColor, &total); err != nil {
+			return nil, fmt.Errorf("failed to scan category trend row: %w", err)
+		}
+
+		idx, ok := indexByKey[yr*100+mo]
+		if !ok {
+			continue // outside the requested window (e.g. a future-dated transaction)
+		}
+
+		rounded := utils.Round(total, 2)
+
+		// Roll every leaf (direct-on-parent or subcategory) up into the root series.
+		root := roots[rootID]
+		if root == nil {
+			root = &types.CategoryTrend{ID: rootID, Name: rootName, Color: rootColor, Totals: make([]float64, len(axis))}
+			roots[rootID] = root
+		}
+		root.Totals[idx] = utils.Round(root.Totals[idx]+rounded, 2)
+		root.Total = utils.Round(root.Total+rounded, 2)
+
+		// Track actual subcategories (a leaf distinct from its root) as their own series.
+		if catID != rootID {
+			sub := subs[catID]
+			if sub == nil {
+				sub = &types.CategoryTrend{ID: catID, Name: catName, Color: catColor, Totals: make([]float64, len(axis))}
+				subs[catID] = sub
+				subParent[catID] = rootID
+			}
+			sub.Totals[idx] = utils.Round(sub.Totals[idx]+rounded, 2)
+			sub.Total = utils.Round(sub.Total+rounded, 2)
+		}
+
+		totals[idx] = utils.Round(totals[idx]+rounded, 2)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate category trend rows: %w", err)
+	}
+
+	for leafID, sub := range subs {
+		if root := roots[subParent[leafID]]; root != nil {
+			root.Subcategories = append(root.Subcategories, sub)
+		}
+	}
+
+	// Biggest first so the picker lists the most relevant series on top.
+	categorySlice := make([]*types.CategoryTrend, 0, len(roots))
+	for _, root := range roots {
+		if len(root.Subcategories) > 1 {
+			sort.SliceStable(root.Subcategories, func(i, j int) bool {
+				return root.Subcategories[i].Total > root.Subcategories[j].Total
+			})
+		}
+		categorySlice = append(categorySlice, root)
+	}
+	sort.SliceStable(categorySlice, func(i, j int) bool {
+		return categorySlice[i].Total > categorySlice[j].Total
+	})
+
+	var windowTotal float64
+	for _, v := range totals {
+		windowTotal += v
+	}
+	windowTotal = utils.Round(windowTotal, 2)
+	var monthlyAverage float64
+	if len(axis) > 0 {
+		monthlyAverage = utils.Round(windowTotal/float64(len(axis)), 2)
+	}
+
+	// Income is always the credit side, independent of the selected type, so any
+	// category can be shown as a share of income (e.g. a savings category's % of
+	// income == the savings rate). It's a separate query because the main pass is
+	// filtered to a single transaction_type_id.
+	income, err := s.queryMonthlyIncome(accountToken, indexByKey, len(axis), startDate)
+	if err != nil {
+		return nil, err
+	}
+	var windowIncome float64
+	for _, v := range income {
+		windowIncome += v
+	}
+	windowIncome = utils.Round(windowIncome, 2)
+
+	return &types.CategoryTrendsResponse{
+		AccountToken:    accountToken,
+		TransactionType: transactionTypeID,
+		Months:          axis,
+		Totals:          totals,
+		Income:          income,
+		WindowTotal:     windowTotal,
+		WindowIncome:    windowIncome,
+		MonthlyAverage:  monthlyAverage,
+		Categories:      categorySlice,
+		Movers:          computeCategoryMovers(categorySlice, len(axis)),
+	}, nil
+}
+
+// monthlyAmount is one (year, month) bucket of a pre-summed amount, as scanned
+// from an aggregate query. Kept separate from the axis so bucketing onto it can
+// be unit-tested without a database.
+type monthlyAmount struct {
+	year   int
+	month  int
+	amount float64
+}
+
+// bucketMonthlyAmounts places pre-summed monthly amounts onto the shared axis via
+// indexByKey, dropping any month outside the window. Pure (no DB) so the income
+// aggregation is unit-testable.
+func bucketMonthlyAmounts(rows []*monthlyAmount, indexByKey map[int]int, n int) []float64 {
+	out := make([]float64, n)
+	for _, r := range rows {
+		idx, ok := indexByKey[r.year*100+r.month]
+		if !ok {
+			continue // outside the requested window
+		}
+		out[idx] = utils.Round(out[idx]+utils.Round(r.amount, 2), 2)
+	}
+	return out
+}
+
+// queryMonthlyIncome returns per-month credit totals aligned to the axis. Incoming
+// transfers (rows carrying a transfer_group_id) are excluded so money moved between
+// the user's own accounts is not counted as income.
+func (s *Store) queryMonthlyIncome(accountToken string, indexByKey map[int]int, n int, startDate string) ([]float64, error) {
+	const query = `
+		SELECT
+			EXTRACT(YEAR FROM date)::int  AS yr,
+			EXTRACT(MONTH FROM date)::int AS mo,
+			SUM(ABS(amount))             AS total
+		FROM transactions
+		WHERE account_token = $1
+		  AND is_pending = false
+		  AND transaction_type_id = $2
+		  AND transfer_group_id IS NULL
+		  AND date >= $3::date
+		GROUP BY yr, mo`
+
+	rows, err := db.QueryList(s.db, query, func(r *sql.Rows) (*monthlyAmount, error) {
+		m := &monthlyAmount{}
+		if err := r.Scan(&m.year, &m.month, &m.amount); err != nil {
+			return nil, err
+		}
+		return m, nil
+	}, accountToken, int(types.CreditTransactionType), startDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query monthly income: %w", err)
+	}
+
+	return bucketMonthlyAmounts(rows, indexByKey, n), nil
+}
+
+// computeCategoryMovers ranks root categories by how much their spend moved from
+// the previous month to the latest month, biggest money change first, capped at
+// six. Direction is "up"/"down" (>|2%|) or "new" (spend this month, none last).
+// A category that fell to exactly zero is skipped: within a possibly-incomplete
+// current month, an absence reads as "not yet", not a real decrease.
+func computeCategoryMovers(roots []*types.CategoryTrend, n int) []*types.CategoryMover {
+	movers := make([]*types.CategoryMover, 0)
+	if n < 2 {
+		return movers
+	}
+
+	for _, root := range roots {
+		prev := root.Totals[n-2]
+		cur := root.Totals[n-1]
+
+		var pct *float64
+		direction := ""
+		switch {
+		case prev == 0 && cur > 0:
+			direction = "new"
+		case prev == 0 || cur == 0:
+			continue // nothing to compare, or dropped to zero (likely just "not yet")
+		default:
+			p := ((cur - prev) / prev) * 100
+			switch {
+			case p > 2:
+				direction = "up"
+			case p < -2:
+				direction = "down"
+			default:
+				continue // flat — not a mover
+			}
+			rounded := utils.Round(p, 0)
+			pct = &rounded
+		}
+
+		movers = append(movers, &types.CategoryMover{
+			ID:        root.ID,
+			Name:      root.Name,
+			Color:     root.Color,
+			Totals:    root.Totals,
+			Pct:       pct,
+			Direction: direction,
+		})
+	}
+
+	// Biggest money change first — a big euro swing matters more than a big % on a
+	// tiny category.
+	delta := func(m *types.CategoryMover) float64 {
+		return abs(m.Totals[n-1] - m.Totals[n-2])
+	}
+	sort.SliceStable(movers, func(i, j int) bool {
+		return delta(movers[i]) > delta(movers[j])
+	})
+
+	if len(movers) > 6 {
+		movers = movers[:6]
+	}
+	return movers
+}
+
+// buildMonthAxis returns `months` consecutive TrendMonths ending with the month
+// of `now` (chronological order).
+func buildMonthAxis(now time.Time, months int) []types.TrendMonth {
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -(months - 1), 0)
+	axis := make([]types.TrendMonth, 0, months)
+	for i := 0; i < months; i++ {
+		d := start.AddDate(0, i, 0)
+		axis = append(axis, types.TrendMonth{Month: int(d.Month()), Year: d.Year()})
+	}
+	return axis
+}
+
 // Returns start and end date (YYYY-MM-DD) for a given month/year
 func getMonthDateRange(month, year *int) (startDate, endDate string) {
 	loc := time.UTC

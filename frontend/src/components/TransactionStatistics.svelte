@@ -1,9 +1,10 @@
 <!-- src/components/TransactionStatistics.svelte -->
 <script lang="ts">
-	import type { Account, TransactionStatistics } from '$lib/types';
+	import type { Account, TransactionStatistics, CashflowProjectionResponse } from '$lib/types';
 	import { BarChart3, TrendingUp, TrendingDown, PieChart, Bot, BarChart } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { formatCurrency } from '$lib/utils/currency';
+	import { dataService } from '$lib/services/dataService';
 	import TransactionsHeatmap from './TransactionsHeatmap.svelte';
 	import AiFeedback from './AiFeedback.svelte';
 	import HierarchicalPieChart from './HierarchicalPieChart.svelte';
@@ -20,6 +21,46 @@
 	let statsView: 'transactions' | 'categories' | 'overview' = 'transactions';
 
 	$: isAll = selectedMonth === null && selectedYear === null;
+
+	// End-of-month "safe to spend" projection only makes sense for the ongoing
+	// month; for past months a projection would be meaningless, so hide it.
+	const currentMonth = new Date().getMonth() + 1;
+	const currentYear = new Date().getFullYear();
+	$: isCurrentMonth = !isAll && selectedMonth === currentMonth && selectedYear === currentYear;
+
+	let projection: CashflowProjectionResponse | null = null;
+	let projectionToken: string | null = null;
+
+	// The projection reframes the month's Net Balance: where will this month's
+	// credit − debit land once the recurring movements still due before month end
+	// are applied. Base = current net; delta = expected income − expected expenses.
+	$: netBalance = statistics ? statistics.totals.difference : 0;
+	$: netUpcoming = projection ? projection.upcoming_credits - projection.upcoming_debits : 0;
+	$: projectedNet = netBalance + netUpcoming;
+
+	// Only show the row when something recurring is still expected; otherwise
+	// projected == the Net Balance already shown above and it would just be noise.
+	$: showProjection =
+		!!projection && (projection.upcoming_credits > 0 || projection.upcoming_debits > 0);
+
+	$: if (isCurrentMonth && account) {
+		loadProjection(account.token);
+	} else {
+		projection = null;
+		projectionToken = null;
+	}
+
+	async function loadProjection(token: string) {
+		if (projectionToken === token) return; // already loaded/loading for this account
+		projectionToken = token;
+		try {
+			projection = await dataService.fetchCashflowProjection(token);
+		} catch (err) {
+			console.error('Error fetching cashflow projection:', err);
+			projection = null;
+			projectionToken = null;
+		}
+	}
 
 	let showAiFeedbackModal = false;
 
@@ -148,7 +189,7 @@
 							>
 								{statistics.totals.difference >= 0 ? '+' : ''}{formatCurrency(
 									statistics.totals.difference
-								)}€
+								)}
 							</p>
 							{#if statistics.totals.difference >= 0}
 								<TrendingUp size={16} class="text-success" />
@@ -158,6 +199,59 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- Projected Net Balance (current month only, and only when recurring
+				     movements are still expected before month end). Reframes the Net
+				     Balance above as an equation: current net − expected = projected net. -->
+				{#if isCurrentMonth && showProjection && projection}
+					<div class="mt-4 rounded-lg border border-base-300 bg-base-200/40 p-4">
+						<div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-4">
+							<!-- Current net balance -->
+							<div class="min-w-[7rem] text-center">
+								<p class="text-xs uppercase tracking-wide opacity-60">
+									{$t('transactions.net-balance')}
+								</p>
+								<p class="text-xl font-bold {netBalance >= 0 ? 'text-success' : 'text-error'}">
+									{netBalance >= 0 ? '+' : ''}{formatCurrency(netBalance)}
+								</p>
+							</div>
+
+							<span class="text-3xl font-light opacity-30">{netUpcoming < 0 ? '−' : '+'}</span>
+
+							<!-- Expected movement until month end -->
+							<div
+								class="min-w-[9rem] rounded-lg bg-base-100/60 px-4 py-2 text-center"
+								title="{$t('projection.expected-income')}: +{formatCurrency(
+									projection.upcoming_credits
+								)} · {$t('projection.expected-expenses')}: -{formatCurrency(
+									projection.upcoming_debits
+								)}"
+							>
+								<p class="text-xs uppercase tracking-wide opacity-60">
+									{$t('projection.expected-until-month-end')}
+								</p>
+								<div class="flex items-center justify-center gap-1.5">
+									<p class="text-xl font-bold {netUpcoming < 0 ? 'text-error' : 'text-success'}">
+										{formatCurrency(Math.abs(netUpcoming))}
+									</p>
+								</div>
+							</div>
+
+							<span class="text-3xl font-light opacity-30">=</span>
+
+							<!-- Projected net balance -->
+							<div class="min-w-[7rem] text-center">
+								<p class="text-xs uppercase tracking-wide opacity-60">
+									{$t('projection.projected-net')}
+								</p>
+								<p class="text-xl font-bold {projectedNet >= 0 ? 'text-success' : 'text-error'}">
+									{projectedNet >= 0 ? '+' : ''}{formatCurrency(projectedNet)}
+								</p>
+							</div>
+						</div>
+					</div>
+				{/if}
+
 				<!-- Gap between sections -->
 				<div class="mt-2"></div>
 

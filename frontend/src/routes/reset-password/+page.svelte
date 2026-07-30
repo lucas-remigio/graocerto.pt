@@ -53,11 +53,20 @@
 
 		<form class="mt-6 space-y-4" on:submit|preventDefault={handleSubmit}>
 			<div class="form-control">
-				<label for="password" class="label"><span class="label-text">{$t('auth.password')}</span></label>
-				<input id="password" type="password" bind:value={password} class="input input-bordered w-full" />
+				<label for="password" class="label"
+					><span class="label-text">{$t('auth.password')}</span></label
+				>
+				<input
+					id="password"
+					type="password"
+					bind:value={password}
+					class="input input-bordered w-full"
+				/>
 			</div>
 			<div class="form-control">
-				<label for="confirmPassword" class="label"><span class="label-text">{$t('auth.confirm-password')}</span></label>
+				<label for="confirmPassword" class="label"
+					><span class="label-text">{$t('auth.confirm-password')}</span></label
+				>
 				<input
 					id="confirmPassword"
 					type="password"

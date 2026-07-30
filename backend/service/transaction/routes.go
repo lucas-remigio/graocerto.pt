@@ -23,6 +23,7 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/transactions/transfer", middleware.AuthMiddleware(h.CreateTransfer))
 	router.HandleFunc("/transactions/dto/", middleware.AuthMiddleware(h.GetTransactionsDTOByAccountToken))
 	router.HandleFunc("/transactions/statistics/", middleware.AuthMiddleware(h.GetTransactionStatistics))
+	router.HandleFunc("/transactions/trends/", middleware.AuthMiddleware(h.GetCategoryMonthlyTrends))
 	router.HandleFunc("/transactions/", middleware.AuthMiddleware(h.GetTransactionsByAccountToken))
 	router.HandleFunc("/transactions/{id}", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
@@ -308,4 +309,46 @@ func (h *Handler) GetTransactionStatistics(w http.ResponseWriter, r *http.Reques
 	}
 
 	utils.WriteJson(w, http.StatusOK, statistics)
+}
+
+func (h *Handler) GetCategoryMonthlyTrends(w http.ResponseWriter, r *http.Request) {
+	// extract account token from URL path (/transactions/trends/{accountToken})
+	accountToken, ok := middleware.ExtractPathParamAndRespond(w, r, 2)
+	if !ok {
+		return
+	}
+
+	if _, ok = middleware.RequireAuth(w, r); !ok {
+		return
+	}
+
+	months := 12
+	if monthsStr := r.URL.Query().Get("months"); monthsStr != "" {
+		monthsInt, err := strconv.Atoi(monthsStr)
+		if err != nil || monthsInt < 1 || monthsInt > 24 {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("months must be between 1 and 24"))
+			return
+		}
+		months = monthsInt
+	}
+
+	// Default to spending (debit); allow income (credit) via ?type=credit.
+	transactionTypeID := int(types.DebitTransactionType)
+	switch r.URL.Query().Get("type") {
+	case "", "debit":
+		transactionTypeID = int(types.DebitTransactionType)
+	case "credit":
+		transactionTypeID = int(types.CreditTransactionType)
+	default:
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("type must be 'debit' or 'credit'"))
+		return
+	}
+
+	trends, err := h.store.GetCategoryMonthlyTrends(accountToken, months, transactionTypeID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, trends)
 }

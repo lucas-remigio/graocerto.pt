@@ -18,14 +18,14 @@
 		summaryItems.length > 0
 			? summaryItems
 			: recurringRules.length > 0
-			? recurringRules.map((rule) => ({
-					amount: rule.amount,
-					typeId: rule.transaction_type_id
-				}))
-			: transactions.map((transaction) => ({
-					amount: transaction.amount,
-					typeId: transaction.transaction_type.id
-				}))
+				? recurringRules.map((rule) => ({
+						amount: rule.amount,
+						typeId: rule.transaction_type_id
+					}))
+				: transactions.map((transaction) => ({
+						amount: transaction.amount,
+						typeId: transaction.transaction_type.id
+					}))
 	);
 
 	let totals = $derived(() => {

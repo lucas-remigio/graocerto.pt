@@ -68,7 +68,6 @@ export const showNonFavorites = derived(uiPreferences, ($prefs) => $prefs.showNo
 
 export const heatmapDisplayMode = derived(uiPreferences, ($prefs) => $prefs.heatmapDisplayMode);
 
-
 // Helper functions to update individual preferences
 export const updateHideBalances = (value: boolean) => {
 	uiPreferences.update((prefs) => ({ ...prefs, hideBalances: value }));

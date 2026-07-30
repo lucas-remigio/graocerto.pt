@@ -18,6 +18,60 @@ type TransactionStore interface {
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
+	GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID int) (*CategoryTrendsResponse, error)
+}
+
+// TrendMonth is one point on the trends x-axis.
+type TrendMonth struct {
+	Month int `json:"month"`
+	Year  int `json:"year"`
+}
+
+// CategoryTrend is one category's spend/income per month, aligned index-for-index
+// with CategoryTrendsResponse.Months. Total is the window sum (used for ordering
+// the picker so the biggest categories surface first).
+type CategoryTrend struct {
+	ID     int       `json:"id"`
+	Name   string    `json:"name"`
+	Color  string    `json:"color"`
+	Totals []float64 `json:"totals"`
+	Total  float64   `json:"total"`
+	// Subcategories carry their own series; only populated on root categories.
+	// The parent's Totals already include these (rolled up), matching the stats view.
+	Subcategories []*CategoryTrend `json:"subcategories,omitempty"`
+}
+
+// CategoryMover is a category whose recent-half average moved meaningfully vs the
+// earlier half of the window. Pct is nil for a "new" category (no earlier spend).
+// Direction is one of: "up", "down", "new".
+type CategoryMover struct {
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Color     string    `json:"color"`
+	Totals    []float64 `json:"totals"`
+	Pct       *float64  `json:"pct"`
+	Direction string    `json:"direction"`
+}
+
+// CategoryTrendsResponse is a chart-ready time series over the last N months:
+// a shared month axis, the per-month grand total, and a per-category series
+// (subcategories rolled up into their parent, matching the statistics view).
+// WindowTotal/MonthlyAverage and Movers are computed server-side so the client
+// only renders.
+type CategoryTrendsResponse struct {
+	AccountToken    string           `json:"account_token"`
+	TransactionType int              `json:"transaction_type"`
+	Months          []TrendMonth     `json:"months"`
+	Totals          []float64        `json:"totals"`
+	// Income is per-month credit total (transfers-in excluded), aligned to Months,
+	// regardless of the selected TransactionType — it's always the credit side so the
+	// client can express any category as a share of income. WindowIncome is its sum.
+	Income         []float64        `json:"income"`
+	WindowTotal    float64          `json:"window_total"`
+	WindowIncome   float64          `json:"window_income"`
+	MonthlyAverage float64          `json:"monthly_average"`
+	Categories     []*CategoryTrend `json:"categories"`
+	Movers         []*CategoryMover `json:"movers"`
 }
 
 type CreateTransactionPayload struct {
