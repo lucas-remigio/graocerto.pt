@@ -121,6 +121,19 @@
 	</button>
 {/snippet}
 
+<!-- One stat: value on top, a label below whose full meaning is a DaisyUI tooltip. -->
+{#snippet stat(value: string, label: string, tip: string)}
+	<span class="flex min-w-[3.25rem] flex-col items-end leading-tight">
+		<span class="text-sm font-semibold tabular-nums">{value}</span>
+		<span
+			class="tooltip tooltip-top cursor-help text-[0.6rem] uppercase tracking-wide underline decoration-dotted underline-offset-2 opacity-60 before:z-10 before:max-w-[11rem] before:whitespace-normal before:text-[0.7rem] before:normal-case before:content-[attr(data-tip)]"
+			data-tip={tip}
+		>
+			{label}
+		</span>
+	</span>
+{/snippet}
+
 <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
 	<!-- Concentration + smoothing: context before any click. -->
 	<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -153,41 +166,40 @@
 		</div>
 	{/if}
 
-	<!-- Per-category detail for the selection. Hover the chart for every month's %. -->
+	<!-- Per-category detail for the selection. Each stat's label carries a tooltip;
+	     hover the chart for every month's %. Wraps (no scroll) so tooltips aren't clipped. -->
 	{#if selectedCats.length > 0}
-		<div class="mt-3 overflow-x-auto rounded-lg bg-base-200/50">
-			<div class="min-w-[24rem] px-3 py-2">
-				<div
-					class="grid grid-cols-[minmax(0,1fr)_4rem_4rem_4rem_4.5rem] items-center gap-2 pb-1 text-[0.65rem] uppercase tracking-wide opacity-50"
-				>
-					<span></span>
-					<span class="text-right">{$t('trends.col-income')}</span>
-					<span class="text-right">{$t('trends.col-this-month')}</span>
-					<span class="text-right">{$t('trends.col-mom')}</span>
-					<span class="text-right">{$t('trends.col-permonth')}</span>
-				</div>
+		<div class="mt-3 rounded-lg bg-base-200/50 px-3 py-2">
+			<p class="pb-1 text-[0.65rem] italic opacity-45">{$t('trends.detail-hint')}</p>
+			<div class="flex flex-col divide-y divide-base-300/50">
 				{#each selectedCats as cat (cat.id)}
 					{@const m = momOf(cat)}
-					<div
-						class="grid grid-cols-[minmax(0,1fr)_4rem_4rem_4rem_4.5rem] items-center gap-2 py-0.5 text-sm"
-					>
-						<span class="flex min-w-0 items-center gap-1.5">
+					<div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-1.5">
+						<span class="flex min-w-0 basis-full items-center gap-1.5 sm:flex-1 sm:basis-32">
 							<span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {cat.color};"
 							></span>
-							<span class="truncate">{cat.name}</span>
+							<span class="truncate font-medium">{cat.name}</span>
 						</span>
-						<span class="text-right font-semibold">{pct(windowShare(cat))}</span>
-						<span class="text-right">{pct(monthShare(cat))}</span>
-						<span class="text-right tabular-nums">
-							{#if m.dir === 'new'}
-								{$t('trends.momentum-new')}
-							{:else if m.dir === 'none'}
-								—
-							{:else}
-								{m.pct > 0 ? '+' : ''}{m.pct}%
-							{/if}
-						</span>
-						<span class="text-right tabular-nums">{formatCurrency(perMonth(cat), 0)}</span>
+						{@render stat(pct(windowShare(cat)), $t('trends.col-income'), $t('trends.tip-income'))}
+						{@render stat(
+							pct(monthShare(cat)),
+							$t('trends.col-this-month'),
+							$t('trends.tip-this-month')
+						)}
+						{@render stat(
+							m.dir === 'new'
+								? $t('trends.momentum-new')
+								: m.dir === 'none'
+									? '—'
+									: `${m.pct > 0 ? '+' : ''}${m.pct}%`,
+							$t('trends.col-mom'),
+							$t('trends.tip-mom')
+						)}
+						{@render stat(
+							formatCurrency(perMonth(cat), 0),
+							$t('trends.col-permonth'),
+							$t('trends.tip-permonth')
+						)}
 					</div>
 				{/each}
 			</div>

@@ -97,7 +97,8 @@
 						<span class="min-w-0 flex-1 truncate text-sm">{m.name}</span>
 						<CategorySparkline data={m.totals} color={m.color} />
 						<span
-							class="flex items-center gap-1 rounded-full bg-base-200 px-2 py-0.5 text-xs font-semibold text-base-content/80"
+							class="tooltip tooltip-left flex cursor-help items-center gap-1 rounded-full bg-base-200 px-2 py-0.5 text-xs font-semibold text-base-content/80 before:z-10 before:max-w-[12rem] before:whitespace-normal before:text-[0.7rem] before:content-[attr(data-tip)]"
+							data-tip={$t('trends.momentum-tip')}
 						>
 							{#if m.direction === 'new'}
 								{$t('trends.momentum-new')}
