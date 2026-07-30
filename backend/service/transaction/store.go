@@ -1667,13 +1667,101 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 		return categorySlice[i].Total > categorySlice[j].Total
 	})
 
+	var windowTotal float64
+	for _, v := range totals {
+		windowTotal += v
+	}
+	windowTotal = utils.Round(windowTotal, 2)
+	var monthlyAverage float64
+	if len(axis) > 0 {
+		monthlyAverage = utils.Round(windowTotal/float64(len(axis)), 2)
+	}
+
 	return &types.CategoryTrendsResponse{
 		AccountToken:    accountToken,
 		TransactionType: transactionTypeID,
 		Months:          axis,
 		Totals:          totals,
+		WindowTotal:     windowTotal,
+		MonthlyAverage:  monthlyAverage,
 		Categories:      categorySlice,
+		Movers:          computeCategoryMovers(categorySlice, len(axis)),
 	}, nil
+}
+
+// computeCategoryMovers ranks root categories by how much their recent-half
+// average moved versus the earlier half of the window, keeping only meaningful
+// movers (>|2%|, or brand-new spend), biggest first, capped at six.
+func computeCategoryMovers(roots []*types.CategoryTrend, n int) []*types.CategoryMover {
+	movers := make([]*types.CategoryMover, 0)
+	if n < 2 {
+		return movers
+	}
+	half := n / 2
+	avg := func(arr []float64, from, to int) float64 {
+		if to <= from {
+			return 0
+		}
+		var sum float64
+		for i := from; i < to; i++ {
+			sum += arr[i]
+		}
+		return sum / float64(to-from)
+	}
+
+	for _, root := range roots {
+		priorAvg := avg(root.Totals, 0, half)
+		recentAvg := avg(root.Totals, n-half, n)
+
+		var pct *float64
+		direction := ""
+		switch {
+		case priorAvg == 0 && recentAvg > 0:
+			direction = "new"
+		case priorAvg == 0:
+			continue // no earlier spend and none now
+		default:
+			p := ((recentAvg - priorAvg) / priorAvg) * 100
+			switch {
+			case p > 2:
+				direction = "up"
+			case p < -2:
+				direction = "down"
+			default:
+				continue // flat — not a mover
+			}
+			rounded := utils.Round(p, 0)
+			pct = &rounded
+		}
+
+		movers = append(movers, &types.CategoryMover{
+			ID:        root.ID,
+			Name:      root.Name,
+			Color:     root.Color,
+			Totals:    root.Totals,
+			Pct:       pct,
+			Direction: direction,
+		})
+	}
+
+	// Biggest movers first; brand-new categories float to the top.
+	rank := func(m *types.CategoryMover) float64 {
+		if m.Direction == "new" {
+			return 1e18
+		}
+		if m.Pct == nil {
+			return 0
+		}
+		return abs(*m.Pct)
+	}
+	sort.SliceStable(movers, func(i, j int) bool {
+		return rank(movers[i]) > rank(movers[j])
+	})
+
+	if len(movers) > 6 {
+		movers = movers[:6]
+	}
+	return movers
 }
 
 // buildMonthAxis returns `months` consecutive TrendMonths ending with the month

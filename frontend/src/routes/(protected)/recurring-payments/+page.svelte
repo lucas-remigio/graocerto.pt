@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { dataService } from '$lib/services/dataService';
 	import type {
 		Account,
@@ -26,6 +26,8 @@
 		matchesTransactionFilters
 	} from '$lib/utils/transactionFilters';
 	import { toastStore } from '$lib/stores/toast';
+	import { pickInitialAccount, rememberSelectedAccount } from '$lib/utils/accounts';
+	import { useIsLargeScreen } from '$lib/utils/screenSize.svelte';
 
 	let loading = $state(true);
 	let recurringRules: RecurringRule[] = $state([]);
@@ -44,7 +46,7 @@
 	let categories: CategoryDto[] = $state([]);
 	let accountsLoading = $state(false);
 	let selectedAccount: Account | null = $state(null);
-	let isLargeScreen: boolean = $state(false);
+	const screen = useIsLargeScreen();
 	let recurringViewMode = $state<'rules' | 'forecast'>('rules');
 	let forecastDays: RecurringForecastRangeDays = $state(30);
 	let forecastItems: RecurringForecastItem[] = $state([]);
@@ -97,15 +99,8 @@
 				}))
 	);
 
-	function updateScreenSize() {
-		isLargeScreen = window.innerWidth >= 1024;
-	}
-
 	function getSelectedAccount() {
-		if (selectedAccount || accounts.length === 0) return;
-		const storedAccountToken = localStorage.getItem('selectedAccount');
-		selectedAccount =
-			accounts.find((account) => account.token === storedAccountToken) || accounts[0];
+		selectedAccount = pickInitialAccount(accounts, selectedAccount);
 	}
 
 	async function loadData() {
@@ -285,7 +280,7 @@
 
 	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
-		localStorage.setItem('selectedAccount', selectedAccount.token);
+		rememberSelectedAccount(selectedAccount.token);
 		syncForecastIfNeeded();
 	}
 
@@ -305,12 +300,6 @@
 
 	onMount(async () => {
 		await Promise.all([fetchAccounts(true), fetchCategories(), loadData()]);
-		updateScreenSize();
-		window.addEventListener('resize', updateScreenSize);
-	});
-
-	onDestroy(() => {
-		window.removeEventListener('resize', updateScreenSize);
 	});
 </script>
 
@@ -318,7 +307,7 @@
 	<AccountsSplitLayout
 		{accounts}
 		{selectedAccount}
-		{isLargeScreen}
+		isLargeScreen={screen.value}
 		{accountsLoading}
 		showRightPanel={!!selectedAccount}
 		on:select={handleSelectAccount}

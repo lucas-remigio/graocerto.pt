@@ -41,15 +41,32 @@ type CategoryTrend struct {
 	Subcategories []*CategoryTrend `json:"subcategories,omitempty"`
 }
 
+// CategoryMover is a category whose recent-half average moved meaningfully vs the
+// earlier half of the window. Pct is nil for a "new" category (no earlier spend).
+// Direction is one of: "up", "down", "new".
+type CategoryMover struct {
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Color     string    `json:"color"`
+	Totals    []float64 `json:"totals"`
+	Pct       *float64  `json:"pct"`
+	Direction string    `json:"direction"`
+}
+
 // CategoryTrendsResponse is a chart-ready time series over the last N months:
 // a shared month axis, the per-month grand total, and a per-category series
 // (subcategories rolled up into their parent, matching the statistics view).
+// WindowTotal/MonthlyAverage and Movers are computed server-side so the client
+// only renders.
 type CategoryTrendsResponse struct {
 	AccountToken    string           `json:"account_token"`
 	TransactionType int              `json:"transaction_type"`
 	Months          []TrendMonth     `json:"months"`
 	Totals          []float64        `json:"totals"`
+	WindowTotal     float64          `json:"window_total"`
+	MonthlyAverage  float64          `json:"monthly_average"`
 	Categories      []*CategoryTrend `json:"categories"`
+	Movers          []*CategoryMover `json:"movers"`
 }
 
 type CreateTransactionPayload struct {

@@ -76,3 +76,53 @@ func mustDate(t *testing.T, s string) time.Time {
 	}
 	return d
 }
+
+func TestComputeCategoryMovers(t *testing.T) {
+	// 6-month window: half = 3, so prior = months[0..3), recent = months[3..6).
+	roots := []*types.CategoryTrend{
+		// prior avg 100, recent avg 150 => +50% up
+		{ID: 1, Name: "Dining", Totals: []float64{100, 100, 100, 150, 150, 150}},
+		// prior avg 200, recent avg 100 => -50% down
+		{ID: 2, Name: "Transport", Totals: []float64{200, 200, 200, 100, 100, 100}},
+		// no prior spend, recent spend => new
+		{ID: 3, Name: "Gym", Totals: []float64{0, 0, 0, 40, 40, 40}},
+		// flat (within ±2%) => excluded
+		{ID: 4, Name: "Rent", Totals: []float64{500, 500, 500, 500, 500, 500}},
+	}
+
+	movers := computeCategoryMovers(roots, 6)
+
+	byID := make(map[int]*types.CategoryMover)
+	for _, m := range movers {
+		byID[m.ID] = m
+	}
+
+	if _, ok := byID[4]; ok {
+		t.Fatalf("flat category should be excluded from movers")
+	}
+	if len(movers) != 3 {
+		t.Fatalf("expected 3 movers, got %d", len(movers))
+	}
+
+	if byID[1].Direction != "up" || byID[1].Pct == nil || *byID[1].Pct != 50 {
+		t.Fatalf("Dining: got dir=%s pct=%v", byID[1].Direction, byID[1].Pct)
+	}
+	if byID[2].Direction != "down" || byID[2].Pct == nil || *byID[2].Pct != -50 {
+		t.Fatalf("Transport: got dir=%s pct=%v", byID[2].Direction, byID[2].Pct)
+	}
+	if byID[3].Direction != "new" || byID[3].Pct != nil {
+		t.Fatalf("Gym: expected new with nil pct, got dir=%s pct=%v", byID[3].Direction, byID[3].Pct)
+	}
+
+	// New floats to the top of the ranking.
+	if movers[0].ID != 3 {
+		t.Fatalf("expected new category (Gym) first, got id=%d", movers[0].ID)
+	}
+}
+
+func TestComputeCategoryMovers_TooFewMonths(t *testing.T) {
+	roots := []*types.CategoryTrend{{ID: 1, Totals: []float64{100}}}
+	if movers := computeCategoryMovers(roots, 1); len(movers) != 0 {
+		t.Fatalf("expected no movers for n<2, got %d", len(movers))
+	}
+}

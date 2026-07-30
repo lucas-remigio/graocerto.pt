@@ -325,7 +325,10 @@
 		"no-accounts": "Create an account to see trends.",
 		"kpi-total": "Total",
 		"kpi-average": "Monthly average",
-		"kpi-categories": "Categories"
+		"kpi-categories": "Categories",
+		"whats-changing": "What's changing",
+		"momentum-caption": "Recent months vs earlier in the range",
+		"momentum-new": "New"
 	},
 
 	"transactions": {

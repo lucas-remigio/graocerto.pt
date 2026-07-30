@@ -232,12 +232,24 @@ export interface CategoryTrend {
 	subcategories?: CategoryTrend[]; // only on root categories; parent totals include these
 }
 
+export interface CategoryMover {
+	id: number;
+	name: string;
+	color: string;
+	totals: number[];
+	pct: number | null; // null for "new"
+	direction: 'up' | 'down' | 'new';
+}
+
 export interface CategoryTrendsResponse {
 	account_token: string;
 	transaction_type: number;
 	months: TrendMonth[];
 	totals: number[]; // grand total per month, aligned to months
+	window_total: number;
+	monthly_average: number;
 	categories: CategoryTrend[];
+	movers: CategoryMover[];
 }
 
 export type TrendsRangeMonths = 6 | 12 | 24;
