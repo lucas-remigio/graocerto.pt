@@ -18,7 +18,9 @@
 	import { locale } from 'svelte-i18n';
 	import { themeService } from '$lib/services/themeService';
 	import { formatCurrency } from '$lib/utils/currency';
-	import type { CategoryTrendsResponse } from '$lib/types';
+	import type { TrendMonth } from '$lib/types';
+
+	type ChartSeries = { name: string; color: string; totals: number[] };
 
 	ChartJS.register(
 		Title,
@@ -32,8 +34,9 @@
 		Filler
 	);
 
-	export let trends: CategoryTrendsResponse;
-	export let selectedCategoryIds: number[] = [];
+	export let months: TrendMonth[] = [];
+	export let total: number[] = [];
+	export let series: ChartSeries[] = [];
 	export let showTotal: boolean = true;
 
 	let canvasElement: HTMLCanvasElement;
@@ -45,7 +48,7 @@
 	$: currentLocale = $locale || 'pt';
 
 	function monthLabels(): string[] {
-		return trends.months.map((m) =>
+		return months.map((m) =>
 			new Date(m.year, m.month - 1, 1).toLocaleDateString(currentLocale, {
 				month: 'short',
 				year: '2-digit'
@@ -54,7 +57,7 @@
 	}
 
 	function createChart() {
-		if (!canvasElement || !trends || trends.months.length === 0) return;
+		if (!canvasElement || months.length === 0) return;
 
 		if (chart) {
 			chart.destroy();
@@ -71,15 +74,13 @@
 			tooltipBorderColor
 		} = themeService.getThemeColors();
 
-		const categoriesById = new Map(trends.categories.map((c) => [c.id, c]));
-
 		// Chart.js defines internal properties on the arrays/objects it receives, which
 		// throws on Svelte $state proxies — hand it plain (cloned) arrays instead.
 		const totalDataset = showTotal
 			? [
 					{
 						label: $t('trends.total'),
-						data: trends.totals.slice(),
+						data: total.slice(),
 						borderColor: TOTAL_COLOR,
 						backgroundColor: 'rgba(99, 102, 241, 0.10)',
 						fill: true,
@@ -94,21 +95,18 @@
 
 		const datasets = [
 			...totalDataset,
-			...selectedCategoryIds
-				.map((id) => categoriesById.get(id))
-				.filter((c): c is NonNullable<typeof c> => !!c)
-				.map((c) => ({
-					label: c.name,
-					data: c.totals.slice(),
-					borderColor: c.color,
-					backgroundColor: c.color,
-					fill: false,
-					tension: 0.25,
-					borderWidth: 2,
-					pointRadius: 2,
-					pointHoverRadius: 5,
-					pointBackgroundColor: c.color
-				}))
+			...series.map((s) => ({
+				label: s.name,
+				data: s.totals.slice(),
+				borderColor: s.color,
+				backgroundColor: s.color,
+				fill: false,
+				tension: 0.25,
+				borderWidth: 2,
+				pointRadius: 2,
+				pointHoverRadius: 5,
+				pointBackgroundColor: s.color
+			}))
 		];
 
 		const config: ChartConfiguration = {
@@ -159,8 +157,9 @@
 	}
 
 	// Rebuild on data, selection, total-toggle, or locale change.
-	$: if (canvasElement && trends) {
-		void selectedCategoryIds;
+	$: if (canvasElement && months.length > 0) {
+		void total;
+		void series;
 		void showTotal;
 		void currentLocale;
 		createChart();

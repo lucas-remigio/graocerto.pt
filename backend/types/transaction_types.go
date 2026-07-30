@@ -36,6 +36,9 @@ type CategoryTrend struct {
 	Color  string    `json:"color"`
 	Totals []float64 `json:"totals"`
 	Total  float64   `json:"total"`
+	// Subcategories carry their own series; only populated on root categories.
+	// The parent's Totals already include these (rolled up), matching the stats view.
+	Subcategories []*CategoryTrend `json:"subcategories,omitempty"`
 }
 
 // CategoryTrendsResponse is a chart-ready time series over the last N months:

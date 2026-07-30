@@ -229,6 +229,7 @@ export interface CategoryTrend {
 	color: string;
 	totals: number[]; // aligned to CategoryTrendsResponse.months
 	total: number; // sum over the window
+	subcategories?: CategoryTrend[]; // only on root categories; parent totals include these
 }
 
 export interface CategoryTrendsResponse {

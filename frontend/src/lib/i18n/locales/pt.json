@@ -322,6 +322,7 @@
 		"spending": "Gastos",
 		"income": "Entradas",
 		"total": "Total",
+		"subcategories": "Subcategorias",
 		"pick-series": "Ativa uma série abaixo para ver a tendência.",
 		"no-data": "Ainda não há dados para este período.",
 		"no-accounts": "Cria uma conta para ver tendências.",

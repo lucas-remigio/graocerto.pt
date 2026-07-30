@@ -319,6 +319,7 @@
 		"spending": "Spending",
 		"income": "Income",
 		"total": "Total",
+		"subcategories": "Subcategories",
 		"pick-series": "Toggle a series below to see the trend.",
 		"no-data": "No data yet for this range.",
 		"no-accounts": "Create an account to see trends.",

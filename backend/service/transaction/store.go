@@ -1574,22 +1574,25 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 	}
 	startDate := fmt.Sprintf("%04d-%02d-01", axis[0].Year, axis[0].Month)
 
-	// Roll subcategory spend up into the parent (grp), mirroring the statistics
-	// breakdown, so the series match what the user sees per month.
+	// Group by the actual (leaf) category but also carry its root, so we can build
+	// both the rolled-up parent series and each subcategory's own series in one pass.
+	// Root = the parent (or the category itself when it has no parent), matching the
+	// statistics breakdown.
 	const query = `
 		SELECT
 			EXTRACT(YEAR FROM t.date)::int  AS yr,
 			EXTRACT(MONTH FROM t.date)::int AS mo,
-			grp.id, grp.category_name, grp.color,
+			c.id, c.category_name, c.color,
+			root.id, root.category_name, root.color,
 			SUM(ABS(t.amount)) AS total
 		FROM transactions t
-		JOIN categories c   ON c.id = t.category_id
-		JOIN categories grp ON grp.id = COALESCE(c.parent_category_id, c.id)
+		JOIN categories c    ON c.id = t.category_id
+		JOIN categories root ON root.id = COALESCE(c.parent_category_id, c.id)
 		WHERE t.account_token = $1
 		  AND t.is_pending = false
 		  AND t.transaction_type_id = $2
 		  AND t.date >= $3::date
-		GROUP BY yr, mo, grp.id, grp.category_name, grp.color`
+		GROUP BY yr, mo, c.id, c.category_name, c.color, root.id, root.category_name, root.color`
 
 	rows, err := s.db.Query(query, accountToken, transactionTypeID, startDate)
 	if err != nil {
@@ -1598,13 +1601,15 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 	defer rows.Close()
 
 	totals := make([]float64, len(axis))
-	categories := make(map[int]*types.CategoryTrend)
+	roots := make(map[int]*types.CategoryTrend)
+	subs := make(map[int]*types.CategoryTrend) // leaf id -> subcategory series
+	subParent := make(map[int]int)             // leaf id -> root id
 
 	for rows.Next() {
-		var yr, mo, catID int
-		var name, color string
+		var yr, mo, catID, rootID int
+		var catName, catColor, rootName, rootColor string
 		var total float64
-		if err := rows.Scan(&yr, &mo, &catID, &name, &color, &total); err != nil {
+		if err := rows.Scan(&yr, &mo, &catID, &catName, &catColor, &rootID, &rootName, &rootColor, &total); err != nil {
 			return nil, fmt.Errorf("failed to scan category trend row: %w", err)
 		}
 
@@ -1613,31 +1618,51 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 			continue // outside the requested window (e.g. a future-dated transaction)
 		}
 
-		cat, exists := categories[catID]
-		if !exists {
-			cat = &types.CategoryTrend{
-				ID:     catID,
-				Name:   name,
-				Color:  color,
-				Totals: make([]float64, len(axis)),
+		rounded := utils.Round(total, 2)
+
+		// Roll every leaf (direct-on-parent or subcategory) up into the root series.
+		root := roots[rootID]
+		if root == nil {
+			root = &types.CategoryTrend{ID: rootID, Name: rootName, Color: rootColor, Totals: make([]float64, len(axis))}
+			roots[rootID] = root
+		}
+		root.Totals[idx] = utils.Round(root.Totals[idx]+rounded, 2)
+		root.Total = utils.Round(root.Total+rounded, 2)
+
+		// Track actual subcategories (a leaf distinct from its root) as their own series.
+		if catID != rootID {
+			sub := subs[catID]
+			if sub == nil {
+				sub = &types.CategoryTrend{ID: catID, Name: catName, Color: catColor, Totals: make([]float64, len(axis))}
+				subs[catID] = sub
+				subParent[catID] = rootID
 			}
-			categories[catID] = cat
+			sub.Totals[idx] = utils.Round(sub.Totals[idx]+rounded, 2)
+			sub.Total = utils.Round(sub.Total+rounded, 2)
 		}
 
-		rounded := utils.Round(total, 2)
-		cat.Totals[idx] = rounded
-		cat.Total = utils.Round(cat.Total+rounded, 2)
 		totals[idx] = utils.Round(totals[idx]+rounded, 2)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate category trend rows: %w", err)
 	}
 
-	categorySlice := make([]*types.CategoryTrend, 0, len(categories))
-	for _, cat := range categories {
-		categorySlice = append(categorySlice, cat)
+	for leafID, sub := range subs {
+		if root := roots[subParent[leafID]]; root != nil {
+			root.Subcategories = append(root.Subcategories, sub)
+		}
 	}
-	// Biggest categories first so the picker lists the most relevant ones on top.
+
+	// Biggest first so the picker lists the most relevant series on top.
+	categorySlice := make([]*types.CategoryTrend, 0, len(roots))
+	for _, root := range roots {
+		if len(root.Subcategories) > 1 {
+			sort.SliceStable(root.Subcategories, func(i, j int) bool {
+				return root.Subcategories[i].Total > root.Subcategories[j].Total
+			})
+		}
+		categorySlice = append(categorySlice, root)
+	}
 	sort.SliceStable(categorySlice, func(i, j int) bool {
 		return categorySlice[i].Total > categorySlice[j].Total
 	})
