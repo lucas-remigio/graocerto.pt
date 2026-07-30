@@ -16,6 +16,7 @@ import type {
 	RecurringRule,
 	RecurringForecastResponse,
 	RecurringForecastRangeDays,
+	CashflowProjectionResponse,
 	RecurringRulesResponse,
 	NotificationItem,
 	NotificationsResponse,
@@ -390,6 +391,18 @@ class DataService {
 			throw new Error(`Failed to fetch recurring forecast: ${res.status}`);
 		}
 		return res.data as RecurringForecastResponse;
+	}
+
+	async fetchCashflowProjection(accountToken: string): Promise<CashflowProjectionResponse> {
+		const res = await api_axios.get('recurring-rules/projection', {
+			params: {
+				account_token: accountToken
+			}
+		});
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch cashflow projection: ${res.status}`);
+		}
+		return res.data as CashflowProjectionResponse;
 	}
 
 	async createRecurringRule(payload: CreateRecurringRulePayload): Promise<RecurringRule> {

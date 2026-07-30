@@ -305,6 +305,11 @@
 		"no-matching-rules": "No recurring rules match the selected filters."
 	},
 
+	"projection": {
+		"eom-label": "End of month",
+		"eom-tooltip": "Projected balance at month end: current balance plus upcoming recurring income and expenses."
+	},
+
 	"transactions": {
 		"no-transactions": "No transactions found",
 		"no-transactions-for": "No transactions found for",

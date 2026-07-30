@@ -267,6 +267,16 @@ export interface RecurringForecastResponse {
 	summary: RecurringForecastSummary;
 }
 
+export interface CashflowProjectionResponse {
+	account_token: string;
+	current_balance: number;
+	upcoming_credits: number;
+	upcoming_debits: number;
+	projected_balance: number;
+	days_remaining: number;
+	period_end: string;
+}
+
 export interface NotificationItem {
 	id: number;
 	user_id: number;

@@ -308,6 +308,11 @@
 		"no-matching-rules": "Nenhuma regra recorrente corresponde aos filtros selecionados."
 	},
 
+	"projection": {
+		"eom-label": "Fim do mês",
+		"eom-tooltip": "Saldo previsto no fim do mês: saldo atual mais receitas e despesas recorrentes por vir."
+	},
+
 	"transactions": {
 		"no-transactions": "Nenhuma transação encontrada",
 		"no-transactions-for": "Nenhuma transação encontrada para",

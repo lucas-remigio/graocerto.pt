@@ -81,7 +81,22 @@ the UI copy.
 
 ---
 
-## 2. "Safe to spend" / end-of-month projection on the dashboard  `todo`
+## 2. "Safe to spend" / end-of-month projection on the dashboard  `done`
+
+> **Shipped notes.** Endpoint is `GET /recurring-rules/projection?account_token=` (query param,
+> mirroring the sibling `forecast` route — not the path param originally sketched). Base balance is
+> the account **pending** balance, not the confirmed balance: recurring rules generate *pending*
+> transactions and advance `next_run_date`, so those occurrences leave the forecast window and would
+> otherwise be dropped. The `safe_to_spend` + user buffer was **not** built for v1 — there is no
+> buffer storage, so it would have equalled `projected_balance`; the headline is the projected
+> end-of-month balance. `GetRecurringForecast` was refactored to share a pure `expandRuleOccurrences`
+> helper with the projection (unit-tested, no DB), which also avoids the `days <= 0 → 30` default
+> misfiring on the last day of the month.
+>
+> **Frontend placement:** not a standalone dashboard card (rejected as too heavy) — instead a single
+> compact "End of month" stat appended to the statistics-page summary row
+> (`TransactionStatistics.svelte`), styled like the existing credit/debit/net cells and shown **only
+> when viewing the current month** (a projection for a past month is meaningless).
 
 **Value: high · Effort: low.**
 

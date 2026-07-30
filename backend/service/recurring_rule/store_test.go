@@ -2,6 +2,7 @@ package recurring_rule
 
 import (
 	"testing"
+	"time"
 
 	"github.com/lucas-remigio/wallet-tracker/types"
 )
@@ -91,4 +92,121 @@ func TestCalculateNextRunDate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEndOfMonthWindow(t *testing.T) {
+	tests := []struct {
+		name      string
+		now       string
+		wantStart string
+		wantEnd   string
+		wantDays  int
+	}{
+		{name: "mid month", now: "2026-07-29", wantStart: "2026-07-29", wantEnd: "2026-07-31", wantDays: 2},
+		{name: "last day", now: "2026-07-31", wantStart: "2026-07-31", wantEnd: "2026-07-31", wantDays: 0},
+		{name: "first day", now: "2026-07-01", wantStart: "2026-07-01", wantEnd: "2026-07-31", wantDays: 30},
+		{name: "february non-leap", now: "2026-02-15", wantStart: "2026-02-15", wantEnd: "2026-02-28", wantDays: 13},
+		{name: "february leap", now: "2028-02-15", wantStart: "2028-02-15", wantEnd: "2028-02-29", wantDays: 14},
+		{name: "december rollover", now: "2026-12-10", wantStart: "2026-12-10", wantEnd: "2026-12-31", wantDays: 21},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			now, err := time.Parse("2006-01-02", tt.now)
+			if err != nil {
+				t.Fatalf("bad test date: %v", err)
+			}
+			start, end := endOfMonthWindow(now)
+			if start.Format("2006-01-02") != tt.wantStart {
+				t.Fatalf("start: got %s, want %s", start.Format("2006-01-02"), tt.wantStart)
+			}
+			if end.Format("2006-01-02") != tt.wantEnd {
+				t.Fatalf("end: got %s, want %s", end.Format("2006-01-02"), tt.wantEnd)
+			}
+			if days := int(end.Sub(start).Hours() / 24); days != tt.wantDays {
+				t.Fatalf("days remaining: got %d, want %d", days, tt.wantDays)
+			}
+		})
+	}
+}
+
+func TestExpandRuleOccurrences(t *testing.T) {
+	// July 2026 window: today through end of month.
+	windowStart, _ := time.Parse("2006-01-02", "2026-07-29")
+	windowEnd, _ := time.Parse("2006-01-02", "2026-07-31")
+
+	monthly := func(id int, typeID int, amount float64, nextRun string) *types.RecurringRule {
+		return &types.RecurringRule{
+			ID:                id,
+			AccountToken:      "acc",
+			CategoryID:        1,
+			TransactionTypeID: typeID,
+			Amount:            amount,
+			Frequency:         types.RecurringMonthly,
+			IntervalValue:     1,
+			NextRunDate:       nextRun,
+		}
+	}
+
+	t.Run("no rules -> zero summary", func(t *testing.T) {
+		items, summary, err := expandRuleOccurrences(nil, windowStart, windowEnd)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(items) != 0 {
+			t.Fatalf("expected no items, got %d", len(items))
+		}
+		if summary.Credit != 0 || summary.Debit != 0 || summary.Difference != 0 {
+			t.Fatalf("expected zero summary, got %+v", summary)
+		}
+	})
+
+	t.Run("debit due before month end is included", func(t *testing.T) {
+		rules := []*types.RecurringRule{monthly(1, transactionTypeDebit, 50, "2026-07-30")}
+		items, summary, err := expandRuleOccurrences(rules, windowStart, windowEnd)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(items) != 1 {
+			t.Fatalf("expected 1 item, got %d", len(items))
+		}
+		if summary.Debit != 50 || summary.Difference != -50 {
+			t.Fatalf("expected debit 50 / difference -50, got %+v", summary)
+		}
+	})
+
+	t.Run("occurrence after month end is excluded", func(t *testing.T) {
+		rules := []*types.RecurringRule{monthly(1, transactionTypeCredit, 100, "2026-08-05")}
+		items, summary, err := expandRuleOccurrences(rules, windowStart, windowEnd)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(items) != 0 {
+			t.Fatalf("expected no items, got %d", len(items))
+		}
+		if summary.Difference != 0 {
+			t.Fatalf("expected zero difference, got %+v", summary)
+		}
+	})
+
+	t.Run("credit and debit net into difference", func(t *testing.T) {
+		rules := []*types.RecurringRule{
+			monthly(1, transactionTypeCredit, 1000, "2026-07-29"),
+			monthly(2, transactionTypeDebit, 250, "2026-07-31"),
+		}
+		_, summary, err := expandRuleOccurrences(rules, windowStart, windowEnd)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if summary.Credit != 1000 || summary.Debit != 250 || summary.Difference != 750 {
+			t.Fatalf("expected 1000/250/750, got %+v", summary)
+		}
+	})
+
+	t.Run("invalid next run date errors", func(t *testing.T) {
+		rules := []*types.RecurringRule{monthly(1, transactionTypeDebit, 10, "not-a-date")}
+		if _, _, err := expandRuleOccurrences(rules, windowStart, windowEnd); err == nil {
+			t.Fatalf("expected error for invalid date, got nil")
+		}
+	})
 }

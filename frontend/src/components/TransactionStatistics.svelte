@@ -1,9 +1,10 @@
 <!-- src/components/TransactionStatistics.svelte -->
 <script lang="ts">
-	import type { Account, TransactionStatistics } from '$lib/types';
+	import type { Account, TransactionStatistics, CashflowProjectionResponse } from '$lib/types';
 	import { BarChart3, TrendingUp, TrendingDown, PieChart, Bot, BarChart } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { formatCurrency } from '$lib/utils/currency';
+	import { dataService } from '$lib/services/dataService';
 	import TransactionsHeatmap from './TransactionsHeatmap.svelte';
 	import AiFeedback from './AiFeedback.svelte';
 	import HierarchicalPieChart from './HierarchicalPieChart.svelte';
@@ -20,6 +21,34 @@
 	let statsView: 'transactions' | 'categories' | 'overview' = 'transactions';
 
 	$: isAll = selectedMonth === null && selectedYear === null;
+
+	// End-of-month "safe to spend" projection only makes sense for the ongoing
+	// month; for past months a projection would be meaningless, so hide it.
+	const currentMonth = new Date().getMonth() + 1;
+	const currentYear = new Date().getFullYear();
+	$: isCurrentMonth = !isAll && selectedMonth === currentMonth && selectedYear === currentYear;
+
+	let projection: CashflowProjectionResponse | null = null;
+	let projectionToken: string | null = null;
+
+	$: if (isCurrentMonth && account) {
+		loadProjection(account.token);
+	} else {
+		projection = null;
+		projectionToken = null;
+	}
+
+	async function loadProjection(token: string) {
+		if (projectionToken === token) return; // already loaded/loading for this account
+		projectionToken = token;
+		try {
+			projection = await dataService.fetchCashflowProjection(token);
+		} catch (err) {
+			console.error('Error fetching cashflow projection:', err);
+			projection = null;
+			projectionToken = null;
+		}
+	}
 
 	let showAiFeedbackModal = false;
 
@@ -108,7 +137,7 @@
 					</div>
 				{/if}
 				<!-- Main Statistics Row -->
-				<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+				<div class="grid grid-cols-2 gap-6 {projection ? 'md:grid-cols-5' : 'md:grid-cols-4'}">
 					<!-- Total Transactions -->
 					<div class="text-center">
 						<p class="text-xs uppercase tracking-wide opacity-60">
@@ -148,7 +177,7 @@
 							>
 								{statistics.totals.difference >= 0 ? '+' : ''}{formatCurrency(
 									statistics.totals.difference
-								)}€
+								)}
 							</p>
 							{#if statistics.totals.difference >= 0}
 								<TrendingUp size={16} class="text-success" />
@@ -157,6 +186,22 @@
 							{/if}
 						</div>
 					</div>
+
+					<!-- Projected End-of-Month Balance (current month only) -->
+					{#if projection}
+						<div class="text-center" title={$t('projection.eom-tooltip')}>
+							<p class="text-xs uppercase tracking-wide opacity-60">
+								{$t('projection.eom-label')}
+							</p>
+							<p
+								class="text-xl font-bold {projection.projected_balance >= 0
+									? 'text-success'
+									: 'text-error'}"
+							>
+								{formatCurrency(projection.projected_balance)}
+							</p>
+						</div>
+					{/if}
 				</div>
 				<!-- Gap between sections -->
 				<div class="mt-2"></div>

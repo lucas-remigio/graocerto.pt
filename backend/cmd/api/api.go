@@ -49,10 +49,10 @@ func (s *APIServer) Run() error {
 	authTokenStore := userStore
 	transactionTypesStore := transaction_types.NewStore(s.db)
 	categoryStore := category.NewStore(s.db)
-	recurringRuleStore := recurring_rule.NewStore(s.db)
 	notificationStore := notification.NewStore(s.db)
 	openAiStore := openai.NewClient()
 	accountStore := account.NewStore(s.db, categoryStore, openAiStore)
+	recurringRuleStore := recurring_rule.NewStore(s.db, accountStore)
 	transactionStore := transaction.NewStore(s.db, accountStore)
 	var authMailer mailer.Mailer = mailer.NoopMailer{}
 	if config.Envs.SMTPHost != "" && config.Envs.SMTPFromEmail != "" {

@@ -32,6 +32,12 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 		}),
 	))
 
+	router.HandleFunc("/recurring-rules/projection", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodGet: h.GetCashflowProjection,
+		}),
+	))
+
 	router.HandleFunc("/recurring-rules/{id}", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
 			http.MethodPut:    h.UpdateRecurringRule,
@@ -104,6 +110,27 @@ func (h *Handler) GetRecurringForecast(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.WriteDataResponse(w, forecast)
+}
+
+func (h *Handler) GetCashflowProjection(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.RequireAuth(w, r)
+	if !ok {
+		return
+	}
+
+	accountToken := r.URL.Query().Get("account_token")
+	if accountToken == "" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account_token is required"))
+		return
+	}
+
+	projection, err := h.store.GetCashflowProjection(userID, accountToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	middleware.WriteDataResponse(w, projection)
 }
 
 func (h *Handler) CreateRecurringRule(w http.ResponseWriter, r *http.Request) {

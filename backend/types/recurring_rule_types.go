@@ -22,6 +22,7 @@ type RecurringRuleStore interface {
 	GetRecurringRuleByID(id int, userID int) (*RecurringRule, error)
 	GetRecurringRulesByUserID(userID int) ([]*RecurringRule, error)
 	GetRecurringForecast(userID int, accountToken string, days int) (*RecurringForecastResponse, error)
+	GetCashflowProjection(userID int, accountToken string) (*CashflowProjectionResponse, error)
 	GenerateTransactionForRuleNow(ctx context.Context, id int, userID int) ([]*RecurringRule, error)
 	GeneratePendingTransactionsForDueRules() error
 }
@@ -96,6 +97,22 @@ type RecurringForecastResponse struct {
 	Days         int                       `json:"days"`
 	Items        []*RecurringForecastItem  `json:"items"`
 	Summary      *RecurringForecastSummary `json:"summary"`
+}
+
+// CashflowProjectionResponse is the end-of-month "safe to spend" projection for
+// a single account: where the balance is heading once the remaining recurring
+// credits/debits of the current month land. CurrentBalance is the pending
+// balance (confirmed balance plus already-generated but unapproved pending
+// transactions), so occurrences that have already advanced past their next run
+// date are not double counted with the forecast.
+type CashflowProjectionResponse struct {
+	AccountToken     string  `json:"account_token"`
+	CurrentBalance   float64 `json:"current_balance"`
+	UpcomingCredits  float64 `json:"upcoming_credits"`
+	UpcomingDebits   float64 `json:"upcoming_debits"`
+	ProjectedBalance float64 `json:"projected_balance"`
+	DaysRemaining    int     `json:"days_remaining"`
+	PeriodEnd        string  `json:"period_end"`
 }
 
 type CreateRecurringTransferPayload struct {
