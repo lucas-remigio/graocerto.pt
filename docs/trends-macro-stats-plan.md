@@ -171,3 +171,68 @@ Every label via `$t(...)` (existing `trends.*` keys). Follow **"Frontend is the 
 layer"** (`AGENTS.md`): the one real aggregate (`income[]`) is computed in the store; the inline
 stats, concentration, smoothing, and chips are thin presentational derivations of aggregates
 already on the client.
+
+---
+
+# Future work — macro UI/UX  `todo`
+
+A macro read of the whole `/trends` page (after iterations 1–3). The page is now a vertical stack
+of **equal-weight** cards (KPIs → chart → what-changed) scoped to **one account**. The items below
+are ordered by impact/effort. None are started.
+
+## The defining gap: the page never shows *net / savings*
+
+For a wallet tracker the headline question is **"am I saving money?"**, but `TrendsControls`
+toggles Spending **or** Income, so income − spending (net) is never visible together — even though
+`income[]` / `window_income` are already on the client. Everything below is secondary to closing
+this.
+
+## Tier 1 — structure & the savings story
+
+1. **"Saved this period" KPI (replace "Categories" count).** `todo` · **impact: high · effort:
+   low.** The category-count tile is not an insight. Swap it for **net = window_income −
+   window_total** and the **savings rate %** (both already derivable client-side in `TrendsKpis`).
+   Highest impact-to-effort on the page; do this first.
+2. **Cash-flow view (rethink the Spending/Income toggle).** `todo` · **impact: high · effort:
+   high.** Replace either/or with income-vs-spending per month (paired bars) + a **net line**, so
+   the whole story reads at once. The transformative version of #1; treat as its own effort after
+   #1 lands. Touches `TrendsChart`, `TrendsControls`, and likely the store (return both series in
+   one response instead of one-type-per-fetch).
+3. **Visual hierarchy / hero.** `todo` · **impact: medium · effort: low-med.** Everything uses the
+   same `rounded-xl border shadow-sm`; nothing leads. Promote the savings/cash-flow number to a
+   hero tile; demote the rest to supporting. Makes it read as a dashboard, not a list.
+4. **"All accounts" aggregate.** `todo` · **impact: medium · effort: med.** `AccountsSplitLayout`
+   scopes trends to one account; a true macro view wants the whole picture. Add an "All accounts"
+   option (sum across the user's accounts). On a stats page, also consider a slim account
+   **dropdown** instead of the full split panel to give charts more width.
+
+## Tier 2 — turn insight into action
+
+5. **Drill-through to transactions.** `todo` · **impact: high · effort: med.** Nothing on the page
+   is clickable — it's a dead end. Clicking a category (legend pill / mover row) or a chart month
+   should open the underlying transactions ("dining +32%" → *which ones*). The missing verb of the
+   whole page.
+6. **AI "insight of the period".** `todo` · **impact: high · effort: med.** Reuse the existing
+   OpenAI integration (`backend/service/openai/`, prompts in `backend/prompts/`) to surface one
+   scoped sentence ("Dining is your biggest change, +150€ vs last month"). Feed it the aggregates
+   we already compute (movers, concentration, savings). Turns a chart into guidance; differentiator.
+7. **Period-over-period on the KPIs.** `todo` · **impact: medium · effort: low-med.** KPIs show
+   absolutes with no baseline. Add "▲8% vs previous 12M" to each headline (same MoM idea as
+   `computeCategoryMovers`, applied to the window — needs the store to also compute the prior
+   window, or a second fetch).
+
+## Tier 3 — polish
+
+8. **Budgets/targets overlay.** `todo` · Categories already carry `budget` and
+   `GetTransactionStatistics` computes `budget_percentage` (see `docs/feature-plans.md`). Overlay a
+   target line / "30% over dining" on the chart once budgets are surfaced.
+9. **Chart affordances.** `todo` · Click a point to focus that month; annotate the peak; skeleton
+   loaders instead of the bare spinner in `+page.svelte`.
+10. **Consistency pass.** `todo` · `tabular-nums` on every figure; one red=spend / green=income rule
+    everywhere; unify the "% / MoM / concentration" family so the metrics read as one system.
+
+## Suggested order
+
+**#1 (savings KPI) → #5 (drill-through) → #6 (AI insight)** — best impact/effort, and each proves
+appetite before the larger **#2 (cash-flow redesign)**. Keep the `income[]` aggregate as the seed:
+it already unlocks #1 with no backend work.

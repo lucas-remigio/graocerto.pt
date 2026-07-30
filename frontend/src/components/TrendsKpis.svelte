@@ -49,7 +49,7 @@
 <!-- Tile label with an on-hover DaisyUI tooltip explaining the stat. -->
 {#snippet kpiLabel(label: string, tip: string)}
 	<span
-		class="tooltip tooltip-bottom block w-fit cursor-help text-xs uppercase tracking-wide underline decoration-dotted underline-offset-2 opacity-60 before:z-10 before:max-w-[12rem] before:whitespace-normal before:text-[0.7rem] before:normal-case before:content-[attr(data-tip)]"
+		class="tooltip tooltip-bottom block w-fit cursor-help text-xs uppercase tracking-wide text-base-content/60 underline decoration-dotted underline-offset-2 before:z-10 before:max-w-[12rem] before:whitespace-normal before:text-[0.7rem] before:normal-case before:shadow-lg before:content-[attr(data-tip)]"
 		data-tip={tip}
 	>
 		{label}

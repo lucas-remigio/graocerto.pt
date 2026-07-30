@@ -126,7 +126,7 @@
 	<span class="flex min-w-[3.25rem] flex-col items-end leading-tight">
 		<span class="text-sm font-semibold tabular-nums">{value}</span>
 		<span
-			class="tooltip tooltip-top cursor-help text-[0.6rem] uppercase tracking-wide underline decoration-dotted underline-offset-2 opacity-60 before:z-10 before:max-w-[11rem] before:whitespace-normal before:text-[0.7rem] before:normal-case before:content-[attr(data-tip)]"
+			class="tooltip tooltip-top cursor-help text-[0.6rem] uppercase tracking-wide text-base-content/60 underline decoration-dotted underline-offset-2 before:z-10 before:max-w-[11rem] before:whitespace-normal before:text-[0.7rem] before:normal-case before:shadow-lg before:content-[attr(data-tip)]"
 			data-tip={tip}
 		>
 			{label}
