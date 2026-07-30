@@ -130,7 +130,6 @@
 			isLoading = false;
 		}
 	};
-
 </script>
 
 <svelte:head>

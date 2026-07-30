@@ -9,7 +9,15 @@
 		RecurringRule
 	} from '$lib/types';
 	import { t } from '$lib/i18n';
-	import { ArrowRightLeft, BarChart3, CalendarDays, Filter, List, Plus, Repeat } from 'lucide-svelte';
+	import {
+		ArrowRightLeft,
+		BarChart3,
+		CalendarDays,
+		Filter,
+		List,
+		Plus,
+		Repeat
+	} from 'lucide-svelte';
 	import RecurringRuleModal from '$components/RecurringRuleModal.svelte';
 	import RecurringTransferModal from '$components/RecurringTransferModal.svelte';
 	import RecurringForecastTable from '$components/RecurringForecastTable.svelte';
@@ -19,7 +27,11 @@
 	import TransactionsStats from '$components/TransactionsStats.svelte';
 	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
 	import ConfirmAction from '$components/ConfirmAction.svelte';
-	import { TransactionTypeId, TransactionTypes, TransactionTypeSlug } from '$lib/transaction_types_types';
+	import {
+		TransactionTypeId,
+		TransactionTypes,
+		TransactionTypeSlug
+	} from '$lib/transaction_types_types';
 	import {
 		countActiveFilters,
 		emptyTransactionFilters,

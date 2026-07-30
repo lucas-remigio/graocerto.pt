@@ -126,3 +126,41 @@ func TestComputeCategoryMovers_TooFewMonths(t *testing.T) {
 		t.Fatalf("expected no movers for n<2, got %d", len(movers))
 	}
 }
+
+func TestBucketMonthlyAmounts(t *testing.T) {
+	// A 3-month axis: Jan, Feb, Mar 2026.
+	indexByKey := map[int]int{
+		2026*100 + 1: 0,
+		2026*100 + 2: 1,
+		2026*100 + 3: 2,
+	}
+	rows := []*monthlyAmount{
+		{year: 2026, month: 1, amount: 100},
+		{year: 2026, month: 3, amount: 50.005}, // rounds to 50.01
+		{year: 2025, month: 12, amount: 999},   // outside the window -> dropped
+	}
+
+	got := bucketMonthlyAmounts(rows, indexByKey, 3)
+
+	want := []float64{100, 0, 50.01}
+	if len(got) != len(want) {
+		t.Fatalf("expected %d buckets, got %d", len(want), len(got))
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("bucket[%d] = %v; want %v", i, got[i], want[i])
+		}
+	}
+}
+
+func TestBucketMonthlyAmounts_Empty(t *testing.T) {
+	got := bucketMonthlyAmounts(nil, map[int]int{}, 3)
+	if len(got) != 3 {
+		t.Fatalf("expected a zeroed slice of length 3, got %d", len(got))
+	}
+	for i, v := range got {
+		if v != 0 {
+			t.Fatalf("bucket[%d] = %v; want 0", i, v)
+		}
+	}
+}

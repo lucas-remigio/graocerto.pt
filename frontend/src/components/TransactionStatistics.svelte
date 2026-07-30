@@ -216,7 +216,7 @@
 								</p>
 							</div>
 
-						<span class="text-3xl font-light opacity-30">{netUpcoming < 0 ? '−' : '+'}</span>
+							<span class="text-3xl font-light opacity-30">{netUpcoming < 0 ? '−' : '+'}</span>
 
 							<!-- Expected movement until month end -->
 							<div

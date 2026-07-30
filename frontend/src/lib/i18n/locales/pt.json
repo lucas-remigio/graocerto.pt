@@ -331,7 +331,18 @@
 		"kpi-categories": "Categorias",
 		"whats-changing": "O que está a mudar",
 		"momentum-caption": "Meses recentes vs início do período",
-		"momentum-new": "Novo"
+		"momentum-new": "Novo",
+		"smoothing": "Média de 3 meses",
+		"smoothed": "Média 3m",
+		"concentration-spending": "Top {n} categorias = {pct} dos gastos",
+		"concentration-income": "Top {n} categorias = {pct} das entradas",
+		"col-income": "% entradas",
+		"col-this-month": "este mês",
+		"col-mom": "vs mês ant.",
+		"col-permonth": "méd/mês",
+		"highest-month": "Máximo",
+		"lowest-month": "Mínimo",
+		"vs-last-month": "vs mês anterior"
 	},
 
 	"transactions": {

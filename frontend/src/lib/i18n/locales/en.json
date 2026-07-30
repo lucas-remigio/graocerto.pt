@@ -328,7 +328,18 @@
 		"kpi-categories": "Categories",
 		"whats-changing": "What's changing",
 		"momentum-caption": "Recent months vs earlier in the range",
-		"momentum-new": "New"
+		"momentum-new": "New",
+		"smoothing": "3-month average",
+		"smoothed": "3-mo avg",
+		"concentration-spending": "Top {n} categories = {pct} of spending",
+		"concentration-income": "Top {n} categories = {pct} of income",
+		"col-income": "% income",
+		"col-this-month": "this mo",
+		"col-mom": "MoM",
+		"col-permonth": "avg/mo",
+		"highest-month": "Highest",
+		"lowest-month": "Lowest",
+		"vs-last-month": "vs last month"
 	},
 
 	"transactions": {

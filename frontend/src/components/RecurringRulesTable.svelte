@@ -99,10 +99,13 @@
 								</span>
 							{/if}
 							<span
-								class="inline-flex items-center justify-center rounded px-3 py-1 {getRuleCategory(rule)
+								class="inline-flex items-center justify-center rounded px-3 py-1 {getRuleCategory(
+									rule
+								)
 									? getContrastTextClass(getRuleCategory(rule)!.color)
 									: 'text-gray-900'}"
-								style="background-color: {getRuleCategory(rule)?.color || '#d1d5db'}; min-width: 4rem;"
+								style="background-color: {getRuleCategory(rule)?.color ||
+									'#d1d5db'}; min-width: 4rem;"
 							>
 								{getRuleCategory(rule)?.category_name || 'N/A'}
 							</span>

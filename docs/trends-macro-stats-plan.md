@@ -19,11 +19,20 @@ Status legend: `todo` / `in progress` / `done`.
 
 ## The only backend change
 
-Add **`income []float64`** (aligned to `Months`) to `CategoryTrendsResponse`
-(`backend/types/transaction_types.go:61`): per-month `Σ Credit amount WHERE transfer_group_id IS
-NULL` (exclude money transferred *in* so it isn't counted as income), computed in the same
-`GetCategoryMonthlyTrends` pass (`store.go:1561`) using the existing `indexByKey` map. Window
-income is just its sum. **No new endpoint, route, DI, migration, or persistence.**
+Add **`income []float64`** (aligned to `Months`) plus its sum **`window_income`** to
+`CategoryTrendsResponse` (`backend/types/transaction_types.go:61`): per-month `Σ Credit amount
+WHERE transfer_group_id IS NULL` (exclude money transferred *in* so it isn't counted as income).
+
+**Why it's a second query, not "the same pass":** the main trends query is hard-filtered to a
+single `transaction_type_id = $2` (`store.go:1593`), so when the user views *spending* (debit)
+the result set contains **zero credit rows** — there is no income in that pass to sum. Income is
+always the credit side (`CreditTransactionType = 1`), so it needs its own small aggregate query
+(`GROUP BY year, month`, `transfer_group_id IS NULL`). It reuses the same `indexByKey` axis map.
+**No new endpoint, route, DI, migration, or persistence.**
+
+To keep it testable without a DB (all existing store tests are pure-function tests), the
+bucketing is extracted into a pure helper `bucketMonthlyAmounts(rows, indexByKey, n)` — the SQL
+just feeds it, and the unit test targets the helper (same shape as `computeCategoryMovers`).
 
 That single array unlocks the flagship feature below and works in both chart modes (income is
 always the credit side, regardless of the debit/credit toggle).
@@ -38,7 +47,7 @@ useful for every category.
 
 ---
 
-## Section A — the category chart, enriched  `todo`
+## Section A — the category chart, enriched  `done`
 
 **Question:** *"Where does my money go, how much of my income is it, and is it trending?"*
 **Value: high · Effort: low.** This is where four of the five features live.
@@ -66,12 +75,13 @@ the tooltip is a trivial add on the same `income[]` data.
 ### Done when
 Selecting the savings category shows its **% of income (= savings rate)**, % of spend, and
 ~€/mo·€/yr; the concentration line and smoothing toggle render; everything updates with the range
-and debit/credit toggles. `income[]` excludes incoming transfers. One `store_test.go` case asserts
-`income[]` sums credits per month and ignores `transfer_group_id` credits.
+and debit/credit toggles. `income[]` excludes incoming transfers (the SQL filters
+`transfer_group_id IS NULL`). One `store_test.go` case asserts the pure `bucketMonthlyAmounts`
+helper buckets amounts onto the axis and drops out-of-window months.
 
 ---
 
-## Section B — what's changing  `todo`
+## Section B — what's changing  `done`
 
 **Question:** *"What shifted recently, and how does this month compare?"*
 **Value: medium · Effort: trivial · Frontend-only.**
@@ -84,6 +94,24 @@ Keep the existing movers card (`TrendsMovers`). Add a slim row of **context chip
 Chips show correct labels and %; handle <2 months and all-zero windows cleanly.
 
 ---
+
+## Iteration 2 — per-category detail  `done`
+
+The window-aggregate stat strip was replaced with a **per-category detail table** (one row per
+selected category) so the selection answers "how is *this* category doing", not just the whole
+window:
+
+- **3-month curve per category** — the smoothing toggle now adds a dashed 3-mo average to *every*
+  drawn line (total + each selected series), computed inside `TrendsChart` (`movingAverage`).
+  Dashed lines are filtered out of the legend so they read as guides, not series.
+- **MoM per category** — each row shows latest month vs previous (`momOf`): signed %, `new` when
+  spend appeared with no prior month, `—` under 2 months.
+- **% per month per category** — the row's `this mo` column is the latest month's share; the chart
+  **tooltip** appends `(Y%)` = that point's share of the month's grand total for every category,
+  so hovering any month reveals the full per-month × per-category matrix without extra surfaces.
+
+Table columns: `% income · this mo · MoM · avg/mo`, wrapped in `overflow-x-auto`. Still no new
+backend work — all three are thin derivations of `income[]` + `totals[]` already on the client.
 
 ## Traceability — the 5 features (none dropped)
 
@@ -100,7 +128,9 @@ Chips show correct labels and %; handle <2 months and all-zero windows cleanly.
 - **No dedicated savings graph, no savings picker, no localStorage.** Savings rate is just the
   picked category's **% of income** shown inline on the existing chart. (Reverted the Money Flow
   graph — it re-introduced complexity we'd already removed.)
-- **One backend change:** add `income[]` to `CategoryTrendsResponse`. No new endpoint.
+- **One backend change:** add `income[]` + `window_income` to `CategoryTrendsResponse`, fed by
+  one extra credit-only aggregate query (not the same pass — the main query is single-type). No
+  new endpoint.
 - **Window figure first**, per-month % in the tooltip as a trivial optional on the same data.
 
 ## Build order

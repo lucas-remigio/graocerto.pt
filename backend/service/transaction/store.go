@@ -1677,16 +1677,87 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 		monthlyAverage = utils.Round(windowTotal/float64(len(axis)), 2)
 	}
 
+	// Income is always the credit side, independent of the selected type, so any
+	// category can be shown as a share of income (e.g. a savings category's % of
+	// income == the savings rate). It's a separate query because the main pass is
+	// filtered to a single transaction_type_id.
+	income, err := s.queryMonthlyIncome(accountToken, indexByKey, len(axis), startDate)
+	if err != nil {
+		return nil, err
+	}
+	var windowIncome float64
+	for _, v := range income {
+		windowIncome += v
+	}
+	windowIncome = utils.Round(windowIncome, 2)
+
 	return &types.CategoryTrendsResponse{
 		AccountToken:    accountToken,
 		TransactionType: transactionTypeID,
 		Months:          axis,
 		Totals:          totals,
+		Income:          income,
 		WindowTotal:     windowTotal,
+		WindowIncome:    windowIncome,
 		MonthlyAverage:  monthlyAverage,
 		Categories:      categorySlice,
 		Movers:          computeCategoryMovers(categorySlice, len(axis)),
 	}, nil
+}
+
+// monthlyAmount is one (year, month) bucket of a pre-summed amount, as scanned
+// from an aggregate query. Kept separate from the axis so bucketing onto it can
+// be unit-tested without a database.
+type monthlyAmount struct {
+	year   int
+	month  int
+	amount float64
+}
+
+// bucketMonthlyAmounts places pre-summed monthly amounts onto the shared axis via
+// indexByKey, dropping any month outside the window. Pure (no DB) so the income
+// aggregation is unit-testable.
+func bucketMonthlyAmounts(rows []*monthlyAmount, indexByKey map[int]int, n int) []float64 {
+	out := make([]float64, n)
+	for _, r := range rows {
+		idx, ok := indexByKey[r.year*100+r.month]
+		if !ok {
+			continue // outside the requested window
+		}
+		out[idx] = utils.Round(out[idx]+utils.Round(r.amount, 2), 2)
+	}
+	return out
+}
+
+// queryMonthlyIncome returns per-month credit totals aligned to the axis. Incoming
+// transfers (rows carrying a transfer_group_id) are excluded so money moved between
+// the user's own accounts is not counted as income.
+func (s *Store) queryMonthlyIncome(accountToken string, indexByKey map[int]int, n int, startDate string) ([]float64, error) {
+	const query = `
+		SELECT
+			EXTRACT(YEAR FROM date)::int  AS yr,
+			EXTRACT(MONTH FROM date)::int AS mo,
+			SUM(ABS(amount))             AS total
+		FROM transactions
+		WHERE account_token = $1
+		  AND is_pending = false
+		  AND transaction_type_id = $2
+		  AND transfer_group_id IS NULL
+		  AND date >= $3::date
+		GROUP BY yr, mo`
+
+	rows, err := db.QueryList(s.db, query, func(r *sql.Rows) (*monthlyAmount, error) {
+		m := &monthlyAmount{}
+		if err := r.Scan(&m.year, &m.month, &m.amount); err != nil {
+			return nil, err
+		}
+		return m, nil
+	}, accountToken, int(types.CreditTransactionType), startDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query monthly income: %w", err)
+	}
+
+	return bucketMonthlyAmounts(rows, indexByKey, n), nil
 }
 
 // computeCategoryMovers ranks root categories by how much their recent-half

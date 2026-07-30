@@ -282,9 +282,7 @@
 	>
 		<div class="mb-2 flex items-center justify-between border-b border-base-200 pb-2">
 			<span class="text-sm font-semibold capitalize">{formatFullDate(popover.date)}</span>
-			<span
-				class="text-sm font-bold {popoverData.net >= 0 ? 'text-success' : 'text-error'}"
-			>
+			<span class="text-sm font-bold {popoverData.net >= 0 ? 'text-success' : 'text-error'}">
 				{popoverData.net >= 0 ? '+' : ''}{formatCurrency(popoverData.net)}
 			</span>
 		</div>

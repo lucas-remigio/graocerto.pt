@@ -34,7 +34,11 @@
 	on:focusout={handleFocusOut}
 >
 	<!-- Logo -->
-	<div class="flex h-16 shrink-0 items-center border-b border-base-300 {collapsed ? 'justify-center px-0' : 'px-4'}">
+	<div
+		class="flex h-16 shrink-0 items-center border-b border-base-300 {collapsed
+			? 'justify-center px-0'
+			: 'px-4'}"
+	>
 		<a
 			href={$isAuthenticated ? '/home' : '/'}
 			class="flex items-center gap-3 overflow-hidden text-xl font-semibold"
@@ -102,9 +106,7 @@
 	<div class="shrink-0 border-t border-base-300 px-2 py-3">
 		<!-- Theme / Language / Balance icon buttons -->
 		<div
-			class="mb-2 flex {collapsed
-				? 'flex-col items-center gap-1'
-				: 'items-center justify-around'}"
+			class="mb-2 flex {collapsed ? 'flex-col items-center gap-1' : 'items-center justify-around'}"
 		>
 			<NavActions
 				theme={$theme}
@@ -157,7 +159,7 @@
 		{:else if collapsed}
 			<a
 				href="/login"
-				class="btn btn-primary text-base-100 btn-sm tooltip tooltip-right flex w-full items-center justify-center"
+				class="btn btn-primary btn-sm tooltip tooltip-right flex w-full items-center justify-center text-base-100"
 				data-tip={$t('auth.login', { default: 'Login' })}
 			>
 				<LogIn size={16} />

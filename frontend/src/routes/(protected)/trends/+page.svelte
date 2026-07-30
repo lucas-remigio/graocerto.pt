@@ -1,12 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { dataService } from '$lib/services/dataService';
-	import type {
-		Account,
-		CategoryTrendsResponse,
-		TrendsRangeMonths,
-		TrendsType
-	} from '$lib/types';
+	import type { Account, CategoryTrendsResponse, TrendsRangeMonths, TrendsType } from '$lib/types';
 	import { t } from '$lib/i18n';
 	import { toastStore } from '$lib/stores/toast';
 	import AccountsSplitLayout from '$components/AccountsSplitLayout.svelte';
@@ -138,10 +133,10 @@
 
 				<!-- Keyed on type so switching spending/income resets the legend selection. -->
 				{#key type}
-					<TrendsChartCard {trends} />
+					<TrendsChartCard {trends} {type} />
 				{/key}
 
-				<TrendsMovers movers={trends.movers} />
+				<TrendsMovers movers={trends.movers} totals={trends.totals} months={trends.months} {type} />
 			{:else}
 				<div class="flex h-96 items-center justify-center">
 					<p class="text-base-content/60">{$t('trends.no-data')}</p>

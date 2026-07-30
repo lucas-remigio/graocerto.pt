@@ -44,7 +44,9 @@ api_axios.interceptors.response.use(
 	(response) => response, // Pass through successful responses
 	async (error) => {
 		const requestUrl = String(error.config?.url || '');
-		const isPublicAuthEndpoint = publicAuthEndpoints.some((endpoint) => requestUrl.includes(endpoint));
+		const isPublicAuthEndpoint = publicAuthEndpoints.some((endpoint) =>
+			requestUrl.includes(endpoint)
+		);
 
 		if (error.response?.status === 401 && !isPublicAuthEndpoint) {
 			token.set(null);

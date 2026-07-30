@@ -63,10 +63,15 @@ type CategoryTrendsResponse struct {
 	TransactionType int              `json:"transaction_type"`
 	Months          []TrendMonth     `json:"months"`
 	Totals          []float64        `json:"totals"`
-	WindowTotal     float64          `json:"window_total"`
-	MonthlyAverage  float64          `json:"monthly_average"`
-	Categories      []*CategoryTrend `json:"categories"`
-	Movers          []*CategoryMover `json:"movers"`
+	// Income is per-month credit total (transfers-in excluded), aligned to Months,
+	// regardless of the selected TransactionType — it's always the credit side so the
+	// client can express any category as a share of income. WindowIncome is its sum.
+	Income         []float64        `json:"income"`
+	WindowTotal    float64          `json:"window_total"`
+	WindowIncome   float64          `json:"window_income"`
+	MonthlyAverage float64          `json:"monthly_average"`
+	Categories     []*CategoryTrend `json:"categories"`
+	Movers         []*CategoryMover `json:"movers"`
 }
 
 type CreateTransactionPayload struct {

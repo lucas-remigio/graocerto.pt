@@ -246,7 +246,9 @@ export interface CategoryTrendsResponse {
 	transaction_type: number;
 	months: TrendMonth[];
 	totals: number[]; // grand total per month, aligned to months
+	income: number[]; // credit total per month (transfers-in excluded), aligned to months
 	window_total: number;
+	window_income: number; // sum of income[] over the window
 	monthly_average: number;
 	categories: CategoryTrend[];
 	movers: CategoryMover[];
