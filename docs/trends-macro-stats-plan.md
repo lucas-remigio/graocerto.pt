@@ -110,8 +110,24 @@ window:
   **tooltip** appends `(Y%)` = that point's share of the month's grand total for every category,
   so hovering any month reveals the full per-month × per-category matrix without extra surfaces.
 
-Table columns: `% income · this mo · MoM · avg/mo`, wrapped in `overflow-x-auto`. Still no new
+Table columns: `% income · this mo · MoM · avg/mo`, shown as a wrapping row per category (no
+horizontal scroll, so DaisyUI tooltips on each stat label aren't clipped). Every stat label —
+here and on the KPI tiles — has an on-hover tooltip explaining the exact math. Still no new
 backend work — all three are thin derivations of `income[]` + `totals[]` already on the client.
+
+## Iteration 3 — "What changed this month" (movers rework)  `done`
+
+The old movers card mixed two scopes (total best/worst-month chips + per-category
+*recent-half-vs-earlier-half* momentum) under one caption, and flooded with "New" on short
+histories. Reworked to **one consistent metric — month-over-month**:
+
+- `computeCategoryMovers` (`store.go`) now compares the **latest month vs the previous month** per
+  root, ranked by **absolute euro change** (a big € swing beats a big % on a tiny category). A
+  category that fell to exactly zero is skipped (within a possibly-incomplete current month an
+  absence reads as "not yet", not a decrease). "new" = spend this month, none last month.
+- The card (`TrendsMovers`) shows a context line (total MoM + peak month) then **Biggest rises /
+  Biggest drops**, each row = name · sparkline · euro change + % (or "New"). Consistent with the
+  per-category MoM in the detail table.
 
 ## Traceability — the 5 features (none dropped)
 

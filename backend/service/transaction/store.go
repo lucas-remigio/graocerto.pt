@@ -1760,39 +1760,30 @@ func (s *Store) queryMonthlyIncome(accountToken string, indexByKey map[int]int, 
 	return bucketMonthlyAmounts(rows, indexByKey, n), nil
 }
 
-// computeCategoryMovers ranks root categories by how much their recent-half
-// average moved versus the earlier half of the window, keeping only meaningful
-// movers (>|2%|, or brand-new spend), biggest first, capped at six.
+// computeCategoryMovers ranks root categories by how much their spend moved from
+// the previous month to the latest month, biggest money change first, capped at
+// six. Direction is "up"/"down" (>|2%|) or "new" (spend this month, none last).
+// A category that fell to exactly zero is skipped: within a possibly-incomplete
+// current month, an absence reads as "not yet", not a real decrease.
 func computeCategoryMovers(roots []*types.CategoryTrend, n int) []*types.CategoryMover {
 	movers := make([]*types.CategoryMover, 0)
 	if n < 2 {
 		return movers
 	}
-	half := n / 2
-	avg := func(arr []float64, from, to int) float64 {
-		if to <= from {
-			return 0
-		}
-		var sum float64
-		for i := from; i < to; i++ {
-			sum += arr[i]
-		}
-		return sum / float64(to-from)
-	}
 
 	for _, root := range roots {
-		priorAvg := avg(root.Totals, 0, half)
-		recentAvg := avg(root.Totals, n-half, n)
+		prev := root.Totals[n-2]
+		cur := root.Totals[n-1]
 
 		var pct *float64
 		direction := ""
 		switch {
-		case priorAvg == 0 && recentAvg > 0:
+		case prev == 0 && cur > 0:
 			direction = "new"
-		case priorAvg == 0:
-			continue // no earlier spend and none now
+		case prev == 0 || cur == 0:
+			continue // nothing to compare, or dropped to zero (likely just "not yet")
 		default:
-			p := ((recentAvg - priorAvg) / priorAvg) * 100
+			p := ((cur - prev) / prev) * 100
 			switch {
 			case p > 2:
 				direction = "up"
@@ -1815,18 +1806,13 @@ func computeCategoryMovers(roots []*types.CategoryTrend, n int) []*types.Categor
 		})
 	}
 
-	// Biggest movers first; brand-new categories float to the top.
-	rank := func(m *types.CategoryMover) float64 {
-		if m.Direction == "new" {
-			return 1e18
-		}
-		if m.Pct == nil {
-			return 0
-		}
-		return abs(*m.Pct)
+	// Biggest money change first — a big euro swing matters more than a big % on a
+	// tiny category.
+	delta := func(m *types.CategoryMover) float64 {
+		return abs(m.Totals[n-1] - m.Totals[n-2])
 	}
 	sort.SliceStable(movers, func(i, j int) bool {
-		return rank(movers[i]) > rank(movers[j])
+		return delta(movers[i]) > delta(movers[j])
 	})
 
 	if len(movers) > 6 {

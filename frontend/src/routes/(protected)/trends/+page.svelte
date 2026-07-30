@@ -136,7 +136,7 @@
 					<TrendsChartCard {trends} {type} />
 				{/key}
 
-				<TrendsMovers movers={trends.movers} totals={trends.totals} months={trends.months} {type} />
+				<TrendsMovers movers={trends.movers} totals={trends.totals} months={trends.months} />
 			{:else}
 				<div class="flex h-96 items-center justify-center">
 					<p class="text-base-content/60">{$t('trends.no-data')}</p>
