@@ -136,9 +136,28 @@ Projection quality depends on recurring rules being complete — a user with no 
 
 ---
 
-## 3. Month-over-month spending comparison  `todo`
+## 3. Month-over-month spending comparison → shipped as a macro "Trends" screen  `done`
 
 **Value: high · Effort: low–medium.**
+
+> **Pivoted during build.** A two-month diff was the original plan, but the better product is a
+> multi-month **Trends** screen — "vs last month" is just the last two points of a trend line, and a
+> chart directly delivers the "Spot trends by category" promise. The pivot was cheap because the app
+> already ships **Chart.js 4** (`InvestmentChart.svelte` pattern) and the backend is one grouped
+> query, not N stat calls. The half-built comparison endpoint/UI was reverted (no dead code) — any
+> "vs last month" delta is derivable client-side from the trends series.
+>
+> **Shipped:**
+> - Backend: `GetCategoryMonthlyTrends(accountToken, months, transactionTypeID)` — one grouped SQL
+>   query (`SUM(ABS(amount)) … GROUP BY year, month, root category`), subcategories rolled up into
+>   their parent to match the stats view. Route `GET /transactions/trends/{accountToken}?months=&type=`
+>   (`months` 1–24 default 12; `type` debit|credit default debit). Pure `buildMonthAxis` unit-tested
+>   (window length, year rollover).
+> - Frontend: new top-level **Trends** page (`src/routes/(protected)/trends/`, nav entry added) with
+>   account picker, Spending/Income toggle, 6M/12M/24M range. Chart = **total line + category picker**
+>   (chosen over multi-line/stacked to avoid spaghetti): always shows the grand total; users add
+>   category overlays via a dropdown, remove via chips. `TrendsChart.svelte` mirrors the existing
+>   Chart.js line-chart pattern (theme-aware, locale-aware month labels).
 
 Stats are single-period. The i18n string already promises "Spot trends by category". Deliver it
 by diffing two periods.

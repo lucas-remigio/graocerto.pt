@@ -18,6 +18,35 @@ type TransactionStore interface {
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
+	GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID int) (*CategoryTrendsResponse, error)
+}
+
+// TrendMonth is one point on the trends x-axis.
+type TrendMonth struct {
+	Month int `json:"month"`
+	Year  int `json:"year"`
+}
+
+// CategoryTrend is one category's spend/income per month, aligned index-for-index
+// with CategoryTrendsResponse.Months. Total is the window sum (used for ordering
+// the picker so the biggest categories surface first).
+type CategoryTrend struct {
+	ID     int       `json:"id"`
+	Name   string    `json:"name"`
+	Color  string    `json:"color"`
+	Totals []float64 `json:"totals"`
+	Total  float64   `json:"total"`
+}
+
+// CategoryTrendsResponse is a chart-ready time series over the last N months:
+// a shared month axis, the per-month grand total, and a per-category series
+// (subcategories rolled up into their parent, matching the statistics view).
+type CategoryTrendsResponse struct {
+	AccountToken    string           `json:"account_token"`
+	TransactionType int              `json:"transaction_type"`
+	Months          []TrendMonth     `json:"months"`
+	Totals          []float64        `json:"totals"`
+	Categories      []*CategoryTrend `json:"categories"`
 }
 
 type CreateTransactionPayload struct {

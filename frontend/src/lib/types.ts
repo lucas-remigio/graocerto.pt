@@ -218,6 +218,30 @@ export interface TransactionStatistics {
 	end_date: string; // Format: YYYY-MM-DD
 }
 
+export interface TrendMonth {
+	month: number;
+	year: number;
+}
+
+export interface CategoryTrend {
+	id: number;
+	name: string;
+	color: string;
+	totals: number[]; // aligned to CategoryTrendsResponse.months
+	total: number; // sum over the window
+}
+
+export interface CategoryTrendsResponse {
+	account_token: string;
+	transaction_type: number;
+	months: TrendMonth[];
+	totals: number[]; // grand total per month, aligned to months
+	categories: CategoryTrend[];
+}
+
+export type TrendsRangeMonths = 6 | 12 | 24;
+export type TrendsType = 'debit' | 'credit';
+
 export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'every_x_days';
 
 export interface RecurringRule {

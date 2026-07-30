@@ -95,6 +95,7 @@
 		"home": "Home",
 		"categories": "Categories",
 		"recurring-payments": "Recurring",
+		"trends": "Trends",
 		"notifications": "Notifications",
 		"calculator": "Calculator",
 		"investment-calculator": "Investment Calculator",
@@ -310,6 +311,20 @@
 		"expected-expenses": "Expected expenses",
 		"projected-net": "Projected net balance",
 		"expected-until-month-end": "Expected until month end"
+	},
+
+	"trends": {
+		"title": "Trends",
+		"subtitle": "How your money moves month over month",
+		"spending": "Spending",
+		"income": "Income",
+		"total": "Total",
+		"pick-series": "Toggle a series below to see the trend.",
+		"no-data": "No data yet for this range.",
+		"no-accounts": "Create an account to see trends.",
+		"kpi-total": "Total",
+		"kpi-average": "Monthly average",
+		"kpi-categories": "Categories"
 	},
 
 	"transactions": {

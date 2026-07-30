@@ -1555,6 +1555,114 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 	return stats, nil
 }
 
+// GetCategoryMonthlyTrends returns a per-category monthly time series over the
+// last `months` months for one transaction type (spending or income). Everything
+// is aligned to a shared month axis so the frontend can plot it directly.
+func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID int) (*types.CategoryTrendsResponse, error) {
+	if months < 1 {
+		months = 12
+	}
+	if months > 24 {
+		months = 24
+	}
+
+	axis := buildMonthAxis(time.Now().UTC(), months)
+	// index by year*100+month for O(1) row placement onto the axis.
+	indexByKey := make(map[int]int, len(axis))
+	for i, tm := range axis {
+		indexByKey[tm.Year*100+tm.Month] = i
+	}
+	startDate := fmt.Sprintf("%04d-%02d-01", axis[0].Year, axis[0].Month)
+
+	// Roll subcategory spend up into the parent (grp), mirroring the statistics
+	// breakdown, so the series match what the user sees per month.
+	const query = `
+		SELECT
+			EXTRACT(YEAR FROM t.date)::int  AS yr,
+			EXTRACT(MONTH FROM t.date)::int AS mo,
+			grp.id, grp.category_name, grp.color,
+			SUM(ABS(t.amount)) AS total
+		FROM transactions t
+		JOIN categories c   ON c.id = t.category_id
+		JOIN categories grp ON grp.id = COALESCE(c.parent_category_id, c.id)
+		WHERE t.account_token = $1
+		  AND t.is_pending = false
+		  AND t.transaction_type_id = $2
+		  AND t.date >= $3::date
+		GROUP BY yr, mo, grp.id, grp.category_name, grp.color`
+
+	rows, err := s.db.Query(query, accountToken, transactionTypeID, startDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query category trends: %w", err)
+	}
+	defer rows.Close()
+
+	totals := make([]float64, len(axis))
+	categories := make(map[int]*types.CategoryTrend)
+
+	for rows.Next() {
+		var yr, mo, catID int
+		var name, color string
+		var total float64
+		if err := rows.Scan(&yr, &mo, &catID, &name, &color, &total); err != nil {
+			return nil, fmt.Errorf("failed to scan category trend row: %w", err)
+		}
+
+		idx, ok := indexByKey[yr*100+mo]
+		if !ok {
+			continue // outside the requested window (e.g. a future-dated transaction)
+		}
+
+		cat, exists := categories[catID]
+		if !exists {
+			cat = &types.CategoryTrend{
+				ID:     catID,
+				Name:   name,
+				Color:  color,
+				Totals: make([]float64, len(axis)),
+			}
+			categories[catID] = cat
+		}
+
+		rounded := utils.Round(total, 2)
+		cat.Totals[idx] = rounded
+		cat.Total = utils.Round(cat.Total+rounded, 2)
+		totals[idx] = utils.Round(totals[idx]+rounded, 2)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate category trend rows: %w", err)
+	}
+
+	categorySlice := make([]*types.CategoryTrend, 0, len(categories))
+	for _, cat := range categories {
+		categorySlice = append(categorySlice, cat)
+	}
+	// Biggest categories first so the picker lists the most relevant ones on top.
+	sort.SliceStable(categorySlice, func(i, j int) bool {
+		return categorySlice[i].Total > categorySlice[j].Total
+	})
+
+	return &types.CategoryTrendsResponse{
+		AccountToken:    accountToken,
+		TransactionType: transactionTypeID,
+		Months:          axis,
+		Totals:          totals,
+		Categories:      categorySlice,
+	}, nil
+}
+
+// buildMonthAxis returns `months` consecutive TrendMonths ending with the month
+// of `now` (chronological order).
+func buildMonthAxis(now time.Time, months int) []types.TrendMonth {
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -(months - 1), 0)
+	axis := make([]types.TrendMonth, 0, months)
+	for i := 0; i < months; i++ {
+		d := start.AddDate(0, i, 0)
+		axis = append(axis, types.TrendMonth{Month: int(d.Month()), Year: d.Year()})
+	}
+	return axis
+}
+
 // Returns start and end date (YYYY-MM-DD) for a given month/year
 func getMonthDateRange(month, year *int) (startDate, endDate string) {
 	loc := time.UTC

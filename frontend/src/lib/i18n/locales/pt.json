@@ -91,6 +91,7 @@
 		"home": "Início",
 		"categories": "Categorias",
 		"recurring-payments": "Recorrentes",
+		"trends": "Tendências",
 		"notifications": "Notificações",
 		"calculator": "Calculadora",
 		"investment-calculator": "Calculadora de Investimentos",
@@ -313,6 +314,20 @@
 		"expected-expenses": "Saídas previstas",
 		"projected-net": "Saldo Líquido previsto",
 		"expected-until-month-end": "Previsto até ao fim do mês"
+	},
+
+	"trends": {
+		"title": "Tendências",
+		"subtitle": "Como o teu dinheiro se move mês a mês",
+		"spending": "Gastos",
+		"income": "Entradas",
+		"total": "Total",
+		"pick-series": "Ativa uma série abaixo para ver a tendência.",
+		"no-data": "Ainda não há dados para este período.",
+		"no-accounts": "Cria uma conta para ver tendências.",
+		"kpi-total": "Total",
+		"kpi-average": "Média mensal",
+		"kpi-categories": "Categorias"
 	},
 
 	"transactions": {

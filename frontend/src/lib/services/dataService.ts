@@ -8,6 +8,7 @@ import type {
 	CategoriesDtoResponse,
 	MonthYear,
 	TransactionStatistics,
+	CategoryTrendsResponse,
 	TransactionType,
 	TransactionTypesResponse,
 	TransactionsResponse,
@@ -196,6 +197,21 @@ class DataService {
 		if (statistics) this.statisticsCache.set(cacheKey, this.wrap(statistics));
 
 		return statistics;
+	}
+
+	// Fetch per-category monthly trends (view-triggered, not cached)
+	async fetchCategoryTrends(
+		accountToken: string,
+		months: number,
+		type: 'debit' | 'credit'
+	): Promise<CategoryTrendsResponse> {
+		const response = await api_axios.get(`transactions/trends/${accountToken}`, {
+			params: { months, type }
+		});
+		if (response.status !== 200) {
+			throw new Error(`Failed to fetch trends: ${response.status}`);
+		}
+		return response.data as CategoryTrendsResponse;
 	}
 
 	// Fetch available months with caching
