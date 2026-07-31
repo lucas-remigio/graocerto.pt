@@ -54,12 +54,11 @@
 	}
 
 	function getRuleRowClass(rule: RecurringRule): string {
-		// Softened, semantic-token tints matching the transactions table.
 		const type = getTypeSlug(rule);
-		const dark = $appliedTheme === 'dark';
-		if (type === 'debit')
-			return dark ? 'bg-error/15 hover:bg-error/25' : 'bg-error/10 hover:bg-error/20';
-		return dark ? 'bg-success/15 hover:bg-success/25' : 'bg-success/10 hover:bg-success/20';
+		if ($appliedTheme === 'dark') {
+			return type === 'debit' ? 'bg-red-900/40' : 'bg-green-900/40';
+		}
+		return type === 'debit' ? 'bg-red-100' : 'bg-green-100';
 	}
 
 	let currentLocale = $derived($locale || 'pt');
@@ -87,7 +86,7 @@
 		</thead>
 		<tbody class="text-center">
 			{#each recurringRules as rule (rule.id)}
-				<tr class="transition-colors {getRuleRowClass(rule)}">
+				<tr class={getRuleRowClass(rule)}>
 					<td class="text-base-content">
 						<span class="badge badge-ghost">{getFrequencyLabel(rule)}</span>
 					</td>
@@ -119,14 +118,11 @@
 									<ArrowRightLeft size={14} class="text-info" />
 								</span>
 							{/if}
-							<span class="font-mono font-semibold tabular-nums">
-								{getTypeSlug(rule) === 'credit' ? '+' : '−'}{formatCurrency(rule.amount)}
-							</span>
+							<span>{formatCurrency(rule.amount)}</span>
 						</div>
 					</td>
 					<td class="text-base-content">{rule.description || 'N/A'}</td>
-					<td class="font-mono font-medium tabular-nums text-base-content">{rule.interval_value}</td
-					>
+					<td class="font-medium text-base-content">{rule.interval_value}</td>
 					<td class="text-base-content">
 						<div class="flex items-center justify-center gap-x-2">
 							<button

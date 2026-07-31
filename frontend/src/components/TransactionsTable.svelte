@@ -148,19 +148,20 @@
 	}
 
 	function getRowClass(tx: TransactionDto): string {
-		// Softened, semantic-token row tints (was heavy red-100 / full-opacity green-900);
-		// the same error/success family as the rest of the app, at a low wash.
 		if (tx.is_pending) {
-			return $appliedTheme === 'dark' ? 'bg-base-300/60' : 'bg-base-200/70';
+			return $appliedTheme === 'dark' ? 'bg-base-300/80' : 'bg-base-200';
 		}
 
 		const type = tx.transaction_type.type_slug;
-		const dark = $appliedTheme === 'dark';
-		if (type === 'debit')
-			return dark ? 'bg-error/15 hover:bg-error/25' : 'bg-error/10 hover:bg-error/20';
-		if (type === 'credit')
-			return dark ? 'bg-success/15 hover:bg-success/25' : 'bg-success/10 hover:bg-success/20';
-		return dark ? 'bg-base-300/50' : 'bg-base-200/40';
+		if ($appliedTheme === 'dark') {
+			if (type === 'debit') return 'bg-red-900 bg-opacity-40';
+			if (type === 'credit') return 'bg-green-900 bg-opacity-100';
+			return 'bg-base-300';
+		} else {
+			if (type === 'debit') return 'bg-red-100';
+			if (type === 'credit') return 'bg-green-100';
+			return '';
+		}
 	}
 
 	// Add filter state
@@ -355,7 +356,7 @@
 						{/if}
 						{#each group.transactions as tx (tx.id)}
 							<tr
-								class="transition-colors {getRowClass(tx)}"
+								class={getRowClass(tx)}
 								in:fly={{ y: 20, duration: 200 }}
 								out:fade={{ duration: 150 }}
 							>
@@ -389,11 +390,7 @@
 										{#if tx.is_pending}
 											<span class="badge badge-warning badge-sm">{$t('transactions.pending')}</span>
 										{/if}
-										<span class="font-mono font-semibold tabular-nums">
-											{tx.transaction_type.type_slug === 'credit' ? '+' : '−'}{formatCurrency(
-												tx.amount
-											)}
-										</span>
+										<span>{formatCurrency(tx.amount)}</span>
 									</div>
 								</td>
 								<td class="text-base-content"> {tx.description || 'N/A'} </td>
