@@ -52,35 +52,25 @@
 	});
 </script>
 
-<div class="flex items-center justify-end gap-4 text-sm">
-	<div class="stats stats-horizontal shadow-sm">
-		<div class="stat px-4 py-2 text-right">
-			<div class="stat-title text-right text-xs text-base-content/70">
-				{$t('transactions.total-credit')}
-			</div>
-			<div class="stat-value text-right text-sm text-success">
-				+{formatCurrency(totals().credit)}
-			</div>
+<div class="flex divide-x divide-base-300 rounded-xl border border-base-300 bg-base-100 shadow-sm">
+	{@render stat($t('transactions.total-credit'), totals().credit, 'text-success', '+')}
+	{@render stat($t('transactions.total-debit'), totals().debit, 'text-error', '−')}
+	{@render stat(
+		$t('transactions.net-balance'),
+		Math.abs(totals().difference),
+		totals().difference >= 0 ? 'text-success' : 'text-error',
+		totals().difference >= 0 ? '+' : '−'
+	)}
+</div>
+
+<!-- One stat cell: micro label over a monospace, signed value. -->
+{#snippet stat(label: string, value: number, colorClass: string, sign: string)}
+	<div class="px-4 py-2 text-right">
+		<div class="text-[0.65rem] font-medium uppercase tracking-wide text-base-content/55">
+			{label}
 		</div>
-		<div class="stat px-4 py-2 text-right">
-			<div class="stat-title text-right text-xs text-base-content/70">
-				{$t('transactions.total-debit')}
-			</div>
-			<div class="stat-value text-right text-sm text-error">
-				-{formatCurrency(totals().debit)}
-			</div>
-		</div>
-		<div class="stat px-4 py-2 text-right">
-			<div class="stat-title text-right text-xs text-base-content/70">
-				{$t('transactions.net-balance')}
-			</div>
-			<div
-				class="stat-value text-right text-sm {totals().difference >= 0
-					? 'text-success'
-					: 'text-error'}"
-			>
-				{totals().difference >= 0 ? '+' : ''}{formatCurrency(totals().difference)}
-			</div>
+		<div class="font-mono text-sm font-semibold tabular-nums {colorClass}">
+			{sign}{formatCurrency(value)}
 		</div>
 	</div>
-</div>
+{/snippet}

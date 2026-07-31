@@ -232,7 +232,9 @@
 											{#if item.recurring_transfer_group_id}
 												<ArrowRightLeft size={9} class="shrink-0" />
 											{/if}
-											<span class="truncate">{formatCurrency(item.amount)}</span>
+											<span class="truncate font-mono tabular-nums"
+												>{formatCurrency(item.amount)}</span
+											>
 										</span>
 									{/each}
 									{#if data.items.length > 2}
@@ -282,7 +284,11 @@
 	>
 		<div class="mb-2 flex items-center justify-between border-b border-base-200 pb-2">
 			<span class="text-sm font-semibold capitalize">{formatFullDate(popover.date)}</span>
-			<span class="text-sm font-bold {popoverData.net >= 0 ? 'text-success' : 'text-error'}">
+			<span
+				class="font-mono text-sm font-bold tabular-nums {popoverData.net >= 0
+					? 'text-success'
+					: 'text-error'}"
+			>
 				{popoverData.net >= 0 ? '+' : ''}{formatCurrency(popoverData.net)}
 			</span>
 		</div>
@@ -310,12 +316,12 @@
 						{/if}
 					</div>
 					<span
-						class="shrink-0 text-xs font-semibold {item.transaction_type_id ===
+						class="shrink-0 font-mono text-xs font-semibold tabular-nums {item.transaction_type_id ===
 						TransactionTypeId.Debit
 							? 'text-error'
 							: 'text-success'}"
 					>
-						{item.transaction_type_id === TransactionTypeId.Debit ? '-' : '+'}{formatCurrency(
+						{item.transaction_type_id === TransactionTypeId.Debit ? '−' : '+'}{formatCurrency(
 							item.amount
 						)}
 					</span>

@@ -24,11 +24,11 @@
 	}
 
 	function getRowClass(item: RecurringForecastItem): string {
+		// Softened, semantic-token tints matching the transactions table.
 		const isDebit = item.transaction_type_id === TransactionTypeId.Debit;
-		if ($appliedTheme === 'dark') {
-			return isDebit ? 'bg-red-900/40' : 'bg-green-900/40';
-		}
-		return isDebit ? 'bg-red-100' : 'bg-green-100';
+		const dark = $appliedTheme === 'dark';
+		if (isDebit) return dark ? 'bg-error/15 hover:bg-error/25' : 'bg-error/10 hover:bg-error/20';
+		return dark ? 'bg-success/15 hover:bg-success/25' : 'bg-success/10 hover:bg-success/20';
 	}
 
 	let currentLocale = $derived($locale || 'pt');
@@ -53,7 +53,7 @@
 		</thead>
 		<tbody class="text-center">
 			{#each items as item (`${item.recurring_rule_id}-${item.date}`)}
-				<tr class={getRowClass(item)}>
+				<tr class="transition-colors {getRowClass(item)}">
 					<td class="text-base-content">{formatForecastDate(item.date)}</td>
 					<td class="text-base-content">
 						<div class="flex flex-col items-center gap-0.5">
@@ -82,7 +82,11 @@
 									<ArrowRightLeft size={14} class="text-info" />
 								</span>
 							{/if}
-							<span>{formatCurrency(item.amount)}</span>
+							<span class="font-mono font-semibold tabular-nums">
+								{item.transaction_type_id === TransactionTypeId.Credit ? '+' : '−'}{formatCurrency(
+									item.amount
+								)}
+							</span>
 						</div>
 					</td>
 					<td class="text-base-content">{item.description || 'N/A'}</td>
