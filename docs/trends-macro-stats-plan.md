@@ -129,6 +129,36 @@ histories. Reworked to **one consistent metric — month-over-month**:
   Biggest drops**, each row = name · sparkline · euro change + % (or "New"). Consistent with the
   per-category MoM in the detail table.
 
+## Iteration 4 — customisable comparison months  `done`
+
+The MoM story was hardwired to `latest vs previous` = axis indices `n-1`/`n-2`. But `buildMonthAxis`
+(`store.go:1826`) always ends on the **current (incomplete) calendar month**, so on the 1st of a
+month the whole "what changed" card compared an empty new month to a full previous one. Fixed by
+letting the user **compare any two months** — with the real logic kept **on the backend** (single,
+unit-tested implementation), driven by a refetch (prior data stays on screen, so no jarring spinner):
+
+- **Backend owns the policy + ranking.** `GetCategoryMonthlyTrends` gained `compareBase,
+  compareCurrent` params (axis indices; `-1`/out-of-range → default). `defaultCompareIndices(axis,
+  now)` (`store.go`) picks the default — when the last bucket is the current month and **< 1/3 of it
+  has elapsed**, it falls back to the two most recent *complete* months (fixes the 1st-of-month
+  view); otherwise keeps current-vs-previous. `computeCategoryMovers` is now parametrised by the two
+  indices. The response echoes `compare_base` / `compare_current` so the pickers stay in sync. Route
+  (`routes.go`) validates the pair is within `[0, months)`. Tests: `TestDefaultCompareIndices` +
+  the updated `TestComputeCategoryMovers`.
+- **Frontend is pure visualization.** `TrendsCompareControls.svelte` = two `[base] → [current]`
+  `<select>`s in the movers card header. On change it refetches via
+  `dataService.fetchCategoryTrends(..., compareBase, compareCurrent)`; the page (`+page.svelte`)
+  mirrors the echoed indices into `baseIdx`/`curIdx` and passes them to `TrendsMovers` (context +
+  delta) and `TrendsChartCard` (detail-table `MoM` + `% of month` follow the focus month). The
+  structural `$effect` (account/range/type) does **not** read the indices, so echoing them back
+  can't loop. Movers come straight from `trends.movers`.
+- **What deliberately stayed on the client** (thin ratios over aggregates the backend already
+  returns, i.e. the visualization layer): `windowShare`, `monthShare`, `perMonth`, `concentration`,
+  the context peak/MoM, and the 3-mo moving-average chart guide.
+- i18n: `changed-title` dropped "this month", added `compare-label`, `col-mom` → generic "change",
+  `tip-mom` reworded, removed `vs-last-month`.
+- Scoped out of v1: multi-month *period-vs-period* averaging (the "3 and 4 months" idea).
+
 ## Traceability — the 5 features (none dropped)
 
 | # | Feature | Lives in |
@@ -174,25 +204,63 @@ already on the client.
 
 ---
 
+## Iteration 5 — visual identity: "ledger instrument"  `done` (Phase 1)
+
+A design pass giving `/trends` a committed identity instead of a stack of equal grey cards.
+Direction chosen from two mockups (v1 calm-analytic vs v2 "ledger instrument"); v2 won.
+
+- **Signature — money speaks in monospace.** Every figure (KPI values, legend amounts, detail
+  stats, mover deltas, month pickers, axis ticks) is `font-mono tabular-nums` — a ledger/terminal
+  vernacular that also aligns numerals in columns. System mono stack, no webfont.
+- **Chart as a live readout** (`TrendsChart.svelte`, rewritten): primary-blue line + gradient
+  wash, x-grid removed / y-grid receded to a hairline, monospace ticks, a custom `trendsReadout`
+  plugin that direct-labels the **endpoint value** and marks the **peak**, a `trendsCrosshair`
+  plugin on hover, and a reduced-motion-aware draw-in. The hardcoded indigo `#6366f1` total colour
+  is gone — the line now uses DaisyUI `primary` via `themeService.getThemeColors().seriesTotal`,
+  and the Total legend pill uses the `primary` token so the two always match.
+- **Colour system** unchanged semantically but now consistent: spend=`error`, income=`success`,
+  blue=total. Grid colours softened in `themeService` for recessiveness.
+- **KPI rail** (`TrendsKpis.svelte`): dropped the non-insight *categories count* tile for a
+  **top-3 concentration** tile (thin client-side derivation, computed in `+page.svelte`); the two
+  time-series tiles carry a subtle `CategorySparkline` of `totals[]`. New i18n keys
+  `kpi-concentration` / `kpi-concentration-tip`.
+
+- **Legible category lines regardless of picked colour.** User-chosen colours can sit almost on the
+  surface (a pale line on white, a dark one on black) and vanish. Rather than alter the colour, the
+  **real colour is kept** and a contrasting **casing** is drawn behind each category line — a soft
+  canvas-shadow halo (`lineCasingPlugin` in `TrendsChart.svelte`), dark on the light theme, light on
+  the dark theme, so it only "shows" where the line is close to the surface. The filled total line
+  and the dashed smoothed guides are excluded. (Small legend/detail swatch dots still use the raw
+  colour; add a hairline ring there if they read faint.)
+
+This closes Future-work **#3 (hierarchy)** and **#10 (consistency pass)** below.
+
+**Phase 2 — deferred, needs backend:** per-KPI **"vs previous period" deltas** (needs a prior-window
+aggregate or a second fetch) and a **savings-rate hero tile** (needs a designated savings category
+or a net-of-transfers figure). The mockups show these; they were intentionally not faked in v1.
+
+---
+
 # Future work — macro UI/UX  `todo`
 
 A macro read of the whole `/trends` page (after iterations 1–3). The page is now a vertical stack
 of **equal-weight** cards (KPIs → chart → what-changed) scoped to **one account**. The items below
 are ordered by impact/effort. None are started.
 
-## The defining gap: the page never shows *net / savings*
+## Not a net KPI — savings rate already reads off the category chart  `rejected`
 
-For a wallet tracker the headline question is **"am I saving money?"**, but `TrendsControls`
-toggles Spending **or** Income, so income − spending (net) is never visible together — even though
-`income[]` / `window_income` are already on the client. Everything below is secondary to closing
-this.
+The earlier "Why % of income, not net" section already settled this: this user ends every month
+at ~zero balance because **savings is a transfer out** (a Debit carrying `transfer_group_id`), so
+`net = window_income − window_total ≈ 0` and is worse than useless. The savings rate is already
+visible as the **savings category's % of income** on the existing chart. A "Saved this period"
+tile would be redundant (Option A) or would require redefining spend as net-of-transfers
+everywhere (Option B) — not worth it. **Decision: do not add a net/savings KPI.** Leave the
+category chart as the savings read.
 
 ## Tier 1 — structure & the savings story
 
-1. **"Saved this period" KPI (replace "Categories" count).** `todo` · **impact: high · effort:
-   low.** The category-count tile is not an insight. Swap it for **net = window_income −
-   window_total** and the **savings rate %** (both already derivable client-side in `TrendsKpis`).
-   Highest impact-to-effort on the page; do this first.
+1. **~~"Saved this period" KPI~~** `rejected` — see above. Net ≈ 0 for a transfer-based savings
+   flow; savings rate is already the savings category's % of income on the chart.
 2. **Cash-flow view (rethink the Spending/Income toggle).** `todo` · **impact: high · effort:
    high.** Replace either/or with income-vs-spending per month (paired bars) + a **net line**, so
    the whole story reads at once. The transformative version of #1; treat as its own effort after
@@ -233,6 +301,6 @@ this.
 
 ## Suggested order
 
-**#1 (savings KPI) → #5 (drill-through) → #6 (AI insight)** — best impact/effort, and each proves
-appetite before the larger **#2 (cash-flow redesign)**. Keep the `income[]` aggregate as the seed:
-it already unlocks #1 with no backend work.
+**#5 (drill-through) → #6 (AI insight)** — best impact/effort, and each proves appetite before the
+larger **#2 (cash-flow redesign)**. (#1 was dropped — the savings rate already reads off the
+category chart, so there's no net-KPI seed to build on.)

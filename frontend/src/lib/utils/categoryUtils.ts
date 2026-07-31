@@ -28,20 +28,31 @@ export function buildCategoryGroups(cats: CategoryDto[]): CategoryGroup[] {
 	return groups;
 }
 
+/* ---- colour helpers (WCAG relative luminance) ---- */
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+	const h = hex.replace('#', '');
+	return {
+		r: parseInt(h.substring(0, 2), 16),
+		g: parseInt(h.substring(2, 4), 16),
+		b: parseInt(h.substring(4, 6), 16)
+	};
+}
+
+function channelLuminance(color: number): number {
+	const c = color / 255;
+	return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(hex: string): number {
+	const { r, g, b } = hexToRgb(hex);
+	return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+}
+
 /**
  * Returns a tailwind text-color class ('text-gray-900' | 'text-gray-100') that
  * contrasts against the given hex background colour, based on relative luminance.
  */
 export function getContrastTextClass(backgroundColor: string): string {
-	const hex = backgroundColor.replace('#', '');
-	const r = parseInt(hex.substring(0, 2), 16);
-	const g = parseInt(hex.substring(2, 4), 16);
-	const b = parseInt(hex.substring(4, 6), 16);
-	const channelLuminance = (color: number) => {
-		const c = color / 255;
-		return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-	};
-	const luminance =
-		0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
-	return luminance > 0.5 ? 'text-gray-900' : 'text-gray-100';
+	return relativeLuminance(backgroundColor) > 0.5 ? 'text-gray-900' : 'text-gray-100';
 }

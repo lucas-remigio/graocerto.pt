@@ -344,7 +344,21 @@ func (h *Handler) GetCategoryMonthlyTrends(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	trends, err := h.store.GetCategoryMonthlyTrends(accountToken, months, transactionTypeID)
+	// Optional comparison months, as axis indices [0, months). Both must be present
+	// and valid together; otherwise the store applies its default policy (-1).
+	compareBase, compareCurrent := -1, -1
+	baseStr, curStr := r.URL.Query().Get("compare_base"), r.URL.Query().Get("compare_current")
+	if baseStr != "" && curStr != "" {
+		b, bErr := strconv.Atoi(baseStr)
+		c, cErr := strconv.Atoi(curStr)
+		if bErr != nil || cErr != nil || b < 0 || b >= months || c < 0 || c >= months {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("compare_base and compare_current must be within [0, months)"))
+			return
+		}
+		compareBase, compareCurrent = b, c
+	}
+
+	trends, err := h.store.GetCategoryMonthlyTrends(accountToken, months, transactionTypeID, compareBase, compareCurrent)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

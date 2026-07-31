@@ -203,11 +203,18 @@ class DataService {
 	async fetchCategoryTrends(
 		accountToken: string,
 		months: number,
-		type: 'debit' | 'credit'
+		type: 'debit' | 'credit',
+		compareBase?: number,
+		compareCurrent?: number
 	): Promise<CategoryTrendsResponse> {
-		const response = await api_axios.get(`transactions/trends/${accountToken}`, {
-			params: { months, type }
-		});
+		// Comparison months are optional; when omitted the backend applies its default
+		// policy and echoes the chosen pair back in compare_base / compare_current.
+		const params: Record<string, string | number> = { months, type };
+		if (compareBase !== undefined && compareCurrent !== undefined) {
+			params.compare_base = compareBase;
+			params.compare_current = compareCurrent;
+		}
+		const response = await api_axios.get(`transactions/trends/${accountToken}`, { params });
 		if (response.status !== 200) {
 			throw new Error(`Failed to fetch trends: ${response.status}`);
 		}

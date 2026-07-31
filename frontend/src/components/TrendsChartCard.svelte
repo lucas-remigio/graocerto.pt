@@ -9,9 +9,13 @@
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import type { CategoryTrend, CategoryTrendsResponse, TrendsType } from '$lib/types';
 
-	let { trends, type }: { trends: CategoryTrendsResponse; type: TrendsType } = $props();
-
-	const TOTAL_COLOR = '#6366f1'; // must match TrendsChart's total line
+	let {
+		trends,
+		type,
+		baseIdx,
+		curIdx
+	}: { trends: CategoryTrendsResponse; type: TrendsType; baseIdx: number; curIdx: number } =
+		$props();
 
 	let selectedCategoryIds = $state<number[]>([]);
 	let showTotal = $state(true);
@@ -41,7 +45,6 @@
 	let hasSeries = $derived(showTotal || selectedSeries.length > 0);
 
 	let monthsCount = $derived(trends.months.length || 1);
-	let lastIdx = $derived(trends.months.length - 1);
 
 	// --- Per-category stats. Denominators guarded so a zero window shows "—". ---
 
@@ -53,24 +56,24 @@
 		return denom > 0 ? cat.total / denom : null;
 	}
 
-	// The category's share of the latest month's grand total.
+	// The category's share of the focus month's grand total.
 	function monthShare(cat: CategoryTrend): number | null {
-		if (lastIdx < 0) return null;
-		const monthTotal = trends.totals[lastIdx] ?? 0;
-		return monthTotal > 0 ? (cat.totals[lastIdx] ?? 0) / monthTotal : null;
+		if (curIdx < 0) return null;
+		const monthTotal = trends.totals[curIdx] ?? 0;
+		return monthTotal > 0 ? (cat.totals[curIdx] ?? 0) / monthTotal : null;
 	}
 
 	const perMonth = (cat: CategoryTrend) => cat.total / monthsCount;
 
-	// Latest month vs the previous one. 'new' = spend appeared with no prior month.
+	// Change between the two chosen comparison months. 'new' = spend appeared with
+	// no spend in the baseline month.
 	function momOf(cat: CategoryTrend): {
 		dir: 'up' | 'down' | 'flat' | 'new' | 'none';
 		pct: number;
 	} {
-		const n = cat.totals.length;
-		if (n < 2) return { dir: 'none', pct: 0 };
-		const prev = cat.totals[n - 2];
-		const cur = cat.totals[n - 1];
+		if (baseIdx < 0 || curIdx < 0) return { dir: 'none', pct: 0 };
+		const prev = cat.totals[baseIdx] ?? 0;
+		const cur = cat.totals[curIdx] ?? 0;
 		if (prev === 0) return { dir: cur > 0 ? 'new' : 'none', pct: 0 };
 		const p = ((cur - prev) / prev) * 100;
 		return { dir: p > 0.5 ? 'up' : p < -0.5 ? 'down' : 'flat', pct: Math.round(p) };
@@ -117,14 +120,16 @@
 	>
 		<span class="h-2.5 w-2.5 rounded-full" style="background-color: {color};"></span>
 		{name}
-		<span class="text-xs {active ? 'opacity-80' : 'opacity-50'}">{formatCurrency(catTotal)}</span>
+		<span class="font-mono text-xs tabular-nums {active ? 'opacity-80' : 'opacity-50'}"
+			>{formatCurrency(catTotal)}</span
+		>
 	</button>
 {/snippet}
 
 <!-- One stat: value on top, a label below whose full meaning is a DaisyUI tooltip. -->
 {#snippet stat(value: string, label: string, tip: string)}
 	<span class="flex min-w-[3.25rem] flex-col items-end leading-tight">
-		<span class="text-sm font-semibold tabular-nums">{value}</span>
+		<span class="font-mono text-sm font-semibold tabular-nums">{value}</span>
 		<span
 			class="tooltip tooltip-top cursor-help text-[0.6rem] uppercase tracking-wide text-base-content/60 underline decoration-dotted underline-offset-2 before:z-10 before:max-w-[11rem] before:whitespace-normal before:text-[0.7rem] before:normal-case before:shadow-lg before:content-[attr(data-tip)]"
 			data-tip={tip}
@@ -166,58 +171,19 @@
 		</div>
 	{/if}
 
-	<!-- Per-category detail for the selection. Each stat's label carries a tooltip;
-	     hover the chart for every month's %. Wraps (no scroll) so tooltips aren't clipped. -->
-	{#if selectedCats.length > 0}
-		<div class="mt-3 rounded-lg bg-base-200/50 px-3 py-2">
-			<p class="pb-1 text-[0.65rem] italic opacity-45">{$t('trends.detail-hint')}</p>
-			<div class="flex flex-col divide-y divide-base-300/50">
-				{#each selectedCats as cat (cat.id)}
-					{@const m = momOf(cat)}
-					<div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-1.5">
-						<span class="flex min-w-0 basis-full items-center gap-1.5 sm:flex-1 sm:basis-32">
-							<span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {cat.color};"
-							></span>
-							<span class="truncate font-medium">{cat.name}</span>
-						</span>
-						{@render stat(pct(windowShare(cat)), $t('trends.col-income'), $t('trends.tip-income'))}
-						{@render stat(
-							pct(monthShare(cat)),
-							$t('trends.col-this-month'),
-							$t('trends.tip-this-month')
-						)}
-						{@render stat(
-							m.dir === 'new'
-								? $t('trends.momentum-new')
-								: m.dir === 'none'
-									? '—'
-									: `${m.pct > 0 ? '+' : ''}${m.pct}%`,
-							$t('trends.col-mom'),
-							$t('trends.tip-mom')
-						)}
-						{@render stat(
-							formatCurrency(perMonth(cat), 0),
-							$t('trends.col-permonth'),
-							$t('trends.tip-permonth')
-						)}
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
-	<!-- Toggleable legend: Total + roots (with drill-down into subcategories) -->
+	<!-- Toggleable legend directly under the chart: Total + roots (with drill-down
+	     into subcategories). Sits here so picking several in a row needs no travel. -->
 	<div class="mt-4 flex flex-col gap-3">
 		<div class="flex flex-wrap items-center gap-2">
 			<button
 				type="button"
 				class="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors {showTotal
-					? 'border-transparent text-white shadow-sm'
+					? 'border-transparent bg-primary text-primary-content shadow-sm'
 					: 'border-base-300 text-base-content/60 hover:bg-base-200'}"
-				style={showTotal ? `background-color: ${TOTAL_COLOR};` : ''}
 				onclick={() => (showTotal = !showTotal)}
 			>
-				<span class="h-2.5 w-2.5 rounded-full" style="background-color: {TOTAL_COLOR};"></span>
+				<span class="h-2.5 w-2.5 rounded-full {showTotal ? 'bg-primary-content' : 'bg-primary'}"
+				></span>
 				{$t('trends.total')}
 			</button>
 
@@ -262,4 +228,45 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- Per-category detail for the selection, below the picker. Each stat's label
+	     carries a tooltip; hover the chart for every month's %. Wraps (no scroll) so
+	     tooltips aren't clipped. -->
+	{#if selectedCats.length > 0}
+		<div class="mt-4 rounded-lg bg-base-200/50 px-3 py-2">
+			<p class="pb-1 text-[0.65rem] italic opacity-45">{$t('trends.detail-hint')}</p>
+			<div class="flex flex-col divide-y divide-base-300/50">
+				{#each selectedCats as cat (cat.id)}
+					{@const m = momOf(cat)}
+					<div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-1.5">
+						<span class="flex min-w-0 basis-full items-center gap-1.5 sm:flex-1 sm:basis-32">
+							<span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {cat.color};"
+							></span>
+							<span class="truncate font-medium">{cat.name}</span>
+						</span>
+						{@render stat(pct(windowShare(cat)), $t('trends.col-income'), $t('trends.tip-income'))}
+						{@render stat(
+							pct(monthShare(cat)),
+							$t('trends.col-this-month'),
+							$t('trends.tip-this-month')
+						)}
+						{@render stat(
+							m.dir === 'new'
+								? $t('trends.momentum-new')
+								: m.dir === 'none'
+									? '—'
+									: `${m.pct > 0 ? '+' : ''}${m.pct}%`,
+							$t('trends.col-mom'),
+							$t('trends.tip-mom')
+						)}
+						{@render stat(
+							formatCurrency(perMonth(cat), 0),
+							$t('trends.col-permonth'),
+							$t('trends.tip-permonth')
+						)}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </div>
