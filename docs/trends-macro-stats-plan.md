@@ -225,6 +225,14 @@ Direction chosen from two mockups (v1 calm-analytic vs v2 "ledger instrument"); 
   time-series tiles carry a subtle `CategorySparkline` of `totals[]`. New i18n keys
   `kpi-concentration` / `kpi-concentration-tip`.
 
+- **Legible category lines regardless of picked colour.** User-chosen colours can sit almost on the
+  surface (a pale line on white, a dark one on black) and vanish. Rather than alter the colour, the
+  **real colour is kept** and a contrasting **casing** is drawn behind each category line — a soft
+  canvas-shadow halo (`lineCasingPlugin` in `TrendsChart.svelte`), dark on the light theme, light on
+  the dark theme, so it only "shows" where the line is close to the surface. The filled total line
+  and the dashed smoothed guides are excluded. (Small legend/detail swatch dots still use the raw
+  colour; add a hairline ring there if they read faint.)
+
 This closes Future-work **#3 (hierarchy)** and **#10 (consistency pass)** below.
 
 **Phase 2 — deferred, needs backend:** per-KPI **"vs previous period" deltas** (needs a prior-window

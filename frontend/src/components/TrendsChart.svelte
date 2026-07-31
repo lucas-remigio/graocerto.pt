@@ -125,6 +125,9 @@
 
 		// Chart surface, for the ring around end/peak markers so they stay legible.
 		const surface = isDarkMode ? '#1e1e1e' : '#ffffff';
+		// Contrasting casing behind each category line so the real colour stays visible
+		// even when it sits close to the surface (dark casing on light, light on dark).
+		const casingColor = isDarkMode ? 'rgba(255, 255, 255, 0.55)' : 'rgba(17, 17, 17, 0.5)';
 		const totalLabel = $t('trends.total');
 		const peakLabel = $t('trends.peak-month');
 		const smoothLabel = $t('trends.smoothed');
@@ -162,6 +165,8 @@
 		}
 
 		for (const s of series) {
+			// The real, user-picked colour — kept exactly. Legibility against the surface
+			// comes from the contrasting casing drawn by lineCasingPlugin below.
 			datasets.push({
 				label: s.name,
 				data: s.totals.slice(),
@@ -257,10 +262,35 @@
 			}
 		};
 
+		// Casing: before each category line draws, lay a soft contrasting halo under it
+		// (via a canvas shadow) so a pale-on-white / dark-on-black colour still reads.
+		// The filled total line and the dashed smoothed guides are left alone.
+		const lineCasingPlugin: Plugin<'line'> = {
+			id: 'trendsLineCasing',
+			beforeDatasetDraw(c, args) {
+				const ds = c.data.datasets[args.index];
+				const label = ds.label ?? '';
+				if (label === totalLabel || label === smoothLabel || ds.fill) return;
+				const ctx = c.ctx;
+				ctx.shadowColor = casingColor;
+				ctx.shadowBlur = 3.5;
+				ctx.shadowOffsetX = 0;
+				ctx.shadowOffsetY = 0;
+			},
+			afterDatasetDraw(c, args) {
+				const ds = c.data.datasets[args.index];
+				const label = ds.label ?? '';
+				if (label === totalLabel || label === smoothLabel || ds.fill) return;
+				const ctx = c.ctx;
+				ctx.shadowColor = 'transparent';
+				ctx.shadowBlur = 0;
+			}
+		};
+
 		const config: ChartConfiguration<'line'> = {
 			type: 'line',
 			data: { labels: monthLabels(), datasets },
-			plugins: [readoutPlugin, crosshairPlugin],
+			plugins: [lineCasingPlugin, readoutPlugin, crosshairPlugin],
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
