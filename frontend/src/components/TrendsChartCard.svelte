@@ -171,47 +171,8 @@
 		</div>
 	{/if}
 
-	<!-- Per-category detail for the selection. Each stat's label carries a tooltip;
-	     hover the chart for every month's %. Wraps (no scroll) so tooltips aren't clipped. -->
-	{#if selectedCats.length > 0}
-		<div class="mt-3 rounded-lg bg-base-200/50 px-3 py-2">
-			<p class="pb-1 text-[0.65rem] italic opacity-45">{$t('trends.detail-hint')}</p>
-			<div class="flex flex-col divide-y divide-base-300/50">
-				{#each selectedCats as cat (cat.id)}
-					{@const m = momOf(cat)}
-					<div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-1.5">
-						<span class="flex min-w-0 basis-full items-center gap-1.5 sm:flex-1 sm:basis-32">
-							<span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {cat.color};"
-							></span>
-							<span class="truncate font-medium">{cat.name}</span>
-						</span>
-						{@render stat(pct(windowShare(cat)), $t('trends.col-income'), $t('trends.tip-income'))}
-						{@render stat(
-							pct(monthShare(cat)),
-							$t('trends.col-this-month'),
-							$t('trends.tip-this-month')
-						)}
-						{@render stat(
-							m.dir === 'new'
-								? $t('trends.momentum-new')
-								: m.dir === 'none'
-									? '—'
-									: `${m.pct > 0 ? '+' : ''}${m.pct}%`,
-							$t('trends.col-mom'),
-							$t('trends.tip-mom')
-						)}
-						{@render stat(
-							formatCurrency(perMonth(cat), 0),
-							$t('trends.col-permonth'),
-							$t('trends.tip-permonth')
-						)}
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
-	<!-- Toggleable legend: Total + roots (with drill-down into subcategories) -->
+	<!-- Toggleable legend directly under the chart: Total + roots (with drill-down
+	     into subcategories). Sits here so picking several in a row needs no travel. -->
 	<div class="mt-4 flex flex-col gap-3">
 		<div class="flex flex-wrap items-center gap-2">
 			<button
@@ -267,4 +228,45 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- Per-category detail for the selection, below the picker. Each stat's label
+	     carries a tooltip; hover the chart for every month's %. Wraps (no scroll) so
+	     tooltips aren't clipped. -->
+	{#if selectedCats.length > 0}
+		<div class="mt-4 rounded-lg bg-base-200/50 px-3 py-2">
+			<p class="pb-1 text-[0.65rem] italic opacity-45">{$t('trends.detail-hint')}</p>
+			<div class="flex flex-col divide-y divide-base-300/50">
+				{#each selectedCats as cat (cat.id)}
+					{@const m = momOf(cat)}
+					<div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-1.5">
+						<span class="flex min-w-0 basis-full items-center gap-1.5 sm:flex-1 sm:basis-32">
+							<span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {cat.color};"
+							></span>
+							<span class="truncate font-medium">{cat.name}</span>
+						</span>
+						{@render stat(pct(windowShare(cat)), $t('trends.col-income'), $t('trends.tip-income'))}
+						{@render stat(
+							pct(monthShare(cat)),
+							$t('trends.col-this-month'),
+							$t('trends.tip-this-month')
+						)}
+						{@render stat(
+							m.dir === 'new'
+								? $t('trends.momentum-new')
+								: m.dir === 'none'
+									? '—'
+									: `${m.pct > 0 ? '+' : ''}${m.pct}%`,
+							$t('trends.col-mom'),
+							$t('trends.tip-mom')
+						)}
+						{@render stat(
+							formatCurrency(perMonth(cat), 0),
+							$t('trends.col-permonth'),
+							$t('trends.tip-permonth')
+						)}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </div>
