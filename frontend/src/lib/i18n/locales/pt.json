@@ -335,6 +335,8 @@
 		"kpi-average-tip-income": "Total de entradas ÷ o número de meses do período.",
 		"kpi-categories": "Categorias",
 		"kpi-categories-tip": "Categorias com pelo menos uma transação neste período.",
+		"kpi-concentration": "Concentração top {n}",
+		"kpi-concentration-tip": "Os teus {n} maiores destinos como fatia do total do período.",
 		"changed-title": "O que mudou",
 		"compare-label": "A comparar",
 		"changed-total": "Total",

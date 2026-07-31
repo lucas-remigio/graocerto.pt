@@ -17,8 +17,6 @@
 	}: { trends: CategoryTrendsResponse; type: TrendsType; baseIdx: number; curIdx: number } =
 		$props();
 
-	const TOTAL_COLOR = '#6366f1'; // must match TrendsChart's total line
-
 	let selectedCategoryIds = $state<number[]>([]);
 	let showTotal = $state(true);
 	let expandedRootId = $state<number | null>(null);
@@ -122,14 +120,16 @@
 	>
 		<span class="h-2.5 w-2.5 rounded-full" style="background-color: {color};"></span>
 		{name}
-		<span class="text-xs {active ? 'opacity-80' : 'opacity-50'}">{formatCurrency(catTotal)}</span>
+		<span class="font-mono text-xs tabular-nums {active ? 'opacity-80' : 'opacity-50'}"
+			>{formatCurrency(catTotal)}</span
+		>
 	</button>
 {/snippet}
 
 <!-- One stat: value on top, a label below whose full meaning is a DaisyUI tooltip. -->
 {#snippet stat(value: string, label: string, tip: string)}
 	<span class="flex min-w-[3.25rem] flex-col items-end leading-tight">
-		<span class="text-sm font-semibold tabular-nums">{value}</span>
+		<span class="font-mono text-sm font-semibold tabular-nums">{value}</span>
 		<span
 			class="tooltip tooltip-top cursor-help text-[0.6rem] uppercase tracking-wide text-base-content/60 underline decoration-dotted underline-offset-2 before:z-10 before:max-w-[11rem] before:whitespace-normal before:text-[0.7rem] before:normal-case before:shadow-lg before:content-[attr(data-tip)]"
 			data-tip={tip}
@@ -178,12 +178,12 @@
 			<button
 				type="button"
 				class="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors {showTotal
-					? 'border-transparent text-white shadow-sm'
+					? 'border-transparent bg-primary text-primary-content shadow-sm'
 					: 'border-base-300 text-base-content/60 hover:bg-base-200'}"
-				style={showTotal ? `background-color: ${TOTAL_COLOR};` : ''}
 				onclick={() => (showTotal = !showTotal)}
 			>
-				<span class="h-2.5 w-2.5 rounded-full" style="background-color: {TOTAL_COLOR};"></span>
+				<span class="h-2.5 w-2.5 rounded-full {showTotal ? 'bg-primary-content' : 'bg-primary'}"
+				></span>
 				{$t('trends.total')}
 			</button>
 

@@ -204,25 +204,55 @@ already on the client.
 
 ---
 
+## Iteration 5 — visual identity: "ledger instrument"  `done` (Phase 1)
+
+A design pass giving `/trends` a committed identity instead of a stack of equal grey cards.
+Direction chosen from two mockups (v1 calm-analytic vs v2 "ledger instrument"); v2 won.
+
+- **Signature — money speaks in monospace.** Every figure (KPI values, legend amounts, detail
+  stats, mover deltas, month pickers, axis ticks) is `font-mono tabular-nums` — a ledger/terminal
+  vernacular that also aligns numerals in columns. System mono stack, no webfont.
+- **Chart as a live readout** (`TrendsChart.svelte`, rewritten): primary-blue line + gradient
+  wash, x-grid removed / y-grid receded to a hairline, monospace ticks, a custom `trendsReadout`
+  plugin that direct-labels the **endpoint value** and marks the **peak**, a `trendsCrosshair`
+  plugin on hover, and a reduced-motion-aware draw-in. The hardcoded indigo `#6366f1` total colour
+  is gone — the line now uses DaisyUI `primary` via `themeService.getThemeColors().seriesTotal`,
+  and the Total legend pill uses the `primary` token so the two always match.
+- **Colour system** unchanged semantically but now consistent: spend=`error`, income=`success`,
+  blue=total. Grid colours softened in `themeService` for recessiveness.
+- **KPI rail** (`TrendsKpis.svelte`): dropped the non-insight *categories count* tile for a
+  **top-3 concentration** tile (thin client-side derivation, computed in `+page.svelte`); the two
+  time-series tiles carry a subtle `CategorySparkline` of `totals[]`. New i18n keys
+  `kpi-concentration` / `kpi-concentration-tip`.
+
+This closes Future-work **#3 (hierarchy)** and **#10 (consistency pass)** below.
+
+**Phase 2 — deferred, needs backend:** per-KPI **"vs previous period" deltas** (needs a prior-window
+aggregate or a second fetch) and a **savings-rate hero tile** (needs a designated savings category
+or a net-of-transfers figure). The mockups show these; they were intentionally not faked in v1.
+
+---
+
 # Future work — macro UI/UX  `todo`
 
 A macro read of the whole `/trends` page (after iterations 1–3). The page is now a vertical stack
 of **equal-weight** cards (KPIs → chart → what-changed) scoped to **one account**. The items below
 are ordered by impact/effort. None are started.
 
-## The defining gap: the page never shows *net / savings*
+## Not a net KPI — savings rate already reads off the category chart  `rejected`
 
-For a wallet tracker the headline question is **"am I saving money?"**, but `TrendsControls`
-toggles Spending **or** Income, so income − spending (net) is never visible together — even though
-`income[]` / `window_income` are already on the client. Everything below is secondary to closing
-this.
+The earlier "Why % of income, not net" section already settled this: this user ends every month
+at ~zero balance because **savings is a transfer out** (a Debit carrying `transfer_group_id`), so
+`net = window_income − window_total ≈ 0` and is worse than useless. The savings rate is already
+visible as the **savings category's % of income** on the existing chart. A "Saved this period"
+tile would be redundant (Option A) or would require redefining spend as net-of-transfers
+everywhere (Option B) — not worth it. **Decision: do not add a net/savings KPI.** Leave the
+category chart as the savings read.
 
 ## Tier 1 — structure & the savings story
 
-1. **"Saved this period" KPI (replace "Categories" count).** `todo` · **impact: high · effort:
-   low.** The category-count tile is not an insight. Swap it for **net = window_income −
-   window_total** and the **savings rate %** (both already derivable client-side in `TrendsKpis`).
-   Highest impact-to-effort on the page; do this first.
+1. **~~"Saved this period" KPI~~** `rejected` — see above. Net ≈ 0 for a transfer-based savings
+   flow; savings rate is already the savings category's % of income on the chart.
 2. **Cash-flow view (rethink the Spending/Income toggle).** `todo` · **impact: high · effort:
    high.** Replace either/or with income-vs-spending per month (paired bars) + a **net line**, so
    the whole story reads at once. The transformative version of #1; treat as its own effort after
@@ -263,6 +293,6 @@ this.
 
 ## Suggested order
 
-**#1 (savings KPI) → #5 (drill-through) → #6 (AI insight)** — best impact/effort, and each proves
-appetite before the larger **#2 (cash-flow redesign)**. Keep the `income[]` aggregate as the seed:
-it already unlocks #1 with no backend work.
+**#5 (drill-through) → #6 (AI insight)** — best impact/effort, and each proves appetite before the
+larger **#2 (cash-flow redesign)**. (#1 was dropped — the savings rate already reads off the
+category chart, so there's no net-KPI seed to build on.)

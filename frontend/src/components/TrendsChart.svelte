@@ -13,6 +13,8 @@
 		Filler,
 		type ChartConfiguration,
 		type ChartDataset,
+		type ScriptableContext,
+		type Plugin,
 		type TooltipItem
 	} from 'chart.js';
 	import { t } from '$lib/i18n';
@@ -22,6 +24,7 @@
 	import type { TrendMonth } from '$lib/types';
 
 	type ChartSeries = { name: string; color: string; totals: number[] };
+	type Pt = { x: number; y: number };
 
 	ChartJS.register(
 		Title,
@@ -47,10 +50,26 @@
 	let chart: ChartJS | null = null;
 	let unsubscribeTheme: (() => void) | null = null;
 
-	const TOTAL_COLOR = '#6366f1'; // indigo-500
 	const SMOOTH_WINDOW = 3;
+	// Ledger identity: figures and axis ticks are monospace.
+	const MONO =
+		"ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace";
 
 	$: currentLocale = $locale || 'pt';
+
+	function hexToRgba(hex: string, alpha: number): string {
+		const h = hex.replace('#', '');
+		const r = parseInt(h.slice(0, 2), 16);
+		const g = parseInt(h.slice(2, 4), 16);
+		const b = parseInt(h.slice(4, 6), 16);
+		return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+	}
+
+	function prefersReducedMotion(): boolean {
+		return (
+			typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		);
+	}
 
 	function monthLabels(): string[] {
 		return months.map((m) =>
@@ -93,6 +112,8 @@
 		}
 
 		const {
+			isDarkMode,
+			seriesTotal: totalColor,
 			legendColor,
 			axisTextColor,
 			gridColor,
@@ -102,9 +123,12 @@
 			tooltipBorderColor
 		} = themeService.getThemeColors();
 
+		// Chart surface, for the ring around end/peak markers so they stay legible.
+		const surface = isDarkMode ? '#1e1e1e' : '#ffffff';
+		const totalLabel = $t('trends.total');
+		const peakLabel = $t('trends.peak-month');
 		const smoothLabel = $t('trends.smoothed');
 		// The set of labels whose tooltip should show a "% of that month" share.
-		// Smoothed lines and the grand total are excluded (a share of itself is 100%).
 		const shareLabels = new Set(series.map((s) => s.name));
 
 		// Chart.js defines internal properties on the arrays/objects it receives, which
@@ -113,18 +137,28 @@
 
 		if (showTotal) {
 			datasets.push({
-				label: $t('trends.total'),
+				label: totalLabel,
 				data: total.slice(),
-				borderColor: TOTAL_COLOR,
-				backgroundColor: 'rgba(99, 102, 241, 0.10)',
+				borderColor: totalColor,
+				// Gradient wash under the line, built once the plot area is known.
+				backgroundColor: (context: ScriptableContext<'line'>) => {
+					const { ctx, chartArea } = context.chart;
+					if (!chartArea) return 'transparent';
+					const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+					g.addColorStop(0, hexToRgba(totalColor, 0.22));
+					g.addColorStop(1, hexToRgba(totalColor, 0));
+					return g;
+				},
 				fill: true,
 				tension: 0.25,
-				borderWidth: 3,
-				pointRadius: 3,
+				borderWidth: 2.5,
+				pointRadius: 0, // resting line is clean; endpoint is direct-labelled by the plugin
 				pointHoverRadius: 6,
-				pointBackgroundColor: TOTAL_COLOR
+				pointBackgroundColor: totalColor,
+				pointBorderColor: surface,
+				pointBorderWidth: 2
 			});
-			if (smooth) datasets.push(smoothedDataset(smoothLabel, total, TOTAL_COLOR));
+			if (smooth) datasets.push(smoothedDataset(smoothLabel, total, totalColor));
 		}
 
 		for (const s of series) {
@@ -136,20 +170,103 @@
 				fill: false,
 				tension: 0.25,
 				borderWidth: 2,
-				pointRadius: 2,
+				pointRadius: 0,
 				pointHoverRadius: 5,
-				pointBackgroundColor: s.color
+				pointBackgroundColor: s.color,
+				pointBorderColor: surface,
+				pointBorderWidth: 2
 			});
 			if (smooth) datasets.push(smoothedDataset(smoothLabel, s.totals, s.color));
 		}
 
-		const config: ChartConfiguration = {
+		// Direct-label the total line's endpoint (current reading) and mark its peak —
+		// the "instrument readout" that carries the page's identity.
+		const readoutPlugin: Plugin<'line'> = {
+			id: 'trendsReadout',
+			afterDatasetsDraw(c) {
+				if (!showTotal || total.length === 0) return;
+				const dsIndex = c.data.datasets.findIndex((d) => d.label === totalLabel);
+				if (dsIndex < 0) return;
+				const meta = c.getDatasetMeta(dsIndex);
+				if (!meta?.data?.length) return;
+
+				let peakI = 0;
+				for (let i = 1; i < total.length; i++) if (total[i] > total[peakI]) peakI = i;
+				const lastI = total.length - 1;
+				const peakEl = meta.data[peakI] as unknown as Pt;
+				const lastEl = meta.data[lastI] as unknown as Pt;
+
+				const ctx = c.ctx;
+				ctx.save();
+
+				// Peak marker (skip when it coincides with the endpoint).
+				if (peakI !== lastI && peakEl) {
+					ctx.beginPath();
+					ctx.arc(peakEl.x, peakEl.y, 4, 0, Math.PI * 2);
+					ctx.fillStyle = surface;
+					ctx.fill();
+					ctx.lineWidth = 2;
+					ctx.strokeStyle = totalColor;
+					ctx.stroke();
+					ctx.font = `600 10px ${MONO}`;
+					ctx.fillStyle = axisTextColor;
+					ctx.textBaseline = 'bottom';
+					ctx.textAlign = peakEl.x < 60 ? 'left' : 'center';
+					ctx.fillText(`${peakLabel} · ${formatCurrency(total[peakI], 0)}`, peakEl.x, peakEl.y - 9);
+				}
+
+				// Endpoint: filled dot + the current value, right-anchored so it never clips.
+				if (lastEl) {
+					ctx.beginPath();
+					ctx.arc(lastEl.x, lastEl.y, 4, 0, Math.PI * 2);
+					ctx.fillStyle = totalColor;
+					ctx.fill();
+					ctx.lineWidth = 2;
+					ctx.strokeStyle = surface;
+					ctx.stroke();
+					ctx.font = `600 12px ${MONO}`;
+					ctx.fillStyle = tooltipTitleColor;
+					ctx.textBaseline = 'bottom';
+					ctx.textAlign = 'right';
+					ctx.fillText(formatCurrency(total[lastI], 0), lastEl.x - 6, lastEl.y - 6);
+				}
+
+				ctx.restore();
+			}
+		};
+
+		// Vertical crosshair following the shared-index tooltip.
+		const crosshairPlugin: Plugin<'line'> = {
+			id: 'trendsCrosshair',
+			afterDraw(c) {
+				const active = c.tooltip?.getActiveElements?.() ?? [];
+				if (active.length === 0) return;
+				const x = (active[0].element as unknown as Pt).x;
+				const { top, bottom } = c.chartArea;
+				const ctx = c.ctx;
+				ctx.save();
+				ctx.beginPath();
+				ctx.moveTo(x, top);
+				ctx.lineTo(x, bottom);
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = totalColor;
+				ctx.globalAlpha = 0.35;
+				ctx.setLineDash([3, 3]);
+				ctx.stroke();
+				ctx.restore();
+			}
+		};
+
+		const config: ChartConfiguration<'line'> = {
 			type: 'line',
 			data: { labels: monthLabels(), datasets },
+			plugins: [readoutPlugin, crosshairPlugin],
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
+				animation: prefersReducedMotion() ? false : { duration: 900, easing: 'easeOutQuart' },
 				interaction: { mode: 'index', intersect: false },
+				layout: { padding: { top: 26, right: 12 } },
 				plugins: {
 					title: { display: false },
 					legend: {
@@ -171,6 +288,8 @@
 						borderColor: tooltipBorderColor,
 						borderWidth: 1,
 						cornerRadius: 8,
+						padding: 10,
+						bodyFont: { family: MONO },
 						callbacks: {
 							label: (context: TooltipItem<'line'>) => {
 								const value = context.parsed.y ?? 0;
@@ -187,14 +306,17 @@
 				},
 				scales: {
 					x: {
-						grid: { color: gridColor, lineWidth: 1 },
-						ticks: { color: axisTextColor, font: { size: 11 } }
+						grid: { display: false },
+						border: { display: false },
+						ticks: { color: axisTextColor, font: { size: 11, family: MONO } }
 					},
 					y: {
-						grid: { color: gridColor, lineWidth: 1 },
+						grid: { color: gridColor, lineWidth: 1, drawTicks: false },
+						border: { display: false },
 						ticks: {
 							color: axisTextColor,
-							font: { size: 11 },
+							font: { size: 11, family: MONO },
+							padding: 8,
 							callback: (value: string | number) => formatCurrency(Number(value), 0)
 						}
 					}

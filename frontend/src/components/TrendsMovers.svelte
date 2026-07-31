@@ -70,7 +70,7 @@
 		<span class="min-w-0 flex-1 truncate text-sm">{m.name}</span>
 		<CategorySparkline data={m.totals} color={m.color} />
 		<span class="flex flex-col items-end leading-tight">
-			<span class="text-sm font-semibold tabular-nums">
+			<span class="font-mono text-sm font-semibold tabular-nums">
 				{d > 0 ? '+' : ''}{formatCurrency(d, 0)}
 			</span>
 			<span class="text-[0.65rem] uppercase tracking-wide opacity-60">

@@ -332,6 +332,8 @@
 		"kpi-average-tip-income": "Total income ÷ the number of months in the range.",
 		"kpi-categories": "Categories",
 		"kpi-categories-tip": "Categories with at least one transaction in this range.",
+		"kpi-concentration": "Top {n} concentration",
+		"kpi-concentration-tip": "Your {n} biggest categories as a share of the period total.",
 		"changed-title": "What changed",
 		"compare-label": "Comparing",
 		"changed-total": "Total",

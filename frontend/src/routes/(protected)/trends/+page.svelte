@@ -84,6 +84,15 @@
 
 	let movers = $derived(trends?.movers ?? []);
 
+	// Category concentration for the KPI tile: the top-N roots as a share of the
+	// window total. Thin client-side derivation of aggregates already returned.
+	let topN = $derived(trends ? Math.min(3, trends.categories.length) : 0);
+	let topShare = $derived.by(() => {
+		if (!trends || topN === 0 || trends.window_total <= 0) return null;
+		const top = trends.categories.slice(0, topN).reduce((sum, c) => sum + c.total, 0);
+		return top / trends.window_total;
+	});
+
 	/* ---- Account cards (mirror Home/Recurring behaviour) ---- */
 	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
 		selectedAccount = event.detail.account;
@@ -152,7 +161,9 @@
 				<TrendsKpis
 					windowTotal={trends.window_total}
 					monthlyAverage={trends.monthly_average}
-					categoriesCount={trends.categories.length}
+					{topShare}
+					{topN}
+					totals={trends.totals}
 					{type}
 				/>
 

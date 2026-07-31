@@ -33,7 +33,7 @@
 			{$t('trends.compare-label')}
 		</span>
 		<select
-			class="select select-bordered h-9 min-h-0 text-sm"
+			class="select select-bordered h-9 min-h-0 font-mono text-sm"
 			bind:value={baseIdx}
 			onchange={onCompareChange}
 		>
@@ -43,7 +43,7 @@
 		</select>
 		<ArrowRight size={14} class="text-base-content/50" />
 		<select
-			class="select select-bordered h-9 min-h-0 text-sm"
+			class="select select-bordered h-9 min-h-0 font-mono text-sm"
 			bind:value={curIdx}
 			onchange={onCompareChange}
 		>

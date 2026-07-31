@@ -87,9 +87,13 @@ class ThemeService {
 
 		return {
 			isDarkMode: isDark,
+			// The "total" line + its gradient area — DaisyUI `primary`, so it matches the
+			// Total legend pill (which uses the primary token) in both themes.
+			seriesTotal: isDark ? '#4F99FF' : '#006FF9',
 			legendColor: isDark ? '#e5e7eb' : '#374151',
-			axisTextColor: isDark ? '#e5e7eb' : '#111827',
-			gridColor: isDark ? '#374151' : '#f3f4f6',
+			axisTextColor: isDark ? '#9ca3af' : '#6b7280',
+			// Recessive: hairline gridlines close to the surface, not a strong grey.
+			gridColor: isDark ? '#2a2a2a' : '#eef1f4',
 			tooltipBg: isDark ? '#1f2937' : '#ffffff',
 			tooltipTitleColor: isDark ? '#e5e7eb' : '#111827',
 			tooltipBodyColor: isDark ? '#e5e7eb' : '#374151',
