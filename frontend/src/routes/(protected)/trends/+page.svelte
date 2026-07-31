@@ -24,6 +24,12 @@
 	let loading = $state(false);
 	let loadKey = '';
 
+	// The two months every month-over-month surface compares (axis indices). The
+	// backend resolves the default and echoes the chosen pair back; the user can
+	// then pick any two months, which refetches with those indices.
+	let baseIdx = $state(-1);
+	let curIdx = $state(-1);
+
 	onMount(async () => {
 		accountsLoading = true;
 		try {
@@ -37,14 +43,24 @@
 		}
 	});
 
-	async function loadTrends(token: string | undefined, range: TrendsRangeMonths, kind: TrendsType) {
+	// base/cur are the comparison months to request; undefined lets the backend pick
+	// its default and echo the resolved pair back (which we mirror into the pickers).
+	async function loadTrends(
+		token: string | undefined,
+		range: TrendsRangeMonths,
+		kind: TrendsType,
+		base?: number,
+		cur?: number
+	) {
 		if (!token) return;
-		const key = `${token}-${range}-${kind}`;
+		const key = `${token}-${range}-${kind}-${base ?? 'd'}-${cur ?? 'd'}`;
 		if (loadKey === key) return;
 		loadKey = key;
 		loading = true;
 		try {
-			trends = await dataService.fetchCategoryTrends(token, range, kind);
+			trends = await dataService.fetchCategoryTrends(token, range, kind, base, cur);
+			baseIdx = trends.compare_base;
+			curIdx = trends.compare_current;
 		} catch (err) {
 			console.error('Error loading trends:', err);
 			toastStore.error($t('errors.failed-load-transactions'));
@@ -54,10 +70,19 @@
 		}
 	}
 
-	// Refetch whenever account / range / type changes (deps read as arguments).
+	// Structural refetch: account / range / type. Comparison is left to the backend
+	// default here (does not read baseIdx/curIdx, so echoing them back won't loop).
 	$effect(() => {
 		void loadTrends(selectedAccount?.token, months, type);
 	});
+
+	// The user picked different comparison months — refetch so the backend re-ranks
+	// the movers for that pair. Optimistic index update keeps the pickers responsive.
+	function handleCompareChange() {
+		void loadTrends(selectedAccount?.token, months, type, baseIdx, curIdx);
+	}
+
+	let movers = $derived(trends?.movers ?? []);
 
 	/* ---- Account cards (mirror Home/Recurring behaviour) ---- */
 	function handleSelectAccount(event: CustomEvent<{ account: Account }>) {
@@ -133,10 +158,17 @@
 
 				<!-- Keyed on type so switching spending/income resets the legend selection. -->
 				{#key type}
-					<TrendsChartCard {trends} {type} />
+					<TrendsChartCard {trends} {type} {baseIdx} {curIdx} />
 				{/key}
 
-				<TrendsMovers movers={trends.movers} totals={trends.totals} months={trends.months} />
+				<TrendsMovers
+					{movers}
+					totals={trends.totals}
+					months={trends.months}
+					bind:baseIdx
+					bind:curIdx
+					onCompareChange={handleCompareChange}
+				/>
 			{:else}
 				<div class="flex h-96 items-center justify-center">
 					<p class="text-base-content/60">{$t('trends.no-data')}</p>

@@ -9,7 +9,13 @@
 	import { ChevronDown, ChevronRight } from 'lucide-svelte';
 	import type { CategoryTrend, CategoryTrendsResponse, TrendsType } from '$lib/types';
 
-	let { trends, type }: { trends: CategoryTrendsResponse; type: TrendsType } = $props();
+	let {
+		trends,
+		type,
+		baseIdx,
+		curIdx
+	}: { trends: CategoryTrendsResponse; type: TrendsType; baseIdx: number; curIdx: number } =
+		$props();
 
 	const TOTAL_COLOR = '#6366f1'; // must match TrendsChart's total line
 
@@ -41,7 +47,6 @@
 	let hasSeries = $derived(showTotal || selectedSeries.length > 0);
 
 	let monthsCount = $derived(trends.months.length || 1);
-	let lastIdx = $derived(trends.months.length - 1);
 
 	// --- Per-category stats. Denominators guarded so a zero window shows "—". ---
 
@@ -53,24 +58,24 @@
 		return denom > 0 ? cat.total / denom : null;
 	}
 
-	// The category's share of the latest month's grand total.
+	// The category's share of the focus month's grand total.
 	function monthShare(cat: CategoryTrend): number | null {
-		if (lastIdx < 0) return null;
-		const monthTotal = trends.totals[lastIdx] ?? 0;
-		return monthTotal > 0 ? (cat.totals[lastIdx] ?? 0) / monthTotal : null;
+		if (curIdx < 0) return null;
+		const monthTotal = trends.totals[curIdx] ?? 0;
+		return monthTotal > 0 ? (cat.totals[curIdx] ?? 0) / monthTotal : null;
 	}
 
 	const perMonth = (cat: CategoryTrend) => cat.total / monthsCount;
 
-	// Latest month vs the previous one. 'new' = spend appeared with no prior month.
+	// Change between the two chosen comparison months. 'new' = spend appeared with
+	// no spend in the baseline month.
 	function momOf(cat: CategoryTrend): {
 		dir: 'up' | 'down' | 'flat' | 'new' | 'none';
 		pct: number;
 	} {
-		const n = cat.totals.length;
-		if (n < 2) return { dir: 'none', pct: 0 };
-		const prev = cat.totals[n - 2];
-		const cur = cat.totals[n - 1];
+		if (baseIdx < 0 || curIdx < 0) return { dir: 'none', pct: 0 };
+		const prev = cat.totals[baseIdx] ?? 0;
+		const cur = cat.totals[curIdx] ?? 0;
 		if (prev === 0) return { dir: cur > 0 ? 'new' : 'none', pct: 0 };
 		const p = ((cur - prev) / prev) * 100;
 		return { dir: p > 0.5 ? 'up' : p < -0.5 ? 'down' : 'flat', pct: Math.round(p) };

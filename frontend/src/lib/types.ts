@@ -251,7 +251,9 @@ export interface CategoryTrendsResponse {
 	window_income: number; // sum of income[] over the window
 	monthly_average: number;
 	categories: CategoryTrend[];
-	movers: CategoryMover[];
+	movers: CategoryMover[]; // computed for the [compare_base, compare_current] months
+	compare_base: number; // axis index of the baseline comparison month
+	compare_current: number; // axis index of the focus comparison month
 }
 
 export type TrendsRangeMonths = 6 | 12 | 24;

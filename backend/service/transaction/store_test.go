@@ -92,7 +92,7 @@ func TestComputeCategoryMovers(t *testing.T) {
 		{ID: 5, Name: "Travel", Totals: []float64{0, 0, 0, 0, 200, 0}},
 	}
 
-	movers := computeCategoryMovers(roots, 6)
+	movers := computeCategoryMovers(roots, 4, 5)
 
 	byID := make(map[int]*types.CategoryMover)
 	for _, m := range movers {
@@ -125,10 +125,32 @@ func TestComputeCategoryMovers(t *testing.T) {
 	}
 }
 
-func TestComputeCategoryMovers_TooFewMonths(t *testing.T) {
+func TestComputeCategoryMovers_NoComparison(t *testing.T) {
 	roots := []*types.CategoryTrend{{ID: 1, Totals: []float64{100}}}
-	if movers := computeCategoryMovers(roots, 1); len(movers) != 0 {
-		t.Fatalf("expected no movers for n<2, got %d", len(movers))
+	// baseIdx = -1 signals "no valid pair to compare" (e.g. a single-month window).
+	if movers := computeCategoryMovers(roots, -1, 0); len(movers) != 0 {
+		t.Fatalf("expected no movers without a comparison pair, got %d", len(movers))
+	}
+}
+
+func TestDefaultCompareIndices(t *testing.T) {
+	// 12-month axis ending on the current month.
+	axis := buildMonthAxis(mustDate(t, "2026-08-15"), 12) // ends Aug 2026 (idx 11)
+
+	// Early in the month (< 1/3 elapsed): skip the incomplete current month and
+	// compare the two most recent COMPLETE months (Jun→Jul = idx 9→10).
+	if b, c := defaultCompareIndices(axis, mustDate(t, "2026-08-02")); b != 9 || c != 10 {
+		t.Fatalf("early-month: expected 9,10 got %d,%d", b, c)
+	}
+
+	// Late in the month (> 1/3 elapsed): keep current-vs-previous (Jul→Aug = 10→11).
+	if b, c := defaultCompareIndices(axis, mustDate(t, "2026-08-28")); b != 10 || c != 11 {
+		t.Fatalf("late-month: expected 10,11 got %d,%d", b, c)
+	}
+
+	// Fewer than two months: no pair to compare.
+	if b, _ := defaultCompareIndices(buildMonthAxis(mustDate(t, "2026-08-15"), 1), mustDate(t, "2026-08-02")); b != -1 {
+		t.Fatalf("single-month axis: expected base -1, got %d", b)
 	}
 }
 

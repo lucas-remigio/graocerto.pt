@@ -7,17 +7,24 @@
 	import { locale } from 'svelte-i18n';
 	import { TrendingUp, TrendingDown } from 'lucide-svelte';
 	import CategorySparkline from '$components/CategorySparkline.svelte';
+	import TrendsCompareControls from '$components/TrendsCompareControls.svelte';
 	import { formatCurrency } from '$lib/utils/currency';
 	import type { CategoryMover, TrendMonth } from '$lib/types';
 
 	let {
 		movers,
 		totals,
-		months
+		months,
+		baseIdx = $bindable(),
+		curIdx = $bindable(),
+		onCompareChange
 	}: {
 		movers: CategoryMover[];
 		totals: number[];
 		months: TrendMonth[];
+		baseIdx: number;
+		curIdx: number;
+		onCompareChange: () => void;
 	} = $props();
 
 	let currentLocale = $derived($locale || 'pt');
@@ -27,8 +34,9 @@
 			year: '2-digit'
 		});
 
-	// Peak month + total month-over-month, ignoring leading-zero months (before any
-	// activity). null when the window is all-zero; mom is null with <2 active months.
+	// Peak month + total change between the two chosen months, ignoring leading-zero
+	// months (before any activity). null when the window is all-zero; mom is null
+	// when the baseline month had no spend to compare against.
 	let context = $derived.by(() => {
 		const n = totals.length;
 		const start = totals.findIndex((v) => v > 0);
@@ -40,8 +48,8 @@
 		}
 
 		let mom: number | null = null;
-		if (n - start >= 2 && totals[n - 2] > 0) {
-			mom = Math.round(((totals[n - 1] - totals[n - 2]) / totals[n - 2]) * 100);
+		if (baseIdx >= 0 && curIdx >= 0 && totals[baseIdx] > 0) {
+			mom = Math.round(((totals[curIdx] - totals[baseIdx]) / totals[baseIdx]) * 100);
 		}
 		return { hiIdx, mom };
 	});
@@ -50,9 +58,8 @@
 	let risers = $derived(movers.filter((m) => m.direction === 'up' || m.direction === 'new'));
 	let fallers = $derived(movers.filter((m) => m.direction === 'down'));
 
-	// Euro change from last month to the latest month (the mover's ranking key).
-	const deltaOf = (m: CategoryMover) =>
-		m.totals[m.totals.length - 1] - m.totals[m.totals.length - 2];
+	// Euro change between the two chosen months (the mover's ranking key).
+	const deltaOf = (m: CategoryMover) => m.totals[curIdx] - m.totals[baseIdx];
 </script>
 
 <!-- One category row: name, sparkline, euro change + % (or "New"). -->
@@ -79,12 +86,18 @@
 
 {#if context}
 	<div class="mt-4 rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
-		<p class="text-sm font-semibold">{$t('trends.changed-title')}</p>
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<p class="text-sm font-semibold">{$t('trends.changed-title')}</p>
+			<TrendsCompareControls {months} bind:baseIdx bind:curIdx {onCompareChange} />
+		</div>
 		<p class="mt-0.5 text-xs text-base-content/50">
 			{#if context.mom !== null}
 				{$t('trends.changed-total')}
 				<span class="font-semibold">{context.mom > 0 ? '+' : ''}{context.mom}%</span>
-				{$t('trends.vs-last-month')} ·
+				<span class="opacity-80">
+					{monthLabel(months[baseIdx])} → {monthLabel(months[curIdx])}
+				</span>
+				<span class="opacity-60">·</span>
 			{/if}
 			{$t('trends.peak-month')}
 			<span class="font-semibold">{monthLabel(months[context.hiIdx])}</span>

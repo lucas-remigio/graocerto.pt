@@ -1558,7 +1558,7 @@ func (s *Store) GetTransactionStatistics(accountToken string, month, year *int) 
 // GetCategoryMonthlyTrends returns a per-category monthly time series over the
 // last `months` months for one transaction type (spending or income). Everything
 // is aligned to a shared month axis so the frontend can plot it directly.
-func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID int) (*types.CategoryTrendsResponse, error) {
+func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID, compareBase, compareCurrent int) (*types.CategoryTrendsResponse, error) {
 	if months < 1 {
 		months = 12
 	}
@@ -1566,7 +1566,8 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 		months = 24
 	}
 
-	axis := buildMonthAxis(time.Now().UTC(), months)
+	now := time.Now().UTC()
+	axis := buildMonthAxis(now, months)
 	// index by year*100+month for O(1) row placement onto the axis.
 	indexByKey := make(map[int]int, len(axis))
 	for i, tm := range axis {
@@ -1691,6 +1692,14 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 	}
 	windowIncome = utils.Round(windowIncome, 2)
 
+	// Resolve the two months to compare. The client sends axis indices (echoed
+	// back so its pickers stay in sync); an absent or out-of-range pair falls back
+	// to the default policy that skips an early, incomplete current month.
+	baseIdx, curIdx := compareBase, compareCurrent
+	if baseIdx < 0 || baseIdx >= len(axis) || curIdx < 0 || curIdx >= len(axis) {
+		baseIdx, curIdx = defaultCompareIndices(axis, now)
+	}
+
 	return &types.CategoryTrendsResponse{
 		AccountToken:    accountToken,
 		TransactionType: transactionTypeID,
@@ -1701,7 +1710,9 @@ func (s *Store) GetCategoryMonthlyTrends(accountToken string, months, transactio
 		WindowIncome:    windowIncome,
 		MonthlyAverage:  monthlyAverage,
 		Categories:      categorySlice,
-		Movers:          computeCategoryMovers(categorySlice, len(axis)),
+		Movers:          computeCategoryMovers(categorySlice, baseIdx, curIdx),
+		CompareBase:     baseIdx,
+		CompareCurrent:  curIdx,
 	}, nil
 }
 
@@ -1760,20 +1771,48 @@ func (s *Store) queryMonthlyIncome(accountToken string, indexByKey map[int]int, 
 	return bucketMonthlyAmounts(rows, indexByKey, n), nil
 }
 
-// computeCategoryMovers ranks root categories by how much their spend moved from
-// the previous month to the latest month, biggest money change first, capped at
-// six. Direction is "up"/"down" (>|2%|) or "new" (spend this month, none last).
-// A category that fell to exactly zero is skipped: within a possibly-incomplete
-// current month, an absence reads as "not yet", not a real decrease.
-func computeCategoryMovers(roots []*types.CategoryTrend, n int) []*types.CategoryMover {
-	movers := make([]*types.CategoryMover, 0)
+// monthElapsedFraction is how much of the current calendar month has passed, in
+// (0, 1] (day-of-month ÷ days-in-month).
+func monthElapsedFraction(now time.Time) float64 {
+	daysInMonth := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()
+	return float64(now.Day()) / float64(daysInMonth)
+}
+
+// defaultCompareIndices picks the two axis months to compare by default. The axis
+// always ends on the current calendar month, which is incomplete: comparing an
+// empty first-of-month against a full previous month reads as a crash. So when
+// less than a third of the current month has elapsed, fall back to the two most
+// recent COMPLETE months; otherwise keep current-vs-previous (the natural read
+// late in a month). Returns baseIdx = -1 when there aren't two months to compare.
+func defaultCompareIndices(axis []types.TrendMonth, now time.Time) (baseIdx, curIdx int) {
+	n := len(axis)
 	if n < 2 {
+		return -1, n - 1
+	}
+
+	last := axis[n-1]
+	lastIsCurrentMonth := last.Year == now.Year() && last.Month == int(now.Month())
+	if lastIsCurrentMonth && monthElapsedFraction(now) < 1.0/3.0 && n >= 3 {
+		return n - 3, n - 2
+	}
+	return n - 2, n - 1
+}
+
+// computeCategoryMovers ranks root categories by how much their spend moved
+// between the two chosen months (baseIdx → curIdx), biggest money change first,
+// capped at six. Direction is "up"/"down" (>|2%|) or "new" (spend now, none in
+// the baseline month). A category that fell to exactly zero is skipped: within a
+// possibly-incomplete current month, an absence reads as "not yet", not a real
+// decrease.
+func computeCategoryMovers(roots []*types.CategoryTrend, baseIdx, curIdx int) []*types.CategoryMover {
+	movers := make([]*types.CategoryMover, 0)
+	if baseIdx < 0 || curIdx < 0 {
 		return movers
 	}
 
 	for _, root := range roots {
-		prev := root.Totals[n-2]
-		cur := root.Totals[n-1]
+		prev := root.Totals[baseIdx]
+		cur := root.Totals[curIdx]
 
 		var pct *float64
 		direction := ""
@@ -1809,7 +1848,7 @@ func computeCategoryMovers(roots []*types.CategoryTrend, n int) []*types.Categor
 	// Biggest money change first — a big euro swing matters more than a big % on a
 	// tiny category.
 	delta := func(m *types.CategoryMover) float64 {
-		return abs(m.Totals[n-1] - m.Totals[n-2])
+		return abs(m.Totals[curIdx] - m.Totals[baseIdx])
 	}
 	sort.SliceStable(movers, func(i, j int) bool {
 		return delta(movers[i]) > delta(movers[j])

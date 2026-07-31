@@ -129,6 +129,36 @@ histories. Reworked to **one consistent metric — month-over-month**:
   Biggest drops**, each row = name · sparkline · euro change + % (or "New"). Consistent with the
   per-category MoM in the detail table.
 
+## Iteration 4 — customisable comparison months  `done`
+
+The MoM story was hardwired to `latest vs previous` = axis indices `n-1`/`n-2`. But `buildMonthAxis`
+(`store.go:1826`) always ends on the **current (incomplete) calendar month**, so on the 1st of a
+month the whole "what changed" card compared an empty new month to a full previous one. Fixed by
+letting the user **compare any two months** — with the real logic kept **on the backend** (single,
+unit-tested implementation), driven by a refetch (prior data stays on screen, so no jarring spinner):
+
+- **Backend owns the policy + ranking.** `GetCategoryMonthlyTrends` gained `compareBase,
+  compareCurrent` params (axis indices; `-1`/out-of-range → default). `defaultCompareIndices(axis,
+  now)` (`store.go`) picks the default — when the last bucket is the current month and **< 1/3 of it
+  has elapsed**, it falls back to the two most recent *complete* months (fixes the 1st-of-month
+  view); otherwise keeps current-vs-previous. `computeCategoryMovers` is now parametrised by the two
+  indices. The response echoes `compare_base` / `compare_current` so the pickers stay in sync. Route
+  (`routes.go`) validates the pair is within `[0, months)`. Tests: `TestDefaultCompareIndices` +
+  the updated `TestComputeCategoryMovers`.
+- **Frontend is pure visualization.** `TrendsCompareControls.svelte` = two `[base] → [current]`
+  `<select>`s in the movers card header. On change it refetches via
+  `dataService.fetchCategoryTrends(..., compareBase, compareCurrent)`; the page (`+page.svelte`)
+  mirrors the echoed indices into `baseIdx`/`curIdx` and passes them to `TrendsMovers` (context +
+  delta) and `TrendsChartCard` (detail-table `MoM` + `% of month` follow the focus month). The
+  structural `$effect` (account/range/type) does **not** read the indices, so echoing them back
+  can't loop. Movers come straight from `trends.movers`.
+- **What deliberately stayed on the client** (thin ratios over aggregates the backend already
+  returns, i.e. the visualization layer): `windowShare`, `monthShare`, `perMonth`, `concentration`,
+  the context peak/MoM, and the 3-mo moving-average chart guide.
+- i18n: `changed-title` dropped "this month", added `compare-label`, `col-mom` → generic "change",
+  `tip-mom` reworded, removed `vs-last-month`.
+- Scoped out of v1: multi-month *period-vs-period* averaging (the "3 and 4 months" idea).
+
 ## Traceability — the 5 features (none dropped)
 
 | # | Feature | Lives in |

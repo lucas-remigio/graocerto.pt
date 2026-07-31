@@ -18,7 +18,7 @@ type TransactionStore interface {
 	GetAvailableTransactionMonthsByAccountToken(accountToken string) ([]*MonthYear, error)
 	CalculateTransactionTotals(transactions []*TransactionDTO) (*TransactionTotals, error)
 	GetTransactionStatistics(accountToken string, month, year *int) (*TransactionStatistics, error)
-	GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID int) (*CategoryTrendsResponse, error)
+	GetCategoryMonthlyTrends(accountToken string, months, transactionTypeID, compareBase, compareCurrent int) (*CategoryTrendsResponse, error)
 }
 
 // TrendMonth is one point on the trends x-axis.
@@ -72,6 +72,11 @@ type CategoryTrendsResponse struct {
 	MonthlyAverage float64          `json:"monthly_average"`
 	Categories     []*CategoryTrend `json:"categories"`
 	Movers         []*CategoryMover `json:"movers"`
+	// CompareBase/CompareCurrent are the axis indices of the two months the movers
+	// compare. Echoed back so the client's month pickers reflect the resolved
+	// default (or the pair the client requested).
+	CompareBase    int `json:"compare_base"`
+	CompareCurrent int `json:"compare_current"`
 }
 
 type CreateTransactionPayload struct {

@@ -335,12 +335,13 @@
 		"kpi-average-tip-income": "Total de entradas ÷ o número de meses do período.",
 		"kpi-categories": "Categorias",
 		"kpi-categories-tip": "Categorias com pelo menos uma transação neste período.",
-		"changed-title": "O que mudou este mês",
+		"changed-title": "O que mudou",
+		"compare-label": "A comparar",
 		"changed-total": "Total",
 		"peak-month": "pico",
 		"biggest-rises": "Maiores subidas",
 		"biggest-drops": "Maiores descidas",
-		"no-changes": "Sem mudanças assinaláveis vs mês anterior.",
+		"no-changes": "Sem mudanças assinaláveis entre estes meses.",
 		"momentum-new": "Novo",
 		"smoothing": "Média de 3 meses",
 		"smoothed": "Média 3m",
@@ -349,13 +350,12 @@
 		"detail-hint": "Passa o rato no título da coluna para ver o significado · no gráfico para o % de cada mês",
 		"col-income": "% das entradas",
 		"col-this-month": "% do mês",
-		"col-mom": "vs mês ant.",
+		"col-mom": "variação",
 		"col-permonth": "méd / mês",
 		"tip-income": "Total desta categoria nos meses selecionados ÷ o total das tuas entradas nesse período — a sua fatia das entradas.",
-		"tip-this-month": "A fatia desta categoria no total do último mês (a sua parte nesse único mês).",
-		"tip-mom": "Variação do mês anterior para o último mês. 'Novo' = surgiu sem mês anterior.",
-		"tip-permonth": "Valor médio por mês desta categoria nos meses selecionados.",
-		"vs-last-month": "vs mês anterior"
+		"tip-this-month": "A fatia desta categoria no total do mês em foco (a sua parte nesse único mês).",
+		"tip-mom": "Variação entre os dois meses que escolheste comparar. 'Novo' = surgiu sem gastos no mês base.",
+		"tip-permonth": "Valor médio por mês desta categoria nos meses selecionados."
 	},
 
 	"transactions": {
