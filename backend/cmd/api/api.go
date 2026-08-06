@@ -18,6 +18,7 @@ import (
 	"github.com/lucas-remigio/wallet-tracker/service/notification"
 	"github.com/lucas-remigio/wallet-tracker/service/openai"
 	"github.com/lucas-remigio/wallet-tracker/service/recurring_rule"
+	"github.com/lucas-remigio/wallet-tracker/service/telegram"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction"
 	"github.com/lucas-remigio/wallet-tracker/service/transaction_types"
 	"github.com/lucas-remigio/wallet-tracker/service/user"
@@ -92,7 +93,22 @@ func (s *APIServer) Run() error {
 	notificationHandler := notification.NewHandler(notificationStore, pushService)
 	notificationHandler.RegisterRoutes(apiV1Router)
 
+	telegramStore := telegram.NewStore(s.db)
+	telegramLinks := telegram.NewLinkService(userStore, authTokenStore, telegramStore)
+	telegramHandler := telegram.NewHandler(telegramLinks)
+	telegramHandler.RegisterRoutes(apiV1Router)
+
 	accountStore.SetTransactionStore(transactionStore)
+
+	s.startTelegramBot(telegram.ServiceDeps{
+		Users:        userStore,
+		Pending:      telegramStore,
+		Categories:   categoryStore,
+		Accounts:     accountStore,
+		Transactions: transactionStore,
+		LLM:          openAiStore,
+		Links:        telegramLinks,
+	})
 
 	investmentCalculatorStore := investment_calculator.NewStore()
 	investmentCalculatorHandler := investment_calculator.NewHandler(investmentCalculatorStore)
@@ -116,6 +132,30 @@ func (s *APIServer) Run() error {
 
 	slog.Info("Server is running", "addr", s.addr)
 	return http.ListenAndServe(s.addr, corsMiddleware(router))
+}
+
+// startTelegramBot runs the bot in-process, alongside the recurring rule
+// scheduler. Without a token configured the integration is simply off, so the
+// server behaves exactly as before.
+func (s *APIServer) startTelegramBot(deps telegram.ServiceDeps) {
+	if config.Envs.TelegramBotToken == "" {
+		slog.Info("TELEGRAM_BOT_TOKEN not configured, telegram bot disabled")
+		return
+	}
+
+	// Per chat, not per IP: every update reaches us from Telegram's own
+	// address, and what needs protecting is LLM spend.
+	chatLimiter := middlewares.NewClientRateLimiter(1, 5, 10*time.Minute)
+
+	bot := telegram.NewBot(
+		config.Envs.TelegramBotToken,
+		telegram.NewService(deps),
+		telegram.ChatLimiterFunc(func(chatID string) bool {
+			return chatLimiter.GetLimiter(chatID).Allow()
+		}),
+	)
+
+	go bot.Run(context.Background())
 }
 
 func (s *APIServer) handleHealthz(w http.ResponseWriter, _ *http.Request) {

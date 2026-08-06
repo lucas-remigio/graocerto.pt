@@ -16,6 +16,7 @@ const (
 	AuthTokenPurposeEmailVerification AuthTokenPurpose = "email_verification"
 	AuthTokenPurposeLoginOTP          AuthTokenPurpose = "login_otp"
 	AuthTokenPurposePasswordReset     AuthTokenPurpose = "password_reset"
+	AuthTokenPurposeTelegramLink      AuthTokenPurpose = "telegram_link"
 )
 
 type AuthTokenStore interface {

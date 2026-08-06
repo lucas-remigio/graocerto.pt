@@ -29,7 +29,9 @@ import type {
 	CreateRecurringTransferPayload,
 	CreateRecurringRulePayload,
 	UpdateRecurringTransferPayload,
-	UpdateRecurringRulePayload
+	UpdateRecurringRulePayload,
+	TelegramStatusResponse,
+	TelegramLinkTokenResponse
 } from '$lib/types';
 
 // Cache types
@@ -574,6 +576,32 @@ class DataService {
 		const res = await api_axios.post('notifications/test-push');
 		if (res.status !== 200) {
 			throw new Error(`Failed to send test push notification: ${res.status}`);
+		}
+	}
+
+	// Telegram link status is never cached: the user links from another app, so
+	// a stale "not linked" would be confusing.
+	async fetchTelegramStatus(): Promise<boolean> {
+		const res = await api_axios.get('telegram');
+		if (res.status !== 200) {
+			throw new Error(`Failed to fetch telegram status: ${res.status}`);
+		}
+		const data: TelegramStatusResponse = res.data;
+		return data.linked;
+	}
+
+	async createTelegramLinkToken(): Promise<TelegramLinkTokenResponse> {
+		const res = await api_axios.post('telegram/link-token');
+		if (res.status !== 200) {
+			throw new Error(`Failed to create telegram link token: ${res.status}`);
+		}
+		return res.data as TelegramLinkTokenResponse;
+	}
+
+	async unlinkTelegram(): Promise<void> {
+		const res = await api_axios.delete('telegram');
+		if (res.status !== 200) {
+			throw new Error(`Failed to unlink telegram: ${res.status}`);
 		}
 	}
 }

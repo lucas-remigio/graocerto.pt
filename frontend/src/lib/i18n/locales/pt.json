@@ -631,6 +631,19 @@
 		}
 	},
 
+	"telegram": {
+		"title": "Telegram",
+		"description": "Adicione transações por mensagem, nas suas próprias palavras.",
+		"connect": "Ligar o Telegram",
+		"instructions": "Envie esta mensagem para",
+		"expires": "Válido até",
+		"check-status": "Já enviei",
+		"linked": "Ligado",
+		"linked-description": "Envie uma mensagem como \"3,19 bolachas\" ao bot para adicionar uma transação.",
+		"unlink": "Desligar",
+		"error": "Algo correu mal. Por favor tente novamente."
+	},
+
 	"cookies": {
 		"banner": {
 			"title": "Valorizamos a tua privacidade",

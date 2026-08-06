@@ -2,6 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { User, Mail, Trash2, Download, X } from 'lucide-svelte';
 	import api_axios from './axios';
+	import TelegramLink from './TelegramLink.svelte';
 
 	export let showModal = false;
 	export let logout: () => void;
@@ -122,6 +123,8 @@
 						</div>
 						<p class="text-base-content/80">{userCreated}</p>
 					</div>
+
+					<TelegramLink />
 				</div>
 
 				<!-- Actions -->

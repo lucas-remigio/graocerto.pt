@@ -168,7 +168,20 @@ func TestLoginHandler(t *testing.T) {
 	}
 }
 
-type mockUserStore struct{}
+// telegramUserStoreStub supplies the telegram linking methods that every fake
+// user store must satisfy but no auth test exercises. Embed it rather than
+// repeating the no-ops in each mock.
+type telegramUserStoreStub struct{}
+
+func (telegramUserStoreStub) LinkTelegramChatID(userID int, chatID string) error { return nil }
+
+func (telegramUserStoreStub) GetUserByTelegramChatID(chatID string) (*types.User, error) {
+	return nil, fmt.Errorf("user not found")
+}
+
+func (telegramUserStoreStub) UnlinkTelegram(userID int) error { return nil }
+
+type mockUserStore struct{ telegramUserStoreStub }
 
 func (m *mockUserStore) GetUserByEmail(email string) (*types.User, error) {
 	return nil, fmt.Errorf("user not found")
@@ -200,7 +213,7 @@ func (m *mockUserStore) UpdatePassword(userID int, hashedPassword string) error 
 	return nil
 }
 
-type mockUserStoreDuplicate struct{}
+type mockUserStoreDuplicate struct{ telegramUserStoreStub }
 
 func (m *mockUserStoreDuplicate) GetUserByEmail(email string) (*types.User, error) {
 	return &types.User{Email: email}, nil // Simulate existing user
@@ -234,7 +247,7 @@ func (m *mockUserStoreDuplicate) UpdatePassword(userID int, hashedPassword strin
 	return nil
 }
 
-type mockUserStoreError struct{}
+type mockUserStoreError struct{ telegramUserStoreStub }
 
 func (m *mockUserStoreError) GetUserByEmail(email string) (*types.User, error) {
 	return nil, fmt.Errorf("user already exists")
@@ -268,7 +281,7 @@ func (m *mockUserStoreError) UpdatePassword(userID int, hashedPassword string) e
 	return nil
 }
 
-type mockUserStoreLogin struct{}
+type mockUserStoreLogin struct{ telegramUserStoreStub }
 
 func (m *mockUserStoreLogin) GetUserByEmail(email string) (*types.User, error) {
 	// Use the same auth.HashPassword function as production for consistency
@@ -279,8 +292,8 @@ func (m *mockUserStoreLogin) GetUserByEmail(email string) (*types.User, error) {
 	}, nil
 }
 
-func (m *mockUserStoreLogin) CreateUser(ctx context.Context, user *types.User) error            { return nil }
-func (m *mockUserStoreLogin) GetUserById(id int) (*types.User, error) { return &types.User{}, nil }
+func (m *mockUserStoreLogin) CreateUser(ctx context.Context, user *types.User) error { return nil }
+func (m *mockUserStoreLogin) GetUserById(id int) (*types.User, error)                { return &types.User{}, nil }
 func (m *mockUserStoreLogin) ValidatePassword(password string) error {
 	return validatePasswordForTest(password)
 }
@@ -299,7 +312,7 @@ func (m *mockUserStoreLogin) UpdatePassword(userID int, hashedPassword string) e
 	return nil
 }
 
-type mockUserStoreSuccess struct{}
+type mockUserStoreSuccess struct{ telegramUserStoreStub }
 
 func (m *mockUserStoreSuccess) GetUserByEmail(email string) (*types.User, error) {
 	hashedPassword, _ := auth.HashPassword("123123") // Simulate matching hash

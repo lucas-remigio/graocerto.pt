@@ -14,17 +14,21 @@ type UserStore interface {
 	MarkEmailVerified(userID int, verified bool) error
 	UpdateMfaMethod(userID int, method MfaMethod) error
 	UpdatePassword(userID int, hashedPassword string) error
+	LinkTelegramChatID(userID int, chatID string) error
+	GetUserByTelegramChatID(chatID string) (*User, error)
+	UnlinkTelegram(userID int) error
 }
 
 type User struct {
-	ID           int        `json:"id"`
-	FirstName    string     `json:"first_name"`
-	LastName     string     `json:"last_name"`
-	Email        string     `json:"email"`
-	Password     string     `json:"-"`
-	EmailVerified bool      `json:"email_verified"`
-	MfaMethod    MfaMethod  `json:"mfa_method"`
-	CreatedAt    string     `json:"created_at"`
+	ID             int       `json:"id"`
+	FirstName      string    `json:"first_name"`
+	LastName       string    `json:"last_name"`
+	Email          string    `json:"email"`
+	Password       string    `json:"-"`
+	EmailVerified  bool      `json:"email_verified"`
+	MfaMethod      MfaMethod `json:"mfa_method"`
+	TelegramChatID *string   `json:"telegram_chat_id,omitempty"`
+	CreatedAt      string    `json:"created_at"`
 }
 
 /* ==============================

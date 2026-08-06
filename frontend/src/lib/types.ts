@@ -356,6 +356,15 @@ export interface NotificationPreferencesResponse {
 	preferences: NotificationPreferences;
 }
 
+export interface TelegramStatusResponse {
+	linked: boolean;
+}
+
+export interface TelegramLinkTokenResponse {
+	token: string;
+	expires_at: string;
+}
+
 export interface UnreadNotificationCountResponse {
 	count: number;
 }

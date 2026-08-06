@@ -18,6 +18,7 @@ import (
 )
 
 type memoryUserStore struct {
+	telegramUserStoreStub
 	users      map[int]*types.User
 	emailIndex map[string]int
 	nextID     int
@@ -192,7 +193,7 @@ func performJSONRequest(handler http.HandlerFunc, method, path string, body any)
 func TestHandleLoginCreatesOtpChallenge(t *testing.T) {
 	userStore := newMemoryUserStore()
 	hashedPassword, _ := auth.HashPassword("Password1!")
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -230,7 +231,7 @@ func TestHandleLoginCreatesOtpChallenge(t *testing.T) {
 
 func TestHandleVerifyEmailMarksUserVerified(t *testing.T) {
 	userStore := newMemoryUserStore()
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -269,7 +270,7 @@ func TestHandleVerifyEmailMarksUserVerified(t *testing.T) {
 func TestHandleResetPasswordUpdatesPassword(t *testing.T) {
 	userStore := newMemoryUserStore()
 	hashedPassword, _ := auth.HashPassword("Password1!")
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -386,7 +387,7 @@ func TestHandleRegisterReturnsGenericResponse(t *testing.T) {
 			handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
 
 			if tc.existingUser != nil {
-				_ = userStore.CreateUser(context.Background(),tc.existingUser)
+				_ = userStore.CreateUser(context.Background(), tc.existingUser)
 			}
 
 			email := "john@example.com"
@@ -423,7 +424,7 @@ func TestHandleRegisterReturnsGenericResponse(t *testing.T) {
 
 func TestSendVerificationEmailRespectsCooldown(t *testing.T) {
 	userStore := newMemoryUserStore()
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -452,7 +453,7 @@ func TestSendVerificationEmailRespectsCooldown(t *testing.T) {
 func TestSendPasswordResetEmailRespectsCooldown(t *testing.T) {
 	userStore := newMemoryUserStore()
 	hashedPassword, _ := auth.HashPassword("Password1!")
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -481,7 +482,7 @@ func TestSendPasswordResetEmailRespectsCooldown(t *testing.T) {
 func TestHandleForgotPasswordReturnsGenericResponse(t *testing.T) {
 	userStore := newMemoryUserStore()
 	hashedPassword, _ := auth.HashPassword("Password1!")
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -532,7 +533,7 @@ func TestHandleResendVerificationReturnsGenericResponse(t *testing.T) {
 	mailer := &memoryMailer{}
 	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
 
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -576,7 +577,7 @@ func TestHandleResendVerificationReturnsGenericResponse(t *testing.T) {
 func TestHandleVerifyLoginOTPRejectsWrongAndExhaustedCodes(t *testing.T) {
 	userStore := newMemoryUserStore()
 	hashedPassword, _ := auth.HashPassword("Password1!")
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",
@@ -632,7 +633,7 @@ func TestHandleVerifyLoginOTPRejectsWrongAndExhaustedCodes(t *testing.T) {
 func TestHandleVerifyAndResetRejectInvalidExpiredAndConsumedTokens(t *testing.T) {
 	userStore := newMemoryUserStore()
 	hashedPassword, _ := auth.HashPassword("Password1!")
-	_ = userStore.CreateUser(context.Background(),&types.User{
+	_ = userStore.CreateUser(context.Background(), &types.User{
 		FirstName:     "John",
 		LastName:      "Doe",
 		Email:         "john@example.com",

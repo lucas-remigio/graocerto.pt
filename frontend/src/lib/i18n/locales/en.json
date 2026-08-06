@@ -628,6 +628,19 @@
 		}
 	},
 
+	"telegram": {
+		"title": "Telegram",
+		"description": "Add transactions by texting a bot, in your own words.",
+		"connect": "Connect Telegram",
+		"instructions": "Send this message to",
+		"expires": "Valid until",
+		"check-status": "I've sent it",
+		"linked": "Linked",
+		"linked-description": "Send a message like \"3.19 cookies\" to the bot to add a transaction.",
+		"unlink": "Unlink",
+		"error": "Something went wrong. Please try again."
+	},
+
 	"cookies": {
 		"banner": {
 			"title": "We value your privacy",

@@ -20,9 +20,12 @@ func NewStore(db *sql.DB) *Store {
 	}
 }
 
+// userSelectColumns keeps every user query in sync with scanRowIntoUser.
+const userSelectColumns = "SELECT id, first_name, last_name, email, password, email_verified, mfa_method, telegram_chat_id, created_at"
+
 func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 	user, err := db.QueryFirstFromRows(s.db,
-		"SELECT id, first_name, last_name, email, password, email_verified, mfa_method, created_at FROM users WHERE email = $1",
+		userSelectColumns+" FROM users WHERE email = $1",
 		scanRowIntoUser, email)
 
 	if err != nil {
@@ -55,7 +58,7 @@ func (s *Store) CreateUser(ctx context.Context, user *types.User) error {
 
 func (s *Store) GetUserById(id int) (*types.User, error) {
 	user, err := db.QueryFirstFromRows(s.db,
-		"SELECT id, first_name, last_name, email, password, email_verified, mfa_method, created_at FROM users WHERE id = $1",
+		userSelectColumns+" FROM users WHERE id = $1",
 		scanRowIntoUser, id)
 
 	if err != nil {
@@ -97,11 +100,16 @@ func (s *Store) DeleteUser(userId int) error {
 
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	user := new(types.User)
+	var telegramChatID sql.NullString
 
-	err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.EmailVerified, &user.MfaMethod, &user.CreatedAt)
+	err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.EmailVerified, &user.MfaMethod, &telegramChatID, &user.CreatedAt)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if telegramChatID.Valid {
+		user.TelegramChatID = &telegramChatID.String
 	}
 
 	return user, nil

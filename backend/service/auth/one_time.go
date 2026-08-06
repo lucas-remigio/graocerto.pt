@@ -14,6 +14,32 @@ func GenerateOneTimeToken() (string, error) {
 	return utils.GenerateToken(16)
 }
 
+// readableAlphabet omits characters that are easily confused when a human has
+// to retype a code: 0/O, 1/I/L.
+const readableAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+// GenerateReadableCode returns a code a user can type without ambiguity.
+// At 8 characters it carries ~39 bits of entropy, which is why callers must
+// still expire it and rate limit redemption attempts.
+func GenerateReadableCode(length int) (string, error) {
+	if length <= 0 {
+		return "", fmt.Errorf("code length must be greater than zero")
+	}
+
+	max := big.NewInt(int64(len(readableAlphabet)))
+	code := make([]byte, length)
+
+	for i := range code {
+		index, err := rand.Int(rand.Reader, max)
+		if err != nil {
+			return "", err
+		}
+		code[i] = readableAlphabet[index.Int64()]
+	}
+
+	return string(code), nil
+}
+
 func GenerateOTPCode(length int) (string, error) {
 	if length <= 0 {
 		return "", fmt.Errorf("otp length must be greater than zero")

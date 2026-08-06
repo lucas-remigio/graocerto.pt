@@ -53,6 +53,7 @@ jobs:
             ${{ matrix.service == 'frontend' && format('PUBLIC_GOOGLE_CLIENT_ID={0}', secrets.GOOGLE_CLIENT_ID) || '' }}
             ${{ matrix.service == 'frontend' && format('PUBLIC_VAPID_KEY={0}', secrets.VAPID_PUBLIC_KEY) || '' }}
             ${{ matrix.service == 'frontend' && format('ENABLE_WEBSOCKETS={0}', vars.ENABLE_WEBSOCKETS || 'false') || '' }}
+            ${{ matrix.service == 'frontend' && format('TELEGRAM_BOT_USERNAME={0}', vars.TELEGRAM_BOT_USERNAME || 'GraoCertoBot') || '' }}
             ${{ matrix.service == 'frontend' && 'IS_PRODUCTION=true' || '' }}
 
   deploy:
@@ -95,6 +96,8 @@ jobs:
             export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
             export VAPID_PUBLIC_KEY='${{ secrets.VAPID_PUBLIC_KEY }}'
             export VAPID_PRIVATE_KEY='${{ secrets.VAPID_PRIVATE_KEY }}'
+            # Empty disables the telegram bot; the rest of the app is unaffected
+            export TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
 
             # JWT vars
             export JWT_SECRET='${{ secrets.JWT_SECRET }}'
