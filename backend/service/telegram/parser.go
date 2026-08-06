@@ -19,6 +19,12 @@ const (
 	// maxItemsPerMessage bounds how much a single message can book. The model
 	// is not trusted to be sensible about a pathological input.
 	maxItemsPerMessage = 20
+	// minCategoryConfidence is how sure the model must claim to be before we
+	// accept its category. Below this the slot is left empty and the user is
+	// asked, which costs one tap and cannot file a transaction in the wrong
+	// place. Self-reported confidence is imperfectly calibrated, so this is a
+	// filter on obvious guesses, not a guarantee.
+	minCategoryConfidence = 0.75
 )
 
 // llmResponse is the object wrapper the model is asked for. A wrapper rather
@@ -33,6 +39,10 @@ type llmTransaction struct {
 	Amount      float64 `json:"amount"`
 	Description string  `json:"description"`
 	CategoryID  *int    `json:"category_id"`
+	// Confidence is a pointer so a missing field is distinguishable from a
+	// reported zero. Both are treated as "not sure enough" — if the model
+	// stops answering the question, the bot must ask the user, not guess.
+	Confidence *float64 `json:"confidence"`
 }
 
 // Parser turns free text into a transaction proposal. It only ever proposes:
@@ -119,7 +129,7 @@ func validateItems(transactions []llmTransaction, catalog *Catalog) []types.Pend
 			Description: truncate(strings.TrimSpace(transaction.Description), maxDescriptionLength),
 		}
 
-		if category := resolveCategory(transaction.CategoryID, catalog); category != nil {
+		if category := resolveCategory(transaction, catalog); category != nil {
 			categoryID := category.ID
 			transactionTypeID := category.TransactionType.ID
 			item.CategoryID = &categoryID
@@ -133,14 +143,24 @@ func validateItems(transactions []llmTransaction, catalog *Catalog) []types.Pend
 	return items
 }
 
-func resolveCategory(categoryID *int, catalog *Catalog) *types.CategoryDTO {
-	if categoryID == nil {
+// resolveCategory accepts the model's category only when the user owns it and
+// the model claims to be sure. A guess is downgraded to "unknown" so the
+// conversation asks, rather than filing money under the wrong heading.
+func resolveCategory(transaction llmTransaction, catalog *Catalog) *types.CategoryDTO {
+	if transaction.CategoryID == nil {
 		return nil
 	}
 
-	category := catalog.Category(*categoryID)
+	category := catalog.Category(*transaction.CategoryID)
 	if category == nil {
-		slog.Warn("telegram parse rejected unusable category", "category_id", *categoryID)
+		slog.Warn("telegram parse rejected unusable category", "category_id", *transaction.CategoryID)
+		return nil
+	}
+
+	if transaction.Confidence == nil || *transaction.Confidence < minCategoryConfidence {
+		slog.Info("telegram parse asking user: category match not confident",
+			"category_id", *transaction.CategoryID, "confidence", transaction.Confidence)
+		return nil
 	}
 
 	return category

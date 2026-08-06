@@ -70,7 +70,7 @@ func newBotForTest(t *testing.T, fake *telegramServer, limiter ChatLimiter) (*Bo
 	t.Helper()
 
 	f := newConversation(t, twoAccounts())
-	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1}],"account_token":"tok-main"}`
+	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1,"confidence":0.95}],"account_token":"tok-main"}`
 
 	// Telegram chat ids are numeric, so the linked chat must match what the
 	// bot derives from an update.

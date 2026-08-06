@@ -41,8 +41,8 @@ func testCatalog() *Catalog {
 
 func TestParseResolvesItemsAndAccount(t *testing.T) {
 	llm := &stubLLM{response: `{"transactions":[
-		{"amount":3.19,"description":"cookies","category_id":1},
-		{"amount":4.50,"description":"gasoil","category_id":null}
+		{"amount":3.19,"description":"cookies","category_id":1,"confidence":0.95},
+		{"amount":4.50,"description":"gasoil","category_id":null,"confidence":0}
 	],"account_token":"tok-savings"}`}
 
 	items, accountToken, err := NewParser(llm).Parse("3.19 cookies, 4.50 gasoil from savings", testCatalog())
@@ -87,7 +87,7 @@ func TestParseRejectsCategoriesTheUserCannotUse(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			llm := &stubLLM{response: fmt.Sprintf(
-				`{"transactions":[{"amount":10,"description":"x","category_id":%s}],"account_token":null}`,
+				`{"transactions":[{"amount":10,"description":"x","category_id":%s,"confidence":0.95}],"account_token":null}`,
 				tc.categoryID,
 			)}
 
@@ -107,8 +107,67 @@ func TestParseRejectsCategoriesTheUserCannotUse(t *testing.T) {
 	}
 }
 
+// A category the model is only guessing at is worse than no category: the user
+// gets asked instead, which costs one tap and cannot misfile the money.
+func TestParseRequiresConfidenceToAcceptACategory(t *testing.T) {
+	tests := []struct {
+		name       string
+		confidence string
+		wantKept   bool
+	}{
+		{name: "sure", confidence: `"confidence":0.95`, wantKept: true},
+		{name: "exactly at the threshold", confidence: `"confidence":0.75`, wantKept: true},
+		{name: "just below the threshold", confidence: `"confidence":0.74`},
+		{name: "guessing", confidence: `"confidence":0.5`},
+		{name: "no opinion", confidence: `"confidence":0`},
+		// If the model stops answering the question, ask the user rather than
+		// silently falling back to trusting it.
+		{name: "field omitted entirely", confidence: `"unused":0`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			llm := &stubLLM{response: fmt.Sprintf(
+				`{"transactions":[{"amount":3.19,"description":"cookies","category_id":1,%s}],"account_token":null}`,
+				tc.confidence,
+			)}
+
+			items, _, err := NewParser(llm).Parse("3.19 cookies", testCatalog())
+			if err != nil {
+				t.Fatalf("Parse returned error: %v", err)
+			}
+
+			if len(items) != 1 {
+				t.Fatalf("the transaction itself must survive, got %d items", len(items))
+			}
+
+			kept := items[0].CategoryID != nil
+			if kept != tc.wantKept {
+				t.Fatalf("category kept = %v, want %v", kept, tc.wantKept)
+			}
+
+			// A rejected category must not leave a derived type behind.
+			if !kept && items[0].TransactionTypeID != nil {
+				t.Fatal("no type may be derived from a rejected category")
+			}
+		})
+	}
+}
+
+func TestPromptAsksForConfidence(t *testing.T) {
+	llm := &stubLLM{response: `{"transactions":[],"account_token":null}`}
+
+	if _, _, err := NewParser(llm).Parse("3.19 cookies", testCatalog()); err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+
+	if !strings.Contains(llm.lastPrompt, "confidence") {
+		t.Fatalf("the prompt no longer asks for a confidence score:\n%s", llm.lastPrompt)
+	}
+}
+
 func TestParseRejectsForeignAccountToken(t *testing.T) {
-	llm := &stubLLM{response: `{"transactions":[{"amount":10,"description":"x","category_id":1}],"account_token":"someone-elses"}`}
+	llm := &stubLLM{response: `{"transactions":[{"amount":10,"description":"x","category_id":1,"confidence":0.95}],"account_token":"someone-elses"}`}
 
 	_, accountToken, err := NewParser(llm).Parse("whatever", testCatalog())
 	if err != nil {
@@ -122,10 +181,10 @@ func TestParseRejectsForeignAccountToken(t *testing.T) {
 
 func TestParseDropsUnbookableAmounts(t *testing.T) {
 	llm := &stubLLM{response: `{"transactions":[
-		{"amount":0,"description":"zero","category_id":1},
-		{"amount":-5,"description":"negative","category_id":1},
-		{"amount":1000000000,"description":"too big","category_id":1},
-		{"amount":12.5,"description":"fine","category_id":1}
+		{"amount":0,"description":"zero","category_id":1,"confidence":0.95},
+		{"amount":-5,"description":"negative","category_id":1,"confidence":0.95},
+		{"amount":1000000000,"description":"too big","category_id":1,"confidence":0.95},
+		{"amount":12.5,"description":"fine","category_id":1,"confidence":0.95}
 	],"account_token":null}`}
 
 	items, _, err := NewParser(llm).Parse("whatever", testCatalog())
@@ -145,7 +204,7 @@ func TestParseDropsUnbookableAmounts(t *testing.T) {
 func TestParseTruncatesLongDescription(t *testing.T) {
 	long := strings.Repeat("a", 400)
 	llm := &stubLLM{response: fmt.Sprintf(
-		`{"transactions":[{"amount":1,"description":%q,"category_id":1}],"account_token":null}`, long,
+		`{"transactions":[{"amount":1,"description":%q,"category_id":1,"confidence":0.95}],"account_token":null}`, long,
 	)}
 
 	items, _, err := NewParser(llm).Parse("whatever", testCatalog())

@@ -83,7 +83,7 @@ func (f *conversationFixture) send(t *testing.T, text string) string {
 // Everything supplied by the message: one confirmation and done.
 func TestConversationJumpsStraightToConfirmation(t *testing.T) {
 	f := newConversation(t, twoAccounts())
-	f.llm.response = `{"transactions":[{"amount":3.19,"description":"cookies","category_id":1}],"account_token":"tok-savings"}`
+	f.llm.response = `{"transactions":[{"amount":3.19,"description":"cookies","category_id":1,"confidence":0.95}],"account_token":"tok-savings"}`
 
 	reply := f.send(t, "3.19 in cookies from savings")
 
@@ -127,8 +127,8 @@ func TestConversationJumpsStraightToConfirmation(t *testing.T) {
 func TestConversationAsksCategoryThenAccount(t *testing.T) {
 	f := newConversation(t, threeAccountsTwoFavourites())
 	f.llm.response = `{"transactions":[
-		{"amount":3.19,"description":"cookies","category_id":1},
-		{"amount":4.50,"description":"gasoil","category_id":null}
+		{"amount":3.19,"description":"cookies","category_id":1,"confidence":0.95},
+		{"amount":4.50,"description":"gasoil","category_id":null,"confidence":0}
 	],"account_token":null}`
 
 	reply := f.send(t, "3.19 in cookies, 4.50 gasoil")
@@ -164,7 +164,7 @@ func TestConversationAsksCategoryThenAccount(t *testing.T) {
 // A single account means there is nothing to ask about.
 func TestConversationSkipsAccountQuestionWhenThereIsNoChoice(t *testing.T) {
 	f := newConversation(t, []*types.Account{account("tok-only", "Wallet", false)})
-	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1}],"account_token":null}`
+	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1,"confidence":0.95}],"account_token":null}`
 
 	reply := f.send(t, "10 lunch")
 
@@ -178,7 +178,7 @@ func TestConversationSkipsAccountQuestionWhenThereIsNoChoice(t *testing.T) {
 
 func TestConversationRepeatsQuestionOnBadAnswer(t *testing.T) {
 	f := newConversation(t, twoAccounts())
-	f.llm.response = `{"transactions":[{"amount":4.50,"description":"gasoil","category_id":null}],"account_token":"tok-main"}`
+	f.llm.response = `{"transactions":[{"amount":4.50,"description":"gasoil","category_id":null,"confidence":0}],"account_token":"tok-main"}`
 
 	f.send(t, "4.50 gasoil")
 	reply := f.send(t, "99")
@@ -198,7 +198,7 @@ func TestConversationRepeatsQuestionOnBadAnswer(t *testing.T) {
 
 func TestConversationCancel(t *testing.T) {
 	f := newConversation(t, twoAccounts())
-	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1}],"account_token":"tok-main"}`
+	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1,"confidence":0.95}],"account_token":"tok-main"}`
 
 	f.send(t, "10 lunch")
 
@@ -222,7 +222,7 @@ func TestConversationCancel(t *testing.T) {
 // input rather than booking the same items twice.
 func TestConversationDoesNotDoubleBookOnRepeatedYes(t *testing.T) {
 	f := newConversation(t, twoAccounts())
-	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1}],"account_token":"tok-main"}`
+	f.llm.response = `{"transactions":[{"amount":10,"description":"lunch","category_id":1,"confidence":0.95}],"account_token":"tok-main"}`
 
 	f.send(t, "10 lunch")
 	f.send(t, "yes")
@@ -288,8 +288,8 @@ func TestConversationReportsPartialFailure(t *testing.T) {
 	f := newConversation(t, twoAccounts())
 	f.transactions.successLimit = 1
 	f.llm.response = `{"transactions":[
-		{"amount":1,"description":"first","category_id":1},
-		{"amount":2,"description":"second","category_id":1}
+		{"amount":1,"description":"first","category_id":1,"confidence":0.95},
+		{"amount":2,"description":"second","category_id":1,"confidence":0.95}
 	],"account_token":"tok-main"}`
 
 	f.send(t, "1 first, 2 second")
@@ -311,7 +311,7 @@ func TestConversationReportsPartialFailure(t *testing.T) {
 func TestConversationReportsTotalFailure(t *testing.T) {
 	f := newConversation(t, twoAccounts())
 	f.transactions.successLimit = 0
-	f.llm.response = `{"transactions":[{"amount":1,"description":"only","category_id":1}],"account_token":"tok-main"}`
+	f.llm.response = `{"transactions":[{"amount":1,"description":"only","category_id":1,"confidence":0.95}],"account_token":"tok-main"}`
 
 	f.send(t, "1 only")
 

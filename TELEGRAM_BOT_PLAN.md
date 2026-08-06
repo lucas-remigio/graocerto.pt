@@ -161,13 +161,15 @@ These are the **only** new HTTP endpoints in v1.
   - The raw text.
   - The user's categories as an allowed list: `id`, `name`, `transaction_type`. **Only credit and debit categories** — transfer categories are excluded (see 2.3). Soft-deleted categories (`deleted_at IS NOT NULL`) are excluded too.
   - The user's accounts as an allowed list: `token`, `name`. If the user named an account in the text, return its `token`; otherwise `account_token: null`.
-  - If nothing confidently fits a description, return `category_id: null` — **never guess, never fall back to a default category**.
-  - Output shape: `{ "transactions": [{ "amount": number, "description": string, "category_id": number|null }], "account_token": string|null }`.
+  - If nothing confidently fits a description, return `category_id: null` — **never guess, never fall back to a default category**. Explicitly: being the only category on the list, or the closest of a bad set, or merely having the right direction, is not a match.
+  - A **`confidence`** score (0–1) per item, alongside `category_id`.
+  - Output shape: `{ "transactions": [{ "amount": number, "description": string, "category_id": number|null, "confidence": number }], "account_token": string|null }`.
   - Currency is EUR; amounts are positive; one object per detected item.
 - Temperature stays 0 (already the client default).
 
 ### 2.3 Validation & derivation (server-side, do not trust the LLM)
 For each parsed item:
+- `category_id` is accepted only when `confidence >= 0.75` (`minCategoryConfidence` in `parser.go`). A missing or low score is treated as unresolved → the user is asked. Self-reported confidence is imperfectly calibrated, so this filters obvious guesses rather than guaranteeing correctness; the confirmation step remains the real safety net.
 - `category_id`, if non-null, **must** belong to this user, must not be soft-deleted, and its `transaction_type` must be **credit or debit**. A transfer-type category would create a half-transfer via `CreateTransactionAndReturn` and silently corrupt balances — transfers require `CreateTransfer` and two accounts, which is out of scope for v1. Anything failing these checks is treated as `null` → ask the user.
 - `transaction_type_id` is derived from the resolved category, never from the LLM.
 - Enforce `amount` bounds matching `CreateTransactionPayload` (`gte=0, lte=999999999`), and `description` `max=255`.
