@@ -409,3 +409,12 @@ export interface UpdateRecurringTransferPayload extends CreateRecurringTransferP
 	next_run_date?: string;
 	active: boolean;
 }
+
+export interface TrustedDevice {
+	id: number;
+	label: string;
+	created_at: string;
+	last_used_at: string;
+	expires_at: string;
+	is_current: boolean;
+}

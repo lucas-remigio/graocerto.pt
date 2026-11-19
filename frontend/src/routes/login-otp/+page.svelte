@@ -14,6 +14,7 @@
 	let email = '';
 	let challengeId = '';
 	let otpCode = '';
+	let rememberDevice = false;
 	let isLoading = false;
 	let isReady = false;
 	let status = '';
@@ -64,7 +65,8 @@
 			isLoading = true;
 			const response = await axios.post('auth/verify-login-otp', {
 				challenge_id: challengeId,
-				code: otpCode
+				code: otpCode,
+				remember_device: rememberDevice
 			});
 
 			const { token: authToken, created_at } = response.data;
@@ -109,6 +111,11 @@
 						placeholder={$t('auth.otp-placeholder')}
 					/>
 				</div>
+
+				<label class="label cursor-pointer justify-start gap-3">
+					<input type="checkbox" class="checkbox-primary checkbox" bind:checked={rememberDevice} />
+					<span class="label-text">{$t('auth.remember-device')}</span>
+				</label>
 
 				<button class="btn btn-secondary w-full text-base-100" disabled={isLoading}>
 					{#if isLoading}

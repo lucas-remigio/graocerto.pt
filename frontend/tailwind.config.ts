@@ -17,6 +17,8 @@ export default {
 			{
 				light: {
 					primary: '#006FF9', // Primary color
+					// daisyUI's auto-picked content colour is dark on this blue; force white.
+					'primary-content': '#FFFFFF',
 					secondary: '#767DEA', // Secondary color
 					accent: '#2DD4BF', // Accent color
 					neutral: '#2E3440', // Neutral color

@@ -128,6 +128,14 @@ func (h *Handler) handleVerifyLoginOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.LogWithContext(r.Context()).Info("user logged in via OTP", "userID", user.ID, "email", user.Email)
+
+	// Failing to remember the device shouldn't block a login that already passed 2FA.
+	if payload.RememberDevice && h.trustedDevices != nil {
+		if err := h.rememberDevice(w, r, user.ID); err != nil {
+			utils.LogWithContext(r.Context()).Error("failed to remember device", "userID", user.ID, "error", err)
+		}
+	}
+
 	h.issueAuthToken(w, r, user)
 }
 
@@ -196,6 +204,14 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.LogWithContext(r.Context()).Info("password reset successfully", "userID", token.UserID)
+
+	// A password reset may mean the account was compromised, so forget every remembered browser.
+	if h.trustedDevices != nil {
+		if err := h.trustedDevices.DeleteTrustedDevicesByUser(token.UserID); err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
 
 	if err := h.authTokenStore.ConsumeAuthToken(token.ID); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)

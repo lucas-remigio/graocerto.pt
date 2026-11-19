@@ -40,6 +40,28 @@ type AuthToken struct {
 	CreatedAt   time.Time        `json:"created_at"`
 }
 
+// TrustedDeviceStore persists browsers that may skip the second login factor.
+// Tokens are looked up by their raw value; implementations store only the hash.
+type TrustedDeviceStore interface {
+	CreateTrustedDevice(device *TrustedDevice) error
+	GetTrustedDeviceByToken(token string) (*TrustedDevice, error)
+	ListTrustedDevices(userID int) ([]*TrustedDevice, error)
+	TouchTrustedDevice(id int) error
+	DeleteTrustedDevice(userID, id int) error
+	DeleteTrustedDevicesByUser(userID int) error
+}
+
+type TrustedDevice struct {
+	ID         int       `json:"id"`
+	UserID     int       `json:"-"`
+	TokenHash  string    `json:"-"`
+	Label      string    `json:"label"`
+	CreatedAt  time.Time `json:"created_at"`
+	LastUsedAt time.Time `json:"last_used_at"`
+	ExpiresAt  time.Time `json:"expires_at"`
+	IsCurrent  bool      `json:"is_current"`
+}
+
 type RegisterUserPayload struct {
 	FirstName string `json:"first_name" validate:"required,max=32"`
 	LastName  string `json:"last_name" validate:"required,max=32"`
@@ -65,8 +87,9 @@ type ResendVerificationPayload struct {
 }
 
 type VerifyLoginOTPPayload struct {
-	ChallengeID string `json:"challenge_id" validate:"required"`
-	Code        string `json:"code" validate:"required,min=6,max=6"`
+	ChallengeID    string `json:"challenge_id" validate:"required"`
+	Code           string `json:"code" validate:"required,min=6,max=6"`
+	RememberDevice bool   `json:"remember_device"`
 }
 
 type ForgotPasswordPayload struct {

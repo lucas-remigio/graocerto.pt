@@ -542,6 +542,7 @@
 		"unable-send-verification-email": "Unable to send verification email.",
 		"email-code": "Email code",
 		"verify-code": "Verify code",
+		"remember-device": "Remember this device for 90 days",
 		"login-code-sent": "We sent a 6-digit code to {email}.",
 		"use-different-email": "Use a different email",
 		"enter-otp-code": "Enter the 6-digit code sent to your email.",
@@ -615,6 +616,13 @@
 	},
 
 	"profile": {
+		"trusted-devices": "Trusted devices",
+		"trusted-devices-hint": "These devices skip the login code for 90 days. Your password is still required.",
+		"trusted-devices-empty": "No remembered devices. Tick “Remember this device” when entering a login code.",
+		"this-device": "This device",
+		"last-used": "Last used {date}",
+		"forget-device": "Forget",
+		"forget-all-devices": "Forget all devices",
 		"title": "Profile",
 		"view-profile": "View Profile",
 		"email": "Email",

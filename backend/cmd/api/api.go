@@ -67,7 +67,7 @@ func (s *APIServer) Run() error {
 	}
 
 	// Now initialize handlers with the stores they need
-	userHandler := user.NewHandler(userStore, authTokenStore, authMailer, accountStore, categoryStore, transactionStore)
+	userHandler := user.NewHandler(userStore, authTokenStore, userStore, authMailer, accountStore, categoryStore, transactionStore)
 	userHandler.RegisterRoutes(apiV1Router)
 
 	transactionTypesHandler := transaction_types.NewHandler(transactionTypesStore)

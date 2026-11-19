@@ -22,6 +22,7 @@ func NewHandlerForTesting(userStore types.UserStore) *Handler {
 		store:            userStore,
 		authTokenStore:   nil,
 		mailer:           nil,
+		trustedDevices:   nil,
 		accountStore:     nil, // Not needed for basic user tests
 		categoryStore:    nil,
 		transactionStore: nil,
@@ -31,16 +32,18 @@ func NewHandlerForTesting(userStore types.UserStore) *Handler {
 type Handler struct {
 	store            types.UserStore
 	authTokenStore   types.AuthTokenStore
+	trustedDevices   types.TrustedDeviceStore
 	mailer           mailer.Mailer
 	accountStore     types.AccountStore
 	categoryStore    types.CategoryStore
 	transactionStore types.TransactionStore
 }
 
-func NewHandler(store types.UserStore, authTokenStore types.AuthTokenStore, mailer mailer.Mailer, accountStore types.AccountStore, categoryStore types.CategoryStore, transactionStore types.TransactionStore) *Handler {
+func NewHandler(store types.UserStore, authTokenStore types.AuthTokenStore, trustedDevices types.TrustedDeviceStore, mailer mailer.Mailer, accountStore types.AccountStore, categoryStore types.CategoryStore, transactionStore types.TransactionStore) *Handler {
 	return &Handler{
 		store:            store,
 		authTokenStore:   authTokenStore,
+		trustedDevices:   trustedDevices,
 		mailer:           mailer,
 		accountStore:     accountStore,
 		categoryStore:    categoryStore,
@@ -60,6 +63,17 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/verify-token", middleware.AuthMiddleware(h.verifyToken))
 	router.HandleFunc("/auth/delete-account", middleware.AuthMiddleware(h.handleDeleteAccount))
 	router.HandleFunc("/auth/export-data", middleware.AuthMiddleware(h.handleExportData))
+	router.HandleFunc("/auth/devices", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodGet:    h.handleListTrustedDevices,
+			http.MethodDelete: h.handleRevokeAllTrustedDevices,
+		}),
+	))
+	router.HandleFunc("/auth/devices/{id}", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{
+			http.MethodDelete: h.handleRevokeTrustedDevice,
+		}),
+	))
 }
 
 func (h *Handler) verifyToken(w http.ResponseWriter, r *http.Request) {
@@ -100,6 +114,15 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	if !user.EmailVerified {
 		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("email verification required"))
+		return
+	}
+
+	// A remembered browser skips only the second factor; the password was checked above.
+	if device := h.trustedDeviceFor(r, user.ID); device != nil {
+		if err := h.trustedDevices.TouchTrustedDevice(device.ID); err != nil {
+			utils.LogWithContext(r.Context()).Warn("failed to touch trusted device", "deviceID", device.ID, "error", err)
+		}
+		h.issueAuthToken(w, r, user)
 		return
 	}
 
@@ -231,7 +254,7 @@ func (h *Handler) issueAuthToken(w http.ResponseWriter, r *http.Request, user *t
 		return
 	}
 
-	isSecure := r.TLS != nil
+	isSecure := isSecureRequest(r)
 	jwtExpiration := config.Envs.JWTExpirationInSeconds
 
 	// Set the authToken as a secure, HTTP-only cookie

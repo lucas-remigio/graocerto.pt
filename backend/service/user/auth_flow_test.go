@@ -203,7 +203,7 @@ func TestHandleLoginCreatesOtpChallenge(t *testing.T) {
 
 	authStore := newMemoryAuthTokenStore()
 	mailer := &memoryMailer{}
-	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 
 	rr := performJSONRequest(handler.handleLogin, http.MethodPost, "/login", types.LoginUserPayload{
 		Email:    "john@example.com",
@@ -251,7 +251,7 @@ func TestHandleVerifyEmailMarksUserVerified(t *testing.T) {
 		MaxAttempts: 3,
 	})
 
-	handler := NewHandler(userStore, authStore, &memoryMailer{}, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, &memoryMailer{}, nil, nil, nil)
 	rr := performJSONRequest(handler.handleVerifyEmail, http.MethodPost, "/auth/verify-email", types.VerifyEmailPayload{
 		Token: token,
 	})
@@ -290,7 +290,7 @@ func TestHandleResetPasswordUpdatesPassword(t *testing.T) {
 		MaxAttempts: 3,
 	})
 
-	handler := NewHandler(userStore, authStore, &memoryMailer{}, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, &memoryMailer{}, nil, nil, nil)
 	rr := performJSONRequest(handler.handleResetPassword, http.MethodPost, "/auth/reset-password", types.ResetPasswordPayload{
 		Token:    token,
 		Password: "NewPassword1!",
@@ -310,7 +310,7 @@ func TestHandleRegisterSendsVerificationEmailWithFrontendRoute(t *testing.T) {
 	userStore := newMemoryUserStore()
 	authStore := newMemoryAuthTokenStore()
 	mailer := &memoryMailer{}
-	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 
 	prevFrontendURL := config.Envs.FrontendUrl
 	config.Envs.FrontendUrl = "https://example.com/"
@@ -383,7 +383,7 @@ func TestHandleRegisterReturnsGenericResponse(t *testing.T) {
 			userStore := newMemoryUserStore()
 			authStore := newMemoryAuthTokenStore()
 			mailer := &memoryMailer{}
-			handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+			handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 
 			if tc.existingUser != nil {
 				_ = userStore.CreateUser(context.Background(),tc.existingUser)
@@ -434,7 +434,7 @@ func TestSendVerificationEmailRespectsCooldown(t *testing.T) {
 
 	authStore := newMemoryAuthTokenStore()
 	mailer := &memoryMailer{}
-	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 	user, _ := userStore.GetUserById(1)
 
 	if err := handler.sendVerificationEmail(user); err != nil {
@@ -463,7 +463,7 @@ func TestSendPasswordResetEmailRespectsCooldown(t *testing.T) {
 
 	authStore := newMemoryAuthTokenStore()
 	mailer := &memoryMailer{}
-	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 	user, _ := userStore.GetUserById(1)
 
 	if err := handler.sendPasswordResetEmail(user); err != nil {
@@ -492,7 +492,7 @@ func TestHandleForgotPasswordReturnsGenericResponse(t *testing.T) {
 
 	authStore := newMemoryAuthTokenStore()
 	mailer := &memoryMailer{}
-	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 
 	knownRR := performJSONRequest(handler.handleForgotPassword, http.MethodPost, "/auth/forgot-password", types.ForgotPasswordPayload{
 		Email: "john@example.com",
@@ -530,7 +530,7 @@ func TestHandleResendVerificationReturnsGenericResponse(t *testing.T) {
 	userStore := newMemoryUserStore()
 	authStore := newMemoryAuthTokenStore()
 	mailer := &memoryMailer{}
-	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 
 	_ = userStore.CreateUser(context.Background(),&types.User{
 		FirstName:     "John",
@@ -587,7 +587,7 @@ func TestHandleVerifyLoginOTPRejectsWrongAndExhaustedCodes(t *testing.T) {
 
 	authStore := newMemoryAuthTokenStore()
 	mailer := &memoryMailer{}
-	handler := NewHandler(userStore, authStore, mailer, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, mailer, nil, nil, nil)
 	user, _ := userStore.GetUserById(1)
 	challenge, err := handler.createLoginOTPChallenge(user)
 	if err != nil {
@@ -642,7 +642,7 @@ func TestHandleVerifyAndResetRejectInvalidExpiredAndConsumedTokens(t *testing.T)
 	})
 
 	authStore := newMemoryAuthTokenStore()
-	handler := NewHandler(userStore, authStore, &memoryMailer{}, nil, nil, nil)
+	handler := NewHandler(userStore, authStore, nil, &memoryMailer{}, nil, nil, nil)
 
 	verifyRR := performJSONRequest(handler.handleVerifyEmail, http.MethodPost, "/auth/verify-email", types.VerifyEmailPayload{
 		Token: "missing-token",
