@@ -16,6 +16,8 @@ const (
 	AuthTokenPurposeEmailVerification AuthTokenPurpose = "email_verification"
 	AuthTokenPurposeLoginOTP          AuthTokenPurpose = "login_otp"
 	AuthTokenPurposePasswordReset     AuthTokenPurpose = "password_reset"
+	AuthTokenPurposeLoginTOTP         AuthTokenPurpose = "login_totp"
+	AuthTokenPurposeTOTPRecovery      AuthTokenPurpose = "totp_recovery"
 )
 
 type AuthTokenStore interface {
@@ -62,6 +64,42 @@ type TrustedDevice struct {
 	IsCurrent  bool      `json:"is_current"`
 }
 
+// TOTPStore persists authenticator-app secrets. Secrets are stored encrypted;
+// callers encrypt before writing and decrypt after reading.
+type TOTPStore interface {
+	GetTOTPState(userID int) (*TOTPState, error)
+	SetPendingTOTPSecret(userID int, encryptedSecret string) error
+	// EnableTOTP promotes the pending secret and switches the user's MFA method to TOTP.
+	EnableTOTP(userID int, lastStep int64) error
+	DisableTOTP(userID int) error
+	// AdvanceTOTPStep records a used time step; false means it was already used (replay).
+	AdvanceTOTPStep(userID int, step int64) (bool, error)
+}
+
+type TOTPState struct {
+	Secret        string
+	PendingSecret string
+	LastStep      int64
+}
+
+type MfaCodePayload struct {
+	// Up to 16 chars so a recovery code (XXXXX-XXXXX) fits as well as a 6-digit code.
+	Code string `json:"code" validate:"required,min=6,max=16"`
+}
+
+type TOTPStatusResponse struct {
+	Enabled bool `json:"enabled"`
+}
+
+type TOTPSetupResponse struct {
+	Secret string `json:"secret"`
+	URI    string `json:"uri"`
+}
+
+type TOTPEnableResponse struct {
+	RecoveryCodes []string `json:"recovery_codes"`
+}
+
 type RegisterUserPayload struct {
 	FirstName string `json:"first_name" validate:"required,max=32"`
 	LastName  string `json:"last_name" validate:"required,max=32"`
@@ -88,7 +126,7 @@ type ResendVerificationPayload struct {
 
 type VerifyLoginOTPPayload struct {
 	ChallengeID    string `json:"challenge_id" validate:"required"`
-	Code           string `json:"code" validate:"required,min=6,max=6"`
+	Code           string `json:"code" validate:"required,min=6,max=16"`
 	RememberDevice bool   `json:"remember_device"`
 }
 
@@ -103,6 +141,7 @@ type ResetPasswordPayload struct {
 
 type AuthChallengeResponse struct {
 	ChallengeID string    `json:"challenge_id"`
+	Method      MfaMethod `json:"method"`
 	ExpiresAt   time.Time `json:"expires_at"`
 	Message     string    `json:"message"`
 }

@@ -418,3 +418,25 @@ export interface TrustedDevice {
 	expires_at: string;
 	is_current: boolean;
 }
+
+export type MfaMethod = 'email_otp' | 'totp';
+
+/** Pending second-factor login, kept in sessionStorage between /login and /login-otp. */
+export interface LoginOtpState {
+	challengeId: string;
+	email: string;
+	method: MfaMethod;
+}
+
+export interface TOTPStatusResponse {
+	enabled: boolean;
+}
+
+export interface TOTPSetupResponse {
+	secret: string;
+	uri: string;
+}
+
+export interface TOTPEnableResponse {
+	recovery_codes: string[];
+}

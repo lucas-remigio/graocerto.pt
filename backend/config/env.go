@@ -27,6 +27,7 @@ type Config struct {
 	VAPIDPrivateKey        string
 	IsProduction           bool
 	OTelCollectorEndpoint  string
+	TOTPEncKey             string
 }
 
 var Envs = initConfig()
@@ -54,6 +55,7 @@ func initConfig() Config {
 		VAPIDPrivateKey:        getEnv("VAPID_PRIVATE_KEY", ""),
 		IsProduction:           getEnvAsBool("IS_PRODUCTION", false),
 		OTelCollectorEndpoint:  getEnv("OTEL_COLLECTOR_ENDPOINT", "localhost:4317"),
+		TOTPEncKey:             getEnv("TOTP_ENC_KEY", ""),
 	}
 }
 

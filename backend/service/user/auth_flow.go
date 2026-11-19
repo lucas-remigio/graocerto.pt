@@ -104,12 +104,18 @@ func (h *Handler) handleVerifyLoginOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.validateAuthToken(token, types.AuthTokenPurposeLoginOTP); err != nil {
+	if err := h.validateLoginChallenge(token); err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	if !auth.CompareSecret(payload.Code, token.SecretHash) {
+	valid, err := h.checkLoginCode(token, payload.Code)
+	if err != nil {
+		utils.LogWithContext(r.Context()).Error("failed to check login code", "userID", token.UserID, "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("could not verify login code"))
+		return
+	}
+	if !valid {
 		_ = h.authTokenStore.IncrementAuthTokenAttempts(token.ID)
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid or expired login code"))
 		return
@@ -221,6 +227,30 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJson(w, http.StatusOK, types.MessageResponse{Message: "password updated"})
 }
 
+// createLoginChallenge starts the second factor for the user's chosen method.
+func (h *Handler) createLoginChallenge(user *types.User) (*types.AuthChallengeResponse, error) {
+	if user.MfaMethod == types.MfaMethodTOTP {
+		return h.createLoginTOTPChallenge(user)
+	}
+	return h.createLoginOTPChallenge(user)
+}
+
+// validateLoginChallenge accepts both login challenge kinds; the stored purpose
+// decides how the code is checked.
+func (h *Handler) validateLoginChallenge(token *types.AuthToken) error {
+	if token.Purpose != types.AuthTokenPurposeLoginOTP && token.Purpose != types.AuthTokenPurposeLoginTOTP {
+		return fmt.Errorf("invalid or expired token")
+	}
+	return h.validateAuthToken(token, token.Purpose)
+}
+
+func (h *Handler) checkLoginCode(token *types.AuthToken, code string) (bool, error) {
+	if token.Purpose == types.AuthTokenPurposeLoginTOTP {
+		return h.verifyTOTPOrRecovery(token.UserID, code)
+	}
+	return auth.CompareSecret(code, token.SecretHash), nil
+}
+
 func (h *Handler) createLoginOTPChallenge(user *types.User) (*types.AuthChallengeResponse, error) {
 	if h.authTokenStore == nil || h.mailer == nil {
 		return nil, fmt.Errorf("mfa dependencies are not configured")
@@ -264,6 +294,7 @@ func (h *Handler) createLoginOTPChallenge(user *types.User) (*types.AuthChalleng
 
 	return &types.AuthChallengeResponse{
 		ChallengeID: challengeID,
+		Method:      types.MfaMethodEmailOTP,
 		ExpiresAt:   token.ExpiresAt,
 		Message:     "we sent a login code to your email",
 	}, nil

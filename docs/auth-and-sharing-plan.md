@@ -10,8 +10,8 @@ the analysis isn't lost.
 
 | # | Feature                                | Effort | Status |
 | - | -------------------------------------- | ------ | ------ |
-| 1 | Remember this device (90d) + device list | S–M  | in progress (built + tested, not deployed) |
-| 2 | TOTP 2FA (Ente Auth, Aegis, Google…)   | M      | todo   |
+| 1 | Remember this device (90d) + device list | S–M  | done on `main` (`5e65106`), not deployed |
+| 2 | TOTP 2FA (Ente Auth, Aegis, Google…)   | M      | in progress (built + tested, uncommitted) |
 | 3 | Shared accounts (invite + co-edit)     | L      | parked |
 
 Pre-req: the `telegram_bot` branch has uncommitted work. Land or commit it before starting
@@ -115,7 +115,32 @@ or all of them.
 
 ---
 
-## 2. TOTP 2FA (authenticator apps)  `todo`
+## 2. TOTP 2FA (authenticator apps)  `in progress`
+
+**Opt-in (confirmed by Lucas 2026-11-19):** email codes stay the default; each user chooses the
+app in the Profile modal and can switch back. With the app active there is no email fallback,
+recovery codes cover a lost phone.
+
+**Progress (2026-11-19):** built and tested on the working tree on top of `5e65106`.
+- Backend: `service/auth/totp.go` (RFC 6238, stdlib), `service/auth/encrypt.go` (AES-256-GCM),
+  migration `20261119130000_add-users-totp`, `service/user/totp_store.go`, `service/user/totp.go`
+  (status/setup/enable/disable + login challenge + recovery codes in `auth_tokens`), login and
+  `/auth/verify-login-otp` now dispatch on the challenge purpose; challenge responses carry
+  `method`. `GenerateReadableCode` copied verbatim from `telegram_bot` so that merge is clean.
+- Frontend: `lib/TwoFactorSettings.svelte` in `ProfileModal` (QR via `qrcode@1.5.4`), `login-otp`
+  shows app/email wording + "use a recovery code" toggle, shared `LoginOtpState` in `types.ts`.
+- Config: `TOTP_ENC_KEY` in `config/env.go`, both compose files; dev keys added to local `.env`s.
+- Verified: RFC vectors + skew/replay unit tests, 11 handler tests, store + migration up/down on
+  scratch Postgres (down moves `totp` users back to `email_otp`), full curl E2E incl. replay and
+  recovery codes.
+- Prod key: Lucas added the `TOTP_ENC_KEY` GitHub secret; `deploy.yaml` now exports it (every
+  `${VAR}` in `docker-compose.prod.yaml` is now exported by the workflow).
+- Dev gotcha: `@types/qrcode` pulls `@types/node`, which made pnpm keep two vite copies and broke
+  `pnpm dev` ("Cannot find module '$app/environment'"). Fixed with `pnpm prune` + clearing
+  `node_modules/.vite` and `.svelte-kit`.
+- Left: Lucas tests with a real authenticator app → commit → deploy. Key notes:
+  (`openssl rand -base64 32`, separate from dev; never rotate without a migration plan, or
+  every TOTP user loses access) → deploy.
 
 **Goal:** a user can switch 2FA from email codes to an authenticator app (Ente Auth, Aegis,
 Google Authenticator, 1Password…). Login then asks for the 6-digit app code instead of
@@ -211,6 +236,11 @@ Notes from the 2026-11-19 analysis:
   the modal gets crowded once TOTP is added.
 - 2026-11-19: `TrustedDeviceStore` is its own interface (implemented by the user `Store`)
   instead of growing `UserStore`, so the existing `UserStore` test fakes stay untouched.
+- 2026-11-19: TOTP secret key is a dedicated `TOTP_ENC_KEY` (not derived from `JWT_SECRET`), so
+  rotating the JWT secret never locks TOTP users out.
+- 2026-11-19: TOTP login reuses `/auth/verify-login-otp` and `auth_tokens` (purpose `login_totp`)
+  for expiry + attempt limits; recovery codes are `auth_tokens` rows (purpose `totp_recovery`,
+  max 1 use) rather than a new table. A `TOTPStore` interface keeps `UserStore` fakes untouched.
 - 2026-11-19: "Forget device" only stops skipping 2FA. It doesn't end the session (the JWT
   stays valid up to 7d). Real session revocation would need server-side sessions, out of scope.
 

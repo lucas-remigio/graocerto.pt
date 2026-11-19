@@ -23,6 +23,7 @@ func NewHandlerForTesting(userStore types.UserStore) *Handler {
 		authTokenStore:   nil,
 		mailer:           nil,
 		trustedDevices:   nil,
+		totp:             nil,
 		accountStore:     nil, // Not needed for basic user tests
 		categoryStore:    nil,
 		transactionStore: nil,
@@ -33,17 +34,19 @@ type Handler struct {
 	store            types.UserStore
 	authTokenStore   types.AuthTokenStore
 	trustedDevices   types.TrustedDeviceStore
+	totp             types.TOTPStore
 	mailer           mailer.Mailer
 	accountStore     types.AccountStore
 	categoryStore    types.CategoryStore
 	transactionStore types.TransactionStore
 }
 
-func NewHandler(store types.UserStore, authTokenStore types.AuthTokenStore, trustedDevices types.TrustedDeviceStore, mailer mailer.Mailer, accountStore types.AccountStore, categoryStore types.CategoryStore, transactionStore types.TransactionStore) *Handler {
+func NewHandler(store types.UserStore, authTokenStore types.AuthTokenStore, trustedDevices types.TrustedDeviceStore, totp types.TOTPStore, mailer mailer.Mailer, accountStore types.AccountStore, categoryStore types.CategoryStore, transactionStore types.TransactionStore) *Handler {
 	return &Handler{
 		store:            store,
 		authTokenStore:   authTokenStore,
 		trustedDevices:   trustedDevices,
+		totp:             totp,
 		mailer:           mailer,
 		accountStore:     accountStore,
 		categoryStore:    categoryStore,
@@ -68,6 +71,16 @@ func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 			http.MethodGet:    h.handleListTrustedDevices,
 			http.MethodDelete: h.handleRevokeAllTrustedDevices,
 		}),
+	))
+	router.HandleFunc("/auth/totp", middleware.AuthMiddleware(h.handleTOTPStatus))
+	router.HandleFunc("/auth/totp/setup", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{http.MethodPost: h.handleTOTPSetup}),
+	))
+	router.HandleFunc("/auth/totp/enable", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{http.MethodPost: h.handleTOTPEnable}),
+	))
+	router.HandleFunc("/auth/totp/disable", middleware.AuthMiddleware(
+		middleware.MethodRouter(map[string]http.HandlerFunc{http.MethodPost: h.handleTOTPDisable}),
 	))
 	router.HandleFunc("/auth/devices/{id}", middleware.AuthMiddleware(
 		middleware.MethodRouter(map[string]http.HandlerFunc{
@@ -126,12 +139,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.MfaMethod == types.MfaMethodTOTP {
-		utils.WriteError(w, http.StatusNotImplemented, fmt.Errorf("totp mfa is not implemented yet"))
-		return
-	}
-
-	challenge, err := h.createLoginOTPChallenge(user)
+	challenge, err := h.createLoginChallenge(user)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return

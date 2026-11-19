@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { toastStore } from '$lib/stores/toast';
 	import type { AxiosError } from 'axios';
+	import type { LoginOtpState, MfaMethod } from '$lib/types';
 
 	interface APIErrorResponse {
 		error?: string;
@@ -14,16 +15,20 @@
 	let email = '';
 	let challengeId = '';
 	let otpCode = '';
+	let method: MfaMethod = 'email_otp';
+	let useRecoveryCode = false;
 	let rememberDevice = false;
 	let isLoading = false;
 	let isReady = false;
 	let status = '';
 	const loginOtpStateKey = 'wallet-tracker-login-otp-state';
 
-	interface LoginOtpState {
-		challengeId: string;
-		email: string;
-	}
+	$: isApp = method === 'totp';
+	$: codeLabel = useRecoveryCode
+		? $t('auth.recovery-code')
+		: isApp
+			? $t('auth.app-code')
+			: $t('auth.email-code');
 
 	onMount(() => {
 		const storedState = window.sessionStorage.getItem(loginOtpStateKey);
@@ -37,6 +42,7 @@
 			const parsedState = JSON.parse(storedState) as Partial<LoginOtpState>;
 			email = parsedState.email || '';
 			challengeId = parsedState.challengeId || '';
+			method = parsedState.method === 'totp' ? 'totp' : 'email_otp';
 		} catch {
 			window.sessionStorage.removeItem(loginOtpStateKey);
 			status = $t('auth.missing-login-challenge');
@@ -45,9 +51,15 @@
 		}
 
 		isReady = Boolean(email && challengeId);
-		status = isReady
-			? $t('auth.login-code-sent', { values: { email } })
-			: $t('auth.missing-login-challenge');
+		if (!isReady) {
+			status = $t('auth.missing-login-challenge');
+		} else {
+			// Compare `method` directly: the reactive `isApp` hasn't re-run yet inside onMount.
+			status =
+				method === 'totp'
+					? $t('auth.app-code-prompt')
+					: $t('auth.login-code-sent', { values: { email } });
+		}
 	});
 
 	const handleSubmit = async () => {
@@ -57,7 +69,7 @@
 		}
 
 		if (!otpCode) {
-			toastStore.error($t('auth.enter-otp-code'));
+			toastStore.error(isApp ? $t('auth.enter-app-code') : $t('auth.enter-otp-code'));
 			return;
 		}
 
@@ -99,17 +111,30 @@
 			<form class="space-y-4" on:submit|preventDefault={handleSubmit}>
 				<div class="form-control">
 					<label for="otpCode" class="label">
-						<span class="label-text font-medium">{$t('auth.email-code')}</span>
+						<span class="label-text font-medium">{codeLabel}</span>
 					</label>
 					<input
 						id="otpCode"
 						type="text"
-						inputmode="numeric"
-						maxlength="6"
+						inputmode={useRecoveryCode ? 'text' : 'numeric'}
+						autocomplete="one-time-code"
+						maxlength={useRecoveryCode ? 11 : 6}
 						bind:value={otpCode}
 						class="input input-bordered w-full focus:input-primary"
-						placeholder={$t('auth.otp-placeholder')}
+						placeholder={useRecoveryCode ? 'XXXXX-XXXXX' : $t('auth.otp-placeholder')}
 					/>
+					{#if isApp}
+						<button
+							type="button"
+							class="link link-primary mt-2 self-start text-sm"
+							on:click={() => {
+								useRecoveryCode = !useRecoveryCode;
+								otpCode = '';
+							}}
+						>
+							{useRecoveryCode ? $t('auth.use-app-code') : $t('auth.use-recovery-code')}
+						</button>
+					{/if}
 				</div>
 
 				<label class="label cursor-pointer justify-start gap-3">

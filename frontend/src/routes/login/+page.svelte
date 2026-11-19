@@ -7,6 +7,7 @@
 	import { validateEmail, isPasswordLengthValid } from '$lib/authValidation';
 	import { onMount } from 'svelte';
 	import { toastStore } from '$lib/stores/toast';
+	import type { LoginOtpState } from '$lib/types';
 
 	// Vite will replace this at build time, failing gracefully if undefined
 	const googleClientId = import.meta.env.VITE_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -16,11 +17,6 @@
 	let isLoading = false;
 	let isGoogleLoading = false;
 	const loginOtpStateKey = 'wallet-tracker-login-otp-state';
-
-	interface LoginOtpState {
-		challengeId: string;
-		email: string;
-	}
 
 	interface APIErrorResponse {
 		token?: string; // The main error message
@@ -101,7 +97,8 @@
 			if (response.status === 202 && data.challenge_id) {
 				const challengeState: LoginOtpState = {
 					challengeId: data.challenge_id,
-					email
+					email,
+					method: data.method === 'totp' ? 'totp' : 'email_otp'
 				};
 				sessionStorage.setItem(loginOtpStateKey, JSON.stringify(challengeState));
 				goto('/login-otp');

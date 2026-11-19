@@ -3,6 +3,7 @@
 	import { User, Mail, Trash2, Download, X } from 'lucide-svelte';
 	import api_axios from './axios';
 	import TrustedDevices from './TrustedDevices.svelte';
+	import TwoFactorSettings from './TwoFactorSettings.svelte';
 
 	export let showModal = false;
 	export let logout: () => void;
@@ -10,6 +11,8 @@
 	let showDeleteConfirmation = false;
 	let isDeleting = false;
 	let deleteConfirmText = '';
+	// Bumped when the MFA method changes, which forgets trusted devices server-side.
+	let mfaVersion = 0;
 
 	const userEmail = localStorage.getItem('userEmail') || 'unknown@anonymous.pt';
 	const rawCreated = localStorage.getItem('userCreated') || '';
@@ -124,7 +127,11 @@
 						<p class="text-base-content/80">{userCreated}</p>
 					</div>
 
-					<TrustedDevices />
+					<TwoFactorSettings on:change={() => mfaVersion++} />
+
+					{#key mfaVersion}
+						<TrustedDevices />
+					{/key}
 				</div>
 
 				<!-- Actions -->

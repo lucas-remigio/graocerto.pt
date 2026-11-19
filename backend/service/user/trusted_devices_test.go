@@ -103,7 +103,7 @@ func newTrustedDeviceFixture(t *testing.T) *trustedDeviceFixture {
 		devices:   newMemoryTrustedDeviceStore(),
 		mailer:    &memoryMailer{},
 	}
-	f.handler = NewHandler(userStore, f.authStore, f.devices, f.mailer, nil, nil, nil)
+	f.handler = NewHandler(userStore, f.authStore, f.devices, nil, f.mailer, nil, nil, nil)
 	return f
 }
 
