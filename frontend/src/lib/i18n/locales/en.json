@@ -498,6 +498,7 @@
 	},
 
 	"auth": {
+		"code-already-used": "This code was already used. Wait for the next one in your app.",
 		"app-code": "Authenticator app code",
 		"app-code-prompt": "Enter the 6-digit code from your authenticator app.",
 		"enter-app-code": "Enter the 6-digit code from your authenticator app.",

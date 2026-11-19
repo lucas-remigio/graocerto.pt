@@ -501,6 +501,7 @@
 	},
 
 	"auth": {
+		"code-already-used": "Este código já foi usado. Espera pelo próximo na tua app.",
 		"app-code": "Código da app de autenticação",
 		"app-code-prompt": "Introduz o código de 6 dígitos da tua app de autenticação.",
 		"enter-app-code": "Introduz o código de 6 dígitos da tua app de autenticação.",

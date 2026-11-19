@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/base32"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -37,11 +38,11 @@ func TestMatchTOTPToleratesOneStepOfSkew(t *testing.T) {
 
 	for offset, wantOK := range map[int64]bool{-2: false, -1: true, 0: true, 1: true, 2: false} {
 		code, _ := TOTPCode(rfcSecret, step+offset)
-		matched, ok := MatchTOTP(rfcSecret, code, now, 0)
-		if ok != wantOK {
+		matched, err := MatchTOTP(rfcSecret, code, now, 0)
+		if ok := err == nil; ok != wantOK {
 			t.Errorf("offset %d: ok = %v, want %v", offset, ok, wantOK)
 		}
-		if ok && matched != step+offset {
+		if err == nil && matched != step+offset {
 			t.Errorf("offset %d: matched step %d, want %d", offset, matched, step+offset)
 		}
 	}
@@ -52,16 +53,21 @@ func TestMatchTOTPRejectsReplayAndGarbage(t *testing.T) {
 	step := TOTPStep(now)
 	code, _ := TOTPCode(rfcSecret, step)
 
-	if _, ok := MatchTOTP(rfcSecret, code, now, step); ok {
-		t.Error("expected a code from an already-used step to be rejected")
+	if _, err := MatchTOTP(rfcSecret, code, now, step); !errors.Is(err, ErrTOTPReused) {
+		t.Errorf("expected ErrTOTPReused for an already-used step, got %v", err)
+	}
+	// The previous step's code is also already used once a later step was accepted.
+	previous, _ := TOTPCode(rfcSecret, step-1)
+	if _, err := MatchTOTP(rfcSecret, previous, now, step); !errors.Is(err, ErrTOTPReused) {
+		t.Errorf("expected ErrTOTPReused for an older step, got %v", err)
 	}
 	for _, bad := range []string{"", "12345", "1234567", "abcdef"} {
-		if _, ok := MatchTOTP(rfcSecret, bad, now, 0); ok {
-			t.Errorf("expected %q to be rejected", bad)
+		if _, err := MatchTOTP(rfcSecret, bad, now, 0); !errors.Is(err, ErrTOTPInvalid) {
+			t.Errorf("expected ErrTOTPInvalid for %q, got %v", bad, err)
 		}
 	}
-	if _, ok := MatchTOTP("not base32!", code, now, 0); ok {
-		t.Error("expected an invalid secret to be rejected")
+	if _, err := MatchTOTP("not base32!", code, now, 0); !errors.Is(err, ErrTOTPInvalid) {
+		t.Errorf("expected ErrTOTPInvalid for an invalid secret, got %v", err)
 	}
 }
 

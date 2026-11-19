@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -110,6 +111,12 @@ func (h *Handler) handleVerifyLoginOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	valid, err := h.checkLoginCode(token, payload.Code)
+	if errors.Is(err, auth.ErrTOTPReused) {
+		// Still counts as an attempt; 409 lets the UI say "wait for the next code".
+		_ = h.authTokenStore.IncrementAuthTokenAttempts(token.ID)
+		utils.WriteError(w, http.StatusConflict, err)
+		return
+	}
 	if err != nil {
 		utils.LogWithContext(r.Context()).Error("failed to check login code", "userID", token.UserID, "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("could not verify login code"))

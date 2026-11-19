@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"encoding/base32"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -23,6 +24,13 @@ const (
 )
 
 var totpEncoding = base32.StdEncoding.WithPadding(base32.NoPadding)
+
+var (
+	ErrTOTPInvalid = errors.New("invalid authenticator code")
+	// ErrTOTPReused means the code is right but its time step was already used,
+	// typically the code still on screen right after a successful login.
+	ErrTOTPReused = errors.New("authenticator code already used")
+)
 
 func GenerateTOTPSecret() (string, error) {
 	secret := make([]byte, totpSecretSize)
@@ -62,17 +70,26 @@ func TOTPCode(secret string, step int64) (string, error) {
 }
 
 // MatchTOTP returns the time step the code belongs to. Steps at or before
-// lastUsedStep are rejected so an observed code can't be replayed.
-func MatchTOTP(secret, code string, now time.Time, lastUsedStep int64) (int64, bool) {
+// lastUsedStep return ErrTOTPReused so an observed code can't be replayed.
+func MatchTOTP(secret, code string, now time.Time, lastUsedStep int64) (int64, error) {
+	step, ok := findTOTPStep(secret, code, now)
+	if !ok {
+		return 0, ErrTOTPInvalid
+	}
+	if step <= lastUsedStep {
+		return 0, ErrTOTPReused
+	}
+	return step, nil
+}
+
+// findTOTPStep checks the current step and one either side for clock drift.
+func findTOTPStep(secret, code string, now time.Time) (int64, bool) {
 	if len(code) != totpDigits {
 		return 0, false
 	}
 
 	current := TOTPStep(now)
 	for step := current - totpSkewSteps; step <= current+totpSkewSteps; step++ {
-		if step <= lastUsedStep {
-			continue
-		}
 		expected, err := TOTPCode(secret, step)
 		if err != nil {
 			return 0, false

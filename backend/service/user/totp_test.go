@@ -253,8 +253,43 @@ func TestLoginWithTOTPRejectsReplayedCode(t *testing.T) {
 	if status := f.verify(f.login(t).ChallengeID, code); status != http.StatusOK {
 		t.Fatalf("first use: expected 200, got %d", status)
 	}
-	if status := f.verify(f.login(t).ChallengeID, code); status != http.StatusUnauthorized {
-		t.Fatalf("replay: expected 401, got %d", status)
+	if status := f.verify(f.login(t).ChallengeID, code); status != http.StatusConflict {
+		t.Fatalf("replay: expected 409 (already used), got %d", status)
+	}
+}
+
+func TestTOTPDisableWithJustUsedCodeSaysAlreadyUsed(t *testing.T) {
+	f := newTOTPFixture(t)
+	secret, _ := f.enable(t)
+	code := currentCode(secret)
+	if status := f.verify(f.login(t).ChallengeID, code); status != http.StatusOK {
+		t.Fatalf("login: expected 200, got %d", status)
+	}
+
+	rr := serve(f.handler.handleTOTPDisable, newRequest(http.MethodPost, "/auth/totp/disable", types.MfaCodePayload{Code: code}, "", 1))
+	if rr.Code != http.StatusConflict {
+		t.Fatalf("expected 409 for the code still on screen, got %d", rr.Code)
+	}
+	if user, _ := f.users.GetUserById(1); user.MfaMethod != types.MfaMethodTOTP {
+		t.Fatal("a reused code must not disable TOTP")
+	}
+}
+
+func TestTOTPSetupReusesPendingSecretUntilConfirmed(t *testing.T) {
+	f := newTOTPFixture(t)
+	first := f.setup(t)
+	if again := f.setup(t); again.Secret != first.Secret || again.URI != first.URI {
+		t.Fatal("reopening setup must show the same QR until it is confirmed")
+	}
+
+	// After enabling and disabling, a new setup must not resurrect the old secret.
+	secret, _ := f.enable(t)
+	rr := serve(f.handler.handleTOTPDisable, newRequest(http.MethodPost, "/auth/totp/disable", types.MfaCodePayload{Code: currentCode(secret)}, "", 1))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("disable: expected 200, got %d", rr.Code)
+	}
+	if fresh := f.setup(t); fresh.Secret == first.Secret {
+		t.Fatal("expected a fresh secret after disabling")
 	}
 }
 

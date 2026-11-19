@@ -34,6 +34,8 @@
 		const status = (error as AxiosError).response?.status;
 		if (status === 400) {
 			toastStore.error($t('profile.two-factor-invalid-code'));
+		} else if (status === 409) {
+			toastStore.error($t('auth.code-already-used'));
 		} else if (status === 503) {
 			toastStore.error($t('profile.two-factor-unavailable'));
 		} else {
@@ -54,7 +56,17 @@
 
 	const startSetup = () =>
 		run(async () => {
-			const response = await api_axios.post<TOTPSetupResponse>('auth/totp/setup');
+			const response = await api_axios
+				.post<TOTPSetupResponse>('auth/totp/setup')
+				.catch((error: AxiosError) => {
+					// 409 here means it was already enabled (e.g. in another tab): just show that.
+					if (error.response?.status === 409) return null;
+					throw error;
+				});
+			if (!response) {
+				view = 'app';
+				return;
+			}
 			setup = response.data;
 			qrDataUrl = await QRCode.toDataURL(setup.uri, { margin: 1, width: 200 });
 			code = '';

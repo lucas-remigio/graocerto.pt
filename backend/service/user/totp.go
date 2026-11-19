@@ -20,7 +20,6 @@ const (
 	recoveryCodeLength  = 10
 	recoveryCodeTTL     = 10 * 365 * 24 * time.Hour
 	loginTOTPTTL        = 5 * time.Minute
-	errInvalidTOTPCode  = "invalid authenticator code"
 	errTOTPNotAvailable = "authenticator app sign-in is not configured"
 )
 
@@ -89,10 +88,23 @@ func (h *Handler) verifyTOTPOrRecovery(userID int, code string) (bool, error) {
 		return false, err
 	}
 
-	if step, ok := auth.MatchTOTP(secret, code, time.Now(), state.LastStep); ok {
-		return h.totp.AdvanceTOTPStep(userID, step)
+	step, err := auth.MatchTOTP(secret, code, time.Now(), state.LastStep)
+	if errors.Is(err, auth.ErrTOTPReused) {
+		return false, err
 	}
-	return h.redeemRecoveryCode(userID, code)
+	if err != nil {
+		return h.redeemRecoveryCode(userID, code)
+	}
+
+	advanced, err := h.totp.AdvanceTOTPStep(userID, step)
+	if err != nil {
+		return false, err
+	}
+	if !advanced {
+		// A concurrent request with the same code won the race.
+		return false, auth.ErrTOTPReused
+	}
+	return true, nil
 }
 
 func (h *Handler) redeemRecoveryCode(userID int, code string) (bool, error) {
@@ -178,19 +190,8 @@ func (h *Handler) handleTOTPSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secret, err := auth.GenerateTOTPSecret()
+	secret, err := h.pendingOrNewTOTPSecret(key, userID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	encrypted, err := auth.EncryptSecret(key, secret)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	if err := h.totp.SetPendingTOTPSecret(userID, encrypted); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -199,6 +200,31 @@ func (h *Handler) handleTOTPSetup(w http.ResponseWriter, r *http.Request) {
 		Secret: secret,
 		URI:    auth.TOTPAuthURI(totpIssuer, user.Email, secret),
 	})
+}
+
+// pendingOrNewTOTPSecret keeps showing the same QR until setup is confirmed, so an
+// authenticator entry scanned during an earlier, unfinished attempt keeps working.
+func (h *Handler) pendingOrNewTOTPSecret(key []byte, userID int) (string, error) {
+	state, err := h.totp.GetTOTPState(userID)
+	if err != nil {
+		return "", err
+	}
+	if state.PendingSecret != "" {
+		// Undecryptable (e.g. the key changed) just falls through to a fresh secret.
+		if secret, err := auth.DecryptSecret(key, state.PendingSecret); err == nil {
+			return secret, nil
+		}
+	}
+
+	secret, err := auth.GenerateTOTPSecret()
+	if err != nil {
+		return "", err
+	}
+	encrypted, err := auth.EncryptSecret(key, secret)
+	if err != nil {
+		return "", err
+	}
+	return secret, h.totp.SetPendingTOTPSecret(userID, encrypted)
 }
 
 func (h *Handler) handleTOTPEnable(w http.ResponseWriter, r *http.Request) {
@@ -258,11 +284,7 @@ func (h *Handler) matchPendingTOTP(userID int, code string) (int64, error) {
 		return 0, err
 	}
 
-	step, ok := auth.MatchTOTP(secret, code, time.Now(), 0)
-	if !ok {
-		return 0, errors.New(errInvalidTOTPCode)
-	}
-	return step, nil
+	return auth.MatchTOTP(secret, code, time.Now(), 0)
 }
 
 func (h *Handler) handleTOTPDisable(w http.ResponseWriter, r *http.Request) {
@@ -281,12 +303,16 @@ func (h *Handler) handleTOTPDisable(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusServiceUnavailable, err)
 		return
 	}
+	if errors.Is(err, auth.ErrTOTPReused) {
+		utils.WriteError(w, http.StatusConflict, err)
+		return
+	}
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 	if !valid {
-		utils.WriteError(w, http.StatusBadRequest, errors.New(errInvalidTOTPCode))
+		utils.WriteError(w, http.StatusBadRequest, auth.ErrTOTPInvalid)
 		return
 	}
 

@@ -90,6 +90,10 @@
 		} catch (error) {
 			const axiosError = error as AxiosError;
 			const apiResponse = axiosError.response?.data as APIErrorResponse;
+			if (axiosError.response?.status === 409) {
+				toastStore.error($t('auth.code-already-used'));
+				return;
+			}
 			toastStore.error(apiResponse?.error || $t('auth.error-occurred'));
 		} finally {
 			isLoading = false;
